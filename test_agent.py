@@ -13,7 +13,7 @@ PAGE = (Path(__file__).parent / "tests" / "search_page.html").read_text()  # san
 
 
 def test_parses_listings_without_seller_data():
-    listings = agent.parse_listings(PAGE)
+    listings = agent.parse_listings(PAGE)[0]
     assert len(listings) == 6
     assert listings[0]["title"].startswith("Apple Mac mini M1")
     assert listings[0]["price_eur"] == 425
@@ -22,22 +22,27 @@ def test_parses_listings_without_seller_data():
 
 
 def test_max_price_drops_expensive_and_unpriced_listings():
-    prices = [item["price_eur"] for item in agent.parse_listings(PAGE, max_price_eur=500)]
+    prices = [item["price_eur"] for item in agent.parse_listings(PAGE, max_price_eur=500)[0]]
     assert prices and all(p <= 500 for p in prices)
     assert None not in prices  # "see description" listings have no price to compare
 
 
 def test_tool_is_what_the_model_sees():
     assert agent.search_marktplaats.name == "search_marktplaats"
-    assert set(agent.search_marktplaats.args) == {"query", "max_price_eur", "postcode", "max_distance_km"}
+    assert set(agent.search_marktplaats.args) == {"query", "max_price_eur", "must_include", "postcode", "max_distance_km"}
 
 
 def test_distance_filter_keeps_only_nearby_listings():
     utrecht = (52.09, 5.12)
-    near = agent.parse_listings(PAGE, home=utrecht, max_km=30)
+    near = agent.parse_listings(PAGE, home=utrecht, max_km=30)[0]
     assert near and all(item["distance_km"] is not None and item["distance_km"] <= 30 for item in near)
-    assert len(near) < len(agent.parse_listings(PAGE))  # far or location-less listings dropped
+    assert len(near) < len(agent.parse_listings(PAGE)[0])  # far or location-less listings dropped
 
 
 def test_haversine_amsterdam_utrecht_is_about_35_km():
     assert 33 <= agent.distance_km((52.37, 4.89), (52.09, 5.12)) <= 37
+
+
+def test_spec_filter_matches_titles_ignoring_spaces_and_case():
+    titles = [item["title"] for item in agent.parse_listings(PAGE, must_include="16 gb")[0]]
+    assert titles and all("16gb" in t.lower().replace(" ", "") for t in titles)

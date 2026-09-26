@@ -27,4 +27,6 @@ def chat_route(request: ChatRequest):
         return {"answer": chat(request.message, [t.model_dump() for t in request.history])}
     except Exception as e:
         print(f"chat failed: {type(e).__name__}: {e}")  # details stay in the server log
+        if "content management policy" in str(e):     # Azure's content filter blocked a jailbreak attempt
+            return {"answer": "I can only help with Marktplaats searches."}
         return {"answer": "Error: something went wrong, please try again."}

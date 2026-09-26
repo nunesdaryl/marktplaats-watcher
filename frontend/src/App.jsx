@@ -15,9 +15,9 @@ function inline(text, key) {
     if (m[1]) parts.push(<strong key={`${key}-${i++}`}>{m[1]}</strong>);
     else {
       const url = m[3] || m[4];
-      parts.push(url.startsWith("https://www.marktplaats.nl/")
-        ? <a key={`${key}-${i++}`} href={url} target="_blank" rel="noopener noreferrer">View listing ↗</a>
-        : m[2] || "");
+      if (m[2]) parts.push(<strong key={`${key}-${i++}`}>{m[2]}</strong>);  // keep the listing title
+      if (url.startsWith("https://www.marktplaats.nl/"))
+        parts.push(<a key={`${key}-${i++}`} href={url} target="_blank" rel="noopener noreferrer">View listing ↗</a>);
     }
     last = re.lastIndex;
   }
@@ -39,7 +39,7 @@ function App() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const end = useRef(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);  // braces: return nothing
 
   async function send(text) {
     const message = text.trim();
