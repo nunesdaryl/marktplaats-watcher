@@ -29,4 +29,15 @@ def test_max_price_drops_expensive_and_unpriced_listings():
 
 def test_tool_is_what_the_model_sees():
     assert agent.search_marktplaats.name == "search_marktplaats"
-    assert set(agent.search_marktplaats.args) == {"query", "max_price_eur"}
+    assert set(agent.search_marktplaats.args) == {"query", "max_price_eur", "postcode", "max_distance_km"}
+
+
+def test_distance_filter_keeps_only_nearby_listings():
+    utrecht = (52.09, 5.12)
+    near = agent.parse_listings(PAGE, home=utrecht, max_km=30)
+    assert near and all(item["distance_km"] is not None and item["distance_km"] <= 30 for item in near)
+    assert len(near) < len(agent.parse_listings(PAGE))  # far or location-less listings dropped
+
+
+def test_haversine_amsterdam_utrecht_is_about_35_km():
+    assert 33 <= agent.distance_km((52.37, 4.89), (52.09, 5.12)) <= 37

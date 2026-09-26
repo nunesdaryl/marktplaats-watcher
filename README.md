@@ -22,6 +22,9 @@ cd frontend && npm install && npm run dev      # http://localhost:5173
 Tests: `.venv/bin/python -m pytest -q`
 
 ## Limits
+- The tool reads the first results page only (about 30 listings). A distance filter keeps only listings
+  that have a location, which is roughly a third of them; many private sellers show no location there.
+  Postcode to coordinates uses PDOK, the Dutch government's free address service.
 - It fetches only the public `/q/` search page, which robots.txt allows. It never uses `/lrp/api/`.
   One page is fetched per search, and seller details are never kept.
 - Marktplaats' terms (Art. 7.3) forbid repeated, systematic querying. This is for personal demo use only.
