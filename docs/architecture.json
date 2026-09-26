@@ -1,0 +1,127 @@
+{
+  "title": "Marktplaats Watcher Agent \u00b7 Model (Azure LLM) + Harness = Agent",
+  "diagramType": "architecture",
+  "direction": "TB",
+  "elements": [
+    {
+      "id": "user",
+      "type": "ellipse",
+      "text": "User\nasks in plain language",
+      "role": "primary",
+      "x": 330,
+      "y": 90
+    },
+    {
+      "id": "ui",
+      "type": "rectangle",
+      "text": "React chat UI\nApp.jsx \u00b7 port 5173\nescapes text, safe links",
+      "role": "neutral",
+      "x": 310,
+      "y": 250
+    },
+    {
+      "id": "api",
+      "type": "rectangle",
+      "text": "FastAPI  POST /api/chat\nmain.py \u00b7 port 8000\nschema: 500 chars, 20 turns",
+      "role": "trigger",
+      "x": 300,
+      "y": 440
+    },
+    {
+      "id": "loop",
+      "type": "rectangle",
+      "text": "Agent loop  chat()\nagent.py\nthink \u00b7 act \u00b7 stop \u00b7 max 5 calls",
+      "role": "process",
+      "x": 330,
+      "y": 640
+    },
+    {
+      "id": "llm",
+      "type": "rectangle",
+      "text": "Azure OpenAI gpt-5.6-sol\nvia LangChain\ncontent filter blocks jailbreaks",
+      "role": "primary",
+      "x": 20,
+      "y": 860
+    },
+    {
+      "id": "env",
+      "type": "rectangle",
+      "text": ".env\nkey \u00b7 URL \u00b7 model",
+      "role": "warning",
+      "x": 60,
+      "y": 1110
+    },
+    {
+      "id": "tool",
+      "type": "rectangle",
+      "text": "Tool  search_marktplaats\nquery \u00b7 max price \u00b7 spec\npostcode \u00b7 distance",
+      "role": "success",
+      "x": 600,
+      "y": 860
+    },
+    {
+      "id": "mp",
+      "type": "rectangle",
+      "text": "Marktplaats search page\npublic /q/ only \u00b7 15 s timeout",
+      "role": "external",
+      "x": 470,
+      "y": 1100
+    },
+    {
+      "id": "pdok",
+      "type": "rectangle",
+      "text": "PDOK address service\npostcode to lat/lon",
+      "role": "external",
+      "x": 800,
+      "y": 1100
+    },
+    {
+      "type": "arrow",
+      "from": "user",
+      "to": "ui",
+      "text": "types question"
+    },
+    {
+      "type": "arrow",
+      "from": "ui",
+      "to": "api",
+      "text": "message + history"
+    },
+    {
+      "type": "arrow",
+      "from": "api",
+      "to": "loop",
+      "text": "validated request"
+    },
+    {
+      "type": "arrow",
+      "from": "loop",
+      "to": "llm",
+      "text": "think"
+    },
+    {
+      "type": "arrow",
+      "from": "env",
+      "to": "llm",
+      "text": "secrets at runtime"
+    },
+    {
+      "type": "arrow",
+      "from": "loop",
+      "to": "tool",
+      "text": "act"
+    },
+    {
+      "type": "arrow",
+      "from": "tool",
+      "to": "mp",
+      "text": "fetch 1 page"
+    },
+    {
+      "type": "arrow",
+      "from": "tool",
+      "to": "pdok",
+      "text": "geocode"
+    }
+  ]
+}
