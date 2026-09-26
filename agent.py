@@ -2,6 +2,7 @@ import json
 import math
 import os
 import re
+import time
 from urllib.parse import quote
 
 import httpx
@@ -11,6 +12,13 @@ from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
 load_dotenv()
+
+# Public-deployment limits: identical searches are served from a 15-minute cache, and at most
+# MAX_FETCHES_PER_HOUR Marktplaats pages are fetched per server instance (keeps querying low).
+CACHE_SECONDS = 15 * 60
+MAX_FETCHES_PER_HOUR = int(os.getenv("MAX_FETCHES_PER_HOUR", "30"))
+_page_cache = {}      # url -> (fetched_at, html)
+_fetch_times = []     # timestamps of real fetches in the last hour
 
 NEXT_DATA = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 
@@ -79,6 +87,23 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
     return results[:10], stats
 
 
+def fetch_page(url):
+    """Fetch a search page, from the cache when possible. Returns None when the hourly cap is reached."""
+    now = time.time()
+    cached = _page_cache.get(url)
+    if cached and now - cached[0] < CACHE_SECONDS:
+        return cached[1]
+    _fetch_times[:] = [t for t in _fetch_times if now - t < 3600]
+    if len(_fetch_times) >= MAX_FETCHES_PER_HOUR:
+        return None
+    _fetch_times.append(now)
+    page = httpx.get(url, timeout=15.0, follow_redirects=True,
+                     headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
+    page.raise_for_status()
+    _page_cache[url] = (now, page.text)
+    return page.text
+
+
 @tool
 def search_marktplaats(query: str, max_price_eur: int | None = None, must_include: str | None = None,
                        postcode: str | None = None, max_distance_km: int | None = None) -> str:
@@ -97,12 +122,12 @@ def search_marktplaats(query: str, max_price_eur: int | None = None, must_includ
                 return f"Unknown Dutch postcode '{postcode}'."
         # Only the public /q/ search page, which robots.txt allows (never /lrp/api/)
         url = f"https://www.marktplaats.nl/q/{quote(query.strip().replace(' ', '-'))}/"
-        page = httpx.get(url, timeout=15.0, follow_redirects=True,
-                         headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
-        page.raise_for_status()
+        html = fetch_page(url)
     except httpx.HTTPError as e:
         return f"Search unavailable: {type(e).__name__}"
-    listings, stats = parse_listings(page.text, max_price_eur, home, max_distance_km if home else None,
+    if html is None:
+        return "Search limit reached for this hour. Please try again later."
+    listings, stats = parse_listings(html, max_price_eur, home, max_distance_km if home else None,
                                      must_include)
     if listings:
         return json.dumps(listings)

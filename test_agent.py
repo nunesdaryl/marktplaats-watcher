@@ -46,3 +46,31 @@ def test_haversine_amsterdam_utrecht_is_about_35_km():
 def test_spec_filter_matches_titles_ignoring_spaces_and_case():
     titles = [item["title"] for item in agent.parse_listings(PAGE, must_include="16 gb")[0]]
     assert titles and all("16gb" in t.lower().replace(" ", "") for t in titles)
+
+
+def test_fetch_cache_and_hourly_cap(monkeypatch):
+    calls = []
+
+    class Page:
+        text = "<html></html>"
+        def raise_for_status(self): pass
+
+    monkeypatch.setattr(agent.httpx, "get", lambda *a, **k: calls.append(a) or Page())
+    monkeypatch.setattr(agent, "MAX_FETCHES_PER_HOUR", 2)
+    agent._page_cache.clear(); agent._fetch_times.clear()
+    assert agent.fetch_page("u1") and agent.fetch_page("u1")  # second one comes from the cache
+    assert len(calls) == 1
+    assert agent.fetch_page("u2") is not None
+    assert agent.fetch_page("u3") is None                      # hourly cap reached, no request made
+    assert len(calls) == 2
+
+
+def test_rate_limit_returns_429(monkeypatch):
+    from fastapi.testclient import TestClient
+    import main
+    monkeypatch.setattr(main, "chat", lambda message, history: "ok")
+    monkeypatch.setattr(main, "RATE_PER_MINUTE", 2)
+    main._recent.clear()
+    client = TestClient(main.app)
+    codes = [client.post("/api/chat", json={"message": "hi"}).status_code for _ in range(3)]
+    assert codes == [200, 200, 429]
