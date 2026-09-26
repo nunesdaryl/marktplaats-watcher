@@ -74,3 +74,14 @@ def test_rate_limit_returns_429(monkeypatch):
     client = TestClient(main.app)
     codes = [client.post("/api/chat", json={"message": "hi"}).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
+
+
+def test_offline_model_gives_a_clear_message(monkeypatch):
+    from fastapi.testclient import TestClient
+    import main
+    def gone(message, history):
+        raise RuntimeError("Error code: 404 - Could not find an existing deployment to match the model")
+    monkeypatch.setattr(main, "chat", gone)
+    main._recent.clear()
+    answer = TestClient(main.app).post("/api/chat", json={"message": "hi"}).json()["answer"]
+    assert "offline" in answer and "Docker" in answer

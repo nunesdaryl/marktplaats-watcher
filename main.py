@@ -56,6 +56,10 @@ def chat_route(request: ChatRequest, http: Request):
                   f"path={urlsplit(os.getenv('AZURE_AI_ENDPOINT', '')).path!r}")
         if "content management policy" in str(e):     # Azure's content filter blocked a jailbreak attempt
             return {"answer": "I can only help with Marktplaats searches."}
+        if "existing deployment" in str(e) or "401" in str(e):  # model removed or key withdrawn on Azure
+            return {"answer": "The demo's AI model is offline right now: the temporary course key or model was "
+                              "withdrawn. You can run it yourself with the Docker image and your own Azure key "
+                              "(see the README)."}
         return {"answer": "Error: something went wrong, please try again."}
 
 
