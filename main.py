@@ -2,6 +2,7 @@ import os
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Literal
 
 from dotenv import load_dotenv
@@ -49,6 +50,10 @@ def chat_route(request: ChatRequest, http: Request):
         return {"answer": chat(request.message, [t.model_dump() for t in request.history])}
     except Exception as e:
         print(f"chat failed: {type(e).__name__}: {e}")  # details stay in the server log
+        if "deployment" in str(e):  # show the non-secret config Azure rejected (never the key)
+            print(f"azure config: model={os.getenv('AZURE_AI_MODEL')!r} "
+                  f"host={urlsplit(os.getenv('AZURE_AI_ENDPOINT', '')).hostname!r} "
+                  f"path={urlsplit(os.getenv('AZURE_AI_ENDPOINT', '')).path!r}")
         if "content management policy" in str(e):     # Azure's content filter blocked a jailbreak attempt
             return {"answer": "I can only help with Marktplaats searches."}
         return {"answer": "Error: something went wrong, please try again."}
