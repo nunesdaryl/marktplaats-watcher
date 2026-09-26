@@ -2,29 +2,31 @@
 <defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1e1e1e"/></marker></defs>
 <ellipse cx="453.0" cy="135.0" rx="123.0" ry="45.0" fill="#a5d8ff" stroke="#1971c2" stroke-width="1"/>
 <rect x="310.0" y="250.0" width="264.0" height="117.0" rx="14" fill="#e9ecef" stroke="#495057" stroke-width="1"/>
-<rect x="300.0" y="440.0" width="291.0" height="117.0" rx="14" fill="#bac8ff" stroke="#5f3dc4" stroke-width="1"/>
+<rect x="300.0" y="440.0" width="282.0" height="117.0" rx="14" fill="#bac8ff" stroke="#5f3dc4" stroke-width="1"/>
 <rect x="330.0" y="640.0" width="282.0" height="144.0" rx="14" fill="#99e9f2" stroke="#0c8599" stroke-width="1"/>
 <rect x="20.0" y="860.0" width="264.0" height="144.0" rx="14" fill="#a5d8ff" stroke="#1971c2" stroke-width="1"/>
 <rect x="60.0" y="1110.0" width="201.0" height="90.0" rx="14" fill="#ffd8a8" stroke="#f08c00" stroke-width="1"/>
-<rect x="600.0" y="860.0" width="264.0" height="117.0" rx="14" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1"/>
+<rect x="600.0" y="860.0" width="291.0" height="117.0" rx="14" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1"/>
 <rect x="470.0" y="1100.0" width="255.0" height="117.0" rx="14" fill="#d0bfff" stroke="#7048e8" stroke-width="1"/>
 <rect x="800.0" y="1100.0" width="228.0" height="90.0" rx="14" fill="#d0bfff" stroke="#7048e8" stroke-width="1"/>
+<rect x="700.0" y="440.0" width="219.0" height="117.0" rx="14" fill="#ffd8a8" stroke="#f08c00" stroke-width="1"/>
 <polyline points="453.0,180.0 442.0,250.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
-<polyline points="442.0,367.0 445.5,440.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
-<polyline points="445.5,557.0 471.0,640.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
+<polyline points="442.0,367.0 441.0,440.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
+<polyline points="441.0,557.0 471.0,640.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
 <polyline points="330.0,712.0 284.0,932.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
 <polyline points="160.5,1110.0 152.0,1004.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
 <polyline points="612.0,712.0 600.0,918.5" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
-<polyline points="732.0,977.0 597.5,1100.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
-<polyline points="732.0,977.0 914.0,1100.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
+<polyline points="745.5,977.0 597.5,1100.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
+<polyline points="745.5,977.0 914.0,1100.0" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
+<polyline points="700.0,498.5 582.0,498.5" fill="none" stroke="#495057" stroke-width="2" marker-end="url(#head)"/>
 <text x="453.0" y="129.0" font-size="20" text-anchor="middle" fill="#1971c2" font-weight="bold">User</text>
 <text x="453.0" y="153.0" font-size="20" text-anchor="middle" fill="#1971c2">asks in plain language</text>
 <text x="442.0" y="290.0" font-size="20" text-anchor="middle" fill="#495057" font-weight="bold">React chat UI</text>
 <text x="442.0" y="314.0" font-size="20" text-anchor="middle" fill="#495057">App.jsx · port 5173</text>
 <text x="442.0" y="338.0" font-size="20" text-anchor="middle" fill="#495057">escapes text, safe links</text>
-<text x="445.5" y="480.0" font-size="20" text-anchor="middle" fill="#5f3dc4" font-weight="bold">FastAPI  POST /api/chat</text>
-<text x="445.5" y="504.0" font-size="20" text-anchor="middle" fill="#5f3dc4">main.py · port 8000</text>
-<text x="445.5" y="528.0" font-size="20" text-anchor="middle" fill="#5f3dc4">schema: 500 chars, 20 turns</text>
+<text x="441.0" y="480.0" font-size="20" text-anchor="middle" fill="#5f3dc4" font-weight="bold">FastAPI  POST /api/chat</text>
+<text x="441.0" y="504.0" font-size="20" text-anchor="middle" fill="#5f3dc4">main.py · port 8000</text>
+<text x="441.0" y="528.0" font-size="20" text-anchor="middle" fill="#5f3dc4">schema · 10 req/min per IP</text>
 <text x="471.0" y="681.0" font-size="20" text-anchor="middle" fill="#0c8599" font-weight="bold">Agent loop  chat()</text>
 <text x="471.0" y="705.0" font-size="20" text-anchor="middle" fill="#0c8599">agent.py</text>
 <text x="471.0" y="729.0" font-size="20" text-anchor="middle" fill="#0c8599">think · act · stop · max 5</text>
@@ -35,20 +37,24 @@
 <text x="152.0" y="973.0" font-size="20" text-anchor="middle" fill="#1971c2">jailbreaks</text>
 <text x="160.5" y="1149.0" font-size="20" text-anchor="middle" fill="#f08c00" font-weight="bold">.env</text>
 <text x="160.5" y="1173.0" font-size="20" text-anchor="middle" fill="#f08c00">key · URL · model</text>
-<text x="732.0" y="900.0" font-size="20" text-anchor="middle" fill="#2f9e44" font-weight="bold">Tool  search_marktplaats</text>
-<text x="732.0" y="924.0" font-size="20" text-anchor="middle" fill="#2f9e44">query · max price · spec</text>
-<text x="732.0" y="948.0" font-size="20" text-anchor="middle" fill="#2f9e44">postcode · distance</text>
+<text x="745.5" y="900.0" font-size="20" text-anchor="middle" fill="#2f9e44" font-weight="bold">Tool  search_marktplaats</text>
+<text x="745.5" y="924.0" font-size="20" text-anchor="middle" fill="#2f9e44">price · spec · distance</text>
+<text x="745.5" y="948.0" font-size="20" text-anchor="middle" fill="#2f9e44">cache 15 min · 30 fetches/h</text>
 <text x="597.5" y="1140.0" font-size="20" text-anchor="middle" fill="#7048e8" font-weight="bold">Marktplaats search page</text>
 <text x="597.5" y="1164.0" font-size="20" text-anchor="middle" fill="#7048e8">public /q/ only · 15 s</text>
 <text x="597.5" y="1188.0" font-size="20" text-anchor="middle" fill="#7048e8">timeout</text>
 <text x="914.0" y="1139.0" font-size="20" text-anchor="middle" fill="#7048e8" font-weight="bold">PDOK address service</text>
 <text x="914.0" y="1163.0" font-size="20" text-anchor="middle" fill="#7048e8">postcode to lat/lon</text>
+<text x="809.5" y="480.0" font-size="20" text-anchor="middle" fill="#f08c00" font-weight="bold">Runs on</text>
+<text x="809.5" y="504.0" font-size="20" text-anchor="middle" fill="#f08c00">Vercel (public URL)</text>
+<text x="809.5" y="528.0" font-size="20" text-anchor="middle" fill="#f08c00">or Docker image</text>
 <text x="447.5" y="193.3" font-size="14" text-anchor="middle" fill="#495057">types question</text>
-<text x="443.75" y="381.8" font-size="14" text-anchor="middle" fill="#495057">message + history</text>
-<text x="458.25" y="576.8" font-size="14" text-anchor="middle" fill="#495057">validated request</text>
+<text x="441.5" y="381.8" font-size="14" text-anchor="middle" fill="#495057">message + history</text>
+<text x="456.0" y="576.8" font-size="14" text-anchor="middle" fill="#495057">validated request</text>
 <text x="307.0" y="800.3" font-size="14" text-anchor="middle" fill="#495057">think</text>
 <text x="156.25" y="1035.3" font-size="14" text-anchor="middle" fill="#495057">secrets at runtime</text>
 <text x="606.0" y="793.55" font-size="14" text-anchor="middle" fill="#495057">act</text>
-<text x="664.75" y="1016.8" font-size="14" text-anchor="middle" fill="#495057">fetch 1 page</text>
-<text x="823.0" y="1016.8" font-size="14" text-anchor="middle" fill="#495057">geocode</text>
+<text x="671.5" y="1016.8" font-size="14" text-anchor="middle" fill="#495057">fetch 1 page</text>
+<text x="829.75" y="1016.8" font-size="14" text-anchor="middle" fill="#495057">geocode</text>
+<text x="641.0" y="476.8" font-size="14" text-anchor="middle" fill="#495057">hosts</text>
 </svg>

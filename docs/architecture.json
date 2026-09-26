@@ -1,5 +1,5 @@
 {
-  "title": "Marktplaats Watcher Agent \u00b7 Model (Azure LLM) + Harness = Agent",
+  "title": "Marktplaats Watcher Agent \u00b7 Model (Azure LLM) + Harness = Agent \u00b7 live on Vercel",
   "diagramType": "architecture",
   "direction": "TB",
   "elements": [
@@ -22,7 +22,7 @@
     {
       "id": "api",
       "type": "rectangle",
-      "text": "FastAPI  POST /api/chat\nmain.py \u00b7 port 8000\nschema: 500 chars, 20 turns",
+      "text": "FastAPI  POST /api/chat\nmain.py \u00b7 port 8000\nschema \u00b7 10 req/min per IP",
       "role": "trigger",
       "x": 300,
       "y": 440
@@ -54,7 +54,7 @@
     {
       "id": "tool",
       "type": "rectangle",
-      "text": "Tool  search_marktplaats\nquery \u00b7 max price \u00b7 spec\npostcode \u00b7 distance",
+      "text": "Tool  search_marktplaats\nprice \u00b7 spec \u00b7 distance\ncache 15 min \u00b7 30 fetches/h",
       "role": "success",
       "x": 600,
       "y": 860
@@ -74,6 +74,14 @@
       "role": "external",
       "x": 800,
       "y": 1100
+    },
+    {
+      "id": "deploy",
+      "type": "rectangle",
+      "text": "Runs on\nVercel (public URL)\nor Docker image",
+      "role": "warning",
+      "x": 700,
+      "y": 440
     },
     {
       "type": "arrow",
@@ -122,6 +130,12 @@
       "from": "tool",
       "to": "pdok",
       "text": "geocode"
+    },
+    {
+      "type": "arrow",
+      "from": "deploy",
+      "to": "api",
+      "text": "hosts"
     }
   ]
 }
