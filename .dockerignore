@@ -1,0 +1,13 @@
+# Never send secrets or local environments into the image
+.env
+.venv/
+.git/
+**/__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+docs/
+tests/
+test_agent.py
+*.tar
+*.tar.gz

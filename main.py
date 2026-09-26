@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
@@ -30,3 +32,15 @@ def chat_route(request: ChatRequest):
         if "content management policy" in str(e):     # Azure's content filter blocked a jailbreak attempt
             return {"answer": "I can only help with Marktplaats searches."}
         return {"answer": "Error: something went wrong, please try again."}
+
+
+@app.get("/api/health")
+def health():
+    return {"ok": True}
+
+
+# In the Docker image the built React UI is served from the same port (no Vite needed).
+# Mounted last, so the /api routes above always take precedence.
+UI = Path(__file__).parent / "frontend" / "dist"
+if UI.is_dir():
+    app.mount("/", StaticFiles(directory=UI, html=True), name="ui")
