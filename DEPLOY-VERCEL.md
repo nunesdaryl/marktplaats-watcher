@@ -33,6 +33,11 @@ vercel --prod        # production URL
 - [ ] 11 fast questions from one browser → the 11th gets "Too many questions in a minute"
 - [ ] "Who is the president of India?" → refusal
 
+## Routing note
+Vercel's **FastAPI preset** serves the `app` in `main.py` directly, with the original request paths.
+Don't add a rewrite to a separate `api/index.py`: it hands FastAPI the path `/api/index` and every route 404s
+(found on the first deploy).
+
 ## Honest limits of this setup
 - The rate limit, cache and hourly cap live **in memory per serverless instance**. Vercel can run several
   instances, so the real limits are looser. For real abuse protection use a shared store (e.g. Upstash
