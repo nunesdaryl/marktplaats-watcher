@@ -59,6 +59,14 @@ def health():
     return {"ok": True}
 
 
+@app.middleware("http")
+async def debug_path(request, call_next):  # TEMPORARY: diagnose Vercel GET routing
+    response = await call_next(request)
+    response.headers["x-seen-path"] = request.url.path
+    response.headers["x-seen-root"] = request.scope.get("root_path", "")
+    return response
+
+
 # In the Docker image the built React UI is served from the same port (no Vite needed).
 # Mounted last, so the /api routes above always take precedence.
 UI = Path(__file__).parent / "frontend" / "dist"
