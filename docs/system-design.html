@@ -173,7 +173,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
 <section>
 <h2>4. The Agent Engineering Cheat Sheet, applied</h2>
 <p>Each concept from the Day-2 cheat sheet, what we did about it in this project, and where to find it.
-  All paths are relative to <code>FDE Course/marktplaats-watcher/</code>. The status is honest: the MVP deliberately
+  All paths are relative to <code>FDE Course/2 Projects/marktplaats-watcher/</code>. The status is honest: the MVP deliberately
   leaves some items for later.</p>
 <table>
   <tr><th style="width:15%">Concept</th><th style="width:11%">Status</th><th>What we did (and where)</th></tr>
@@ -197,7 +197,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
   <tr><td><b>Graph engineering</b></td><td><span class="tag none">NOT IN MVP</span></td><td>The MVP is a single loop, not a
     graph. The designed next version is a LangGraph <code>StateGraph</code> pipeline: fetch → parse → dedupe → rules →
     assess → rank → notify → record, for scheduled runs. The same loop was already ported to LangGraph's
-    <code>create_agent</code> in the weather agent (<code>custom-agent/agent_graph.py</code>).</td></tr>
+    <code>create_agent</code> in the weather agent (<code>2 Projects/weather-agent/agent_graph.py</code>).</td></tr>
   <tr><td><b>Evaluation engineering</b></td><td><span class="tag built">BUILT</span></td><td>8 offline tests with a
     <i>known answer</i> (<code>test_agent.py</code>: the fixture's first Mac Mini must parse as €425, Amsterdam–Utrecht must
     be about 35 km) and 6 live browser cases with written pass conditions, recorded as a GIF, repeated on the public URL. Seven defects found, all fixed. Section 8.</td></tr>
@@ -433,7 +433,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
   <li><b>Ship it:</b> a Docker image for others, and a public URL with rate limits (section 10).</li>
 </ol>
 <h3>Run it</h3>
-<pre>cd "FDE Course/marktplaats-watcher"
+<pre>cd "FDE Course/2 Projects/marktplaats-watcher"
 .venv/bin/uvicorn main:app --port 8000            # API
 cd frontend && npm run dev                        # UI on http://localhost:5173
 .venv/bin/python -m pytest -q                     # offline tests</pre>
