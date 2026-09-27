@@ -77,7 +77,9 @@ A failed alert e-mail is retried automatically at the next 3 checks (15 minutes 
    fixes it under their account.
 
 ## 6. Marktplaats changed its page (0 listings everywhere)
-- **Symptoms:** every search says "No listings matched. Checked 0 listings on the first results page".
+- **Symptoms:** watches show "Marktplaats showed an unexpected page. We'll try again soon.", the chat says it couldn't
+  read the page, and the health digest lists failing watches. (If the listings data moved but is still readable, you'd
+  instead see "Checked 0 listings" everywhere.)
 - **Cause:** the parser reads the `__NEXT_DATA__` JSON and looks for a `listings` array (`agent.parse_listings`). A page
   redesign can move it.
 - **Steps:**

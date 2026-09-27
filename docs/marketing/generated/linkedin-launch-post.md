@@ -42,17 +42,17 @@ The search results for "mac mini" included it. My watcher passed it straight on.
 
 So now nothing gets sent until the AI has read the listing, scored it 0 to 10, and written one line on why.
 
-I tested it on 10 live listings for "mac mini".
+On 27 September I tested it on 10 live listings for "mac mini".
 3 real Mac minis scored 7 to 9.
 7 others scored 0: docking stations, SSD enclosures, a Bluetooth tracker, and a Cisco switch.
 
 The real match from my test run: Mac mini i5, 16GB, €230. Scored 9/10, "only the missing location/distance keeps it from a perfect score." It landed in my inbox, not spam.
 
-The alert apps I compared compete on speed. None of them shows why a listing was sent.
+On the alert sites I reviewed, I didn't find a per-listing reason.
 
 [DARYL: one personal line, in your own words, on why the reason matters to you]
 
-It's live: say what you want in plain words, pick when to check, and only the good ones reach your inbox. A portfolio project from my Forward Deployed Engineer course, not affiliated with Marktplaats. Link in the first comment.
+It's live: say what you want in plain words, pick when to check, and only listings that meet your chosen score reach your inbox. A portfolio project from my Forward Deployed Engineer course, not affiliated with Marktplaats. Link in the first comment.
 
 If you build agents: what should an alert explain before you'd trust it?
 ```
@@ -72,7 +72,7 @@ Built with Next.js, FastAPI with a LangChain tool-calling agent, Convex, Clerk, 
 |---|---|---|
 | A | #2 Resultaten / Bewijs | `10 live Marktplaats listings for "mac mini". Only 3 were Mac minis. So my agent now scores every one, and says why.` (115) |
 | B | #4 Story Tease | `I searched Marktplaats for a Mac mini. It gave me docking stations, SSD enclosures, a Bluetooth tracker and a Cisco switch.` (123) |
-| C | #1 Contrarian | `The Marktplaats alert apps I compared compete on speed. None of them tells you why a listing was sent. So mine does.` (116) |
+| C | #1 Contrarian | `On the Marktplaats alert sites I reviewed, I didn't find a reason next to a listing. So mine gives one.` (103) |
 
 Hook B is the strongest swap if the Cisco line feels overused after the brand-voice samples. Hook C suits a
 client-facing audience but leans on competitors in the first line; keep it for the research post in the series.

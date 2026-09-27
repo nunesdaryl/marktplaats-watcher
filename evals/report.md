@@ -1,6 +1,6 @@
 # Evaluation report
 
-Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-5.4-mini**. Judge: **gpt-5.5** (a stronger model), human spot-check of 10 judge labels: **pending (fill in evals/data/spotcheck.md)**.
+Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-5.4-mini**. Judge: **gpt-5.5** (a stronger model), human spot-check of 10 judge labels: **pending (0/10 answered in evals/data/spotcheck.md)**.
 
 ## 1. Does the AI e-mail the right listings? (scorer vs judge)
 
@@ -103,5 +103,4 @@ One check with 1 new listing costs €0.00048 (356 input + 57 output tokens); wi
 | every day at one time | 30 | €0.01 / month | €0.08 / month |
 | once a week | 4.3 | €0.00 / month | €0.01 / month |
 
-Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. The OpenAI project has a hard $10/month cap (≈ €9.20); that covers about 5,181 chat questions, or 27 hourly watches finding one new listing every hour, all month. When the cap is reached, the AI stops and nothing unscored is e-mailed.
-
+Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. The OpenAI project has a hard $10/month cap (≈ €9.20); that covers about 5,181 chat questions, or 27 hourly watches finding one new listing every hour, all month. When the cap is reached, the AI stops and nothing unscored is e-mailed. The scorer now takes up to 20 new listings per check (the rest wait for the next check); a 20-listing check has not been measured yet.

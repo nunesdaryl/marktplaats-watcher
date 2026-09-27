@@ -98,6 +98,8 @@ export default defineSchema({
     archivedAt: v.optional(v.number()),        // archived watches are paused and hidden from the lists
     folderId: v.optional(v.id("folders")),
     searchEditedAt: v.optional(v.number()),   // results of a check claimed before this are for the old search
+    scheduleEditedAt: v.optional(v.number()), // schedule, pause/resume or "Check now" changed after a claim: keep that
+    leaseUntil: v.optional(v.number()),       // a check is running until this time; no second claim meanwhile
   })
     .index("by_user", ["userId"])
     .index("by_active_next", ["active", "nextRunAt"]),
@@ -126,6 +128,7 @@ export default defineSchema({
     channel: v.literal("email"),     // Telegram / Discord / WhatsApp come later
     emailStatus: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed"), v.literal("dry-run")),
     attempts: v.optional(v.number()),   // e-mail send attempts; missing = 1
+    attemptAt: v.optional(v.number()),  // when the latest attempt started; missing = createdAt
     createdAt: v.number(),
   })
     .index("by_emailStatus", ["emailStatus", "createdAt"])

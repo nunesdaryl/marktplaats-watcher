@@ -17,7 +17,12 @@ def main():
     s, c, labels = read(SCORER_RESULTS), read(CHAT_RESULTS), read(LABELS)
     agree = [row.split("|")[-2].strip().lower() for row in SPOTCHECK.read_text().splitlines() if re.match(r"\| \d+ \|", row)]
     marked = [a for a in agree if a in ("yes", "no")]
-    spot = f"{marked.count('yes')}/{len(marked)} agreed" if marked else "pending (fill in evals/data/spotcheck.md)"
+    disagreed = [str(i + 1) for i, a in enumerate(agree) if a == "no"]
+    if len(marked) < len(agree) or not agree:
+        spot = f"pending ({len(marked)}/{len(agree)} answered in evals/data/spotcheck.md)"
+    else:
+        spot = f"{marked.count('yes')}/{len(marked)} agreed" + (f" (disagreed on rows {', '.join(disagreed)}; the precision and "
+               "recall below are still measured against the judge's labels)" if disagreed else "")
     by_cat = Counter(r["category"] for r in c["cases"])
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
@@ -70,7 +75,11 @@ def main():
         ".venv/bin/python -m evals.run_scorer", ".venv/bin/python -m evals.run_chat", ".venv/bin/python -m evals.report", "```",
         "Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).",
     ]
-    REPORT.write_text("\n".join(lines) + "\n")
+    # Keep the measured running cost (§4, written by evals.cost with real model calls): regenerating must not lose it
+    marker = "## 4. Running cost per watch (measured)"
+    old = REPORT.read_text() if REPORT.exists() else ""
+    cost = old[old.index(marker):].rstrip() if marker in old else ""
+    REPORT.write_text("\n".join(lines) + ("\n\n" + cost if cost else "") + "\n")
     print(f"wrote {REPORT}")
 
 

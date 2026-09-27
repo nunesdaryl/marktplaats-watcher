@@ -112,7 +112,7 @@ export const update = mutation({
       const others = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", watch.userId)).collect())
         .filter((w) => w._id !== id);
       rejectDuplicate(others, fields);
-      Object.assign(patch, fields, { label: label(fields) });
+      Object.assign(patch, fields, { label: label(fields), searchEditedAt: now });   // a check under way is now stale
       if (!sameSearch(watch, fields) && (fields.query.toLowerCase() !== watch.query.toLowerCase() ||
           fields.postcode !== watch.postcode || fields.maxDistanceKm !== watch.maxDistanceKm)) {
         // A different search: start over with a silent first look, so old listings aren't e-mailed as new
@@ -120,7 +120,7 @@ export const update = mutation({
           await ctx.db.delete(row._id);
         patch.seeded = false;
         patch.nextRunAt = now;
-        patch.searchEditedAt = now;          // a check already under way is for the old search: its result is ignored
+        patch.leaseUntil = undefined;        // the new search can be checked right away; the old run's result is ignored
       }
     }
     if (change.schedule) {
@@ -128,6 +128,7 @@ export const update = mutation({
       patch.schedule = change.schedule;
     }
     if (change.active !== undefined) patch.active = change.active;
+    if (change.schedule || change.active !== undefined) patch.scheduleEditedAt = now;
     if ((change.schedule || change.active) && patch.seeded !== false) {
       patch.nextRunAt = watch.seeded ? nextRun(change.schedule ?? watch.schedule, now, watch.timezone) : now;
       patch.lastError = undefined;
@@ -187,7 +188,7 @@ export const checkNow = mutation({
     const now = Date.now();
     if (!watch.active) throw new ConvexError("This watch is paused. Resume it first, then check.");
     if (watch.lastManualAt && now - watch.lastManualAt < 60_000) throw new ConvexError("Checked a moment ago. Try again in a minute.");
-    await ctx.db.patch(id, { nextRunAt: now, lastManualAt: now });
+    await ctx.db.patch(id, { nextRunAt: now, lastManualAt: now, scheduleEditedAt: now });   // runs after any check under way
     await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});
   },
 });

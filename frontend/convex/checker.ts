@@ -29,6 +29,7 @@ export const claimDue = internalMutation({
       .take(MAX_WATCHES_PER_RUN);
     const byQuery = new Map<string, typeof due>();
     for (const w of due) {
+      if (w.leaseUntil !== undefined && w.leaseUntil > now) continue;   // a check for it is still running
       const key = w.query.toLowerCase();
       if (!byQuery.has(key) && byQuery.size >= MAX_QUERIES_PER_RUN) continue;
       byQuery.set(key, [...(byQuery.get(key) ?? []), w]);
@@ -37,7 +38,7 @@ export const claimDue = internalMutation({
     for (const [query, watches] of byQuery) {
       const payload = [];
       for (const w of watches) {
-        if (!dryRun) await ctx.db.patch(w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS) });
+        if (!dryRun) await ctx.db.patch(w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS), leaseUntil: now + LEASE_MS });
         const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
           .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
         payload.push({
@@ -74,12 +75,15 @@ export const record = internalMutation({
       const watchId = ctx.db.normalizeId("watches", r.watchId);
       const watch = watchId && await ctx.db.get(watchId);
       if (!watch) continue;                                   // deleted while it was being checked
+      const ids = [...new Set(r.currentIds ?? [])];
+      // This run's lease ends now, whatever the result (a newer claim's lease is left alone)
+      if (!dryRun && watch.leaseUntil === now + LEASE_MS) await ctx.db.patch(watch._id, { leaseUntil: undefined });
       // Paused, archived or given a different search while it was being checked: this result is stale
       if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
       if (dryRun) {
         if (!r.ok || !watch.seeded) continue;
         const fresh = [];
-        for (const id of r.currentIds ?? []) {
+        for (const id of ids) {
           const seen = await ctx.db.query("seenListings")
             .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
           const item = r.listings?.find((l) => l.id === id);
@@ -100,7 +104,7 @@ export const record = internalMutation({
         continue;
       }
       const newAlerts: Id<"alerts">[] = [];
-      for (const id of r.currentIds ?? []) {
+      for (const id of ids) {
         const seen = await ctx.db.query("seenListings")
           .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
         if (seen) {
@@ -120,8 +124,10 @@ export const record = internalMutation({
           emailStatus: "pending", createdAt: now,
         }));
       }
+      // On to the real next time, unless the schedule changed (or "Check now" was pressed) during this check
+      const keepNext = (watch.scheduleEditedAt ?? -1) >= now;
       await ctx.db.patch(watch._id, { seeded: true, lastCheckedAt: now, lastError: undefined,
-        nextRunAt: nextRun(watch.schedule, now, watch.timezone) });   // the lease ends: on to the real next time
+        nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);
       if (newAlerts.length && user) emails.push({ watchId: watch._id, alertIds: newAlerts, to: user.email });
     }
@@ -140,21 +146,31 @@ export const emailContent = internalQuery({
   },
 });
 
-/** Alert e-mails to try again: failed ones, and ones stuck "pending" (a run that died mid-send), for watches
- * that are still active. Each try counts; after MAX_EMAIL_ATTEMPTS an alert stays "failed" for the health digest.
- * An e-mail AgentMail accepted but didn't confirm could arrive twice; that's preferred over losing it. */
+/** Alert e-mails to try again: failed ones, and ones stuck "pending" 30 minutes after their last try started (a run
+ * that died mid-send), for watches that are still active and still have the same search. Each claim stamps the try,
+ * so overlapping runs can't take the same alert. After MAX_EMAIL_ATTEMPTS an alert stays "failed", which the health
+ * digest reports. An e-mail AgentMail accepted but didn't confirm could arrive twice; that's preferred over losing it. */
 export const claimEmailRetries = internalMutation({
   args: { now: v.number() },
   handler: async (ctx, { now }) => {
-    const since = now - EMAIL_RETRY_WINDOW_MS;
-    const failed = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "failed").gte("createdAt", since)).take(200);
-    const stuck = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "pending").gte("createdAt", since).lt("createdAt", now - RETRY_MS)).take(200);
+    const since = now - EMAIL_RETRY_WINDOW_MS, stale = now - RETRY_MS;
+    const triesLeft = (q: any) => q.or(q.eq(q.field("attempts"), undefined), q.lt(q.field("attempts"), MAX_EMAIL_ATTEMPTS));
+    const failed = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "failed").gte("createdAt", since))
+      .filter(triesLeft).take(200);
+    const stuck = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "pending").gte("createdAt", since))
+      .filter((q) => q.or(q.lt(q.field("attemptAt"), stale), q.and(q.eq(q.field("attemptAt"), undefined), q.lt(q.field("createdAt"), stale))))
+      .take(200);
     const byWatch = new Map<Id<"watches">, Id<"alerts">[]>();
     for (const a of [...failed, ...stuck]) {
-      if ((a.attempts ?? 1) >= MAX_EMAIL_ATTEMPTS) continue;
       const watch = await ctx.db.get(a.watchId);
+      const outOfTries = (a.attempts ?? 1) >= MAX_EMAIL_ATTEMPTS;
+      const oldSearch = watch !== null && (watch.searchEditedAt ?? -1) > a.createdAt;
+      if (outOfTries || oldSearch) {             // give up for good: visible as "failed", never retried
+        if (a.emailStatus !== "failed" || !outOfTries) await ctx.db.patch(a._id, { emailStatus: "failed", attempts: MAX_EMAIL_ATTEMPTS });
+        continue;
+      }
       if (!watch || !watch.active || watch.archivedAt !== undefined) continue;
-      await ctx.db.patch(a._id, { emailStatus: "pending", attempts: (a.attempts ?? 1) + 1 });
+      await ctx.db.patch(a._id, { emailStatus: "pending", attempts: (a.attempts ?? 1) + 1, attemptAt: now });
       byWatch.set(a.watchId, [...(byWatch.get(a.watchId) ?? []), a._id]);
     }
     const mails = [];

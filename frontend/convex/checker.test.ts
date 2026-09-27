@@ -136,3 +136,91 @@ test("the first check tells the search service not to score anything", async () 
   const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
   expect(group.watches[0].seeded).toBe(false);
 });
+
+// Round 2 of the audit (R1, R2, R3, R7): its reproductions, now expecting the fixed behaviour
+const item400 = { ...listing("old-result"), price_eur: 400 };
+async function macMiniUnder500() {
+  const t = convexTest(schema, modules);
+  const u = t.withIdentity({ subject: "audit-user", email: "audit@example.com" });
+  const id = await u.mutation(api.watches.create, { query: "mac mini", maxPriceEur: 500, schedule: hourly, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(id, { seeded: true }));
+  return { t, u, id };
+}
+const addAlert = (t: any, id: any, patch: any = {}) => t.run(async (ctx: any) => {
+  const w = await ctx.db.get(id);
+  return ctx.db.insert("alerts", { userId: w.userId, watchId: id, listingId: "l1", title: "Mac mini 8GB",
+    url: "https://www.marktplaats.nl/v/l1", reason: "match", channel: "email", emailStatus: "pending",
+    createdAt: Date.now() - 31 * 60_000, ...patch });
+});
+
+test("R2: a result for the old price limit is ignored after the limit was lowered mid-check", async () => {
+  const { t, u, id } = await macMiniUnder500();
+  const claimTime = Date.now();
+  await t.mutation(internal.checker.claimDue, { now: claimTime });
+  vi.setSystemTime(claimTime + 1000);
+  await u.mutation(api.watches.update, { id, maxPriceEur: 300 });
+  const mails = await t.mutation(internal.checker.record, { now: claimTime,
+    results: [{ watchId: id, ok: true, currentIds: [item400.id], listings: [item400] }], dryRun: false });
+  expect(mails).toEqual([]);
+  expect(await alerts(t)).toEqual([]);
+});
+
+test("R2: an unsent alert for the old search is not retried under the new search's name", async () => {
+  const { t, u, id } = await macMiniUnder500();
+  const alertId = await addAlert(t, id, { emailStatus: "failed" });
+  vi.setSystemTime(Date.now() + 1000);
+  await u.mutation(api.watches.update, { id, query: "gazelle bike" });
+  expect(await t.mutation(internal.checker.claimEmailRetries, { now: Date.now() })).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.get(alertId))).toMatchObject({ emailStatus: "failed" });
+});
+
+test("R3: a schedule changed during a check is kept when the check finishes", async () => {
+  const { t, u, id } = await macMiniUnder500();
+  const claimTime = Date.now();
+  await t.mutation(internal.checker.claimDue, { now: claimTime });
+  vi.setSystemTime(claimTime + 10 * 60_000);
+  await u.mutation(api.watches.update, { id, schedule: { kind: "daily", times: ["12:05"] } });
+  await t.mutation(internal.checker.record, { now: claimTime, results: [{ watchId: id, ok: true, currentIds: [], listings: [] }], dryRun: false });
+  expect((await t.run((ctx) => ctx.db.get(id)))!.nextRunAt).toBe(Date.parse("2026-09-28T10:05:00Z"));
+});
+
+test("R3: Check now during a running check doesn't start a second one, and runs right after it", async () => {
+  const { t, u, id } = await macMiniUnder500();
+  const claimTime = Date.now();
+  expect(await t.mutation(internal.checker.claimDue, { now: claimTime })).toHaveLength(1);
+  vi.setSystemTime(claimTime + 1000);
+  await u.mutation(api.watches.checkNow, { id });
+  expect(await t.mutation(internal.checker.claimDue, { now: Date.now() })).toEqual([]);   // still leased
+  await t.mutation(internal.checker.record, { now: claimTime, results: [{ watchId: id, ok: true, currentIds: [], listings: [] }], dryRun: false });
+  expect(await t.mutation(internal.checker.claimDue, { now: Date.now() })).toHaveLength(1);   // the manual check runs next
+});
+
+test("R1: overlapping retry claims can't take the same alert twice; a crash on the last try shows up as failed", async () => {
+  const { t, id } = await macMiniUnder500();
+  const alertId = await addAlert(t, id);
+  const claims = [];
+  for (let i = 0; i < 3; i++) claims.push(await t.mutation(internal.checker.claimEmailRetries, { now: Date.now() }));
+  expect(claims.map((m) => m.length)).toEqual([1, 0, 0]);
+  expect(await t.run((ctx) => ctx.db.get(alertId))).toMatchObject({ emailStatus: "pending", attempts: 2 });
+
+  await t.run((ctx) => ctx.db.patch(alertId, { attempts: 4, attemptAt: Date.now() - 31 * 60_000 }));   // last try died
+  expect(await t.mutation(internal.checker.claimEmailRetries, { now: Date.now() })).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.get(alertId))).toMatchObject({ emailStatus: "failed", attempts: 4 });
+  await t.mutation(internal.health.logRun, { at: Date.now(), checked: 0, failed: 0, emails: 0, emailFailures: 0 });
+  expect((await t.query(internal.health.report, { now: Date.now() })).problems.join()).toMatch(/1 alert e-mail\(s\) failed/);
+});
+
+test("R1: alerts that used up their tries don't hide newer ones that can still be retried", async () => {
+  const { t, id } = await macMiniUnder500();
+  for (let i = 0; i < 200; i++) await addAlert(t, id, { listingId: `old-${i}`, emailStatus: "failed", attempts: 4 });
+  const eligible = await addAlert(t, id, { listingId: "new", emailStatus: "failed", attempts: 1, createdAt: Date.now() - 1000 });
+  const [mail] = await t.mutation(internal.checker.claimEmailRetries, { now: Date.now() });
+  expect(mail.alertIds).toEqual([eligible]);
+});
+
+test("R7: a listing id that appears twice is previewed once, like a real run records it once", async () => {
+  const { t, id } = await macMiniUnder500();
+  const r = { watchId: id, ok: true, currentIds: [item400.id, item400.id], listings: [item400] };
+  const preview = await t.mutation(internal.checker.record, { now: Date.now(), results: [r], dryRun: true });
+  expect(preview[0].preview!.alerts).toHaveLength(1);
+});

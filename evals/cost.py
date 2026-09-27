@@ -33,7 +33,8 @@ def main():
     rows += ["", f"Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. The OpenAI project has a "
              f"hard $10/month cap (≈ €{budget_eur:.2f}); that covers about {budget_eur / chat:,.0f} chat questions, or "
              f"{budget_eur / (720 * per_check_1):,.0f} hourly watches finding one new listing every hour, all month. "
-             "When the cap is reached, the AI stops and nothing unscored is e-mailed.", ""]
+             "When the cap is reached, the AI stops and nothing unscored is e-mailed. "
+             "The scorer now takes up to 20 new listings per check (the rest wait for the next check); a 20-listing check has not been measured yet.", ""]
     text = REPORT.read_text()
     marker = "## 4. Running cost per watch (measured)"
     text = text.split(marker)[0].rstrip() + "\n\n" + "\n".join(rows) if marker in text else text.rstrip() + "\n\n" + "\n".join(rows)
