@@ -10,7 +10,7 @@ import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, openSheet, toast }) {
+export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -168,6 +168,9 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
         </div>
       ))}
 
+      <button className="nav-item feedback-item" onClick={onFeedback}>
+        <Icon name="feedback" size={18} />Feedback &amp; suggestions
+      </button>
       <div className="account">
         <UserButton />
         <span className="email">{email}</span>

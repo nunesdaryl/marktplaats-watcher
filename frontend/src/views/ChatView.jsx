@@ -42,7 +42,7 @@ function Assistant({ text, status, listings, proposals, savedProposals, search, 
   );
 }
 
-export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
+export default function ChatView({ chatId, watches, onWatch, onAdjust, onFeedback }) {
   const { getToken } = useAuth();
   const thread = useQuery(api.chats.messages, chatId ? { chatId } : "skip");
   const start = useMutation(api.chats.start);
@@ -116,6 +116,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
             </button>
           ))}
         </div>
+        {onFeedback && <button className="button plain beta-note" onClick={onFeedback}>Free beta · Give feedback &amp; suggestions</button>}
       </section>
     );
   }

@@ -17,6 +17,7 @@ import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
 import { go, useMediaQuery, useRoute } from "./lib/router.js";
 import AlertsView from "./views/AlertsView.jsx";
+import FeedbackSheet from "./views/FeedbackSheet.jsx";
 import ArchivedView from "./views/ArchivedView.jsx";
 import ChatView from "./views/ChatView.jsx";
 import Onboarding from "./views/Onboarding.jsx";
@@ -105,6 +106,7 @@ function Workspace() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const openFeedback = () => setSheet({ type: "feedback" });
   const newWatch = (initial = {}) => setSheet({ type: "watch", mode: "create", initial });
   const closeSheet = () => setSheet(null);
   const actions = useItemActions({
@@ -120,11 +122,12 @@ function Workspace() {
   else if (route.section === "alerts") content = <AlertsView />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
   else if (route.section === "watches") content = <WatchesView watches={watches} actions={actions} onNew={() => newWatch()} />;
-  else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;
+  else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} onFeedback={openFeedback} />;
 
   const sheets = (
     <>
       {sheet?.type === "watch" && <WatchSheet {...sheet} onClose={(id) => { closeSheet(); if (id && sheet.mode === "create") go(`/w/${id}`); }} />}
+      {sheet?.type === "feedback" && <FeedbackSheet page={route.section || "chat"} toast={setToast} onClose={closeSheet} />}
       {sheet?.type === "privacy" && <PrivacySheet email={me?.email} onClose={closeSheet} />}
       {sheet?.type === "history" && <HistorySheet chats={chats} actions={actions} onClose={closeSheet} />}
       {sheet?.type === "rename" && <RenameSheet kind={sheet.kind} item={sheet.item} onClose={closeSheet} />}
@@ -139,7 +142,7 @@ function Workspace() {
       <div className="shell">
         <Sidebar route={route} watches={watches} chats={chats} email={me?.email} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
-                 openSheet={setSheet} toast={setToast} />
+                 onFeedback={openFeedback} openSheet={setSheet} toast={setToast} />
         <main className="main">{userError && <p className="banner" role="alert">{userError}</p>}{content}</main>
         {sheets}
       </div>
@@ -156,7 +159,10 @@ function Workspace() {
           : inChat
             ? <button className="icon-button" onClick={() => setSheet({ type: "history" })} aria-label="Chats"><Icon name="clock" /></button>
             : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" /></button>}
-        <span className="topbar-title">{inChat ? (currentChat?.title ?? "New chat") : ""}</span>
+        <span className="topbar-title">
+          {inChat ? (currentChat?.title ?? "New chat")
+            : <button className="beta-pill" onClick={openFeedback}>Beta · Give feedback</button>}
+        </span>
         {currentChat && <RowMenu items={actions.chatItems(currentChat)} label="Chat options" />}
         {inChat && route.section === "c"
           ? <button className="icon-button" onClick={() => go("/")} aria-label="New chat"><Icon name="compose" /></button>

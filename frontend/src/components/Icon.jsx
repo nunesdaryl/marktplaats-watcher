@@ -16,6 +16,7 @@ const PATHS = {
   refresh: "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5",
   edit: "M4 20h4L19 9l-4-4L4 16Z",
   external: "M14 4h6v6m0-6-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+  feedback: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12ZM8.5 10.5h7m-7 3.5h4",
   shield: "M12 3 5 6v6c0 4.4 3 8 7 9 4-1 7-4.6 7-9V6Z",
   sidebar: "M4 5h16v14H4Zm5 0v14",
   more: "M5 12h.01M12 12h.01M19 12h.01",

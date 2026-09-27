@@ -66,6 +66,8 @@ export const deleteMyData = mutation({
       await deleteWatchData(ctx, watch._id);
     for (const chat of await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect())
       await deleteChat(ctx, chat._id);
+    for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect())
+      await ctx.db.delete(row._id);
     for (const folder of await ctx.db.query("folders").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(folder._id);
     await ctx.db.delete(user._id);

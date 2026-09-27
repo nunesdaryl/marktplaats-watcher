@@ -11,7 +11,8 @@ export default function PrivacySheet({ email, onClose }) {
         <p>Alerts go to <strong>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
         <p>We keep your e-mail address and your watches until you delete them. Your chats and the listings we've
           checked are deleted after 30 days. Your messages, searches and listing details (titles, prices, places)
-          are sent to OpenAI to answer and score them. Nothing is sold or shared.</p>
+          are sent to OpenAI to answer and score them. Feedback you send is kept with your e-mail address so Daryl can
+          reply. Nothing is sold or shared.</p>
         <p className="muted">A free portfolio project by Daryl Nunes, not affiliated with Marktplaats.</p>
         <ConfirmButton icon="trash" label="Delete my data" confirmLabel="Delete everything? This can't be undone."
                        onConfirm={async () => { await deleteMyData(); onClose(); window.location.hash = "/"; }} />

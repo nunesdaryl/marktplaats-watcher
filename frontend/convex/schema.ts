@@ -14,6 +14,9 @@ export const listingCard = v.object({
   image: v.optional(v.union(v.string(), v.null())),
 });
 
+// The answers to "Would you pay for this?" (labels in feedback.ts)
+export const wouldPayValidator = v.union(v.literal("no"), v.literal("maybe"), v.literal("eur2"), v.literal("eur5"), v.literal("eur10"));
+
 export default defineSchema({
   // Only what alerts need: the Clerk id and the e-mail address to send them to.
   users: defineTable({
@@ -30,6 +33,15 @@ export default defineSchema({
     pinned: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // Feedback and "would you pay?" answers from the in-app button. Each one is e-mailed to the owner.
+  feedback: defineTable({
+    userId: v.id("users"),
+    message: v.optional(v.string()),
+    wouldPay: v.optional(wouldPayValidator),
+    page: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
 
   // One row per scheduler run, for the owner's health digest (kept 30 days).
   runs: defineTable({

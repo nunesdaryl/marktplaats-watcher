@@ -62,6 +62,8 @@ CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` an
   matches" has 100% precision and "good matches" catches 90% of real matches. Rerun with `.venv/bin/python -m evals.run_scorer`,
   `evals.run_chat`, `evals.report`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
+- **Feedback and "would you pay?":** the in-app Feedback button e-mails each message to `OWNER_EMAIL`;
+  `cd frontend && npx convex run --prod feedback:summary` counts the answers and lists the latest messages.
 - **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).
 - **Demo:** `docs/demo/` (problem statement, 3-minute script, pre-demo checklist).
 
