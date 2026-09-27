@@ -162,7 +162,7 @@ ${more > 0 ? `<p>…and ${more} more in the app.</p>` : ""}
   return { subject, text, html };
 }
 
-async function sendEmail(to: string, email: { subject: string; text: string; html: string }) {
+export async function sendEmail(to: string, email: { subject: string; text: string; html: string }) {
   const key = process.env.AGENTMAIL_API_KEY, inbox = process.env.AGENTMAIL_INBOX_ID;
   if (!key || !inbox) throw new Error("AGENTMAIL_API_KEY / AGENTMAIL_INBOX_ID are not set in Convex.");
   const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inbox)}/messages/send`, {
@@ -177,10 +177,18 @@ export const checkDue = internalAction({
   args: { dryRun: v.optional(v.boolean()) },
   handler: async (ctx, { dryRun = false }) => {
     const now = Date.now();
+    if (process.env.CHECKS_PAUSED === "1") {    // kill switch (see RUNBOOK.md): no fetching, no scoring, no e-mail
+      console.log(JSON.stringify({ event: "checks_paused" }));
+      await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0, paused: true });
+      return { checked: 0, emails: 0, paused: true };
+    }
     const groups = await ctx.runMutation(internal.checker.claimDue, { now });
-    if (!groups.length) return { checked: 0, emails: 0 };
+    if (!groups.length) {
+      await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0 });
+      return { checked: 0, emails: 0 };
+    }
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
-    let checked = 0, emails = 0;
+    let checked = 0, emails = 0, failed = 0, emailFailures = 0;
     for (const group of groups) {
       let results;
       try {
@@ -197,6 +205,7 @@ export const checkDue = internalAction({
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Search service unavailable, will retry." }));
       }
       checked += group.watches.length;
+      failed += results.filter((r: { ok: boolean }) => !r.ok).length;
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       for (const mail of toSend) {
         const content = await ctx.runQuery(internal.checker.emailContent, { watchId: mail.watchId, alertIds: mail.alertIds });
@@ -212,11 +221,14 @@ export const checkDue = internalAction({
           } catch (e) {
             console.error("alert e-mail failed:", e);
             status = "failed";
+            emailFailures++;
           }
         }
         await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
       }
     }
+    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures });
+    console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, ms: Date.now() - now }));
     return { checked, emails };
   },
 });

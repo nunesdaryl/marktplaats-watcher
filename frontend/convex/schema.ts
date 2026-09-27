@@ -31,6 +31,16 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
 
+  // One row per scheduler run, for the owner's health digest (kept 30 days).
+  runs: defineTable({
+    at: v.number(),
+    checked: v.number(),
+    failed: v.number(),
+    emails: v.number(),
+    emailFailures: v.number(),
+    paused: v.optional(v.boolean()),
+  }).index("by_at", ["at"]),
+
   // Saved conversations, like ChatGPT's history. Kept until deleted, or 30 days after the last message.
   chats: defineTable({
     userId: v.id("users"),

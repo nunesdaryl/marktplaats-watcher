@@ -1,0 +1,22 @@
+name: uptime
+# Every 30 minutes: is the live site up? A failed run makes GitHub e-mail the repo owner, so an outage reaches a
+# human without a separate monitoring account. (GitHub may delay scheduled runs a few minutes under load.)
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: API health
+        run: curl --fail --silent --show-error --max-time 20 https://marktplaats-watcher.vercel.app/api/health
+      - name: Home page
+        run: curl --fail --silent --show-error --max-time 20 -o /dev/null https://marktplaats-watcher.vercel.app/
+      - name: Chat still refuses strangers
+        run: |
+          code=$(curl --silent --max-time 20 -o /dev/null -w "%{http_code}" -X POST https://marktplaats-watcher.vercel.app/api/chat/stream \
+            -H 'content-type: application/json' -d '{"message":"hi"}')
+          test "$code" = 401 || { echo "expected 401 without login, got $code"; exit 1; }

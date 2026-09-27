@@ -77,6 +77,11 @@ def too_many(user):
     return len(hits) > RATE_PER_MINUTE
 
 
+def log(event, **fields):
+    """One JSON line per event, for Vercel's log search. Never personal data or message text."""
+    print(json.dumps({"event": event, **fields}), flush=True)
+
+
 def friendly_error(e):
     """An exception from the model or a tool -> (message a user can act on, HTTP status). Details stay in the log."""
     print(f"chat failed: {type(e).__name__}: {e}")
@@ -114,11 +119,21 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
         return JSONResponse({"answer": "Too many questions in a minute. Please wait a moment."}, status_code=429)
 
     def events():
+        started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}
         try:
             for event in chat_events(*chat_args(request)):
+                if event["type"] == "status":
+                    stats["statuses"] += 1
+                elif event["type"] == "listings":
+                    stats["listings"] = len(event["listings"])
+                elif event["type"] == "done":
+                    stats["proposals"] = len(event["proposals"])
                 yield json.dumps(event) + "\n"
         except Exception as e:
+            stats["error"] = type(e).__name__
             yield json.dumps({"type": "error", "text": friendly_error(e)[0]}) + "\n"
+        log("chat_turn", mode=request.mode, tool_calls=stats["statuses"], ms=round((time.time() - started) * 1000),
+            **{k: v for k, v in stats.items() if k != "statuses"})
 
     return StreamingResponse(events(), media_type="application/x-ndjson",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -150,7 +165,12 @@ def cron_caller(x_cron_secret: str = Header(default="")):
 
 @app.post("/api/internal/check", dependencies=[Depends(cron_caller)])
 def check_route(request: CheckRequest):
-    return {"results": check_query(request.query, [w.model_dump() for w in request.watches])}
+    started = time.time()
+    results = check_query(request.query, [w.model_dump() for w in request.watches])
+    log("check", watches=len(results), failed=sum(not r["ok"] for r in results),
+        new_listings=sum(len(r.get("listings") or []) for r in results), ms=round((time.time() - started) * 1000),
+        errors=sorted({r["error"] for r in results if not r["ok"]}))
+    return {"results": results}
 
 
 @app.get("/api/health")
