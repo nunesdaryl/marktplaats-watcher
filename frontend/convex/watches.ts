@@ -120,6 +120,7 @@ export const update = mutation({
           await ctx.db.delete(row._id);
         patch.seeded = false;
         patch.nextRunAt = now;
+        patch.searchEditedAt = now;          // a check already under way is for the old search: its result is ignored
       }
     }
     if (change.schedule) {

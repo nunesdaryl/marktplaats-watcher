@@ -97,6 +97,7 @@ export default defineSchema({
     pinned: v.optional(v.boolean()),
     archivedAt: v.optional(v.number()),        // archived watches are paused and hidden from the lists
     folderId: v.optional(v.id("folders")),
+    searchEditedAt: v.optional(v.number()),   // results of a check claimed before this are for the old search
   })
     .index("by_user", ["userId"])
     .index("by_active_next", ["active", "nextRunAt"]),
@@ -124,8 +125,10 @@ export default defineSchema({
     reason: v.string(),
     channel: v.literal("email"),     // Telegram / Discord / WhatsApp come later
     emailStatus: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed"), v.literal("dry-run")),
+    attempts: v.optional(v.number()),   // e-mail send attempts; missing = 1
     createdAt: v.number(),
   })
+    .index("by_emailStatus", ["emailStatus", "createdAt"])
     .index("by_watch", ["watchId"])
     .index("by_user", ["userId"])
     .index("by_createdAt", ["createdAt"]),

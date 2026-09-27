@@ -76,14 +76,16 @@ def listing_image(item):
     return url
 
 
-def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None):
+def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10):
+    """Filtered listings from a search page (at most `limit`; None = all). stats["readable"] is False when the page
+    has no listings data at all (a maintenance page or a redesign), which is not the same as zero results."""
     match = NEXT_DATA.search(html)
     try:
         listings = find_listings(json.loads(match.group(1))) if match else None
     except ValueError:  # the page changed shape: treat as "no listings", don't crash
         listings = None
     results = []
-    stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0}
+    stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
     for item in listings or []:
         vip = item.get("vipUrl") or ""
@@ -113,7 +115,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             "url": "https://www.marktplaats.nl" + vip,
             "image": listing_image(item),
         })
-    return results[:10], stats
+    return (results[:limit] if limit else results), stats
 
 
 def fetch_page(url, capped=True):
@@ -166,6 +168,8 @@ def search_marktplaats(query: str, max_price_eur: int | None = None, must_includ
                                      must_include)
     if listings:
         return json.dumps(listings)
+    if not stats["readable"]:
+        return "Marktplaats showed an unexpected page (maintenance or a redesign), so no listings could be read. Try again later."
     return (f"No listings matched. Checked {stats['on_page']} listings on the first results page: "
             f"{stats['price_ok']} matched the price/spec, {stats['with_location']} of those show a location "
             "(many private sellers don't).")
@@ -421,6 +425,9 @@ def rank_listings(description, listings):
     return listings
 
 
+MAX_RANK_PER_CHECK = 20
+
+
 def check_query(query, watches):
     """Fetch one search page, then filter it per watch, keep only unseen listings and rank those.
     watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids}]"""
@@ -428,6 +435,10 @@ def check_query(query, watches):
         html = fetch_page(search_url(query), capped=False)
     except httpx.HTTPError as e:
         return [{"watchId": w["id"], "ok": False, "error": "Marktplaats didn't answer at the last check. We'll try again soon."}
+                for w in watches]
+    if not parse_listings(html, limit=None)[1]["readable"]:
+        # A maintenance or redesigned page: report a failure, so the baseline stays and it's retried soon
+        return [{"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."}
                 for w in watches]
     results, to_rank = [], []
     for w in watches:
@@ -440,11 +451,17 @@ def check_query(query, watches):
             if home is None:
                 results.append({"watchId": w["id"], "ok": False, "error": f"We couldn't find postcode {w['postcode']}. Edit the watch to use another postcode."})
                 continue
+        # Every listing on the page counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
         listings, _ = parse_listings(html, w.get("max_price_eur"), home,
-                                     w.get("max_distance_km") if home else None, w.get("must_include"))
+                                     w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)
         seen = set(w.get("seen_ids") or [])
         fresh = [item for item in listings if item["id"] and item["id"] not in seen]
-        to_rank.append((w, listings, fresh))
+        if not w.get("seeded", True):
+            fresh = []                     # first check: only remember what's there, nothing is e-mailed, so don't score
+        # Bound the scoring per check; listings beyond the bound stay unseen and are scored at the next check
+        waiting = {item["id"] for item in fresh[MAX_RANK_PER_CHECK:]}
+        listings = [item for item in listings if item["id"] not in waiting]
+        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK]))
 
     # Rank the watches in parallel: each is one model call, so a group of 20 takes about as long as one
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:

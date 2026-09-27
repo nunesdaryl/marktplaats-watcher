@@ -144,7 +144,7 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
             return agent.Ranking(ranks=[agent.Rank(id=i["id"], score=7, reason="fair price") for i in listings])
 
     monkeypatch.setattr(agent, "ranker", FakeRanker())
-    all_ids = [i["id"] for i in agent.parse_listings(PAGE)[0]]
+    all_ids = [i["id"] for i in agent.parse_listings(PAGE, limit=None)[0]]
     [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": all_ids[1:]}])
     assert result["ok"] and result["currentIds"] == all_ids
     assert [i["id"] for i in result["listings"]] == [all_ids[0]]     # only the one not seen before
@@ -174,7 +174,7 @@ def test_chat_can_only_propose_watches_never_save_them():
 
 def test_broken_page_json_means_no_listings_not_a_crash():
     html = '<script id="__NEXT_DATA__" type="application/json">{not json</script>'
-    assert agent.parse_listings(html) == ([], {"on_page": 0, "price_ok": 0, "with_location": 0})
+    assert agent.parse_listings(html) == ([], {"on_page": 0, "price_ok": 0, "with_location": 0, "readable": False})
 
 
 def test_listing_photos_only_come_from_marktplaats_image_hosts():
@@ -374,3 +374,68 @@ def test_csp_reports_are_logged_without_crashing(client, capsys):
     assert json.loads(line) == {"event": "csp_violation", "directive": "connect-src",
                                 "blocked": "https://evil.example/collect", "page": "https://x.test/chat/"}   # no query string
     assert client.post("/api/csp-report", content=b"x" * 20_000).status_code == 413
+
+
+def synthetic_page(ids):
+    rows = [{"itemId": i, "title": f"Mac mini {i}", "vipUrl": f"/v/{i}", "priceInfo": {"priceCents": 40000}} for i in ids]
+    return '<script id="__NEXT_DATA__" type="application/json">' + json.dumps({"listings": rows}) + "</script>"
+
+
+class CountingRanker:
+    def __init__(self):
+        self.ranked = []
+
+    def invoke(self, messages):
+        listings = json.loads(messages[-1]["content"])["listings"]
+        self.ranked += [i["id"] for i in listings]
+        return agent.Ranking(ranks=[agent.Rank(id=i["id"], score=9, reason="match") for i in listings])
+
+
+def test_check_query_remembers_every_listing_on_the_page_not_just_ten(monkeypatch):
+    # Audit A03: with 11 matches only 10 were remembered, so the 11th later looked "new" when it wasn't
+    ids = [f"m{i}" for i in range(1, 12)]
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(ids))
+    monkeypatch.setattr(agent, "ranker", CountingRanker())
+    [first] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
+    assert first["ok"] and first["currentIds"] == ids
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(ids[1:]))
+    [second] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": first["currentIds"]}])
+    assert second["listings"] == []
+
+
+def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkeypatch):
+    # Audit A04: a maintenance or redesigned page must not count as "no listings" (it would reset the baseline)
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: "<html><body>Onderhoud</body></html>")
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
+    assert not result["ok"] and "unexpected page" in result["error"]
+    # A readable page that really has no listings is still fine
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page([]))
+    [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
+    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": []}
+
+
+def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
+    # The first check only records what is already listed, so scoring it would be wasted money
+    ranker = CountingRanker()
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(["a", "b"]))
+    monkeypatch.setattr(agent, "ranker", ranker)
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "seeded": False}])
+    assert result["ok"] and result["currentIds"] == ["a", "b"] and result["listings"] == [] and ranker.ranked == []
+
+
+def test_scoring_per_check_is_bounded_and_the_rest_waits_unseen(monkeypatch):
+    ids = [f"n{i}" for i in range(agent.MAX_RANK_PER_CHECK + 5)]
+    ranker = CountingRanker()
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(ids))
+    monkeypatch.setattr(agent, "ranker", ranker)
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
+    assert len(result["listings"]) == agent.MAX_RANK_PER_CHECK
+    assert result["currentIds"] == ids[:agent.MAX_RANK_PER_CHECK]   # the 5 unscored ones stay unseen: scored next time
+
+
+def test_check_route_passes_the_first_check_flag_through(client, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(client.main, "check_query", lambda query, watches: seen.update(w=watches) or [])
+    client.post("/api/internal/check", headers={"X-Cron-Secret": "s3cret"},
+                json={"query": "mac mini", "watches": [{"id": "w1", "seeded": False}, {"id": "w2"}]})
+    assert [w["seeded"] for w in seen["w"]] == [False, True]

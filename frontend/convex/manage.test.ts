@@ -74,7 +74,7 @@ test("an archived watch is paused, hidden, never checked, and restored without r
   expect((await alice.query(api.watches.archived, {})).map((w) => w._id)).toEqual([id]);
   const fetchSpy = vi.fn(); vi.stubGlobal("fetch", fetchSpy);
   vi.setSystemTime(new Date("2026-09-28T10:00:00Z"));
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect(fetchSpy).not.toHaveBeenCalled();
   await expect(alice.mutation(api.watches.update, { id, active: true })).rejects.toThrow("archived. Restore it first");
   await alice.mutation(api.watches.setArchived, { id, archived: false });

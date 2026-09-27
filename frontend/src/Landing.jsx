@@ -75,8 +75,10 @@ export default function Landing({ SignIn = Plain }) {
           <h2>What we keep, and for how long</h2>
           <p>
             Your e-mail address and your watches, until you delete them. Your chats and the listings we've checked,
-            for 30 days. Your messages, searches and listing details (titles, prices, places) are sent to OpenAI to
-            answer and score them. Nothing is sold or shared. "Delete my data" in the app removes it all at once.
+            until 30 days after they were last used. Your messages, searches and listing details (titles, prices, places) are sent to OpenAI to
+            answer and score them. Nothing is sold; the only other companies that see it are the ones that run
+            the app (OpenAI, Convex, Clerk, AgentMail, Vercel). "Delete my data" removes everything we store at once;
+            your login account is closed separately, under your account menu.
           </p>
           <p>
             Up to 5 watches per person, checked at most every 15 minutes. It reads the first page of Marktplaats'

@@ -63,7 +63,7 @@ If Daryl has no personal line, delete the slot entirely; the post still stands (
 
 ```
 Try it: https://marktplaats-watcher.vercel.app
-Built with React + Vite, FastAPI with a LangChain tool-calling agent, Convex, Clerk, AgentMail and Vercel.
+Built with Next.js, FastAPI with a LangChain tool-calling agent, Convex, Clerk, AgentMail and Vercel.
 ```
 
 ## 3 alternative hooks

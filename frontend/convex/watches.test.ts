@@ -12,6 +12,8 @@ beforeEach(() => {
   vi.setSystemTime(new Date("2026-09-27T10:00:00Z"));
   process.env.WATCHER_API_URL = "https://watcher.test";
   process.env.CRON_SECRET = "s3cret";
+  process.env.AGENTMAIL_API_KEY = "am_test";
+  process.env.AGENTMAIL_INBOX_ID = "inbox@test";
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -70,7 +72,8 @@ test("changing the schedule moves the next check", async () => {
 
 function fakeSearchService(answer: (body: any) => unknown) {
   const calls: { headers: Record<string, string>; body: any }[] = [];
-  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    if (url.includes("agentmail")) return new Response("{}");      // alert e-mails "sent"
     const body = JSON.parse(init.body as string);
     calls.push({ headers: init.headers as Record<string, string>, body });
     return new Response(JSON.stringify({ results: answer(body) }));
@@ -92,26 +95,26 @@ test("first check only remembers what is there; later checks alert on good new l
     watchId: w.id, ok: true, currentIds: page, listings: ranked.filter((l) => !w.seen_ids.includes(l.id)),
   })));
 
-  expect(await t.action(internal.checker.checkDue, { dryRun: true })).toEqual({ checked: 1, emails: 0 });
+  expect(await t.action(internal.checker.checkDue, {})).toEqual({ checked: 1, emails: 0 });
   expect(calls[0].headers["X-Cron-Secret"]).toBe("s3cret");
   expect((await alice.query(api.watches.list, {}))[0].alerts).toEqual([]);   // no e-mail about old listings
 
   // Not due yet: nothing is fetched
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect(calls).toHaveLength(1);
 
   // An hour later a great one (a3) and a poor one (a4) appear
   vi.setSystemTime(new Date("2026-09-27T11:00:01Z"));
   page = ["a1", "a2", "a3", "a4"];
   ranked = [item("a3", 9), item("a4", 2)];
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect(calls[1].body.watches[0].seen_ids.sort()).toEqual(["a1", "a2"]);
   const alerts = (await alice.query(api.watches.list, {}))[0].alerts;
-  expect(alerts.map((a) => [a.listingId, a.emailStatus])).toEqual([["a3", "dry-run"]]);
+  expect(alerts.map((a) => [a.listingId, a.emailStatus])).toEqual([["a3", "sent"]]);
 
   // The same listings again: no second alert
   vi.setSystemTime(new Date("2026-09-27T12:00:01Z"));
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect((await alice.query(api.watches.list, {}))[0].alerts).toHaveLength(1);
   const watch = await t.run((ctx) => ctx.db.get(id));
   expect(watch!.seeded).toBe(true);
@@ -123,7 +126,7 @@ test("watches for the same item share one Marktplaats request", async () => {
   await alice.mutation(api.watches.create, macMini);
   await bob.mutation(api.watches.create, { ...macMini, query: "Mac Mini", maxPriceEur: 300 });
   const calls = fakeSearchService((body) => body.watches.map((w: any) => ({ watchId: w.id, ok: true, currentIds: [], listings: [] })));
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect(calls).toHaveLength(1);
   expect(calls[0].body.watches).toHaveLength(2);
 });
@@ -132,7 +135,7 @@ test("when the search service is down the watch shows an error and is retried wi
   const { t, alice } = setup();
   await alice.mutation(api.watches.create, { ...macMini, schedule: { kind: "weekly", days: ["mon"], time: "08:00" } });
   vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 502 })));
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   const [watch] = await alice.query(api.watches.list, {});
   expect(watch.lastError).toMatch(/didn.t answer/);
   expect(watch.nextRunAt).toBe(Date.parse("2026-09-27T10:30:00Z"));   // not next Monday
@@ -144,10 +147,10 @@ test("a listing without a score is never alerted", async () => {
   let page = ["a1"];
   fakeSearchService((body) => body.watches.map((w: any) => ({ watchId: w.id, ok: true, currentIds: page,
     listings: page.filter((id) => !w.seen_ids.includes(id)).map((id) => item(id, null)) })));
-  await t.action(internal.checker.checkDue, { dryRun: true });       // first check: seeds
+  await t.action(internal.checker.checkDue, {});       // first check: seeds
   vi.setSystemTime(new Date("2026-09-27T11:00:01Z"));
   page = ["a1", "a2"];
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect((await alice.query(api.watches.list, {}))[0].alerts).toEqual([]);
 });
 
@@ -158,7 +161,7 @@ test("many watches for one item are split into requests of at most 20", async ()
     await user.mutation(api.watches.create, { ...macMini, maxPriceEur: 300 + i });
   }
   const calls = fakeSearchService((body) => body.watches.map((w: any) => ({ watchId: w.id, ok: true, currentIds: [], listings: [] })));
-  await t.action(internal.checker.checkDue, { dryRun: true });
+  await t.action(internal.checker.checkDue, {});
   expect(calls.map((c) => c.body.watches.length)).toEqual([20, 5]);
 });
 

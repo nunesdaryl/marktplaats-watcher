@@ -66,6 +66,8 @@ Chat keeps working. The next digest says "Checks are paused".
 Never paste keys into chats, issues or the repo; `.env` stays local (mode 600).
 
 ## 5. Alerts not arriving
+A failed alert e-mail is retried automatically at the next 3 checks (15 minutes apart). After 4 failed tries it stays
+"failed" and the digest reports it. A check that dies halfway is picked up again within 30 minutes.
 1. **App → the watch:** check "last checked" and any error line on the watch page.
 2. **Digest problems:** do they mention failed e-mails?
 3. **AgentMail console → Sent:** was the e-mail sent?

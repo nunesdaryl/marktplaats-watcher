@@ -43,7 +43,7 @@
 | Mon | 5 Oct | LinkedIn | P4 | Text + photo | 5. Demo day recap | ☐ |
 | Tue | 6 Oct | LinkedIn | P3 | Text-only or stat card | 6. The limits I chose: $10 cap, 15 minutes, 5 watches, 30 days | ☐ |
 | Wed | 7 Oct | LinkedIn | P3 | Text + comparison graphic | 7. What the competitor research taught me | ☐ |
-| Fri | 9 Oct | LinkedIn | P2 | Text + logo grid | 8. From one sentence to a scored e-mail: the stack and 43 tests | ☐ |
+| Fri | 9 Oct | LinkedIn | P2 | Text + logo grid | 8. From one sentence to a scored e-mail: the stack and 95 tests | ☐ |
 
 ## The 8 posts
 
@@ -56,7 +56,7 @@
 | 5 | "On Saturday I demoed an agent that isn't allowed to save anything." `[DARYL: adjust to what you actually showed]` | What demoing a real product (not slides) taught me. | #18 Reis Documenteren / #4 Story Tease | `[DARYL: demo-day photo, if you have one and may share it]` | One line on the best question asked at the demo `[DARYL]` |
 | 6 | "My app has a $10 a month hard spending cap on its AI." | Limits are design decisions, stated up front. | #21 Radicale Transparantie / #7 Herkenbaarheid | Text-only (pack: works best for #21), or a stat card "$10/month hard cap" | "$10 a month hard cap. Model allow-list. That's my AI budget policy." |
 | 7 | "Marktplaats alerts already sell for up to €39.95 a month. I looked at what none of them do." | Don't compete on speed; compete on explanation. | #22 David vs. Goliath / #2 Resultaten | Simple 3-row comparison graphic you make yourself (Marktplaats saved search / MarktAlert / MPAlerts: price, speed, reason shown?) | "Every alert app competes on speed. None shows a reason." |
-| 8 | "From one sentence to a scored e-mail: 6 services, 43 tests." | How the parts fit, and what keeps it honest (tests, CI, cap). | #7 Tech Stack / #10 Proces Onthullen | Logo grid: React, Vite, FastAPI, LangChain, OpenAI, Convex, Clerk, AgentMail, Vercel | "16 Python tests, 27 TypeScript tests, CI on every push." `[DARYL: confirm "every push" matches your CI trigger]` |
+| 8 | "From one sentence to a scored e-mail: 6 services, 95 tests." | How the parts fit, and what keeps it honest (tests, CI, cap). | #7 Tech Stack / #10 Proces Onthullen | Logo grid: Next.js, FastAPI, LangChain, OpenAI, Convex, Clerk, AgentMail, Vercel | "34 Python tests, 61 TypeScript tests, an evaluation, CI on every push." |
 
 ### One-idea summaries for posts 5 to 8 (no full draft yet)
 
@@ -74,9 +74,9 @@
   to €39.95 a month and claims AI filtering; Marktplaats' own saved search is free. None of those shows a reason per
   alert. Lesson: this project doesn't win on speed, so it doesn't claim speed. Keep claims to what
   `references/research.md` sources; the "none shows a reason" line is from the tools compared, not the whole market.
-- **8. Stack and tests (Fri 9 Oct).** React + Vite front end; FastAPI with a LangChain tool-calling agent on OpenAI
+- **8. Stack and tests (Fri 9 Oct).** Next.js front end; FastAPI with a LangChain tool-calling agent on OpenAI
   gpt-5.4-mini; Convex for the database and scheduled jobs; Clerk for login; AgentMail for e-mail; Vercel for
-  hosting. 16 Python and 27 TypeScript tests, CI. Close on the design rule from post 2: the model never writes to
+  hosting. 34 Python and 61 TypeScript tests, an evaluation (evals/report.md), CI. Close on the design rule from post 2: the model never writes to
   the database.
 
 ## Full drafts: posts 1 to 3 of the follow-up

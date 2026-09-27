@@ -13,13 +13,17 @@ const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the nex
 const MAX_ALERTS_PER_EMAIL = 5;
 const MAX_WATCHES_PER_REQUEST = 20;          // keeps one request to the Python API well inside its time limit
 const RETRY_MS = 30 * 60_000;                // a failed check is tried again within 30 minutes
+const LEASE_MS = 30 * 60_000;                // a claimed check that never reports back is due again after this
+const MAX_EMAIL_ATTEMPTS = 4;                // an alert e-mail is tried at most 4 times, 15 minutes apart
+const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_SEEN_SENT = 1000;
 const RETENTION_MS = 30 * 86_400_000;
 
-/** Take the due watches and move their next check on, so an overlapping run can't pick them up twice. */
+/** Take the due watches and lease them for 30 minutes, so an overlapping run can't pick them up twice, and a run
+ * that dies before recording its results doesn't leave a weekly watch waiting a week. A dry run leases nothing. */
 export const claimDue = internalMutation({
-  args: { now: v.number() },
-  handler: async (ctx, { now }) => {
+  args: { now: v.number(), dryRun: v.optional(v.boolean()) },
+  handler: async (ctx, { now, dryRun = false }) => {
     const due = await ctx.db.query("watches")
       .withIndex("by_active_next", (q) => q.eq("active", true).lte("nextRunAt", now))
       .take(MAX_WATCHES_PER_RUN);
@@ -33,13 +37,13 @@ export const claimDue = internalMutation({
     for (const [query, watches] of byQuery) {
       const payload = [];
       for (const w of watches) {
-        await ctx.db.patch(w._id, { nextRunAt: nextRun(w.schedule, now, w.timezone) });
+        if (!dryRun) await ctx.db.patch(w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS) });
         const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
           .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
         payload.push({
           id: w._id, description: w.label, max_price_eur: w.maxPriceEur ?? null,
           must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
-          max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId),
+          max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId), seeded: w.seeded,
         });
       }
       for (let i = 0; i < payload.length; i += MAX_WATCHES_PER_REQUEST)
@@ -60,15 +64,35 @@ const result = v.object({
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
 });
 
-/** Store what a check found. Returns the e-mails to send: one per watch with good new listings. */
+/** Store what a check found. Returns the e-mails to send: one per watch with good new listings.
+ * `now` is the time the check was claimed. A dry run writes nothing and returns the e-mails as previews. */
 export const record = internalMutation({
   args: { now: v.number(), results: v.array(result), dryRun: v.boolean() },
   handler: async (ctx, { now, results, dryRun }) => {
-    const emails = [];
+    const emails: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string; preview?: EmailContent }[] = [];
     for (const r of results) {
       const watchId = ctx.db.normalizeId("watches", r.watchId);
       const watch = watchId && await ctx.db.get(watchId);
       if (!watch) continue;                                   // deleted while it was being checked
+      // Paused, archived or given a different search while it was being checked: this result is stale
+      if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
+      if (dryRun) {
+        if (!r.ok || !watch.seeded) continue;
+        const fresh = [];
+        for (const id of r.currentIds ?? []) {
+          const seen = await ctx.db.query("seenListings")
+            .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
+          const item = r.listings?.find((l) => l.id === id);
+          if (!seen && item && item.score !== null && item.score >= MIN_SCORE[watch.notify])
+            fresh.push({ title: item.title, priceEur: item.price_eur ?? undefined, city: item.city ?? undefined,
+              url: item.url, score: item.score, reason: item.reason });
+        }
+        const user = await ctx.db.get(watch.userId);
+        if (fresh.length && user) emails.push({ watchId: watch._id, alertIds: [], to: user.email, preview: {
+          watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule),
+          notify: NOTIFY_LABEL[watch.notify], alerts: fresh.sort((a, b) => b.score - a.score) } });
+        continue;
+      }
       if (!r.ok) {
         // Retry soon instead of waiting for the next scheduled time (a weekly watch would wait a week)
         const retryAt = Math.min(watch.nextRunAt, now + RETRY_MS);
@@ -93,10 +117,11 @@ export const record = internalMutation({
           priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,
           image: item.image ?? undefined,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
-          emailStatus: dryRun ? "dry-run" : "pending", createdAt: now,
+          emailStatus: "pending", createdAt: now,
         }));
       }
-      await ctx.db.patch(watch._id, { seeded: true, lastCheckedAt: now, lastError: undefined });
+      await ctx.db.patch(watch._id, { seeded: true, lastCheckedAt: now, lastError: undefined,
+        nextRunAt: nextRun(watch.schedule, now, watch.timezone) });   // the lease ends: on to the real next time
       const user = await ctx.db.get(watch.userId);
       if (newAlerts.length && user) emails.push({ watchId: watch._id, alertIds: newAlerts, to: user.email });
     }
@@ -108,9 +133,37 @@ export const emailContent = internalQuery({
   args: { watchId: v.id("watches"), alertIds: v.array(v.id("alerts")) },
   handler: async (ctx, { watchId, alertIds }) => {
     const watch = await ctx.db.get(watchId);
+    if (!watch || !watch.active || watch.archivedAt !== undefined) return null;   // paused since: don't e-mail
     const alerts = (await Promise.all(alertIds.map((id) => ctx.db.get(id)))).filter((a) => a !== null);
     alerts.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
     return watch && { watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
+  },
+});
+
+/** Alert e-mails to try again: failed ones, and ones stuck "pending" (a run that died mid-send), for watches
+ * that are still active. Each try counts; after MAX_EMAIL_ATTEMPTS an alert stays "failed" for the health digest.
+ * An e-mail AgentMail accepted but didn't confirm could arrive twice; that's preferred over losing it. */
+export const claimEmailRetries = internalMutation({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    const since = now - EMAIL_RETRY_WINDOW_MS;
+    const failed = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "failed").gte("createdAt", since)).take(200);
+    const stuck = await ctx.db.query("alerts").withIndex("by_emailStatus", (q) => q.eq("emailStatus", "pending").gte("createdAt", since).lt("createdAt", now - RETRY_MS)).take(200);
+    const byWatch = new Map<Id<"watches">, Id<"alerts">[]>();
+    for (const a of [...failed, ...stuck]) {
+      if ((a.attempts ?? 1) >= MAX_EMAIL_ATTEMPTS) continue;
+      const watch = await ctx.db.get(a.watchId);
+      if (!watch || !watch.active || watch.archivedAt !== undefined) continue;
+      await ctx.db.patch(a._id, { emailStatus: "pending", attempts: (a.attempts ?? 1) + 1 });
+      byWatch.set(a.watchId, [...(byWatch.get(a.watchId) ?? []), a._id]);
+    }
+    const mails = [];
+    for (const [watchId, alertIds] of byWatch) {
+      const watch = await ctx.db.get(watchId);
+      const user = watch && await ctx.db.get(watch.userId);
+      if (user) mails.push({ watchId, alertIds, to: user.email });
+    }
+    return mails;
   },
 });
 
@@ -184,16 +237,33 @@ export const checkDue = internalAction({
     const now = Date.now();
     if (process.env.CHECKS_PAUSED === "1") {    // kill switch (see RUNBOOK.md): no fetching, no scoring, no e-mail
       console.log(JSON.stringify({ event: "checks_paused" }));
-      await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0, paused: true });
+      if (!dryRun) await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0, paused: true });
       return { checked: 0, emails: 0, paused: true };
     }
-    const groups = await ctx.runMutation(internal.checker.claimDue, { now });
-    if (!groups.length) {
-      await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0 });
-      return { checked: 0, emails: 0 };
-    }
-    const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
+    const appUrl = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
     let checked = 0, emails = 0, failed = 0, emailFailures = 0;
+
+    /** Send one watch's alert e-mail and record the outcome; a failure is retried at the next ticks. */
+    const deliver = async (mail: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string }) => {
+      const content = await ctx.runQuery(internal.checker.emailContent, { watchId: mail.watchId, alertIds: mail.alertIds });
+      if (!content || !content.alerts.length) return;
+      let status: "sent" | "failed" = "sent";
+      try {
+        await sendEmail(mail.to, renderEmail(content, appUrl));
+        emails++;
+      } catch (e) {
+        console.error("alert e-mail failed:", e);
+        status = "failed";
+        emailFailures++;
+      }
+      await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
+    };
+
+    // First, e-mails that failed at an earlier tick (before this tick's new ones, so each gets one try per tick)
+    if (!dryRun) for (const mail of await ctx.runMutation(internal.checker.claimEmailRetries, { now })) await deliver(mail);
+
+    const groups = await ctx.runMutation(internal.checker.claimDue, { now, dryRun });
+    const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
     for (const group of groups) {
       let results;
       try {
@@ -213,27 +283,16 @@ export const checkDue = internalAction({
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       for (const mail of toSend) {
-        const content = await ctx.runQuery(internal.checker.emailContent, { watchId: mail.watchId, alertIds: mail.alertIds });
-        if (!content) continue;
-        const email = renderEmail(content, process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app");
-        let status: "sent" | "failed" | "dry-run" = "dry-run";
-        if (dryRun) console.log(`[dry-run] to ${mail.to}: ${email.subject}\n${email.text}`);
-        else {
-          try {
-            await sendEmail(mail.to, email);
-            status = "sent";
-            emails++;
-          } catch (e) {
-            console.error("alert e-mail failed:", e);
-            status = "failed";
-            emailFailures++;
-          }
-        }
-        await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
+        if (mail.preview) {
+          const email = renderEmail(mail.preview, appUrl);
+          console.log(`[dry-run] to ${mail.to}: ${email.subject}\n${email.text}`);
+        } else await deliver(mail);
       }
     }
+    if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent
     await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures });
-    console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, ms: Date.now() - now }));
+    if (checked || emails || emailFailures)
+      console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, ms: Date.now() - now }));
     return { checked, emails };
   },
 });

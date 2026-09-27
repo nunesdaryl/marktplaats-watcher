@@ -36,8 +36,9 @@ and the schedule floor is 15 minutes, checked on the server."
 
 **1:55, Prove (35 s).** Open the eval report and read three numbers:
 - **Chat golden set 20/20.** "It was 18/20 first. One real bug, fixed in code; one wrong test, corrected and disclosed."
-- **Scorer on 49 real listings, judged by a stronger model:** "Great" has **100% precision** and "Good" catches **90%
-  of real matches at 85% precision**.
+- **Scorer on 49 real listings, judged by a stronger model:** "Great": **13 of 13** e-mails matched the judge
+  (100% precision, 68% recall); "Good" catches **90% of real matches at 85% precision**. "The judge is an AI too, so
+  I'm checking its labels by hand."
 - "The misses are listed, not tuned away: an iPhone 13 that scored 1 is my next fix."
 
 **2:30, cost and ops (20 s).**
@@ -65,11 +66,12 @@ with the reason.* "That sentence *is* the product."
 **1:30.** Show the e-mail: "9 out of 10, and why."
 
 **1:50.** "How do I know it works? I tested it on 49 real listings against a stronger AI as the judge. When you choose
-'great matches only', every e-mail was a real match. I also tested 20 conversations, including people trying to trick
+'great matches only', all 13 e-mails it would send were matches in the judge's eyes, and I'm checking those labels by
+hand. I also tested 20 conversations, including people trying to trick
 it."
 
-**2:20.** "Cost: about 35 cents a month per hourly watch, with a hard budget cap. When something breaks, I get an
-e-mail before a user notices."
+**2:20.** "Cost: about 35 cents a month per hourly watch, with a hard budget cap. When something breaks, I get a
+health e-mail every morning, and GitHub warns me within 30 minutes if the site goes down."
 
 **2:40.** "Built during my Forward Deployed Engineer course: from idea to a live, measured, monitored
 product."

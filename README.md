@@ -51,15 +51,17 @@ npx convex env set OWNER_EMAIL <you@example.com>   # daily health digest (only w
 # npx convex env set CHECKS_PAUSED 1              # kill switch: stops all scheduled checks (see RUNBOOK.md)
 npm run dev                                    # Next.js on http://localhost:3000 (proxies /api to :8000)
 ```
-Try a check without sending e-mail: `npx convex run checker:checkDue '{"dryRun": true}'`.
+Preview a check: `npx convex run checker:checkDue '{"dryRun": true}'` fetches and scores, logs the e-mails it would
+send, and changes nothing (no listings marked seen, no alerts, no schedule change).
 
 Tests: `.venv/bin/python -m pytest -q` and `cd frontend && npm test && npm run typecheck`.
 CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` and a gitleaks secret scan
 (`.github/workflows/ci.yml`). An uptime check runs every 30 minutes (`.github/workflows/uptime.yml`).
 
 ## Evaluation, cost and operations
-- **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, "great
-  matches" has 100% precision and "good matches" catches 90% of real matches. Rerun with `.venv/bin/python -m evals.run_scorer`,
+- **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, all 13
+  "great match" e-mails agreed with the judge (100% precision, 68% recall) and "good matches" catches 90% of real
+  matches; a human check of the judge's labels is pending. Rerun with `.venv/bin/python -m evals.run_scorer`,
   `evals.run_chat`, `evals.report`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
 - **Feedback and "would you pay?":** the in-app Feedback button e-mails each message to `OWNER_EMAIL`;

@@ -38,7 +38,8 @@ Concrete sharpening per weak point:
 | **3. Why you?** | Daryl built and runs it end to end: agent, scheduler, auth, e-mail, deploy, tests, CI, retention, stated risk. | ✅ |
 | **4. Why now?** | FDE and agentic-engineering hiring is active; job-seeking window on the course. `[NEEDS REVIEW: Daryl's timeline]` | ✅ (pending timeline) |
 
-**Score: 4× ✅ → strong** as a portfolio piece. Its weakest link is evidence of quality (no eval) and of use (no users).
+**Score: 4× ✅ → strong** as a portfolio piece. Its weakest link was evidence of quality (no eval) and of use (no users).
+*Update 27 Sep: an evaluation now exists (evals/report.md); evidence of use is still missing.*
 
 ## Validation Ladder
 

@@ -148,6 +148,7 @@ class CheckWatch(BaseModel):
     postcode: str | None = Field(default=None, max_length=10)
     max_distance_km: int | None = None
     seen_ids: list[str] = Field(default=[], max_length=1000)
+    seeded: bool = True          # False on the first check: nothing is e-mailed then, so nothing is scored
 
 
 class CheckRequest(BaseModel):

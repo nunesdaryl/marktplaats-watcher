@@ -13,3 +13,6 @@ frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
 .dev-logs/
+
+# Local audit reproductions (temp paths, replay scripts)
+docs/audit/evidence-*/
