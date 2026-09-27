@@ -1,5 +1,7 @@
 # Marktplaats Watcher: React UI + FastAPI + LangChain agent in one container.
 # Secrets are NOT baked in: pass them at run time with  --env-file .env
+# The UI needs two PUBLIC values at build time:
+#   docker build --build-arg VITE_CONVEX_URL=... --build-arg VITE_CLERK_PUBLISHABLE_KEY=... .
 
 # Stage 1: build the React UI
 FROM node:22-slim AS ui
@@ -7,6 +9,8 @@ WORKDIR /ui
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+ARG VITE_CONVEX_URL
+ARG VITE_CLERK_PUBLISHABLE_KEY
 RUN npm run build
 
 # Stage 2: the Python app, which serves the API and the built UI on port 8000

@@ -1,45 +1,70 @@
-# Deploying to Vercel (prepared, NOT deployed)
+# Deploying to Vercel + Convex
 
-Everything in the repo is ready. What's missing is marked **TODO**; none of it is a secret in this file.
+The Python API and the built UI run on Vercel; the database, schedules and e-mail run on Convex.
+Nothing in this file is a secret. **Type every key into the dashboards or CLI yourself**, never into a
+chat or the repo.
 
-## TODO before the first deploy
-- [ ] **Azure key: your own, not the course key.** Create your own Azure OpenAI deployment, and set a
-      **spending limit / budget alert** in the Azure portal first. A public URL lets anyone spend on this key.
-- [ ] **Decide on access.** Default: fully public with rate limits (below). Optional: add a passcode.
-- [ ] **A Vercel account** and the CLI: `npm i -g vercel`, then `vercel login`.
-- [ ] **Accept the Marktplaats risk.** A public service querying Marktplaats is no longer personal use
-      (ToS Art. 7.3). The cache and hourly cap below keep the query volume low, but the risk is yours.
+## 1. Accounts and keys (one time)
+| Service | What to do | Value(s) you get |
+|---|---|---|
+| OpenAI | platform.openai.com → API keys. Set a **monthly budget limit** first. | `OPENAI_API_KEY`, pick `OPENAI_MODEL` |
+| Clerk | Create an application (e-mail sign-in on). Integrations → **Convex** → activate. Then Sessions → **Customize session token** → add `"email": "{{user.primary_email_address}}"` next to the managed `aud` claim (without it Convex gets no e-mail address and the app says "Your account has no e-mail address"). | Publishable key, Frontend API URL (issuer) |
+| Convex | `cd frontend && npx convex dev` (creates the project), then in the dashboard: Settings → **Deploy key** for production | `CONVEX_DEPLOY_KEY` |
+| AgentMail | console.agentmail.to → API Keys → create. The inbox is `marktplaats-watcher@agentmail.to`. | `AGENTMAIL_API_KEY` |
+| Cron secret | `openssl rand -hex 32` | `CRON_SECRET` (same value in Vercel and Convex) |
 
-## Environment variables (set in Vercel → Project → Settings → Environment Variables)
+## 2. Environment variables
+**Vercel** → Project → Settings → Environment Variables (Production):
 | Name | Value |
 |---|---|
-| `AZURE_AI_ENDPOINT` | `https://<your-resource>.cognitiveservices.azure.com/openai/v1` (**TODO**) |
-| `AZURE_AI_API_KEY` | `<your key>` (**TODO**, type it into Vercel yourself, never into chat or the repo) |
-| `AZURE_AI_MODEL` | `<your deployment name>` (**TODO**) |
-| `RATE_PER_MINUTE` | `10` (optional; per-IP chat limit) |
-| `MAX_FETCHES_PER_HOUR` | `30` (optional; Marktplaats pages per server instance per hour) |
+| `OPENAI_API_KEY` | your key |
+| `OPENAI_MODEL` | model name |
+| `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
+| `CRON_SECRET` | the random string |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
+| `CONVEX_DEPLOY_KEY` | production deploy key (the build pushes Convex functions and sets `VITE_CONVEX_URL`) |
+| `RATE_PER_MINUTE`, `MAX_FETCHES_PER_HOUR` | optional, defaults 10 and 30 |
 
-## Deploy
+**Convex** production deployment → Settings → Environment Variables (or `npx convex env set --prod ...`):
+| Name | Value |
+|---|---|
+| `CLERK_JWT_ISSUER_DOMAIN` | same as `CLERK_ISSUER` |
+| `WATCHER_API_URL` | `https://marktplaats-watcher.vercel.app` |
+| `CRON_SECRET` | same as in Vercel |
+| `AGENTMAIL_API_KEY` | your key |
+| `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
+| `APP_URL` | `https://marktplaats-watcher.vercel.app` |
+
+In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
+
+## 3. Deploy
 ```bash
-cd marktplaats-watcher
-vercel link          # create or link the Vercel project
 vercel               # preview deploy: test it first
 vercel --prod        # production URL
 ```
+The build command (`vercel.json`) runs `npx convex deploy --cmd 'npm run build'`, so Convex functions,
+schema and crons go live together with the UI.
 
-## Verify after deploying (the Vercel routing can only be checked on Vercel itself)
-- [ ] `https://<your-app>.vercel.app/api/health` returns `{"ok":true}`
-- [ ] The chat page loads and the happy flow works ("Find me a Mac mini with 16GB under 500 euro")
-- [ ] 11 fast questions from one browser → the 11th gets "Too many questions in a minute"
-- [ ] "Who is the president of India?" → refusal
+## 4. Verify after deploying
+- [ ] `/api/health` returns `{"ok":true}`
+- [ ] `curl -X POST .../api/chat -H 'content-type: application/json' -d '{"message":"hi"}'` → **401**
+- [ ] `curl -X POST .../api/internal/check -H 'content-type: application/json' -d '{"query":"x","watches":[{"id":"w"}]}'` → **401**
+- [ ] Sign in, search "Mac mini 16GB under €500", press **Watch this search**, save with "every hour"
+- [ ] The watch shows "Next check …"; Convex dashboard → Logs shows `checker:checkDue` running every 15 minutes
+- [ ] Ask the chat "change my Mac mini watch to every day at 08:00" → confirmation card → **Save change**
+- [ ] A new matching listing arrives by e-mail from `marktplaats-watcher@agentmail.to`
+- [ ] A second account can't see the first account's watches
+- [ ] "Delete my data" empties the watches panel
 
 ## Routing note
 Vercel's **FastAPI preset** serves the `app` in `main.py` directly, with the original request paths.
-Don't add a rewrite to a separate `api/index.py`: it hands FastAPI the path `/api/index` and every route 404s
-(found on the first deploy).
+Don't add a rewrite to a separate `api/index.py`: it hands FastAPI the path `/api/index` and every route 404s.
 
 ## Honest limits of this setup
-- The rate limit, cache and hourly cap live **in memory per serverless instance**. Vercel can run several
-  instances, so the real limits are looser. For real abuse protection use a shared store (e.g. Upstash
-  Redis) or Vercel's firewall rate limiting.
-- There's no login. Anyone with the URL can use it and spend on the Azure key.
+- The chat rate limit and the Marktplaats page cache live **in memory per serverless instance**, so with
+  several instances the real limits are looser. Chat now requires a login, which is the main protection
+  for the OpenAI budget; set the budget limit anyway.
+- Scheduled checks are limited in Convex: at most 5 watches per user, 25 distinct items per 15-minute run
+  (the rest wait for the next run), and one Marktplaats request per distinct item.
+- AgentMail's shared `agentmail.to` domain is fine for a demo. For better deliverability, buy a domain
+  and switch the sender (AgentMail custom domain, or Resend).
