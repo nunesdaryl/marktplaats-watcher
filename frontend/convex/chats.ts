@@ -6,6 +6,8 @@ import { currentUser, requireUser } from "./users";
 
 const MAX_CONTENT = 8000;
 const MAX_CHATS_LISTED = 50;
+export const MAX_CHATS = 200;
+export const MAX_MESSAGES = 200;
 
 async function ownChat(ctx: MutationCtx, chatId: Id<"chats">) {
   const user = await requireUser(ctx);
@@ -32,6 +34,8 @@ export const start = mutation({
     const user = await requireUser(ctx);
     const text = content.trim().slice(0, MAX_CONTENT);
     if (!text) throw new ConvexError("Type a message first.");
+    const count = (await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).take(MAX_CHATS)).length;
+    if (count >= MAX_CHATS) throw new ConvexError(`You have ${MAX_CHATS} chats. Delete a few old ones to start a new one.`);
     const title = text.length > 48 ? `${text.slice(0, 47).trimEnd()}…` : text;
     const now = Date.now();
     const chatId = await ctx.db.insert("chats", { userId: user._id, title, updatedAt: now });
@@ -55,6 +59,8 @@ export const append = mutation({
   },
   handler: async (ctx, { chatId, role, content, listings, proposals, search }) => {
     await ownChat(ctx, chatId);
+    const count = (await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", chatId)).take(MAX_MESSAGES)).length;
+    if (count >= MAX_MESSAGES) throw new ConvexError("This chat is full. Start a new chat to keep going.");
     const id = await ctx.db.insert("messages", {
       chatId, role, content: content.slice(0, MAX_CONTENT),
       listings: listings?.slice(0, 10), proposals: checkProposals(proposals), search,

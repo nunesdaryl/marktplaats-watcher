@@ -7,6 +7,7 @@ import ListingCard from "../components/ListingCard.jsx";
 import Proposal, { watchFields } from "../components/Proposal.jsx";
 import RichText from "../lib/text.jsx";
 import { go } from "../lib/router.js";
+import { historyFor } from "../lib/history.js";
 import { streamChat } from "../lib/stream.js";
 
 const SUGGESTIONS = [
@@ -58,7 +59,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
   async function send(message, sendMode = "search") {
     message = message.trim();
     if (!message || live) return;
-    const history = saved.slice(-20).map(({ role, content }) => ({ role, content }));
+    const history = historyFor(saved);
     setLive({ user: message, status: sendMode === "watch" ? "Setting up a watch…" : "Thinking…", listings: [], text: "" });
     let id = chatId;
     try {
@@ -78,6 +79,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
         if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
         else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));
         else if (e.type === "delta") setLive((l) => ({ ...l, status: null, text: l.text + e.text }));
+        else if (e.type === "reset") setLive((l) => ({ ...l, text: "" }));   // words before a tool call weren't the answer
         else if (e.type === "done") final = e;
         else if (e.type === "error") final = { answer: e.text };
       },

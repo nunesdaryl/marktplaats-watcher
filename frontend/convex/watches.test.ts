@@ -128,14 +128,61 @@ test("watches for the same item share one Marktplaats request", async () => {
   expect(calls[0].body.watches).toHaveLength(2);
 });
 
-test("when the search service is down the watch shows an error and is retried at the next scheduled time", async () => {
+test("when the search service is down the watch shows an error and is retried within 30 minutes", async () => {
   const { t, alice } = setup();
-  await alice.mutation(api.watches.create, macMini);
+  await alice.mutation(api.watches.create, { ...macMini, schedule: { kind: "weekly", days: ["mon"], time: "08:00" } });
   vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 502 })));
   await t.action(internal.checker.checkDue, { dryRun: true });
   const [watch] = await alice.query(api.watches.list, {});
   expect(watch.lastError).toMatch(/unavailable/);
-  expect(watch.nextRunAt).toBe(Date.parse("2026-09-27T11:00:00Z"));
+  expect(watch.nextRunAt).toBe(Date.parse("2026-09-27T10:30:00Z"));   // not next Monday
+});
+
+test("a listing without a score is never alerted", async () => {
+  const { t, alice } = setup();
+  await alice.mutation(api.watches.create, macMini);
+  let page = ["a1"];
+  fakeSearchService((body) => body.watches.map((w: any) => ({ watchId: w.id, ok: true, currentIds: page,
+    listings: page.filter((id) => !w.seen_ids.includes(id)).map((id) => item(id, null)) })));
+  await t.action(internal.checker.checkDue, { dryRun: true });       // first check: seeds
+  vi.setSystemTime(new Date("2026-09-27T11:00:01Z"));
+  page = ["a1", "a2"];
+  await t.action(internal.checker.checkDue, { dryRun: true });
+  expect((await alice.query(api.watches.list, {}))[0].alerts).toEqual([]);
+});
+
+test("many watches for one item are split into requests of at most 20", async () => {
+  const { t } = setup();
+  for (let i = 0; i < 25; i++) {
+    const user = t.withIdentity({ subject: `user_${i}`, email: `u${i}@example.com` });
+    await user.mutation(api.watches.create, { ...macMini, maxPriceEur: 300 + i });
+  }
+  const calls = fakeSearchService((body) => body.watches.map((w: any) => ({ watchId: w.id, ok: true, currentIds: [], listings: [] })));
+  await t.action(internal.checker.checkDue, { dryRun: true });
+  expect(calls.map((c) => c.body.watches.length)).toEqual([20, 5]);
+});
+
+test("the newest 1000 seen listings are sent, not the first 1000 by id", async () => {
+  const { t, alice } = setup();
+  const id = await alice.mutation(api.watches.create, macMini);
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 1005; i++)
+      await ctx.db.insert("seenListings", { watchId: id, listingId: `a${String(i).padStart(5, "0")}`, lastSeenAt: i });
+  });
+  const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
+  const sent = group.watches[0].seen_ids;
+  expect(sent).toHaveLength(1000);
+  expect(sent).toContain("a01004");          // newest kept
+  expect(sent).not.toContain("a00000");      // oldest dropped
+});
+
+test("Check now on a paused watch asks to resume first", async () => {
+  const { alice } = setup();
+  const id = await alice.mutation(api.watches.create, macMini);
+  await alice.mutation(api.watches.update, { id, active: false });
+  await expect(alice.mutation(api.watches.checkNow, { id })).rejects.toThrow("paused. Resume it first");
+  const [watch] = await alice.query(api.watches.list, {});
+  expect(watch.active).toBe(false);
 });
 
 test("deleting my data removes the user, watches and alerts", async () => {

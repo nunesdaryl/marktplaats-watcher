@@ -115,8 +115,9 @@ export const checkNow = mutation({
   handler: async (ctx, { id }) => {
     const watch = await ownWatch(ctx, id);
     const now = Date.now();
+    if (!watch.active) throw new ConvexError("This watch is paused. Resume it first, then check.");
     if (watch.lastManualAt && now - watch.lastManualAt < 60_000) throw new ConvexError("Checked a moment ago. Try again in a minute.");
-    await ctx.db.patch(id, { nextRunAt: now, lastManualAt: now, active: true });
+    await ctx.db.patch(id, { nextRunAt: now, lastManualAt: now });
     await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});
   },
 });

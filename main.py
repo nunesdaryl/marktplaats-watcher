@@ -78,17 +78,17 @@ def too_many(user):
 
 
 def friendly_error(e):
-    """An exception from the model or a tool -> a message a user can act on (details stay in the log)."""
+    """An exception from the model or a tool -> (message a user can act on, HTTP status). Details stay in the log."""
     print(f"chat failed: {type(e).__name__}: {e}")
     if "model_not_found" in str(e) or "does not exist" in str(e):  # never log the key, only the model
         print(f"openai config: model={os.getenv('OPENAI_MODEL')!r}")
     if "content_policy" in str(e) or "content management policy" in str(e):
-        return "I can only help with Marktplaats searches and watches."
+        return "I can only help with Marktplaats searches and watches.", 200   # a refusal is a normal answer
     if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
                                        "credit_balance_exhausted")):
         return ("The AI model is offline right now (its API key or model is unavailable). "
-                "Your watches keep running; please try the chat again later.")
-    return "Error: something went wrong, please try again."
+                "Your watches keep running; please try the chat again later."), 503
+    return "Error: something went wrong, please try again.", 500
 
 
 def chat_args(request):
@@ -103,7 +103,8 @@ def chat_route(request: ChatRequest, user: str = Depends(current_user)):
     try:
         return chat(*chat_args(request))
     except Exception as e:
-        return {"answer": friendly_error(e)}
+        answer, status = friendly_error(e)
+        return JSONResponse({"answer": answer}, status_code=status)   # same body; monitoring sees the failure
 
 
 @app.post("/api/chat/stream")
@@ -117,7 +118,7 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
             for event in chat_events(*chat_args(request)):
                 yield json.dumps(event) + "\n"
         except Exception as e:
-            yield json.dumps({"type": "error", "text": friendly_error(e)}) + "\n"
+            yield json.dumps({"type": "error", "text": friendly_error(e)[0]}) + "\n"
 
     return StreamingResponse(events(), media_type="application/x-ndjson",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

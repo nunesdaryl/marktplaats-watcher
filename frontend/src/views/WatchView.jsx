@@ -52,9 +52,11 @@ export default function WatchView({ watch, onEdit }) {
           <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }))}>
             <Icon name={watch.active ? "pause" : "play"} size={16} />{watch.active ? "Pause" : "Resume"}
           </button>
-          <button className="button" onClick={() => run(() => checkNow({ id: watch._id }))}>
-            <Icon name="refresh" size={16} />Check now
-          </button>
+          {watch.active && (
+            <button className="button" onClick={() => run(() => checkNow({ id: watch._id }))}>
+              <Icon name="refresh" size={16} />Check now
+            </button>
+          )}
           <ConfirmButton icon="trash" label="Delete" confirmLabel="Delete for good?"
                          onConfirm={() => run(async () => { await remove({ id: watch._id }); go("/watches"); })} />
         </div>

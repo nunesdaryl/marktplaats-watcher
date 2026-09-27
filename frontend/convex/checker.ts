@@ -11,6 +11,9 @@ import { deleteChat } from "./chats";
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
 const MAX_ALERTS_PER_EMAIL = 5;
+const MAX_WATCHES_PER_REQUEST = 20;          // keeps one request to the Python API well inside its time limit
+const RETRY_MS = 30 * 60_000;                // a failed check is tried again within 30 minutes
+const MAX_SEEN_SENT = 1000;
 const RETENTION_MS = 30 * 86_400_000;
 
 /** Take the due watches and move their next check on, so an overlapping run can't pick them up twice. */
@@ -31,15 +34,16 @@ export const claimDue = internalMutation({
       const payload = [];
       for (const w of watches) {
         await ctx.db.patch(w._id, { nextRunAt: nextRun(w.schedule, now, w.timezone) });
-        const seen = await ctx.db.query("seenListings")
-          .withIndex("by_watch_listing", (q) => q.eq("watchId", w._id)).take(1000);
+        const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
+          .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
         payload.push({
           id: w._id, description: w.label, max_price_eur: w.maxPriceEur ?? null,
           must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId),
         });
       }
-      groups.push({ query, watches: payload });
+      for (let i = 0; i < payload.length; i += MAX_WATCHES_PER_REQUEST)
+        groups.push({ query, watches: payload.slice(i, i + MAX_WATCHES_PER_REQUEST) });
     }
     return groups;
   },
@@ -66,7 +70,9 @@ export const record = internalMutation({
       const watch = watchId && await ctx.db.get(watchId);
       if (!watch) continue;                                   // deleted while it was being checked
       if (!r.ok) {
-        await ctx.db.patch(watch._id, { lastCheckedAt: now, lastError: r.error ?? "Check failed." });
+        // Retry soon instead of waiting for the next scheduled time (a weekly watch would wait a week)
+        const retryAt = Math.min(watch.nextRunAt, now + RETRY_MS);
+        await ctx.db.patch(watch._id, { lastCheckedAt: now, lastError: r.error ?? "Check failed.", nextRunAt: retryAt });
         continue;
       }
       const newAlerts: Id<"alerts">[] = [];
@@ -79,8 +85,9 @@ export const record = internalMutation({
         }
         await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now });
         const item = r.listings?.find((l) => l.id === id);
-        // First check: only remember what is already there. Unranked (AI down) listings still alert.
-        if (!watch.seeded || !item || (item.score !== null && item.score < MIN_SCORE[watch.notify])) continue;
+        // First check: only remember what is already there. (Unscored listings never arrive here: the API
+        // reports the whole watch as failed instead, so they stay unseen and are scored on the retry.)
+        if (!watch.seeded || !item || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
         newAlerts.push(await ctx.db.insert("alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,

@@ -121,8 +121,9 @@ def test_offline_model_gives_a_clear_message(client, monkeypatch, error):
         raise RuntimeError(error)
     monkeypatch.setattr(client.main, "chat", gone)
     headers = {"Authorization": f"Bearer {client.token()}"}
-    answer = client.post("/api/chat", json={"message": "hi"}, headers=headers).json()["answer"]
-    assert "offline" in answer and "watches keep running" in answer
+    res = client.post("/api/chat", json={"message": "hi"}, headers=headers)
+    assert res.status_code == 503                       # monitoring sees it; the body stays user-friendly
+    assert "offline" in res.json()["answer"] and "watches keep running" in res.json()["answer"]
 
 
 def test_internal_check_needs_the_cron_secret(client, monkeypatch):
@@ -246,3 +247,97 @@ def test_watch_mode_tells_the_agent_to_propose_a_watch_instead_of_searching(monk
 def test_chat_rejects_an_unknown_mode(client):
     headers = {"Authorization": f"Bearer {client.token()}"}
     assert client.post("/api/chat/stream", json={"message": "hi", "mode": "delete"}, headers=headers).status_code == 422
+
+
+def test_links_only_ever_point_at_marktplaats():
+    import copy
+    data = json.loads(agent.NEXT_DATA.search(PAGE).group(1))
+    listings = agent.find_listings(data)
+    listings[0]["vipUrl"] = "@evil.example/phish"
+    listings[1]["vipUrl"] = "//evil.example/phish"
+    html = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps(data) + "</script>"
+    urls = [item["url"] for item in agent.parse_listings(html)[0]]
+    assert len(urls) == 4 and all(u.startswith("https://www.marktplaats.nl/") for u in urls)
+
+
+def test_check_query_never_returns_unscored_listings(monkeypatch):
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+
+    class DownRanker:
+        def invoke(self, messages):
+            raise RuntimeError("model down")
+    monkeypatch.setattr(agent, "ranker", DownRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
+    assert result == {"watchId": "w1", "ok": False, "error": "Scoring is unavailable right now; will retry."}
+
+
+def test_check_query_ranks_watches_in_parallel(monkeypatch):
+    import threading
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+    active, peak, lock = [0], [0], threading.Lock()
+
+    class SlowRanker:
+        def invoke(self, messages):
+            with lock:
+                active[0] += 1; peak[0] = max(peak[0], active[0])
+            time.sleep(0.2)
+            with lock:
+                active[0] -= 1
+            listings = json.loads(messages[-1]["content"])["listings"]
+            return agent.Ranking(ranks=[agent.Rank(id=i["id"], score=5, reason="ok") for i in listings])
+
+    monkeypatch.setattr(agent, "ranker", SlowRanker())
+    started = time.time()
+    results = agent.check_query("mac mini", [{"id": f"w{i}", "seen_ids": []} for i in range(6)])
+    assert all(r["ok"] for r in results) and peak[0] > 1
+    assert time.time() - started < 0.2 * 6 * 0.6                  # clearly faster than one after another
+
+
+def test_tool_calls_are_capped_per_question(monkeypatch):
+    class Greedy:
+        """Asks for 4 searches per turn, three turns in a row, then answers."""
+        def __init__(self):
+            self.turn = 0
+
+        def stream(self, messages):
+            from langchain_core.messages import AIMessageChunk
+            self.turn += 1
+            if self.turn <= 3:
+                yield AIMessageChunk(content="", tool_call_chunks=[
+                    {"name": "search_marktplaats", "args": '{"query": "x%d"}' % i, "id": f"c{self.turn}{i}", "index": i}
+                    for i in range(4)])
+            else:
+                yield AIMessageChunk(content="Done.")
+
+    monkeypatch.setattr(agent, "model", Greedy())
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+    done = agent.chat("find everything", [])
+    assert len(done["searches"]) == agent.MAX_TOOL_CALLS == 6
+
+
+def test_words_before_a_tool_call_are_reset_in_the_stream(monkeypatch):
+    class Chatty:
+        def __init__(self):
+            self.turn = 0
+
+        def stream(self, messages):
+            from langchain_core.messages import AIMessageChunk
+            self.turn += 1
+            if self.turn == 1:
+                yield AIMessageChunk(content="Let me look… ")
+                yield AIMessageChunk(content="", tool_call_chunks=[
+                    {"name": "search_marktplaats", "args": '{"query": "mac mini"}', "id": "c1", "index": 0}])
+            else:
+                yield AIMessageChunk(content="Found one.")
+
+    monkeypatch.setattr(agent, "model", Chatty())
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+    kinds = [e["type"] for e in agent.chat_events("mac mini", [])]
+    assert kinds == ["delta", "reset", "status", "listings", "delta", "done"]
+    assert agent.chat("mac mini", [])["answer"] == "Found one."
+
+
+def test_missing_settings_fail_with_a_clear_message(monkeypatch):
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_MODEL is not set"):
+        agent.required_env("OPENAI_MODEL")

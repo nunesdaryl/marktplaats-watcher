@@ -71,6 +71,7 @@ export default defineSchema({
     lastSeenAt: v.number(),
   })
     .index("by_watch_listing", ["watchId", "listingId"])
+    .index("by_watch_lastSeen", ["watchId", "lastSeenAt"])
     .index("by_lastSeen", ["lastSeenAt"]),
 
   alerts: defineTable({

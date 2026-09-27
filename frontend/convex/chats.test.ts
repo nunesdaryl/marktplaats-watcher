@@ -88,3 +88,12 @@ test("onboarding is shown until finished", async () => {
   await alice.mutation(api.users.finishOnboarding, {});
   expect((await alice.query(api.users.me, {}))!.onboarded).toBe(true);
 });
+
+test("a chat holds at most 200 messages", async () => {
+  const { t, alice } = setup();
+  const chatId = await alice.mutation(api.chats.start, { content: "hi" });
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 199; i++) await ctx.db.insert("messages", { chatId, role: "assistant", content: "x" });
+  });
+  await expect(alice.mutation(api.chats.append, { chatId, role: "user", content: "one more" })).rejects.toThrow("This chat is full");
+});
