@@ -3,6 +3,7 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { listingCard } from "./schema";
 import { currentUser, requireUser } from "./users";
+import { checkTargetFolder, cleanName } from "./folders";
 
 const MAX_CONTENT = 8000;
 const MAX_CHATS_LISTED = 50;
@@ -97,14 +98,58 @@ export async function deleteChat(ctx: MutationCtx, chatId: Id<"chats">) {
   await ctx.db.delete(chatId);
 }
 
-/** The signed-in user's chats, newest first. */
+/** The signed-in user's chats (not archived): pinned first, then newest first. */
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     if (!user) return [];
-    return ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id))
-      .order("desc").take(MAX_CHATS_LISTED);
+    const chats = await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id))
+      .order("desc").take(MAX_CHATS);
+    return chats.filter((c) => !c.archivedAt)
+      .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updatedAt - a.updatedAt).slice(0, MAX_CHATS_LISTED);
+  },
+});
+
+export const archived = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await currentUser(ctx);
+    if (!user) return [];
+    const chats = await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect();
+    return chats.filter((c) => c.archivedAt).sort((a, b) => b.archivedAt! - a.archivedAt!);
+  },
+});
+
+export const rename = mutation({
+  args: { chatId: v.id("chats"), title: v.string() },
+  handler: async (ctx, { chatId, title }) => {
+    await ownChat(ctx, chatId);
+    await ctx.db.patch(chatId, { title: cleanName(title, 60, "chat") });
+  },
+});
+
+export const setPinned = mutation({
+  args: { chatId: v.id("chats"), pinned: v.boolean() },
+  handler: async (ctx, { chatId, pinned }) => {
+    await ownChat(ctx, chatId);
+    await ctx.db.patch(chatId, { pinned });
+  },
+});
+
+export const setArchived = mutation({
+  args: { chatId: v.id("chats"), archived: v.boolean() },
+  handler: async (ctx, { chatId, archived }) => {
+    await ownChat(ctx, chatId);
+    await ctx.db.patch(chatId, archived ? { archivedAt: Date.now(), pinned: false } : { archivedAt: undefined });
+  },
+});
+
+export const move = mutation({
+  args: { chatId: v.id("chats"), folderId: v.union(v.id("folders"), v.null()) },
+  handler: async (ctx, { chatId, folderId }) => {
+    await ownChat(ctx, chatId);
+    await ctx.db.patch(chatId, { folderId: await checkTargetFolder(ctx, folderId) });
   },
 });
 

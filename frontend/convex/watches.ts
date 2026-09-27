@@ -1,8 +1,9 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { currentUser, deleteWatchData, requireUser } from "./users";
+import { checkTargetFolder, cleanName } from "./folders";
 import { TIMEZONE, checkSchedule, describe, nextRun, notifyValidator, scheduleValidator } from "./schedule";
 
 export const MAX_WATCHES = 5;
@@ -32,6 +33,19 @@ function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string
   };
 }
 
+type SearchFields = { query: string; maxPriceEur?: number; mustInclude?: string; postcode?: string; maxDistanceKm?: number };
+
+function sameSearch(w: SearchFields, f: SearchFields) {
+  return w.query.toLowerCase() === f.query.toLowerCase() && w.maxPriceEur === f.maxPriceEur &&
+    (w.mustInclude ?? "").toLowerCase() === (f.mustInclude ?? "").toLowerCase() && w.postcode === f.postcode &&
+    w.maxDistanceKm === f.maxDistanceKm;
+}
+
+function rejectDuplicate(mine: Doc<"watches">[], fields: SearchFields) {
+  const same = mine.find((w) => sameSearch(w, fields));
+  if (same) throw new ConvexError(`You already watch "${same.name ?? same.label}". Edit that one to change its schedule.`);
+}
+
 async function ownWatch(ctx: Parameters<typeof requireUser>[0], id: Id<"watches">) {
   const user = await requireUser(ctx);
   const watch = await ctx.db.get(id);
@@ -55,10 +69,7 @@ export const create = mutation({
     if (mine.length >= MAX_WATCHES) throw new ConvexError(`You can have up to ${MAX_WATCHES} watches. Delete one first.`);
     checkSchedule(args.schedule);
     const fields = clean(args);
-    const same = mine.find((w) => w.query.toLowerCase() === fields.query.toLowerCase() && w.maxPriceEur === fields.maxPriceEur &&
-      (w.mustInclude ?? "").toLowerCase() === (fields.mustInclude ?? "").toLowerCase() && w.postcode === fields.postcode &&
-      w.maxDistanceKm === fields.maxDistanceKm);
-    if (same) throw new ConvexError(`You already watch "${same.label}". Edit that one to change its schedule.`);
+    rejectDuplicate(mine, fields);
     const now = Date.now();
     const id = await ctx.db.insert("watches", {
       userId: user._id, label: label(fields), ...fields, schedule: args.schedule, timezone: TIMEZONE,
@@ -77,27 +88,85 @@ export const update = mutation({
     notify: v.optional(notifyValidator),
     active: v.optional(v.boolean()),
     maxPriceEur: v.optional(v.union(v.number(), v.null())),
+    query: v.optional(v.string()),
+    mustInclude: v.optional(v.union(v.string(), v.null())),
+    postcode: v.optional(v.union(v.string(), v.null())),
+    maxDistanceKm: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, { id, ...change }) => {
     const watch = await ownWatch(ctx, id);
     const now = Date.now();
     const patch: Partial<Doc<"watches">> = {};
+    if (change.active && watch.archivedAt) throw new ConvexError("This watch is archived. Restore it first.");
     if (change.notify) patch.notify = change.notify;
-    if (change.maxPriceEur !== undefined) {
-      const { maxPriceEur } = clean({ query: watch.query, maxPriceEur: change.maxPriceEur ?? undefined });
-      patch.maxPriceEur = maxPriceEur;
-      patch.label = label({ ...watch, maxPriceEur });
+
+    // The search itself: any field left out keeps its current value; null clears it
+    const pick = <T,>(value: T | null | undefined, current: T | undefined) => (value === undefined ? current : value ?? undefined);
+    const searchChanged = ["query", "maxPriceEur", "mustInclude", "postcode", "maxDistanceKm"].some((k) => (change as Record<string, unknown>)[k] !== undefined);
+    if (searchChanged) {
+      const fields = clean({
+        query: change.query ?? watch.query, maxPriceEur: pick(change.maxPriceEur, watch.maxPriceEur),
+        mustInclude: pick(change.mustInclude, watch.mustInclude), postcode: pick(change.postcode, watch.postcode),
+        maxDistanceKm: pick(change.maxDistanceKm, watch.maxDistanceKm),
+      });
+      const others = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", watch.userId)).collect())
+        .filter((w) => w._id !== id);
+      rejectDuplicate(others, fields);
+      Object.assign(patch, fields, { label: label(fields) });
+      if (!sameSearch(watch, fields) && (fields.query.toLowerCase() !== watch.query.toLowerCase() ||
+          fields.postcode !== watch.postcode || fields.maxDistanceKm !== watch.maxDistanceKm)) {
+        // A different search: start over with a silent first look, so old listings aren't e-mailed as new
+        for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", id)).collect())
+          await ctx.db.delete(row._id);
+        patch.seeded = false;
+        patch.nextRunAt = now;
+      }
     }
     if (change.schedule) {
       checkSchedule(change.schedule);
       patch.schedule = change.schedule;
     }
     if (change.active !== undefined) patch.active = change.active;
-    if (change.schedule || change.active) {
+    if ((change.schedule || change.active) && patch.seeded !== false) {
       patch.nextRunAt = watch.seeded ? nextRun(change.schedule ?? watch.schedule, now, watch.timezone) : now;
       patch.lastError = undefined;
     }
     await ctx.db.patch(id, patch);
+    if (patch.seeded === false) await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});   // first look now
+  },
+});
+
+/** Your own name for a watch; empty goes back to the automatic one from its filters. */
+export const rename = mutation({
+  args: { id: v.id("watches"), name: v.union(v.string(), v.null()) },
+  handler: async (ctx, { id, name }) => {
+    await ownWatch(ctx, id);
+    await ctx.db.patch(id, { name: name === null || !name.trim() ? undefined : cleanName(name, 60, "watch") });
+  },
+});
+
+export const setPinned = mutation({
+  args: { id: v.id("watches"), pinned: v.boolean() },
+  handler: async (ctx, { id, pinned }) => {
+    await ownWatch(ctx, id);
+    await ctx.db.patch(id, { pinned });
+  },
+});
+
+/** Archive hides and pauses a watch (no checks, no e-mails). Restoring doesn't resume it on its own. */
+export const setArchived = mutation({
+  args: { id: v.id("watches"), archived: v.boolean() },
+  handler: async (ctx, { id, archived }) => {
+    await ownWatch(ctx, id);
+    await ctx.db.patch(id, archived ? { archivedAt: Date.now(), active: false, pinned: false } : { archivedAt: undefined });
+  },
+});
+
+export const move = mutation({
+  args: { id: v.id("watches"), folderId: v.union(v.id("folders"), v.null()) },
+  handler: async (ctx, { id, folderId }) => {
+    await ownWatch(ctx, id);
+    await ctx.db.patch(id, { folderId: await checkTargetFolder(ctx, folderId) });
   },
 });
 
@@ -122,18 +191,36 @@ export const checkNow = mutation({
   },
 });
 
-/** The signed-in user's watches with plain-English schedules and their latest alerts. */
+async function withDetails(ctx: QueryCtx, watches: Doc<"watches">[]) {
+  return Promise.all(watches.map(async (w) => ({
+    ...w,
+    title: w.name ?? w.label,
+    summary: describe(w.schedule),
+    alerts: await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).order("desc").take(5),
+  })));
+}
+
+/** The signed-in user's watches (not archived), pinned first, with plain-English schedules and latest alerts. */
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     if (!user) return [];
-    const watches = await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
-    return Promise.all(watches.map(async (w) => ({
-      ...w,
-      summary: describe(w.schedule),
-      alerts: await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).order("desc").take(5),
-    })));
+    const watches = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
+      .filter((w) => !w.archivedAt)
+      .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || a.createdAt - b.createdAt);
+    return withDetails(ctx, watches);
+  },
+});
+
+export const archived = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await currentUser(ctx);
+    if (!user) return [];
+    const watches = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
+      .filter((w) => w.archivedAt).sort((a, b) => b.archivedAt! - a.archivedAt!);
+    return withDetails(ctx, watches);
   },
 });
 
@@ -146,7 +233,10 @@ export const alerts = query({
     const rows = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", user._id)).order("desc").take(50);
     const labels = new Map<string, string>();
     return Promise.all(rows.map(async (a) => {
-      if (!labels.has(a.watchId)) labels.set(a.watchId, (await ctx.db.get(a.watchId))?.label ?? "Deleted watch");
+      if (!labels.has(a.watchId)) {
+        const w = await ctx.db.get(a.watchId);
+        labels.set(a.watchId, w ? w.name ?? w.label : "Deleted watch");
+      }
       return { ...a, watchLabel: labels.get(a.watchId)! };
     }));
   },

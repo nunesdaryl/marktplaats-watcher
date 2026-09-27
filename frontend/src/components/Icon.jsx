@@ -18,6 +18,13 @@ const PATHS = {
   external: "M14 4h6v6m0-6-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   shield: "M12 3 5 6v6c0 4.4 3 8 7 9 4-1 7-4.6 7-9V6Z",
   sidebar: "M4 5h16v14H4Zm5 0v14",
+  more: "M5 12h.01M12 12h.01M19 12h.01",
+  pin: "M9 4h6l-1 6 4 3v2h-5v5l-1 1-1-1v-5H6v-2l4-3Z",
+  archive: "M4 5h16v4H4Zm1 4v10h14V9M10 13h4",
+  folder: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z",
+  copy: "M8 8h11v11H8ZM5 16V5h11",
+  search: "m20 20-4.35-4.35M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z",
+  restore: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
 };
 
 export default function Icon({ name, size = 20, title }) {
@@ -25,7 +32,7 @@ export default function Icon({ name, size = 20, title }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
          strokeLinecap="round" strokeLinejoin="round" aria-hidden={title ? undefined : true} role={title ? "img" : undefined}>
       {title && <title>{title}</title>}
-      <path d={PATHS[name]} />
+      <path d={PATHS[name]} strokeWidth={name === "more" ? 3 : undefined} />
     </svg>
   );
 }

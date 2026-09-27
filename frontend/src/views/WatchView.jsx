@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
 import Icon from "../components/Icon.jsx";
 import ListingCard from "../components/ListingCard.jsx";
+import RowMenu from "../components/RowMenu.jsx";
 import WatchSentence from "../components/WatchSentence.jsx";
 import { go, useNow } from "../lib/router.js";
 
@@ -22,9 +23,8 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, icon }) {
   );
 }
 
-export default function WatchView({ watch, onEdit }) {
+export default function WatchView({ watch, onEdit, actions }) {
   const update = useMutation(api.watches.update);
-  const remove = useMutation(api.watches.remove);
   const checkNow = useMutation(api.watches.checkNow);
   const now = useNow();
   const [error, setError] = useState("");
@@ -36,29 +36,34 @@ export default function WatchView({ watch, onEdit }) {
   );
 
   let status;
-  if (!watch.active) status = "Paused";
+  if (watch.archivedAt) status = "Archived and paused";
+  else if (!watch.active) status = "Paused";
   else if (!watch.seeded) status = "Taking a first look at what's listed now…";
   else status = `Next check ${describeWhen(watch.nextRunAt, now)}`;
 
   return (
     <section className="page watch-page" aria-labelledby="watch-title">
       <header className="page-head">
-        <h1 id="watch-title">{watch.label}</h1>
+        <div className="title-row">
+          <h1 id="watch-title">{watch.title}</h1>
+          <RowMenu items={actions.watchItems(watch, { full: true })} label="Watch options" className="large" />
+        </div>
+        {watch.pinned && <span className="pill">Pinned</span>}
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
         <p className="muted">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
         <div className="actions">
           <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={16} />Edit</button>
-          <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }))}>
-            <Icon name={watch.active ? "pause" : "play"} size={16} />{watch.active ? "Pause" : "Resume"}
-          </button>
+          {!watch.archivedAt && (
+            <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }))}>
+              <Icon name={watch.active ? "pause" : "play"} size={16} />{watch.active ? "Pause" : "Resume"}
+            </button>
+          )}
           {watch.active && (
             <button className="button" onClick={() => run(() => checkNow({ id: watch._id }))}>
               <Icon name="refresh" size={16} />Check now
             </button>
           )}
-          <ConfirmButton icon="trash" label="Delete" confirmLabel="Delete for good?"
-                         onConfirm={() => run(async () => { await remove({ id: watch._id }); go("/watches"); })} />
         </div>
         {error && <p className="error" role="alert">{error}</p>}
       </header>

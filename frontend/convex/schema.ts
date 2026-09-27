@@ -23,11 +23,22 @@ export default defineSchema({
     onboardedAt: v.optional(v.number()),   // set when the first-run setup is finished or skipped
   }).index("by_clerkId", ["clerkId"]),
 
+  // Folders group chats and watches, like ChatGPT Projects. Deleting a folder never deletes what's in it.
+  folders: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    pinned: v.optional(v.boolean()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   // Saved conversations, like ChatGPT's history. Kept until deleted, or 30 days after the last message.
   chats: defineTable({
     userId: v.id("users"),
     title: v.string(),
     updatedAt: v.number(),
+    pinned: v.optional(v.boolean()),
+    archivedAt: v.optional(v.number()),
+    folderId: v.optional(v.id("folders")),
   })
     .index("by_user_updated", ["userId", "updatedAt"])
     .index("by_updated", ["updatedAt"]),
@@ -60,6 +71,10 @@ export default defineSchema({
     lastError: v.optional(v.string()),
     lastManualAt: v.optional(v.number()),
     createdAt: v.number(),
+    name: v.optional(v.string()),              // the user's own name; `label` (from the filters) is the fallback
+    pinned: v.optional(v.boolean()),
+    archivedAt: v.optional(v.number()),        // archived watches are paused and hidden from the lists
+    folderId: v.optional(v.id("folders")),
   })
     .index("by_user", ["userId"])
     .index("by_active_next", ["active", "nextRunAt"]),

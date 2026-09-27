@@ -34,7 +34,11 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           schedule: f.schedule, notify: f.notify,
         });
       } else {
-        await update({ id: watchId, schedule: f.schedule, notify: f.notify, maxPriceEur: number(f.maxPriceEur) ?? null });
+        await update({
+          id: watchId, schedule: f.schedule, notify: f.notify, query: f.query,
+          mustInclude: f.mustInclude.trim() || null, maxPriceEur: number(f.maxPriceEur) ?? null,
+          postcode: f.postcode.trim() || null, maxDistanceKm: f.postcode.trim() ? number(f.maxDistanceKm) ?? null : null,
+        });
       }
       onClose(id);
     } catch (err) {
@@ -46,7 +50,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
   return (
     <Sheet title={mode === "create" ? "New watch" : "Edit watch"} onClose={() => onClose(null)}>
       <form className="stack" onSubmit={save} id="watch-sheet">
-        {mode === "create" ? (
+        {(
           <div className="group">
             <label className="row"><span>Item</span>
               <input {...field("query")} required minLength={2} maxLength={80} placeholder="Mac mini" autoFocus /></label>
@@ -59,13 +63,8 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
             {f.postcode && <label className="row"><span>Within</span>
               <input {...field("maxDistanceKm")} type="number" min="1" max="300" required placeholder="km" /></label>}
           </div>
-        ) : (
-          <div className="group">
-            <div className="row static"><span>Item</span><span>{initial.label}</span></div>
-            <label className="row"><span>Max price</span>
-              <input {...field("maxPriceEur")} type="number" min="1" inputMode="numeric" placeholder="No limit" /></label>
-          </div>
         )}
+        {mode === "edit" && <p className="hint">Changing the item or place starts a fresh first look, so you're only told about listings that are new from then on.</p>}
         <ScheduleEditor schedule={f.schedule} notify={f.notify} onChange={(s) => setF({ ...f, ...s })} />
         {mode === "create" && <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>}
         {error && <p className="error" role="alert">{error}</p>}

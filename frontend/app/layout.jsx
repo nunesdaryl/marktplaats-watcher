@@ -1,5 +1,6 @@
 import "../src/styles.css";
 import { bootScript } from "../src/lib/boot.js";
+import ClientRoot from "./ClientRoot.jsx";
 
 const title = "Marktplaats Watcher";
 const description = "Marktplaats alerts that read the listings first: say what you want, pick when to check, and get only the good ones, each with a reason.";
@@ -35,7 +36,10 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       {/* suppressHydrationWarning: browser extensions add attributes to <body> before React loads */}
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <ClientRoot />
+        {children}
+      </body>
     </html>
   );
 }

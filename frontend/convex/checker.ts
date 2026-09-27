@@ -110,7 +110,7 @@ export const emailContent = internalQuery({
     const watch = await ctx.db.get(watchId);
     const alerts = (await Promise.all(alertIds.map((id) => ctx.db.get(id)))).filter((a) => a !== null);
     alerts.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-    return watch && { label: watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
+    return watch && { label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
   },
 });
 

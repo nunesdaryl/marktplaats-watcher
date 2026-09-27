@@ -158,6 +158,65 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
 }
 .account .email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Rows with a "…" menu (sidebar, grouped lists) */
+.nav-row { position: relative; display: flex; align-items: center; border-radius: 10px; }
+.nav-row .nav-item { flex: 1; min-width: 0; padding-right: 34px; }
+.nav-row:hover .nav-item, .nav-row.active .nav-item { background: var(--fill); }
+.nav-row.active .nav-item { background: var(--fill-strong); }
+.nav-row .row-menu { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
+.row-menu-trigger {
+  display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: none;
+  color: var(--text-2); opacity: 0; transition: opacity 0.12s;
+}
+.nav-row:hover .row-menu-trigger, .nav-row.active .row-menu-trigger, .row-menu.open .row-menu-trigger,
+.row-menu-trigger:focus-visible { opacity: 1; }
+.row-menu-trigger:hover, .row-menu.open .row-menu-trigger { background: var(--fill-strong); color: var(--text); }
+.row-menu { position: relative; }
+.row-menu.open { z-index: 40; }   /* later rows are positioned too; without this they paint over the open menu */
+.row-menu.large .row-menu-trigger { width: 40px; height: 40px; opacity: 1; background: var(--fill); color: var(--text); border-radius: 12px; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; padding: 6px;
+  border-radius: 14px; background: var(--elevated); border: 1px solid var(--line); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; animation: menu-in 0.14s var(--ease);
+}
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+.menu button {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: none;
+  text-align: left; font-size: 14px; color: var(--text);
+}
+.menu button:hover, .menu button:focus-visible { background: var(--fill); outline: none; }
+.menu button.danger { color: var(--danger); }
+.menu-divider { height: 1px; margin: 4px 6px; background: var(--line); }
+.inline-rename {
+  flex: 1; min-width: 0; margin: 2px 0; padding: 7px 10px; border-radius: 9px; border: 1px solid var(--accent);
+  background: var(--bg); font-size: 15px; outline: none;
+}
+.brand .icon-button { margin-left: auto; }
+.search-bar {
+  display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; padding: 6px 6px 6px 12px; border-radius: 12px;
+  background: var(--fill); color: var(--text-2);
+}
+.search-bar input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font-size: 15px; color: var(--text); }
+.folder .nav-item .count { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.folder-items { padding-left: 14px; }
+.shortcuts { margin: 6px 8px 0; font-size: 11px; color: var(--text-3); }
+.toast {
+  position: fixed; left: 50%; bottom: 28px; z-index: 60; transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 16px; border-radius: 12px; background: var(--text); color: var(--bg); font-size: 14px; box-shadow: var(--shadow);
+  animation: toast-in 0.2s var(--ease);
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+.shell.phone .toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+.grouped-row { display: flex; align-items: center; }
+.grouped-row > button { flex: 1; min-width: 0; }
+.grouped-row .row-menu { padding-right: 8px; }
+.grouped-row .row-menu-trigger { opacity: 1; }
+.group-title { display: flex; align-items: center; gap: 6px; margin: 14px 4px 6px; font: 600 13px var(--font); color: var(--text-2); letter-spacing: 0; }
+.title-row { display: flex; align-items: flex-start; gap: 8px; }
+.title-row h1 { flex: 1; }
+.new-folder { display: flex; gap: 8px; }
+.new-folder .field { flex: 1; }
+
 /* ---------- Phone shell: top bar + tab bar (Apple) ---------- */
 .shell.phone { flex-direction: column; }
 .shell.phone .main { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
@@ -282,7 +341,10 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
 .page-head h1 { font-size: 34px; font-weight: 700; line-height: 1.15; }
 .row-head { flex-direction: row; align-items: center; justify-content: space-between; }
 .section-title { font-size: 20px; font-weight: 600; margin-top: 10px; }
-.grouped { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); background: var(--elevated); border: 1px solid var(--line); overflow: hidden; }
+.grouped { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); background: var(--elevated); border: 1px solid var(--line); }
+/* No overflow clipping (it would cut off row menus): round the first and last rows instead */
+.grouped > li:first-child, .grouped > li:first-child > button { border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); }
+.grouped > li:last-child, .grouped > li:last-child > button { border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius); }
 .grouped li + li { border-top: 0.5px solid var(--line); }
 .grouped button {
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px; border: 0;
@@ -292,6 +354,7 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
 .grouped .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .primary-text { color: var(--text); font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .secondary-text { color: var(--text-2); font-size: 14px; }
+.page-head .pill { align-self: flex-start; }
 .pill { padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px; }
 
 /* ---------- Sheets (dialog): bottom sheet on phones, centred panel on desktop ---------- */
@@ -402,6 +465,17 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
   }
   .cards.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .group .row > span:first-child { width: 104px; }
+}
+
+@media (hover: none) {
+  .row-menu-trigger { opacity: 1; }
+  /* Touch screens: the menu becomes an iOS-style action sheet with big tap targets */
+  .row-menu.open::before { content: ""; position: fixed; inset: 0; z-index: 69; background: var(--overlay); }
+  .menu {
+    position: fixed; left: 8px; right: 8px; top: auto; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 70;
+    min-width: 0; padding: 8px; border-radius: 18px; animation: sheet-up 0.28s var(--ease);
+  }
+  .menu button { min-height: 48px; font-size: 17px; justify-content: flex-start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

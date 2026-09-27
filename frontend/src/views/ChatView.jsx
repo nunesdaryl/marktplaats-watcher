@@ -74,7 +74,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
     await streamChat({
       token: await getToken(),
       body: { message, history, mode: sendMode,
-              watches: watches.map((w) => ({ id: w._id, label: w.label, summary: w.summary, active: w.active })) },
+              watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active })) },
       onEvent: (e) => {
         if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
         else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));

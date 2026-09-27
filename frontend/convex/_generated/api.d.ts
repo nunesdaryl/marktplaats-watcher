@@ -11,6 +11,7 @@
 import type * as chats from "../chats.js";
 import type * as checker from "../checker.js";
 import type * as crons from "../crons.js";
+import type * as folders from "../folders.js";
 import type * as schedule from "../schedule.js";
 import type * as users from "../users.js";
 import type * as watches from "../watches.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   chats: typeof chats;
   checker: typeof checker;
   crons: typeof crons;
+  folders: typeof folders;
   schedule: typeof schedule;
   users: typeof users;
   watches: typeof watches;
