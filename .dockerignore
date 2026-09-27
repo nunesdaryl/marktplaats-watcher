@@ -12,3 +12,5 @@ test_agent.py
 *.tar
 *.tar.gz
 frontend/.env.local
+frontend/.next/
+frontend/out/

@@ -1,4 +1,5 @@
 import hmac
+import json
 import os
 import time
 from collections import defaultdict, deque
@@ -8,13 +9,13 @@ from typing import Literal
 import jwt
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import chat, check_query  # noqa: E402
+from agent import chat, chat_events, check_query  # noqa: E402
 
 app = FastAPI()
 
@@ -36,6 +37,7 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=500)
     history: list[Turn] = Field(default=[], max_length=20)
     watches: list[WatchRef] = Field(default=[], max_length=10)
+    mode: Literal["search", "watch"] = "search"   # the composer's "Search now | Watch it" switch
 
 
 # Login: the browser sends its Clerk session token; we check its signature against Clerk's public keys.
@@ -75,24 +77,50 @@ def too_many(user):
     return len(hits) > RATE_PER_MINUTE
 
 
+def friendly_error(e):
+    """An exception from the model or a tool -> a message a user can act on (details stay in the log)."""
+    print(f"chat failed: {type(e).__name__}: {e}")
+    if "model_not_found" in str(e) or "does not exist" in str(e):  # never log the key, only the model
+        print(f"openai config: model={os.getenv('OPENAI_MODEL')!r}")
+    if "content_policy" in str(e) or "content management policy" in str(e):
+        return "I can only help with Marktplaats searches and watches."
+    if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
+                                       "credit_balance_exhausted")):
+        return ("The AI model is offline right now (its API key or model is unavailable). "
+                "Your watches keep running; please try the chat again later.")
+    return "Error: something went wrong, please try again."
+
+
+def chat_args(request):
+    return (request.message, [t.model_dump() for t in request.history], [w.model_dump() for w in request.watches],
+            request.mode)
+
+
 @app.post("/api/chat")
 def chat_route(request: ChatRequest, user: str = Depends(current_user)):
     if too_many(user):
         return JSONResponse({"answer": "Too many questions in a minute. Please wait a moment."}, status_code=429)
     try:
-        return chat(request.message, [t.model_dump() for t in request.history],
-                    [w.model_dump() for w in request.watches])
+        return chat(*chat_args(request))
     except Exception as e:
-        print(f"chat failed: {type(e).__name__}: {e}")  # details stay in the server log
-        if "model_not_found" in str(e) or "does not exist" in str(e):  # never log the key, only the model
-            print(f"openai config: model={os.getenv('OPENAI_MODEL')!r}")
-        if "content_policy" in str(e) or "content management policy" in str(e):
-            return {"answer": "I can only help with Marktplaats searches and watches."}
-        if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
-                                           "credit_balance_exhausted")):
-            return {"answer": "The AI model is offline right now (its API key or model is unavailable). "
-                              "Your watches keep running; please try the chat again later."}
-        return {"answer": "Error: something went wrong, please try again."}
+        return {"answer": friendly_error(e)}
+
+
+@app.post("/api/chat/stream")
+def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
+    """The same chat, streamed as newline-delimited JSON events: status, listings, delta, done (or error)."""
+    if too_many(user):
+        return JSONResponse({"answer": "Too many questions in a minute. Please wait a moment."}, status_code=429)
+
+    def events():
+        try:
+            for event in chat_events(*chat_args(request)):
+                yield json.dumps(event) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "error", "text": friendly_error(e)}) + "\n"
+
+    return StreamingResponse(events(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # Scheduled checks: only Convex's dispatcher may call this, with the shared CRON_SECRET.
@@ -130,8 +158,8 @@ def health():
 
 
 
-# In the Docker image the built React UI is served from the same port (no Vite needed).
+# In the Docker image the built UI is served from the same port (no Node server needed).
 # Mounted last, so the /api routes above always take precedence.
-UI = Path(__file__).parent / "frontend" / "dist"
+UI = Path(__file__).parent / "frontend" / "out"   # the Next.js static export
 if UI.is_dir():
     app.mount("/", StaticFiles(directory=UI, html=True), name="ui")

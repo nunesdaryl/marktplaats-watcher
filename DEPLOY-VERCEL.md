@@ -21,8 +21,8 @@ chat or the repo.
 | `OPENAI_MODEL` | model name |
 | `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
 | `CRON_SECRET` | the random string |
-| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
-| `VITE_CONVEX_URL` | `https://<prod-deployment>.convex.cloud` (public, used at build time) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
+| `NEXT_PUBLIC_CONVEX_URL` | `https://<prod-deployment>.convex.cloud` (public, used at build time) |
 | `RATE_PER_MINUTE`, `MAX_FETCHES_PER_HOUR` | optional, defaults 10 and 30 |
 
 **Convex** production deployment → Settings → Environment Variables (or `npx convex env set --prod ...`):
@@ -40,7 +40,7 @@ In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / 
 ## 3. Deploy
 ```bash
 cd frontend && npx convex deploy -y   # 1. Convex functions, schema and crons to production
-git push origin main                  # 2. Vercel builds the UI + Python API from GitHub
+git push origin main                  # 2. Vercel builds the Next.js static export + the Python API from GitHub
 ```
 Convex is deployed from a logged-in CLI on purpose: Vercel then never holds a Convex deploy key (which can
 replace every backend function). Deploy Convex **before** pushing a UI that depends on new functions.

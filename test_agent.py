@@ -174,3 +174,75 @@ def test_chat_can_only_propose_watches_never_save_them():
 def test_broken_page_json_means_no_listings_not_a_crash():
     html = '<script id="__NEXT_DATA__" type="application/json">{not json</script>'
     assert agent.parse_listings(html) == ([], {"on_page": 0, "price_ok": 0, "with_location": 0})
+
+
+def test_listing_photos_only_come_from_marktplaats_image_hosts():
+    ok = {"imageUrls": ["//admarkt-cdn.marktplaats.com/api/v1/images/57/abc?rule=eps_82.JPG"]}
+    assert agent.listing_image(ok) == "https://admarkt-cdn.marktplaats.com/api/v1/images/57/abc?rule=eps_82.JPG"
+    for bad in (["https://evil.example/x.jpg"], ["http://images.marktplaats.com/x.jpg"],
+                ["//marktplaats.com.evil.example/x.jpg"], ["javascript:alert(1)"], [], None, [42]):
+        assert agent.listing_image({"imageUrls": bad}) is None
+    assert all("image" in item for item in agent.parse_listings(PAGE)[0])
+
+
+class FakeStreamingModel:
+    """Streams a tool call first, then an answer in two chunks, like the real model does."""
+    def __init__(self):
+        self.calls = 0
+
+    def stream(self, messages):
+        from langchain_core.messages import AIMessageChunk
+        self.calls += 1
+        if self.calls == 1:
+            yield AIMessageChunk(content="", tool_call_chunks=[
+                {"name": "search_marktplaats", "args": '{"query": "mac mini"}', "id": "call_1", "index": 0}])
+        else:
+            yield AIMessageChunk(content="The i5 at €230 ")
+            yield AIMessageChunk(content="looks best.")
+
+
+def test_chat_streams_status_then_listing_cards_then_the_answer(monkeypatch):
+    monkeypatch.setattr(agent, "model", FakeStreamingModel())
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+    events = list(agent.chat_events("mac mini", []))
+    kinds = [e["type"] for e in events]
+    assert kinds == ["status", "listings", "delta", "delta", "done"]
+    assert "mac mini" in events[0]["text"]
+    assert len(events[1]["listings"]) == 6 and events[1]["listings"][0]["id"] == "a9000000001"
+    done = events[-1]
+    assert done["answer"] == "The i5 at €230 looks best." and done["searches"] == [{"query": "mac mini"}]
+    assert agent.chat("mac mini", [])["answer"] == "The i5 at €230 looks best."  # non-streaming wrapper
+
+
+def test_stream_endpoint_needs_login_and_turns_failures_into_an_error_event(client, monkeypatch):
+    assert client.post("/api/chat/stream", json={"message": "hi"}).status_code == 401
+
+    def broken(*a):
+        yield {"type": "status", "text": "Searching…"}
+        raise RuntimeError("Error code: 401 - invalid_api_key")
+    monkeypatch.setattr(client.main, "chat_events", broken)
+    res = client.post("/api/chat/stream", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
+    assert res.headers["content-type"].startswith("application/x-ndjson")
+    events = [json.loads(line) for line in res.text.splitlines()]
+    assert [e["type"] for e in events] == ["status", "error"] and "offline" in events[1]["text"]
+
+
+def test_watch_mode_tells_the_agent_to_propose_a_watch_instead_of_searching(monkeypatch):
+    seen = []
+
+    class Recorder:
+        def stream(self, messages):
+            from langchain_core.messages import AIMessageChunk
+            seen.append(messages[0].content)
+            yield AIMessageChunk(content="Ready to save.")
+
+    monkeypatch.setattr(agent, "model", Recorder())
+    agent.chat("Gazelle bike near 3511AB every morning at 8", [], mode="watch")
+    agent.chat("Gazelle bike", [])
+    assert "Watch it" in seen[0] and "propose_watch straight away" in seen[0]
+    assert "Watch it" not in seen[1]                     # "Search now" is the default
+
+
+def test_chat_rejects_an_unknown_mode(client):
+    headers = {"Authorization": f"Bearer {client.token()}"}
+    assert client.post("/api/chat/stream", json={"message": "hi", "mode": "delete"}, headers=headers).status_code == 422

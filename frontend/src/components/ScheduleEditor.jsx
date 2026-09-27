@@ -1,4 +1,4 @@
-import { DAYS, NOTIFY_LABEL, describe } from "../convex/schedule";
+import { DAYS, NOTIFY_LABEL, describe } from "../../convex/schedule";
 
 // "Check Marktplaats [every hour ▾]" / "[every day at…] 08:00 + add a time" / "[on certain days at…] Mon Fri 18:00"
 const PRESETS = [
@@ -28,7 +28,7 @@ export default function ScheduleEditor({ schedule, notify, onChange }) {
 
   return (
     <fieldset className="schedule">
-      <legend>When to check</legend>
+      <legend className="visually-hidden">When to check</legend>
       <div className="sentence-row">
         <label htmlFor="preset">Check Marktplaats</label>
         <select id="preset" value={presetOf(schedule)} onChange={(e) => set(fromPreset(e.target.value, schedule))}>
@@ -80,7 +80,7 @@ export default function ScheduleEditor({ schedule, notify, onChange }) {
       <p className="summary">
         {schedule.kind === "weekly" && schedule.days.length === 0
           ? "Pick at least one day."
-          : <>So: checked <strong>{describe(schedule)}</strong> (Amsterdam time), and you hear about {NOTIFY_LABEL[notify]}.</>}
+          : <>Checked {describe(schedule)}, Amsterdam time. You hear about {NOTIFY_LABEL[notify]}.</>}
       </p>
     </fieldset>
   );

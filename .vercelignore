@@ -9,3 +9,5 @@ frontend/dist/
 Dockerfile
 .dockerignore
 frontend/.env.local
+frontend/.next/
+frontend/out/

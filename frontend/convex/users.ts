@@ -1,6 +1,7 @@
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+import { deleteChat } from "./chats";
 
 /** The signed-in user's row, or null. */
 export async function currentUser(ctx: QueryCtx) {
@@ -34,7 +35,16 @@ export const me = query({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
-    return user && { email: user.email };
+    return user && { email: user.email, onboarded: user.onboardedAt !== undefined };
+  },
+});
+
+/** The first-run setup was finished or skipped: don't show it again. */
+export const finishOnboarding = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx);
+    if (user.onboardedAt === undefined) await ctx.db.patch(user._id, { onboardedAt: Date.now() });
   },
 });
 
@@ -54,6 +64,8 @@ export const deleteMyData = mutation({
     if (!user) return;
     for (const watch of await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await deleteWatchData(ctx, watch._id);
+    for (const chat of await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect())
+      await deleteChat(ctx, chat._id);
     await ctx.db.delete(user._id);
   },
 });

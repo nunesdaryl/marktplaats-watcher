@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as chats from "../chats.js";
 import type * as checker from "../checker.js";
 import type * as crons from "../crons.js";
 import type * as schedule from "../schedule.js";
@@ -21,6 +22,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  chats: typeof chats;
   checker: typeof checker;
   crons: typeof crons;
   schedule: typeof schedule;

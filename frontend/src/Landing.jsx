@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Logo from "./Logo.jsx";
+import Logo from "./components/Logo.jsx";
 
 // The product in one sentence: the same sentence you fill in when you set up a watch.
 const EXAMPLES = [
@@ -25,7 +25,7 @@ export default function Landing({ SignIn }) {
       <header className="bar">
         <Logo />
         <span className="name">Marktplaats Watcher</span>
-        <SignIn mode="modal"><button className="ghost">Sign in</button></SignIn>
+        <SignIn mode="modal"><button className="button plain">Sign in</button></SignIn>
       </header>
 
       <main>
@@ -38,7 +38,7 @@ export default function Landing({ SignIn }) {
           Say what you want. Pick when to check. Every new listing gets a score from 0 to 10 and the reason
           for it, and only the ones worth a look reach your inbox. Free.
         </p>
-        <SignIn mode="modal"><button className="primary">Sign in to start watching</button></SignIn>
+        <SignIn mode="modal"><button className="button primary large">Sign in to start watching</button></SignIn>
 
         <section className="sample" aria-labelledby="sample-title">
           <h2 id="sample-title">From a real check for "Mac mini, 16GB, under €500"</h2>

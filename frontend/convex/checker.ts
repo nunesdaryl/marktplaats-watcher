@@ -6,6 +6,7 @@ import { internalAction, internalMutation, internalQuery } from "./_generated/se
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { MIN_SCORE, NOTIFY_LABEL, describe, nextRun } from "./schedule";
+import { deleteChat } from "./chats";
 
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
@@ -47,6 +48,7 @@ export const claimDue = internalMutation({
 const listing = v.object({
   id: v.string(), title: v.string(), price_eur: v.union(v.number(), v.null()), city: v.union(v.string(), v.null()),
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
+  image: v.optional(v.union(v.string(), v.null())),
   score: v.union(v.number(), v.null()), reason: v.string(),
 });
 const result = v.object({
@@ -82,6 +84,7 @@ export const record = internalMutation({
         newAlerts.push(await ctx.db.insert("alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,
+          image: item.image ?? undefined,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
           emailStatus: dryRun ? "dry-run" : "pending", createdAt: now,
         }));
@@ -211,14 +214,17 @@ export const checkDue = internalAction({
   },
 });
 
-/** Retention: forget seen listings and alerts after 30 days. */
+/** Retention: forget seen listings, alerts and untouched chats after 30 days. */
 export const purgeOld = internalMutation({
   args: {},
   handler: async (ctx) => {
     const cutoff = Date.now() - RETENTION_MS;
     const seen = await ctx.db.query("seenListings").withIndex("by_lastSeen", (q) => q.lt("lastSeenAt", cutoff)).take(500);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff)).take(500);
+    const chats = await ctx.db.query("chats").withIndex("by_updated", (q) => q.lt("updatedAt", cutoff)).take(100);
     for (const row of [...seen, ...alerts]) await ctx.db.delete(row._id);
-    if (seen.length === 500 || alerts.length === 500) await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});
+    for (const chat of chats) await deleteChat(ctx, chat._id);
+    if (seen.length === 500 || alerts.length === 500 || chats.length === 100)
+      await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});
   },
 });

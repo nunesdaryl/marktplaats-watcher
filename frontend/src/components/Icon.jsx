@@ -1,0 +1,31 @@
+// A small, consistent line-icon set (24px grid, 1.8 stroke), in the spirit of SF Symbols.
+const PATHS = {
+  compose: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z",
+  chat: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z",
+  eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+  bell: "M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9m4.3 13a2 2 0 0 0 3.4 0",
+  up: "M12 19V5m-6 6 6-6 6 6",
+  clock: "M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+  plus: "M12 5v14M5 12h14",
+  chevron: "m9 6 6 6-6 6",
+  back: "m15 6-6 6 6 6",
+  close: "M6 6l12 12M18 6 6 18",
+  trash: "M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 5v14l12-7Z",
+  refresh: "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5",
+  edit: "M4 20h4L19 9l-4-4L4 16Z",
+  external: "M14 4h6v6m0-6-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+  shield: "M12 3 5 6v6c0 4.4 3 8 7 9 4-1 7-4.6 7-9V6Z",
+  sidebar: "M4 5h16v14H4Zm5 0v14",
+};
+
+export default function Icon({ name, size = 20, title }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden={title ? undefined : true} role={title ? "img" : undefined}>
+      {title && <title>{title}</title>}
+      <path d={PATHS[name]} />
+    </svg>
+  );
+}

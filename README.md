@@ -12,7 +12,7 @@ Tell it what you want on Marktplaats, pick how often to check, and get an e-mail
   what is already listed, so you're only told about new ones.
 
 ```
-Browser (React + Clerk + Convex client)
+Browser (Next.js + Clerk + Convex client)
  ├─ chat ────────► FastAPI /api/chat (Clerk token checked) ─► OpenAI + tools
  │                  search_marktplaats · propose_watch · propose_watch_change (proposals only)
  └─ Save watch ──► Convex (users, watches, seen listings, alerts)
@@ -26,7 +26,7 @@ Convex cron, every 15 min ─► due watches, one request per distinct item
 | `agent.py` | The search tool, the watch-proposal tools, the chat loop, and the scoring used by scheduled checks. |
 | `main.py` | FastAPI: `POST /api/chat` (login required), `POST /api/internal/check` (Convex only), `GET /api/health`. |
 | `frontend/convex/` | Database schema, watches, the scheduled checker, e-mail, crons, and `schedule.ts` (next-check maths and plain-English wording, shared with the UI). |
-| `frontend/src/` | React app: landing page, chat, schedule picker, your watches. |
+| `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page; desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup. |
 | `test_agent.py`, `frontend/convex/*.test.ts` | Offline tests (no model, no Marktplaats, no e-mail). |
 | `.env.example`, `frontend/.env.example` | Every setting, with where to find it. **Never commit real values.** |
 
@@ -39,15 +39,15 @@ uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requi
 .venv/bin/uvicorn main:app --port 8000
 
 cd frontend && npm install
-cp .env.example .env.local                     # add VITE_CLERK_PUBLISHABLE_KEY
-npx convex dev                                 # logs in, creates the dev deployment, writes VITE_CONVEX_URL
+cp .env.example .env.local                     # add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+npx convex dev                                 # logs in, creates the dev deployment; copy its URL to NEXT_PUBLIC_CONVEX_URL
 npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<your-app>.clerk.accounts.dev
 npx convex env set WATCHER_API_URL <a URL Convex can reach, e.g. your Vercel preview or a tunnel to :8000>
 npx convex env set CRON_SECRET <same value as in .env>
 npx convex env set AGENTMAIL_API_KEY <key>     # typed by you, never pasted into a chat
 npx convex env set AGENTMAIL_INBOX_ID marktplaats-watcher@agentmail.to
-npx convex env set APP_URL http://localhost:5173
-npm run dev                                    # http://localhost:5173
+npx convex env set APP_URL http://localhost:3000
+npm run dev                                    # Next.js on http://localhost:3000 (proxies /api to :8000)
 ```
 Try a check without sending e-mail: `npx convex run checker:checkDue '{"dryRun": true}'`.
 
@@ -57,7 +57,7 @@ CI runs the same on every push (`.github/workflows/ci.yml`).
 ## Run it with Docker (for anyone)
 One container serves the chat UI and the API on port 8000. Secrets are **not** in the image;
 each user supplies their own `.env` (copy `.env.example` and fill it in). The two public UI values go in
-as build args: `--build-arg VITE_CONVEX_URL=... --build-arg VITE_CLERK_PUBLISHABLE_KEY=...`.
+as build args: `--build-arg NEXT_PUBLIC_CONVEX_URL=... --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...`.
 
 ```bash
 # Build (on this Mac)

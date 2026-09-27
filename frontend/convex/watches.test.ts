@@ -31,7 +31,7 @@ test("a watch is listed with its schedule in plain English", async () => {
   const { alice } = setup();
   await alice.mutation(api.watches.create, { ...macMini, schedule: { kind: "daily", times: ["08:00"] } });
   const [watch] = await alice.query(api.watches.list, {});
-  expect(watch.label).toBe("mac mini, under €500");
+  expect(watch.label).toBe("Mac mini, under €500");
   expect(watch.summary).toBe("every day at 08:00");
 });
 
@@ -146,4 +146,12 @@ test("deleting my data removes the user, watches and alerts", async () => {
     ...(await ctx.db.query("users").collect()), ...(await ctx.db.query("watches").collect()),
   ]);
   expect(left).toEqual([]);
+});
+
+test("the same search can't be watched twice", async () => {
+  const { alice } = setup();
+  await alice.mutation(api.watches.create, macMini);
+  await expect(alice.mutation(api.watches.create, { ...macMini, query: "Mac Mini", schedule: { kind: "daily", times: ["08:00"] } }))
+    .rejects.toThrow('You already watch "Mac mini, under €500"');
+  await alice.mutation(api.watches.create, { ...macMini, maxPriceEur: 400 });   // a different price is a different watch
 });

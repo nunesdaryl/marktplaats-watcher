@@ -12,7 +12,8 @@ function label(w: { query: string; maxPriceEur?: number; mustInclude?: string; p
   if (w.mustInclude) parts.push(w.mustInclude);
   if (w.maxPriceEur) parts.push(`under €${w.maxPriceEur}`);
   if (w.postcode && w.maxDistanceKm) parts.push(`within ${w.maxDistanceKm} km of ${w.postcode}`);
-  return parts.join(", ").slice(0, 100);
+  const text = parts.join(", ").slice(0, 100);
+  return text.charAt(0).toUpperCase() + text.slice(1);   // "gazelle bike" -> "Gazelle bike"
 }
 
 function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string; postcode?: string; maxDistanceKm?: number }) {
@@ -50,10 +51,14 @@ export const create = mutation({
   args: { ...search, schedule: scheduleValidator, notify: notifyValidator },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
-    const count = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect()).length;
-    if (count >= MAX_WATCHES) throw new ConvexError(`You can have up to ${MAX_WATCHES} watches. Delete one first.`);
+    const mine = await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    if (mine.length >= MAX_WATCHES) throw new ConvexError(`You can have up to ${MAX_WATCHES} watches. Delete one first.`);
     checkSchedule(args.schedule);
     const fields = clean(args);
+    const same = mine.find((w) => w.query.toLowerCase() === fields.query.toLowerCase() && w.maxPriceEur === fields.maxPriceEur &&
+      (w.mustInclude ?? "").toLowerCase() === (fields.mustInclude ?? "").toLowerCase() && w.postcode === fields.postcode &&
+      w.maxDistanceKm === fields.maxDistanceKm);
+    if (same) throw new ConvexError(`You already watch "${same.label}". Edit that one to change its schedule.`);
     const now = Date.now();
     const id = await ctx.db.insert("watches", {
       userId: user._id, label: label(fields), ...fields, schedule: args.schedule, timezone: TIMEZONE,
@@ -128,5 +133,20 @@ export const list = query({
       summary: describe(w.schedule),
       alerts: await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).order("desc").take(5),
     })));
+  },
+});
+
+/** The signed-in user's latest alerts across all watches, newest first (the Alerts tab). */
+export const alerts = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await currentUser(ctx);
+    if (!user) return [];
+    const rows = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", user._id)).order("desc").take(50);
+    const labels = new Map<string, string>();
+    return Promise.all(rows.map(async (a) => {
+      if (!labels.has(a.watchId)) labels.set(a.watchId, (await ctx.db.get(a.watchId))?.label ?? "Deleted watch");
+      return { ...a, watchLabel: labels.get(a.watchId)! };
+    }));
   },
 });
