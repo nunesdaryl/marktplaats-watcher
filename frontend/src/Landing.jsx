@@ -35,15 +35,31 @@ export default function Landing({ SignIn }) {
           <span className="tag" key={which}>{which}</span>.
         </h1>
         <p className="lede">
-          Say what you're after in plain words. The watcher checks as often as you like, an AI scores
-          every new listing, and only the good ones reach your inbox.
+          Say what you want. Pick when to check. Every new listing gets a score from 0 to 10 and the reason
+          for it, and only the ones worth a look reach your inbox. Free.
         </p>
         <SignIn mode="modal"><button className="primary">Sign in to start watching</button></SignIn>
+
+        <section className="sample" aria-labelledby="sample-title">
+          <h2 id="sample-title">From a real check for "Mac mini, 16GB, under €500"</h2>
+          <ul>
+            <li className="good">
+              <span className="score">9/10</span>
+              <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, €230<br />
+                A Mac mini with 16GB and a price well under €500. E-mailed.</span>
+            </li>
+            <li className="skip">
+              <span className="score">0/10</span>
+              <span><strong>Mac Mini M4 Docking Station 1TB</strong>, €74<br />
+                A docking station, not a Mac mini. You never hear about it.</span>
+            </li>
+          </ul>
+        </section>
 
         <ol className="steps">
           <li><strong>Tell the chat what you want.</strong> "A Mac mini with 16GB, under €500, near Utrecht."</li>
           <li><strong>Pick how often to check.</strong> Every 15 minutes, every morning at 8, or only on weekends.</li>
-          <li><strong>Get an e-mail when a good one appears.</strong> Each listing comes with a score and the reason for it.</li>
+          <li><strong>Get an e-mail when a good one appears.</strong> The first check only notes what's listed now, so you only hear about new ones.</li>
         </ol>
 
         <section id="privacy" className="fineprint">
@@ -54,8 +70,11 @@ export default function Landing({ SignIn }) {
             "Delete my data" in the app removes it all at once.
           </p>
           <p>
-            A portfolio project, not affiliated with Marktplaats. It reads Marktplaats' public search pages.
-            Alerts come from marktplaats-watcher@agentmail.to.
+            Up to 5 watches per person, checked at most every 15 minutes. It reads the first page of Marktplaats'
+            public search results, so it's for watching, not for searching everything.
+          </p>
+          <p>
+            A portfolio project, not affiliated with Marktplaats. Alerts come from marktplaats-watcher@agentmail.to.
           </p>
         </section>
       </main>

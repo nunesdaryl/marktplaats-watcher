@@ -124,14 +124,18 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const top = c.alerts.slice(0, MAX_ALERTS_PER_EMAIL);
   const more = c.alerts.length - top.length;
   const n = c.alerts.length;
-  const subject = `${n} new match${n === 1 ? "" : "es"} for ${c.label}`;
+  const best = top[0];  // alerts arrive sorted by score, best first
+  const bestText = best && [best.score !== undefined ? `${best.score}/10` : "", best.priceEur ? `€${best.priceEur}` : ""]
+    .filter(Boolean).join(", ");
+  const subject = `${n} new match${n === 1 ? "" : "es"} for ${c.label}${bestText ? ` (best: ${bestText})` : ""}`;
   const facts = (a: (typeof top)[number]) =>
     [a.priceEur ? `€${a.priceEur}` : "", a.city ?? "", a.score !== undefined ? `scored ${a.score}/10` : ""]
       .filter(Boolean).join(", ");
-  const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}.`;
+  const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
+    "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats.";
   const text = [
     subject, "",
-    ...top.flatMap((a) => [a.title, facts(a), a.reason, a.url, ""]),
+    ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`, ""]),
     ...(more > 0 ? [`…and ${more} more in the app.`, ""] : []),
     footer, `Manage or pause this watch: ${appUrl}`,
   ].join("\n");
@@ -140,7 +144,8 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 ${top.map((a) => `<div style="border:1px solid #e5e5ea;border-radius:10px;padding:12px;margin:10px 0">
 <a href="${escape(a.url)}" style="font-weight:600;color:#0a66c2;text-decoration:none">${escape(a.title)}</a>
 <div style="color:#555;margin-top:4px">${escape(facts(a))}</div>
-<div style="margin-top:6px">${escape(a.reason)}</div></div>`).join("\n")}
+<div style="margin-top:6px">${escape(a.reason)}</div>
+<a href="${escape(a.url)}" style="display:inline-block;margin-top:8px;color:#0a66c2">Open on Marktplaats</a></div>`).join("\n")}
 ${more > 0 ? `<p>…and ${more} more in the app.</p>` : ""}
 <p style="color:#888;font-size:12px;margin-top:20px">${escape(footer)}<br>
 <a href="${escape(appUrl)}" style="color:#888">Manage or pause this watch</a></p></div>`;

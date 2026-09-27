@@ -50,7 +50,18 @@ button:disabled { opacity: .5; cursor: default; }
 .nowrap { white-space: nowrap; }
 .lede { font-size: 19px; color: var(--slate); max-width: 56ch; margin: 22px 0; }
 .landing .primary { padding: 13px 22px; font-size: 17px; }
-.steps { list-style: none; counter-reset: step; padding: 0; margin: 64px 0 0; display: grid; gap: 28px;
+.sample { margin-top: 44px; max-width: 620px; }
+.sample h2 { font-size: 15px; font-family: var(--body); font-weight: 600; color: var(--slate); margin-bottom: 10px; }
+.sample ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sample li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 14px; border-radius: 10px;
+             background: var(--panel); border: 1px solid var(--line); color: var(--slate); font-size: 15px; }
+.sample strong { color: var(--ink); font-weight: 600; }
+.sample .score { font-family: var(--display); font-weight: 700; font-size: 20px; min-width: 3.2ch; }
+.sample .good { border-left: 4px solid var(--tag); }
+.sample .good .score { color: var(--ink); }
+.sample .skip { opacity: .7; }
+.sample .skip strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 48px 0 0; display: grid; gap: 28px;
          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .steps li { counter-increment: step; border-top: 2px solid var(--ink); padding-top: 14px; color: var(--slate); }
 .steps li::before { content: counter(step); font-family: var(--display); font-weight: 700; font-size: 28px; color: var(--ink); display: block; }
