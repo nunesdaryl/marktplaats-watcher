@@ -16,7 +16,7 @@ export async function requireUser(ctx: MutationCtx) {
   if (!identity) throw new ConvexError("Please sign in first.");
   const existing = await currentUser(ctx);
   const email = identity.email;
-  if (!email) throw new ConvexError("Your account has no e-mail address, so we can't send alerts.");
+  if (!email) throw new ConvexError("Your account has no e-mail address, so we can't send alerts. Add one under your account (top right).");
   if (existing) {
     if (existing.email !== email) await ctx.db.patch(existing._id, { email });
     return { ...existing, email };

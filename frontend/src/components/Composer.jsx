@@ -3,7 +3,7 @@ import Icon from "./Icon.jsx";
 
 const PLACEHOLDER = {
   search: "Search Marktplaats, e.g. Mac mini 16GB under €500",
-  watch: "What should I watch? e.g. Gazelle bike near 3511AB, every morning at 8",
+  watch: "What should I watch, and when? e.g. Gazelle bike near 3511AB, every morning at 8",
 };
 
 /** The message box: a "Search now | Watch it" switch, grows with the text, Enter sends, Shift+Enter adds a line. */

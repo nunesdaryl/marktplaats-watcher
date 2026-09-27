@@ -123,7 +123,7 @@ def test_offline_model_gives_a_clear_message(client, monkeypatch, error):
     headers = {"Authorization": f"Bearer {client.token()}"}
     res = client.post("/api/chat", json={"message": "hi"}, headers=headers)
     assert res.status_code == 503                       # monitoring sees it; the body stays user-friendly
-    assert "offline" in res.json()["answer"] and "watches keep running" in res.json()["answer"]
+    assert "can't reach its AI" in res.json()["answer"]
 
 
 def test_internal_check_needs_the_cron_secret(client, monkeypatch):
@@ -225,7 +225,7 @@ def test_stream_endpoint_needs_login_and_turns_failures_into_an_error_event(clie
     res = client.post("/api/chat/stream", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
     assert res.headers["content-type"].startswith("application/x-ndjson")
     events = [json.loads(line) for line in res.text.splitlines()]
-    assert [e["type"] for e in events] == ["status", "error"] and "offline" in events[1]["text"]
+    assert [e["type"] for e in events] == ["status", "error"] and "can't reach its AI" in events[1]["text"]
 
 
 def test_watch_mode_tells_the_agent_to_propose_a_watch_instead_of_searching(monkeypatch):
@@ -269,7 +269,7 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
             raise RuntimeError("model down")
     monkeypatch.setattr(agent, "ranker", DownRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
-    assert result == {"watchId": "w1", "ok": False, "error": "Scoring is unavailable right now; will retry."}
+    assert result == {"watchId": "w1", "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
 def test_check_query_ranks_watches_in_parallel(monkeypatch):

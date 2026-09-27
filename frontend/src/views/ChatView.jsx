@@ -60,7 +60,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
     message = message.trim();
     if (!message || live) return;
     const history = historyFor(saved);
-    setLive({ user: message, status: sendMode === "watch" ? "Setting up a watch…" : "Thinking…", listings: [], text: "" });
+    setLive({ user: message, status: sendMode === "watch" ? "Drafting a watch for you to check…" : "Thinking…", listings: [], text: "" });
     let id = chatId;
     try {
       if (id) await append({ chatId: id, role: "user", content: message });
@@ -106,7 +106,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
       <section className="chat empty-chat" aria-label="New chat">
         <div className="hello">
           <h1>What are you looking for?</h1>
-          <p>Search Marktplaats in plain words, or ask me to keep an eye on something.</p>
+          <p>Search Marktplaats in plain words, or switch to Watch it to get the good new ones by e-mail.</p>
         </div>
         <div className="empty-composer"><Composer onSend={send} busy={!!live} autoFocus mode={mode} onModeChange={setMode} /></div>
         <div className="suggestions">

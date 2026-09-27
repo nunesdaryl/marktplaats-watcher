@@ -29,6 +29,7 @@
 | `generated/linkedin-launch-post.md` | Draft, ready after `[DARYL]` line + live-URL check | Content Creator `/social-post linkedin` (#6 Case Study, Story Tease hook) | brand-voice + linkedin-audience + validation + research |
 | `generated/linkedin-series.md` | Draft: 8-post calendar 29 Sep to 9 Oct 2026, full drafts for posts 2 to 4 | Content Creator `/content-kalender` + LinkedIn knowledge base | linkedin-launch-post |
 | `generated/x-repurpose.md` | Draft: 7-tweet thread + 3 singles | Content Creator `/hergebruik` + X workflow | linkedin-launch-post |
+| `generated/in-app-copy.md` | Draft: message hierarchy + copy deck for every surface (landing, meta, onboarding, chat, watch, errors, e-mail, privacy); 12 `[DARYL]` items open; no app string changed yet | Copywriter (Awareness/Leads, Four U's, Bencivenga proof, objections) + Strategist + SEO title/meta | brand-voice + buyer-avatar + research + validation |
 
 ## Other Folders
 

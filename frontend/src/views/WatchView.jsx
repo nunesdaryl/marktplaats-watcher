@@ -78,7 +78,7 @@ export default function WatchView({ watch, onEdit, actions }) {
         </div>
       ) : (
         <p className="empty-note">{watch.seeded
-          ? "No new matches yet. You'll get an e-mail as soon as a good one appears."
+          ? "No new matches yet. When a check finds a good one, we'll e-mail you."
           : "The first check is running. It only notes what's listed now, so you only hear about new ones."}</p>
       )}
     </section>

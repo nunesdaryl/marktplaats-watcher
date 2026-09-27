@@ -72,7 +72,7 @@ export const record = internalMutation({
       if (!r.ok) {
         // Retry soon instead of waiting for the next scheduled time (a weekly watch would wait a week)
         const retryAt = Math.min(watch.nextRunAt, now + RETRY_MS);
-        await ctx.db.patch(watch._id, { lastCheckedAt: now, lastError: r.error ?? "Check failed.", nextRunAt: retryAt });
+        await ctx.db.patch(watch._id, { lastCheckedAt: now, lastError: r.error ?? "The last check didn't work. We'll try again soon.", nextRunAt: retryAt });
         continue;
       }
       const newAlerts: Id<"alerts">[] = [];
@@ -110,7 +110,7 @@ export const emailContent = internalQuery({
     const watch = await ctx.db.get(watchId);
     const alerts = (await Promise.all(alertIds.map((id) => ctx.db.get(id)))).filter((a) => a !== null);
     alerts.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-    return watch && { label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
+    return watch && { watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
   },
 });
 
@@ -125,7 +125,7 @@ const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 type EmailContent = {
-  label: string; summary: string; notify: string;
+  watchId?: string; label: string; summary: string; notify: string;
   alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string }[];
 };
 
@@ -135,30 +135,35 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const more = c.alerts.length - top.length;
   const n = c.alerts.length;
   const best = top[0];  // alerts arrive sorted by score, best first
-  const bestText = best && [best.score !== undefined ? `${best.score}/10` : "", best.priceEur ? `€${best.priceEur}` : ""]
-    .filter(Boolean).join(", ");
-  const subject = `${n} new match${n === 1 ? "" : "es"} for ${c.label}${bestText ? ` (best: ${bestText})` : ""}`;
+  const bestText = best && [best.score !== undefined ? `best ${best.score}/10` : "", best.priceEur ? `at €${best.priceEur}` : ""]
+    .filter(Boolean).join(" ");
+  // The watch name first: with several watches, that's what the eye looks for in an inbox
+  const subject = `${c.label}: ${n} new match${n === 1 ? "" : "es"}${bestText ? `, ${bestText}` : ""}`;
+  const preheader = best ? `Best: ${best.title}. ${best.reason}` : "";
   const facts = (a: (typeof top)[number]) =>
-    [a.priceEur ? `€${a.priceEur}` : "", a.city ?? "", a.score !== undefined ? `scored ${a.score}/10` : ""]
+    [a.score !== undefined ? `Scored ${a.score}/10` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
       .filter(Boolean).join(", ");
+  const manageUrl = c.watchId ? `${appUrl.replace(/\/$/, "")}/watch/?id=${encodeURIComponent(c.watchId)}` : appUrl;
   const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
-    "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats.";
+    "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
+  const heading = `New on Marktplaats for "${c.label}"`;
   const text = [
-    subject, "",
+    heading, "",
     ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`, ""]),
-    ...(more > 0 ? [`…and ${more} more in the app.`, ""] : []),
-    footer, `Manage or pause this watch: ${appUrl}`,
+    ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
+    footer, `Manage or pause this watch: ${manageUrl}`,
   ].join("\n");
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;color:#1d1d1f">
-<h2 style="font-size:18px">${escape(subject)}</h2>
+  const html = `<div style="display:none;max-height:0;overflow:hidden">${escape(preheader)}</div>
+<div style="font-family:system-ui,sans-serif;max-width:560px;color:#1d1d1f">
+<h2 style="font-size:18px">${escape(heading)}</h2>
 ${top.map((a) => `<div style="border:1px solid #e5e5ea;border-radius:10px;padding:12px;margin:10px 0">
 <a href="${escape(a.url)}" style="font-weight:600;color:#0a66c2;text-decoration:none">${escape(a.title)}</a>
 <div style="color:#555;margin-top:4px">${escape(facts(a))}</div>
 <div style="margin-top:6px">${escape(a.reason)}</div>
 <a href="${escape(a.url)}" style="display:inline-block;margin-top:8px;color:#0a66c2">Open on Marktplaats</a></div>`).join("\n")}
-${more > 0 ? `<p>…and ${more} more in the app.</p>` : ""}
+${more > 0 ? `<p>…and ${more} more in the app, under Alerts.</p>` : ""}
 <p style="color:#888;font-size:12px;margin-top:20px">${escape(footer)}<br>
-<a href="${escape(appUrl)}" style="color:#888">Manage or pause this watch</a></p></div>`;
+<a href="${escape(manageUrl)}" style="color:#888">Manage or pause this watch</a></p></div>`;
   return { subject, text, html };
 }
 
@@ -202,7 +207,7 @@ export const checkDue = internalAction({
         results = (await res.json()).results;
       } catch (e) {
         console.error(`check "${group.query}" failed:`, e);
-        results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Search service unavailable, will retry." }));
+        results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
       checked += group.watches.length;
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;

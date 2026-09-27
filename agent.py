@@ -297,9 +297,9 @@ def status_for(call):
     if call["name"] == "search_marktplaats":
         return f"Searching Marktplaats for \u201c{args.get('query', '')}\u201d\u2026"
     if call["name"] == "propose_watch":
-        return "Setting up a watch for you\u2026"
+        return "Drafting a watch for you to check\u2026"
     if call["name"] == "propose_watch_change":
-        return "Preparing the change\u2026"
+        return "Drafting the change for you to check\u2026"
     return "Working\u2026"
 
 
@@ -363,7 +363,7 @@ def chat_events(message, history, watches=None, mode="search"):
                     yield {"type": "listings", "listings": listings}
             messages.append(ToolMessage(result, tool_call_id=call["id"]))
     else:
-        text = "Sorry, I couldn't get an answer."
+        text = "Sorry, I couldn't get an answer. Try asking it another way."
         yield {"type": "delta", "text": text}
     yield {"type": "done", "answer": text, "listings": listings, "searches": ctx.searches,
            "proposals": ctx.proposals, "usage": {**usage, "tool_calls": tool_calls}}
@@ -427,7 +427,7 @@ def check_query(query, watches):
     try:
         html = fetch_page(search_url(query), capped=False)
     except httpx.HTTPError as e:
-        return [{"watchId": w["id"], "ok": False, "error": f"Marktplaats unavailable: {type(e).__name__}"}
+        return [{"watchId": w["id"], "ok": False, "error": "Marktplaats didn't answer at the last check. We'll try again soon."}
                 for w in watches]
     results, to_rank = [], []
     for w in watches:
@@ -438,7 +438,7 @@ def check_query(query, watches):
             except httpx.HTTPError:
                 home = None
             if home is None:
-                results.append({"watchId": w["id"], "ok": False, "error": f"Unknown postcode {w['postcode']}"})
+                results.append({"watchId": w["id"], "ok": False, "error": f"We couldn't find postcode {w['postcode']}. Edit the watch to use another postcode."})
                 continue
         listings, _ = parse_listings(html, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None, w.get("must_include"))
@@ -452,7 +452,7 @@ def check_query(query, watches):
     for (w, listings, _), fresh in zip(to_rank, ranked):
         if any(item["score"] is None for item in fresh):
             # Never e-mail unscored listings: report a failure so nothing is marked seen, and it's retried soon
-            results.append({"watchId": w["id"], "ok": False, "error": "Scoring is unavailable right now; will retry."})
+            results.append({"watchId": w["id"], "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."})
             continue
         results.append({"watchId": w["id"], "ok": True, "currentIds": [i["id"] for i in listings if i["id"]],
                         "listings": fresh})

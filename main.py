@@ -91,9 +91,8 @@ def friendly_error(e):
         return "I can only help with Marktplaats searches and watches.", 200   # a refusal is a normal answer
     if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
                                        "credit_balance_exhausted")):
-        return ("The AI model is offline right now (its API key or model is unavailable). "
-                "Your watches keep running; please try the chat again later."), 503
-    return "Error: something went wrong, please try again.", 500
+        return "The chat can't reach its AI right now. Try again in a few minutes.", 503
+    return "Something went wrong on our side. Try again.", 500
 
 
 def chat_args(request):
@@ -104,7 +103,7 @@ def chat_args(request):
 @app.post("/api/chat")
 def chat_route(request: ChatRequest, user: str = Depends(current_user)):
     if too_many(user):
-        return JSONResponse({"answer": "Too many questions in a minute. Please wait a moment."}, status_code=429)
+        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     try:
         return chat(*chat_args(request))
     except Exception as e:
@@ -116,7 +115,7 @@ def chat_route(request: ChatRequest, user: str = Depends(current_user)):
 def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
     """The same chat, streamed as newline-delimited JSON events: status, listings, delta, done (or error)."""
     if too_many(user):
-        return JSONResponse({"answer": "Too many questions in a minute. Please wait a moment."}, status_code=429)
+        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
 
     def events():
         started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}

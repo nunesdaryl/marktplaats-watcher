@@ -24,13 +24,13 @@ test("a quiet healthy day sends nothing; failures send one e-mail to the owner",
 
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
   const id = await alice.mutation(api.watches.create, { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
-  await t.run((ctx) => ctx.db.patch(id, { lastError: "Scoring is unavailable right now; will retry." }));
+  await t.run((ctx) => ctx.db.patch(id, { lastError: "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored." }));
   const result = await t.action(internal.health.digest, {});
   expect(result.sent).toBe(true);
   expect(sent).toHaveLength(1);
   expect(sent[0].to).toEqual(["owner@example.com"]);
   expect(sent[0].subject).toBe("Marktplaats Watcher: 1 problem(s) need a look");
-  expect(sent[0].text).toContain('"Mac mini" (Scoring is unavailable');
+  expect(sent[0].text).toContain('"Mac mini" (The AI that scores');
 });
 
 test("a stuck scheduler is a problem", async () => {

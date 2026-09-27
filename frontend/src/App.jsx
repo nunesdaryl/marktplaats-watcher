@@ -43,7 +43,7 @@ function HistorySheet({ chats, actions, onClose }) {
       <button className="button tinted wide" onClick={() => open("/")}><Icon name="compose" size={16} />New chat</button>
       <input className="field" type="search" value={search} onChange={(e) => setSearch(e.target.value)}
              placeholder="Search chats" aria-label="Search chats" />
-      {chats.length === 0 ? <p className="empty-note">Your chats will show up here.</p> : found.length === 0 ? (
+      {chats.length === 0 ? <p className="empty-note">Your chats show up here. They're deleted after 30 days without use.</p> : found.length === 0 ? (
         <p className="empty-note">No chat matches "{search}".</p>
       ) : (
         <>

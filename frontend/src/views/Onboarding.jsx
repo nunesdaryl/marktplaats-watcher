@@ -37,7 +37,7 @@ export default function Onboarding({ email, onDone }) {
 
   const steps = [
     <div key="what" className="stack">
-      <p className="lead">What should I keep an eye on?</p>
+      <p className="lead">What should we keep an eye on?</p>
       <input className="field big" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus maxLength={80}
              placeholder="e.g. Mac mini" aria-label="Item to watch" />
       <div className="suggestions left">{IDEAS.map((i) => <button key={i} type="button" className="chip" onClick={() => setQuery(i)}>{i}</button>)}</div>
@@ -45,11 +45,11 @@ export default function Onboarding({ email, onDone }) {
              inputMode="numeric" placeholder="Max price in € (optional)" aria-label="Max price in euros" />
     </div>,
     <div key="when" className="stack">
-      <p className="lead">How often should I check?</p>
+      <p className="lead">When should we check, and what should we send you?</p>
       <ScheduleEditor schedule={plan.schedule} notify={plan.notify} onChange={setPlan} />
     </div>,
     <div key="where" className="stack">
-      <p className="lead">Alerts go to <strong>{email}</strong>.</p>
+      <p className="lead">Alerts go to <strong>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
       <p className="sentence small">Checking Marktplaats for <mark>{query}{maxPrice ? ` under €${maxPrice}` : ""}</mark>{" "}
         <mark>{describe(plan.schedule)}</mark>, e-mailing you <mark>{NOTIFY_LABEL[plan.notify]}</mark>.</p>
       <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>

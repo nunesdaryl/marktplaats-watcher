@@ -8,11 +8,11 @@ export default function PrivacySheet({ email, onClose }) {
   return (
     <Sheet title="Privacy and your data" onClose={onClose}>
       <div className="stack prose">
-        <p>Alerts go to <strong>{email}</strong>.</p>
-        <p>We keep your e-mail address, your watches, the listings already shown to you and your chats. Anything
-          untouched for 30 days is deleted automatically. Searches and listing titles are sent to OpenAI to score
-          them. Nothing is sold or shared.</p>
-        <p className="muted">A portfolio project, not affiliated with Marktplaats.</p>
+        <p>Alerts go to <strong>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
+        <p>We keep your e-mail address and your watches until you delete them. Your chats and the listings we've
+          checked are deleted after 30 days. Your messages, searches and listing details (titles, prices, places)
+          are sent to OpenAI to answer and score them. Nothing is sold or shared.</p>
+        <p className="muted">A free portfolio project by Daryl Nunes, not affiliated with Marktplaats.</p>
         <ConfirmButton icon="trash" label="Delete my data" confirmLabel="Delete everything? This can't be undone."
                        onConfirm={async () => { await deleteMyData(); onClose(); window.location.hash = "/"; }} />
       </div>

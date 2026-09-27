@@ -134,7 +134,7 @@ test("when the search service is down the watch shows an error and is retried wi
   vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 502 })));
   await t.action(internal.checker.checkDue, { dryRun: true });
   const [watch] = await alice.query(api.watches.list, {});
-  expect(watch.lastError).toMatch(/unavailable/);
+  expect(watch.lastError).toMatch(/didn.t answer/);
   expect(watch.nextRunAt).toBe(Date.parse("2026-09-27T10:30:00Z"));   // not next Monday
 });
 

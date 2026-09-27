@@ -35,13 +35,14 @@ export default function Landing({ SignIn = Plain }) {
         <h1 className="sentence" aria-live="polite">
           Check Marktplaats for a <span className="tag" key={what}>{what}</span>{" "}
           <span className="tag" key={when}>{when}</span> and <span className="nowrap">e-mail</span> me{" "}
-          <span className="tag" key={which}>{which}</span>.
+          <span className="tag" key={which}>{which}</span>, with the reason.
         </h1>
         <p className="lede">
-          Say what you want. Pick when to check. Every new listing gets a score from 0 to 10 and the reason
-          for it, and only the ones worth a look reach your inbox. Free.
+          Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
+          say why. Only the ones worth a look reach your inbox. Free, up to 5 watches.
         </p>
-        <SignIn mode="modal"><button className="button primary large">Sign in to start watching</button></SignIn>
+        <SignIn mode="modal"><button className="button primary large">Set up a free watch</button></SignIn>
+        <p className="cta-note">No card, no app to install. Sign in with your e-mail or Google.</p>
 
         <section className="sample" aria-labelledby="sample-title">
           <h2 id="sample-title">From a real check for "Mac mini, 16GB, under €500"</h2>
@@ -56,28 +57,34 @@ export default function Landing({ SignIn = Plain }) {
               <span><strong>Mac Mini M4 Docking Station 1TB</strong>, €74<br />
                 A docking station, not a Mac mini. You never hear about it.</span>
             </li>
+            <li className="skip">
+              <span className="score">0/10</span>
+              <span><strong>Also found: SSDs, a tracker and a Cisco switch</strong><br />
+                All scored 0/10. None e-mailed.</span>
+            </li>
           </ul>
         </section>
 
         <ol className="steps">
           <li><strong>Tell the chat what you want.</strong> "A Mac mini with 16GB, under €500, near Utrecht."</li>
-          <li><strong>Pick how often to check.</strong> Every 15 minutes, every morning at 8, or only on weekends.</li>
-          <li><strong>Get an e-mail when a good one appears.</strong> The first check only notes what's listed now, so you only hear about new ones.</li>
+          <li><strong>Pick when to check.</strong> Every 15 minutes, every morning at 8, or only on weekends.</li>
+          <li><strong>Get an e-mail when a good one appears, with the reason.</strong> The first check only notes what's listed now, so you only hear about new ones.</li>
         </ol>
 
         <section id="privacy" className="fineprint">
           <h2>What we keep, and for how long</h2>
           <p>
-            Your e-mail address (to send alerts), your watches, and the listings we've already shown you, for 30 days.
-            Searches and listing titles are sent to OpenAI to score them. Nothing else, and nothing is sold or shared.
-            "Delete my data" in the app removes it all at once.
+            Your e-mail address and your watches, until you delete them. Your chats and the listings we've checked,
+            for 30 days. Your messages, searches and listing details (titles, prices, places) are sent to OpenAI to
+            answer and score them. Nothing is sold or shared. "Delete my data" in the app removes it all at once.
           </p>
           <p>
             Up to 5 watches per person, checked at most every 15 minutes. It reads the first page of Marktplaats'
             public search results, so it's for watching, not for searching everything.
           </p>
           <p>
-            A portfolio project, not affiliated with Marktplaats. Alerts come from marktplaats-watcher@agentmail.to.
+            A free portfolio project by Daryl Nunes, not affiliated with Marktplaats. Alerts come from
+            marktplaats-watcher@agentmail.to, so add it to your contacts.
           </p>
         </section>
       </main>

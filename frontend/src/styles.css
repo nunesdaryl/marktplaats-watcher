@@ -425,6 +425,7 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
 .landing .tag { animation: tag-in 0.45s ease-out; }
 @keyframes tag-in { from { background-color: transparent; color: var(--text); } }
 .lede { font-size: 20px; color: var(--text-2); max-width: 54ch; margin: 24px 0 28px; line-height: 1.5; }
+.cta-note { margin-top: 10px; font-size: 14px; color: var(--text-2); }
 .sample { margin-top: 48px; max-width: 620px; }
 .sample h2 { font: 600 14px var(--font); color: var(--text-2); letter-spacing: 0; margin-bottom: 10px; }
 .sample ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

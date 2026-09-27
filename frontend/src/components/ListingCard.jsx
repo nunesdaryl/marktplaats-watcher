@@ -22,7 +22,7 @@ export default function ListingCard({ listing, score, reason, meta }) {
       <div className="body">
         <span className="title">{listing.title}</span>
         <span className="line">
-          <strong>{price ? `€${price}` : "Price on request"}</strong>
+          <strong>{price ? `€${price}` : "No price listed"}</strong>
           {place && <span>{place}</span>}
         </span>
         {reason && <span className="reason">{reason}</span>}

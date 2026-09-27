@@ -24,7 +24,7 @@ export function useItemActions(ui) {
     { label: "Move to folder…", icon: "folder", onSelect: () => ui.openSheet({ type: "move", kind: "chat", item: c }) },
     "divider",
     { label: "Archive", icon: "archive", onSelect: () => run(() => chat.archive({ chatId: c._id, archived: true }), () => { leaveIfOpen("c", c._id); ui.toast("Chat archived. Find it under Archived."); }) },
-    { label: "Delete", icon: "trash", danger: true, confirm: true, onSelect: () => run(() => chat.remove({ chatId: c._id }), () => leaveIfOpen("c", c._id)) },
+    { label: "Delete", icon: "trash", danger: true, confirm: "Delete this chat?", onSelect: () => run(() => chat.remove({ chatId: c._id }), () => leaveIfOpen("c", c._id)) },
   ];
 
   const watchFields = (w) => ({ query: w.query, mustInclude: w.mustInclude, maxPriceEur: w.maxPriceEur, postcode: w.postcode,
@@ -42,7 +42,7 @@ export function useItemActions(ui) {
     { label: "Move to folder…", icon: "folder", onSelect: () => ui.openSheet({ type: "move", kind: "watch", item: w }) },
     "divider",
     { label: "Archive", icon: "archive", onSelect: () => run(() => watch.archive({ id: w._id, archived: true }), () => { leaveIfOpen("w", w._id); ui.toast("Watch archived and paused. Find it under Archived."); }) },
-    { label: "Delete", icon: "trash", danger: true, confirm: true, onSelect: () => run(() => watch.remove({ id: w._id }), () => leaveIfOpen("w", w._id)) },
+    { label: "Delete", icon: "trash", danger: true, confirm: "Delete this watch?", onSelect: () => run(() => watch.remove({ id: w._id }), () => leaveIfOpen("w", w._id)) },
   ];
 
   return { chatItems, watchItems };
