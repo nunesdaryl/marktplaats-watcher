@@ -60,8 +60,8 @@
     <div class="eq"><span class="pill">Model (OpenAI gpt-5.4-mini)</span> + <span class="pill">Harness (FastAPI · loop · tool · guardrails)</span> = <span class="pill dark">Agent</span></div>
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
-      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2)</td></tr>
-      <tr><td><b>Status</b></td><td>v1 chat MVP deployed; <b>v2</b> (login, scheduled watches, scored alerts) built and verified end to end</td></tr>
+      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3)</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer precision 100% at "great"), monitored, costed (section 13)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code></td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (editable in Excalidraw)</td></tr>
@@ -72,7 +72,8 @@
     every item on the cheat sheet to the code, with an honest status for each: <span class="tag built">BUILT</span>
     <span class="tag partial">PARTIAL</span> <span class="tag none">NOT IN MVP</span>. Sections 6–9 go deeper into loop,
     tool, security and evaluation engineering, section 10 covers deployment (Docker and Vercel), and section 12
-    describes version 2. Sections 1–11 describe version 1 as it was built on 26 September. Each section ends with a <b>Pattern</b> box: the reusable lesson for
+    describes version 2, section 13 the demo-ready version 3. Sections 1–11 describe version 1 as it was built on
+    26 September; their line numbers refer to that version. Each section ends with a <b>Pattern</b> box: the reusable lesson for
     building your own agent.
   </div>
 </div>
@@ -604,6 +605,68 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   (4) 3–5 beta users and their quotes; (5) a shared store for the chat rate limit and page cache.</p>
 <div class="pattern"><b>Pattern:</b> let the model <i>propose</i> and the user <i>decide</i>. Keep every write behind the user's own
   login and a click, and the model's mistakes (or a stranger's injected text) stay suggestions.</div>
+</section>
+
+<!-- ============================ 13 VERSION 3 ============================ -->
+<section>
+<h2>13. Version 3: demo-ready (measured, monitored, managed)</h2>
+<p>Version 3 closes the gaps the course checklists found in version 2 (§2 Definition of done, §3 Evaluation, §4 Security,
+  §5 Pre-demo) and adds what a user expects from a ChatGPT- or Apple-grade app. Everything below is live and tested:
+  29 pytest and 52 convex-test/vitest tests, CI on every branch with dependency audits and a secret scan.</p>
+
+<h3>Product</h3>
+<ul>
+  <li><b>Next.js 16</b> (App Router, static export, the course's default stack) replaces Vite. The app is mounted once in the
+    root layout, so navigating keeps state (a streaming answer in a new chat survives the URL change).</li>
+  <li><b>Layout:</b> ChatGPT-style sidebar on desktop, Apple-style tab bar and sheets on phones, light/dark from the device.</li>
+  <li><b>Search now | Watch it</b> switch on the composer; streaming answers with listing photos; saved chat history.</li>
+  <li><b>Management:</b> a "…" menu everywhere (rename, pin, edit every field, pause, duplicate, move to folder, archive, delete),
+    pinned section, folders, archive, ⌘K search, chats grouped by date.</li>
+  <li><b>Plain-English notify levels</b> with their score ranges shown under the choice; copy rewritten with the agent-skill-pack
+    copywriting method (docs/marketing/generated/in-app-copy.md), including a corrected privacy text.</li>
+</ul>
+
+<h3>Evaluation (the "Prove" step)</h3>
+<table>
+  <tr><th style="width:36%">What</th><th>Result</th></tr>
+  <tr><td>Chat golden set, 20 cases with written pass conditions and tool-call limits</td><td><b>20/20</b>. First run 18/20: "Watch it"
+    mode could still search (prompt-only rule). Fixed in code: watch mode gets only the proposal tools. One pass condition was
+    wrong and was corrected, stated in the report.</td></tr>
+  <tr><td>Scorer on 49 real listings, labelled by a stronger judge model (gpt-5.5)</td><td>"Great" (≥8): <b>precision 100%</b>, recall 68%.
+    "Good" (≥6): precision 85%, <b>recall 90%</b>. Misses kept visible: an iPhone 13 scored 1, older or smaller models land
+    near the line.</td></tr>
+  <tr><td>Human check of the judge</td><td>10 labels in evals/data/spotcheck.md for the owner to confirm.</td></tr>
+</table>
+<p class="small">Rerun: <code>.venv/bin/python -m evals.run_scorer</code>, <code>evals.run_chat</code>, <code>evals.report</code>, <code>evals.cost</code>
+  (a few cents; by hand after any prompt or model change, and weekly).</p>
+
+<h3>Cost (measured, evals/report.md §4)</h3>
+<p>A check with no new listings makes no AI call. One new listing: <b>€0.00048</b>; ten: €0.00272. An hourly watch costs about
+  <b>€0.35/month</b> (worst case €1.96); a chat question about €0.002. Hosting runs on free tiers. The $10/month hard cap
+  covers about 5,000 questions. <b>Risk found:</b> one very busy 15-minute watch can use most of the cap, which would pause
+  scoring for everyone; a per-user daily budget is the next step.</p>
+
+<h3>Failures reach a human</h3>
+<ul>
+  <li>Daily health digest to the owner (only when something is wrong; a Monday heartbeat), from a per-run log.</li>
+  <li>GitHub uptime workflow every 30 minutes (site, API, and chat still refusing requests without login).</li>
+  <li>Kill switch <code>CHECKS_PAUSED=1</code>; structured JSON logs for checks, chat turns and CSP reports.</li>
+  <li>RUNBOOK.md: kill switch, rollback, key rotation, OpenAI cap, alerts not arriving, page-format change, deletion requests.</li>
+</ul>
+
+<h3>Correctness and security</h3>
+<ul>
+  <li>Scheduled checks: at most 20 watches per request, ranked in parallel; failures retry within 30 minutes; unscored
+    listings are never e-mailed; newest seen listings kept; duplicate watches refused.</li>
+  <li>Chat: 6 tool calls per question; streamed text before a tool call is reset; errors return real status codes;
+    links can only point at marktplaats.nl; per-user caps on chats and messages.</li>
+  <li>Headers: HSTS, X-Frame-Options DENY, nosniff, Referrer- and Permissions-Policy; a Content-Security-Policy in report-only
+    mode with a report endpoint, to be enforced after a clean sign-in check (the static export needs inline scripts, so the
+    CSP's strength is in connect-src, img-src and frame-ancestors).</li>
+  <li>Not indexed by search engines: the product is shared on LinkedIn and at the demo only (ToS art. 7.3 exposure).</li>
+</ul>
+<div class="pattern"><b>Pattern:</b> an evaluation that finds nothing proves nothing. Keep the first run's failures in the report,
+  fix what's real in code, correct what was wrong in the test, and say which is which.</div>
 </section>
 
 </body>

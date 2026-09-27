@@ -47,12 +47,23 @@ npx convex env set CRON_SECRET <same value as in .env>
 npx convex env set AGENTMAIL_API_KEY <key>     # typed by you, never pasted into a chat
 npx convex env set AGENTMAIL_INBOX_ID marktplaats-watcher@agentmail.to
 npx convex env set APP_URL http://localhost:3000
+npx convex env set OWNER_EMAIL <you@example.com>   # daily health digest (only when something is wrong)
+# npx convex env set CHECKS_PAUSED 1              # kill switch: stops all scheduled checks (see RUNBOOK.md)
 npm run dev                                    # Next.js on http://localhost:3000 (proxies /api to :8000)
 ```
 Try a check without sending e-mail: `npx convex run checker:checkDue '{"dryRun": true}'`.
 
 Tests: `.venv/bin/python -m pytest -q` and `cd frontend && npm test && npm run typecheck`.
-CI runs the same on every push (`.github/workflows/ci.yml`).
+CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` and a gitleaks secret scan
+(`.github/workflows/ci.yml`). An uptime check runs every 30 minutes (`.github/workflows/uptime.yml`).
+
+## Evaluation, cost and operations
+- **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, "great
+  matches" has 100% precision and "good matches" catches 90% of real matches. Rerun with `.venv/bin/python -m evals.run_scorer`,
+  `evals.run_chat`, `evals.report`, `evals.cost`.
+- **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
+- **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).
+- **Demo:** `docs/demo/` (problem statement, 3-minute script, pre-demo checklist).
 
 ## Run it with Docker (for anyone)
 One container serves the chat UI and the API on port 8000. Secrets are **not** in the image;
