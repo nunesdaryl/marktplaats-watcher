@@ -1,7 +1,8 @@
 name: ci
+# Every push on every branch, and every PR: tests, type check, build, dependency audits and a secret scan.
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 jobs:
@@ -12,6 +13,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt
       - run: .venv/bin/python -m pytest -q
+      - name: Python dependency audit (known vulnerabilities)
+        run: uvx pip-audit -r requirements.txt
 
   web:
     runs-on: ubuntu-latest
@@ -29,3 +32,16 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: npm dependency audit (high and critical)
+        run: npm audit --omit=dev --audit-level=high
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks, whole history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
