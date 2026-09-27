@@ -8,7 +8,7 @@ from typing import Literal
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -171,6 +171,24 @@ def check_route(request: CheckRequest):
         new_listings=sum(len(r.get("listings") or []) for r in results), ms=round((time.time() - started) * 1000),
         errors=sorted({r["error"] for r in results if not r["ok"]}))
     return {"results": results}
+
+
+@app.post("/api/csp-report")
+async def csp_report(http: Request):
+    """Browsers report Content-Security-Policy violations here (report-only for now). Logged, never stored."""
+    body = await http.body()
+    if len(body) > 10_000:
+        return JSONResponse({}, status_code=413)
+    try:
+        report = json.loads(body or b"{}")
+    except ValueError:
+        return JSONResponse({}, status_code=400)
+    for r in report if isinstance(report, list) else [report.get("csp-report", report)]:
+        r = r.get("body", r) if isinstance(r, dict) else {}
+        log("csp_violation", directive=str(r.get("effectiveDirective") or r.get("violated-directive") or "")[:80],
+            blocked=str(r.get("blockedURL") or r.get("blocked-uri") or "")[:200],
+            page=str(r.get("documentURL") or r.get("document-uri") or "").split("?")[0][:200])
+    return JSONResponse({}, status_code=204)
 
 
 @app.get("/api/health")

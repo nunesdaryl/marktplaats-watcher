@@ -363,3 +363,14 @@ def test_watch_mode_cannot_search_even_if_the_model_asks(monkeypatch):
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: fetched.append(url) or PAGE)
     done = agent.chat("iPhone 13 near 1012AB", [], mode="watch")
     assert fetched == [] and done["searches"] == [] and done["listings"] == []
+
+
+def test_csp_reports_are_logged_without_crashing(client, capsys):
+    report = {"csp-report": {"document-uri": "https://x.test/chat/?id=secret", "violated-directive": "connect-src",
+                             "blocked-uri": "https://evil.example/collect"}}
+    res = client.post("/api/csp-report", content=json.dumps(report), headers={"content-type": "application/csp-report"})
+    assert res.status_code == 204
+    line = [l for l in capsys.readouterr().out.splitlines() if "csp_violation" in l][-1]
+    assert json.loads(line) == {"event": "csp_violation", "directive": "connect-src",
+                                "blocked": "https://evil.example/collect", "page": "https://x.test/chat/"}   # no query string
+    assert client.post("/api/csp-report", content=b"x" * 20_000).status_code == 413

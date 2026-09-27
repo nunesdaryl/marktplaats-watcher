@@ -88,3 +88,20 @@ Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-
 .venv/bin/python -m evals.report
 ```
 Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).
+
+## 4. Running cost per watch (measured)
+
+One check with 1 new listing costs €0.00048 (356 input + 57 output tokens); with 10 new listings €0.00272. A check with no new listings makes no AI call and costs nothing. A chat question costs about €0.0018.
+
+| Schedule | Checks / month | Typical (1 new listing per check) | Busy worst case (10 new every check) |
+|---|---|---|---|
+| every 15 minutes | 2880 | €1.38 / month | €7.82 / month |
+| every hour | 720 | €0.35 / month | €1.96 / month |
+| every 3 hours | 240 | €0.12 / month | €0.65 / month |
+| every 6 hours | 120 | €0.06 / month | €0.33 / month |
+| every 12 hours | 60 | €0.03 / month | €0.16 / month |
+| every day at one time | 30 | €0.01 / month | €0.08 / month |
+| once a week | 4.3 | €0.00 / month | €0.01 / month |
+
+Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. The OpenAI project has a hard $10/month cap (≈ €9.20); that covers about 5,181 chat questions, or 27 hourly watches finding one new listing every hour, all month. When the cap is reached, the AI stops and nothing unscored is e-mailed.
+
