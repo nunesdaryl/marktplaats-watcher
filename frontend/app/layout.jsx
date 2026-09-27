@@ -1,4 +1,5 @@
 import "../src/styles.css";
+import { bootScript } from "../src/lib/boot.js";
 
 const title = "Marktplaats Watcher";
 const description = "Marktplaats alerts that read the listings first: say what you want, pick when to check, and get only the good ones, each with a reason.";
@@ -28,7 +29,11 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Runs before first paint: returning signed-in users skip the landing page flash (see src/Boot.jsx) */}
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+      </head>
       {/* suppressHydrationWarning: browser extensions add attributes to <body> before React loads */}
       <body suppressHydrationWarning>{children}</body>
     </html>

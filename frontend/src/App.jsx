@@ -7,6 +7,8 @@ import Sheet from "./components/Sheet.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import TabBar from "./components/TabBar.jsx";
 import WatchSheet from "./components/WatchSheet.jsx";
+import Boot from "./Boot.jsx";
+import { SIGNED_IN_FLAG } from "./lib/boot.js";
 import Landing from "./Landing.jsx";
 import { go, useMediaQuery, useRoute } from "./lib/router.js";
 import AlertsView from "./views/AlertsView.jsx";
@@ -47,6 +49,7 @@ function Workspace() {
 
   useEffect(() => {
     storeUser().catch((e) => setUserError(e.data ?? "We couldn't load your account. Refresh to try again."));
+    try { localStorage.setItem(SIGNED_IN_FLAG, "1"); } catch {}   // next visit: skip the landing-page flash
   }, [storeUser]);
 
   const newWatch = (initial = {}) => setSheet({ type: "watch", mode: "create", initial });
@@ -101,11 +104,17 @@ function Workspace() {
   );
 }
 
+function SignedOut() {
+  useEffect(() => { try { localStorage.removeItem(SIGNED_IN_FLAG); } catch {} }, []);
+  return <Landing SignIn={SignInButton} />;
+}
+
 export default function App() {
+  const route = useRoute();
   return (
     <>
-      <AuthLoading><div className="loading" aria-live="polite">Loading…</div></AuthLoading>
-      <Unauthenticated><Landing SignIn={SignInButton} /></Unauthenticated>
+      <AuthLoading><Boot landing={route.section === ""} /></AuthLoading>
+      <Unauthenticated><SignedOut /></Unauthenticated>
       <Authenticated><Workspace /></Authenticated>
     </>
   );

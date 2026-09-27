@@ -18,7 +18,10 @@ function useCycle(length, ms) {
   return i;
 }
 
-export default function Landing({ SignIn }) {
+// Before Clerk has loaded (the prerendered page), the sign-in buttons are plain buttons.
+const Plain = ({ children }) => children;
+
+export default function Landing({ SignIn = Plain }) {
   const [what, when, which] = EXAMPLES[useCycle(EXAMPLES.length, 3200)];
   return (
     <div className="landing">

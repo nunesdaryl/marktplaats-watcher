@@ -345,6 +345,13 @@ code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--
 .link { border: 0; background: none; color: var(--accent); padding: 4px 6px; font-size: 14px; }
 .summary { font-size: 14px; color: var(--text-2); }
 
+/* ---------- Boot: shown until the app has loaded ---------- */
+.boot-wait { display: none; place-items: center; height: 100dvh; }
+.boot-wait.always, .returning .boot-wait { display: grid; }
+.returning .boot-landing { display: none; }
+.boot-wait .logo { animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: 0.45; transform: scale(0.94); } }
+
 /* ---------- Landing ---------- */
 .landing { min-height: 100dvh; }
 .landing .bar { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
