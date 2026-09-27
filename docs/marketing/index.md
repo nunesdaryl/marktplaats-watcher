@@ -25,7 +25,10 @@
 | `generated/linkedin-audience.md` | Draft | Content Creator LinkedIn knowledge base | brand-voice |
 | `generated/validation.md` | Complete (verdict + pitch) | Product Builder `/productplan` 4-question test | onboarding + buyer-avatar + testimonials |
 | `generated/offer-stack.md` | Not created (free product, no offer) | Strategist `/offer` | buyer-avatar |
-| `generated/content-kalender.md` | Not created | Content Creator `/content-kalender` | brand-voice + buyer-avatar |
+| `generated/content-kalender.md` | Not created (the 2-week LinkedIn calendar lives in `linkedin-series.md`) | Content Creator `/content-kalender` | brand-voice + buyer-avatar |
+| `generated/linkedin-launch-post.md` | Draft, ready after `[DARYL]` line + live-URL check | Content Creator `/social-post linkedin` (#6 Case Study, Story Tease hook) | brand-voice + linkedin-audience + validation + research |
+| `generated/linkedin-series.md` | Draft: 8-post calendar 29 Sep to 9 Oct 2026, full drafts for posts 2 to 4 | Content Creator `/content-kalender` + LinkedIn knowledge base | linkedin-launch-post |
+| `generated/x-repurpose.md` | Draft: 7-tweet thread + 3 singles | Content Creator `/hergebruik` + X workflow | linkedin-launch-post |
 
 ## Other Folders
 

@@ -9,7 +9,7 @@ chat or the repo.
 |---|---|---|
 | OpenAI | platform.openai.com → API keys. Set a **monthly budget limit** first. | `OPENAI_API_KEY`, pick `OPENAI_MODEL` |
 | Clerk | Create an application (e-mail sign-in on). Integrations → **Convex** → activate. Then Sessions → **Customize session token** → add `"email": "{{user.primary_email_address}}"` next to the managed `aud` claim (without it Convex gets no e-mail address and the app says "Your account has no e-mail address"). | Publishable key, Frontend API URL (issuer) |
-| Convex | `cd frontend && npx convex dev` (creates the project), then in the dashboard: Settings → **Deploy key** for production | `CONVEX_DEPLOY_KEY` |
+| Convex | `cd frontend && npx convex login`, then `npx convex dev --configure new --team <team> --project marktplaats-watcher --dev-deployment cloud --once` | Production URL, printed by `npx convex deploy` |
 | AgentMail | console.agentmail.to → API Keys → create. The inbox is `marktplaats-watcher@agentmail.to`. | `AGENTMAIL_API_KEY` |
 | Cron secret | `openssl rand -hex 32` | `CRON_SECRET` (same value in Vercel and Convex) |
 
@@ -22,7 +22,7 @@ chat or the repo.
 | `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
 | `CRON_SECRET` | the random string |
 | `VITE_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
-| `CONVEX_DEPLOY_KEY` | production deploy key (the build pushes Convex functions and sets `VITE_CONVEX_URL`) |
+| `VITE_CONVEX_URL` | `https://<prod-deployment>.convex.cloud` (public, used at build time) |
 | `RATE_PER_MINUTE`, `MAX_FETCHES_PER_HOUR` | optional, defaults 10 and 30 |
 
 **Convex** production deployment → Settings → Environment Variables (or `npx convex env set --prod ...`):
@@ -39,11 +39,11 @@ In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / 
 
 ## 3. Deploy
 ```bash
-vercel               # preview deploy: test it first
-vercel --prod        # production URL
+cd frontend && npx convex deploy -y   # 1. Convex functions, schema and crons to production
+git push origin main                  # 2. Vercel builds the UI + Python API from GitHub
 ```
-The build command (`vercel.json`) runs `npx convex deploy --cmd 'npm run build'`, so Convex functions,
-schema and crons go live together with the UI.
+Convex is deployed from a logged-in CLI on purpose: Vercel then never holds a Convex deploy key (which can
+replace every backend function). Deploy Convex **before** pushing a UI that depends on new functions.
 
 ## 4. Verify after deploying
 - [ ] `/api/health` returns `{"ok":true}`

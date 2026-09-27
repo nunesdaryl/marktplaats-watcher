@@ -1,4 +1,4 @@
 {
-  "buildCommand": "cd frontend && npm ci && npx convex deploy --cmd 'npm run build'",
+  "buildCommand": "cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/dist"
 }
