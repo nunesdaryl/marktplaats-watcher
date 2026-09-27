@@ -1,4 +1,4 @@
-import { DAYS, NOTIFY_LABEL, describe } from "../../convex/schedule";
+import { DAYS, NOTIFY_HELP, NOTIFY_LABEL, describe } from "../../convex/schedule";
 
 // "Check Marktplaats [every hour ▾]" / "[every day at…] 08:00 + add a time" / "[on certain days at…] Mon Fri 18:00"
 const PRESETS = [
@@ -76,6 +76,7 @@ export default function ScheduleEditor({ schedule, notify, onChange }) {
           {Object.entries(NOTIFY_LABEL).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
         </select>
       </div>
+      <p className="notify-help" aria-live="polite">{NOTIFY_HELP[notify]}</p>
 
       <p className="summary">
         {schedule.kind === "weekly" && schedule.days.length === 0

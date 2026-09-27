@@ -1,0 +1,844 @@
+{
+  "run_at": "2026-09-27 15:29",
+  "model": "gpt-5.4-mini",
+  "listings": 49,
+  "judge_matches": 19,
+  "metrics": {
+    "great": {
+      "threshold": 8,
+      "tp": 13,
+      "fp": 0,
+      "fn": 6,
+      "tn": 30,
+      "precision": 1.0,
+      "recall": 0.684,
+      "false_positives": [],
+      "false_negatives": [
+        {
+          "title": "Apple Mac Mini (Mid 2011) - Macintosh",
+          "score": 4,
+          "reason": "It is a real Mac mini and very cheap, but the 2011 model is quite old and likely limited versus newer options.",
+          "judge_reason": "Apple Mac Mini itself and under €500."
+        },
+        {
+          "title": "Gazelle herenfietsen",
+          "score": 6,
+          "reason": "It is a Gazelle bike and extremely cheap at €40, but the oldtimer/herenfietsen category suggests it may be less practical or need work.",
+          "judge_reason": "Gazelle men's bicycles; appears to be the desired brand and item type, well within budget."
+        },
+        {
+          "title": "Gazelle Orange herenfiets met zeven versnellingen",
+          "score": 7,
+          "reason": "A Gazelle herenfiets with 7 gears for only €45 is a very cheap match, though the condition and location details are limited.",
+          "judge_reason": "Gazelle Orange men's bicycle with seven gears at €45, within budget."
+        },
+        {
+          "title": "Gazelle Heavy Duty, Gazelle NL, Gazelle Miss Grace",
+          "score": 7,
+          "reason": "These Gazelle models are within budget at €325, but the listing is broad and doesn’t specify one exact bike or condition.",
+          "judge_reason": "Listing names Gazelle bicycle models and is priced at €325, within budget."
+        },
+        {
+          "title": "IKEA-bureaustoel",
+          "score": 7,
+          "reason": "It matches IKEA office chair and is very cheap, but the title is generic so specs are unclear.",
+          "judge_reason": "IKEA office chair and well under budget."
+        },
+        {
+          "title": "Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt",
+          "score": 1,
+          "reason": "The title looks inconsistent and it appears in the wrong category, so it’s likely not a real iPhone 13 listing.",
+          "judge_reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+        }
+      ]
+    },
+    "good": {
+      "threshold": 6,
+      "tp": 17,
+      "fp": 3,
+      "fn": 2,
+      "tn": 27,
+      "precision": 0.85,
+      "recall": 0.895,
+      "false_positives": [
+        {
+          "title": "IKEA Bureau en Bureaustoel Set",
+          "score": 6,
+          "reason": "The set includes an IKEA chair and is within budget, but you’d be buying the bundle rather than just a chair.",
+          "judge": "over_budget"
+        },
+        {
+          "title": "Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade",
+          "score": 7,
+          "reason": "Matches the iPhone 13 family and is under budget, but it’s the smaller mini model rather than a standard iPhone 13.",
+          "judge": "wrong_model_or_spec"
+        },
+        {
+          "title": "iPhone 13 Mini 128GB - Blauw - 12mnd garantie",
+          "score": 7,
+          "reason": "Good price for an iPhone 13 mini with warranty, but the mini model is smaller than the standard iPhone 13 you want.",
+          "judge": "wrong_model_or_spec"
+        }
+      ],
+      "false_negatives": [
+        {
+          "title": "Apple Mac Mini (Mid 2011) - Macintosh",
+          "score": 4,
+          "reason": "It is a real Mac mini and very cheap, but the 2011 model is quite old and likely limited versus newer options.",
+          "judge_reason": "Apple Mac Mini itself and under €500."
+        },
+        {
+          "title": "Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt",
+          "score": 1,
+          "reason": "The title looks inconsistent and it appears in the wrong category, so it’s likely not a real iPhone 13 listing.",
+          "judge_reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+        }
+      ]
+    }
+  },
+  "tokens": {
+    "input": 8977,
+    "output": 1784,
+    "calls": 5
+  },
+  "cost_usd": 0.01476,
+  "cost_usd_per_100_listings": 0.03012,
+  "seconds_total": 14.5,
+  "scored": [
+    {
+      "watch": "mac",
+      "id": "a1531500906",
+      "title": "Apple Mac Mini (Mid 2011) - Macintosh",
+      "price_eur": 15,
+      "score": 4,
+      "reason": "It is a real Mac mini and very cheap, but the 2011 model is quite old and likely limited versus newer options.",
+      "judge": {
+        "id": "a1531500906",
+        "match": true,
+        "category": "match",
+        "reason": "Apple Mac Mini itself and under €500."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1529800322",
+      "title": "Mini Bluetooth Tracker met Apple Find My compatibiliteit - V",
+      "price_eur": 47,
+      "score": 0,
+      "reason": "This is not a Mac mini at all, just a Bluetooth tracker.",
+      "judge": {
+        "id": "a1529800322",
+        "match": false,
+        "category": "different_product",
+        "reason": "Bluetooth tracker, not a Mac mini."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1514987251",
+      "title": "Apple Mac mini CTO 3 GHz Intel Core i5 16 GB RAM 512 GB PCIe",
+      "price_eur": 230,
+      "score": 8,
+      "reason": "A Mac mini with solid specs for €230, which is comfortably under budget and looks like good value.",
+      "judge": {
+        "id": "a1514987251",
+        "match": true,
+        "category": "match",
+        "reason": "Apple Mac mini itself and under €500."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1479696779",
+      "title": "Apple Mac mini 3.6 GHz Intel Core i3 8 GB RAM 128 GB PCIe",
+      "price_eur": 228,
+      "score": 8,
+      "reason": "This is a genuine Mac mini and the €228 price is well within budget, though the storage is modest.",
+      "judge": {
+        "id": "a1479696779",
+        "match": true,
+        "category": "match",
+        "reason": "Apple Mac mini itself and under €500."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1513969870",
+      "title": "Cisco C2960L-24PS-LL 24 Gigabit switch PoE+ 195W Budget",
+      "price_eur": 99,
+      "score": 0,
+      "reason": "This is a network switch, not a Mac mini.",
+      "judge": {
+        "id": "a1513969870",
+        "match": false,
+        "category": "different_product",
+        "reason": "Cisco network switch, not a Mac mini."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1530188640",
+      "title": "Qwiizlab USB-C Hub Docking Station voor Mac Mini M2/M1 met D",
+      "price_eur": 110,
+      "score": 0,
+      "reason": "This is an accessory for a Mac mini M1/M2, not the Mac mini itself.",
+      "judge": {
+        "id": "a1530188640",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "USB-C hub/docking station for Mac Mini, not the Mac mini itself."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1530541852",
+      "title": "Mini Draadloos Toetsenbord met Touchpad, Scroll Wheel & 8 Kl",
+      "price_eur": 26,
+      "score": 0,
+      "reason": "This is a mini keyboard, not a Mac mini.",
+      "judge": {
+        "id": "a1530541852",
+        "match": false,
+        "category": "different_product",
+        "reason": "Mini wireless keyboard, not a Mac mini."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1530188553",
+      "title": "UGREEN Docking Station & M.2 NVMe SSD Enclosure voor Mac Min",
+      "price_eur": 114,
+      "score": 0,
+      "reason": "This is a dock/enclosure accessory, not a Mac mini.",
+      "judge": {
+        "id": "a1530188553",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "Docking station/SSD enclosure for Mac Mini, not the Mac mini itself."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1480593582",
+      "title": "Apple Mac mini M1-Chip 8 GB RAM 256 GB PCIe SSD [Late 2020]",
+      "price_eur": 447,
+      "score": 10,
+      "reason": "A Mac mini M1 for €447 fits the budget and is the strongest overall match among these listings.",
+      "judge": {
+        "id": "a1480593582",
+        "match": true,
+        "category": "match",
+        "reason": "Apple Mac mini M1 itself and under €500."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "mac",
+      "id": "a1530504678",
+      "title": "Satechi Stand & Hub For Mac Mini / Studio With NVMe SSD Encl",
+      "price_eur": 89,
+      "score": 0,
+      "reason": "This is a stand/hub accessory for a Mac mini or Studio, not the Mac mini itself.",
+      "judge": {
+        "id": "a1530504678",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "Stand/hub for Mac Mini or Mac Studio, not the Mac mini itself."
+      },
+      "ms": 3007
+    },
+    {
+      "watch": "bike",
+      "id": "a1531453566",
+      "title": "Mechanische fiets | Gazelle Esprit T7 | -47%",
+      "price_eur": 399,
+      "score": 9,
+      "reason": "Gazelle bike under €400 and priced at €399, so it fits the target exactly but leaves little room for a bargain.",
+      "judge": {
+        "id": "a1531453566",
+        "match": true,
+        "category": "match",
+        "reason": "Gazelle Esprit T7 bicycle listed at €399, within the under-€400 budget."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "m2440128367",
+      "title": "Gazelle herenfietsen",
+      "price_eur": 40,
+      "score": 6,
+      "reason": "It is a Gazelle bike and extremely cheap at €40, but the oldtimer/herenfietsen category suggests it may be less practical or need work.",
+      "judge": {
+        "id": "m2440128367",
+        "match": true,
+        "category": "match",
+        "reason": "Gazelle men's bicycles; appears to be the desired brand and item type, well within budget."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "m2443981207",
+      "title": "Gazelle Heavy Duty transportfiets",
+      "price_eur": 200,
+      "score": 8,
+      "reason": "It is a Gazelle bike for €200, well under budget, though the transportfiets style may or may not match what you're after.",
+      "judge": {
+        "id": "m2443981207",
+        "match": true,
+        "category": "match",
+        "reason": "Gazelle Heavy Duty transport bicycle at €200, within budget."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "a1531585953",
+      "title": "Rado - Green Gazelle - Zonder minimumprijs - Heren -",
+      "price_eur": 2,
+      "score": 0,
+      "reason": "This is a Rado watch listing, not a bike, so it does not match your search.",
+      "judge": {
+        "id": "a1531585953",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is a Rado 'Green Gazelle' watch, not a Gazelle bicycle."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "a1526912893",
+      "title": "Alle damesfietsen €80 // uitverkoop!",
+      "price_eur": 80,
+      "score": 0,
+      "reason": "This is a generic damesfietsen sale with no Gazelle model mentioned, so it’s a poor fit despite the low price.",
+      "judge": {
+        "id": "a1526912893",
+        "match": false,
+        "category": "different_product",
+        "reason": "General ladies' bikes listing with no indication they are Gazelle bikes."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "m2442172752",
+      "title": "Gazelle Orange herenfiets met zeven versnellingen",
+      "price_eur": 45,
+      "score": 7,
+      "reason": "A Gazelle herenfiets with 7 gears for only €45 is a very cheap match, though the condition and location details are limited.",
+      "judge": {
+        "id": "m2442172752",
+        "match": true,
+        "category": "match",
+        "reason": "Gazelle Orange men's bicycle with seven gears at €45, within budget."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "a1531162081",
+      "title": "Adidas Gazelle – Blauw/Roze – Maat 36",
+      "price_eur": 40,
+      "score": 0,
+      "reason": "This is Adidas footwear, not a bike, so it does not match your search.",
+      "judge": {
+        "id": "a1531162081",
+        "match": false,
+        "category": "different_product",
+        "reason": "Adidas Gazelle shoes, not a bicycle."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "a1529684758",
+      "title": "Adidas Gazelle Bold – Zwart/Wit – Maat 37.5",
+      "price_eur": 35,
+      "score": 0,
+      "reason": "This is Adidas footwear, not a bike, so it does not match your search.",
+      "judge": {
+        "id": "a1529684758",
+        "match": false,
+        "category": "different_product",
+        "reason": "Adidas Gazelle Bold shoes, not a bicycle."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "bike",
+      "id": "a1514986620",
+      "title": "Gazelle Heavy Duty, Gazelle NL, Gazelle Miss Grace",
+      "price_eur": 325,
+      "score": 7,
+      "reason": "These Gazelle models are within budget at €325, but the listing is broad and doesn’t specify one exact bike or condition.",
+      "judge": {
+        "id": "a1514986620",
+        "match": true,
+        "category": "match",
+        "reason": "Listing names Gazelle bicycle models and is priced at €325, within budget."
+      },
+      "ms": 3141
+    },
+    {
+      "watch": "switch",
+      "id": "a1504361788",
+      "title": "Nintendo Switch Consoles met garantie, vanaf",
+      "price_eur": 185,
+      "score": 2,
+      "reason": "This is a standard Switch listing, not clearly an OLED console, though the €185 price is within budget and it’s nearby.",
+      "judge": {
+        "id": "a1504361788",
+        "match": false,
+        "category": "unclear",
+        "reason": "Generic Nintendo Switch consoles listing with 'vanaf' pricing; it does not specify an OLED console under €200."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1515866993",
+      "title": "Nintendo Switch Consoles & veel keuze, vanaf",
+      "price_eur": 175,
+      "score": 2,
+      "reason": "It’s under budget and local, but the title doesn’t indicate an OLED model, so it may not match your watch exactly.",
+      "judge": {
+        "id": "a1515866993",
+        "match": false,
+        "category": "unclear",
+        "reason": "Generic multi-console listing with starting price; no clear Nintendo Switch OLED console at the listed price."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1530454566",
+      "title": "Nintendo Switch OLED Dock Origineel (Klepje Zijkant Ontbr...",
+      "price_eur": 25,
+      "score": 1,
+      "reason": "This is only an OLED dock accessory, not the console you’re looking for, despite the low price.",
+      "judge": {
+        "id": "a1530454566",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is an OLED dock, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1524759986",
+      "title": "Nintendo Switch OLED Screenprotector / Tempered Glass (Ni...",
+      "price_eur": 5,
+      "score": 0,
+      "reason": "This is just a screen protector accessory and not a Switch OLED console.",
+      "judge": {
+        "id": "a1524759986",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is a screen protector, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1528592460",
+      "title": "Nintendo Switch OLED Dock Origineel + AC Adapter",
+      "price_eur": 45,
+      "score": 1,
+      "reason": "This is an OLED dock with adapter rather than the console, so it’s not a fit for your watch.",
+      "judge": {
+        "id": "a1528592460",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is an OLED dock plus AC adapter, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1530454557",
+      "title": "Originele Nintendo Switch Joy Con OLED Wit Rechts",
+      "price_eur": 40,
+      "score": 1,
+      "reason": "This is a single right Joy-Con for OLED, not the console itself.",
+      "judge": {
+        "id": "a1530454557",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is a single Joy-Con controller, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1531325081",
+      "title": "Originele Nintendo Switch Joy Con OLED Wit Links",
+      "price_eur": 40,
+      "score": 1,
+      "reason": "This is a single left Joy-Con for OLED, not the console itself.",
+      "judge": {
+        "id": "a1531325081",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is a single Joy-Con controller, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1530801137",
+      "title": "Originele Nintendo Switch Joy Con Wit OLED Set",
+      "price_eur": 80,
+      "score": 1,
+      "reason": "This is a Joy-Con set accessory, not a Switch OLED console.",
+      "judge": {
+        "id": "a1530801137",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is a Joy-Con set, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1524760392",
+      "title": "Nintendo Switch Dock OLED Super Mario Edition Origineel",
+      "price_eur": 60,
+      "score": 1,
+      "reason": "This is a special-edition OLED dock only, not the console.",
+      "judge": {
+        "id": "a1524760392",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is an OLED dock, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "switch",
+      "id": "a1524760585",
+      "title": "Nintendo Switch OLED Dock Origineel (Switch Accessoires)",
+      "price_eur": 33,
+      "score": 1,
+      "reason": "This is an OLED dock accessory rather than the console, so it doesn’t match your target item.",
+      "judge": {
+        "id": "a1524760585",
+        "match": false,
+        "category": "accessory_or_part",
+        "reason": "This is an OLED dock/accessory, not the console."
+      },
+      "ms": 2606
+    },
+    {
+      "watch": "chair",
+      "id": "a1527888579",
+      "title": "Ikea Langfjall  bureaustoel, blauw -wit",
+      "price_eur": 91,
+      "score": 9,
+      "reason": "Exactly an IKEA office chair and under €100, though the price is close to your cap.",
+      "judge": {
+        "id": "a1527888579",
+        "match": true,
+        "category": "match",
+        "reason": "IKEA Langfjall office chair, under €100."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "m2445344033",
+      "title": "IKEA-bureaustoel",
+      "price_eur": 10,
+      "score": 7,
+      "reason": "It matches IKEA office chair and is very cheap, but the title is generic so specs are unclear.",
+      "judge": {
+        "id": "m2445344033",
+        "match": true,
+        "category": "match",
+        "reason": "IKEA office chair and well under budget."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1514751210",
+      "title": "Ikea Langfjall draaibare vergaderstoel in hoogte verstelbaar",
+      "price_eur": 50,
+      "score": 8,
+      "reason": "It’s an IKEA Langfjäll office-style chair for €50, a strong fit if the distance works.",
+      "judge": {
+        "id": "a1514751210",
+        "match": true,
+        "category": "match",
+        "reason": "IKEA Langfjall swivel/height-adjustable chair, suitable as an office chair and under budget."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1531509485",
+      "title": "Gebruikte bureau IKEA Galant met glas",
+      "price_eur": 75,
+      "score": 0,
+      "reason": "This is an IKEA desk, not an office chair.",
+      "judge": {
+        "id": "a1531509485",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is an IKEA Galant desk, not an office chair."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1473029656",
+      "title": "Barkruk Sebastian - Houten Witte Zitting",
+      "price_eur": 42,
+      "score": 0,
+      "reason": "A barkruk is not an office chair.",
+      "judge": {
+        "id": "a1473029656",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is a bar stool, not an IKEA office chair."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "m2418010098",
+      "title": "Zwarte IKEA bureaustoel met armleuningen",
+      "price_eur": 15,
+      "score": 8,
+      "reason": "A black IKEA office chair with armrests for €15 is a very good match, depending on distance.",
+      "judge": {
+        "id": "m2418010098",
+        "match": true,
+        "category": "match",
+        "reason": "IKEA office chair with armrests, under budget."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1530191419",
+      "title": "Glazen Bijzettafel | Ø 50 cm",
+      "price_eur": 91,
+      "score": 0,
+      "reason": "This is a side table, not an office chair.",
+      "judge": {
+        "id": "a1530191419",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is a side table, not an office chair."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1525880965",
+      "title": "Slede Stoel - Donkergrijs",
+      "price_eur": 47,
+      "score": 0,
+      "reason": "A sled chair is not an IKEA office chair.",
+      "judge": {
+        "id": "a1525880965",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is a sled-base chair and not listed as an IKEA office chair."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "m2436222417",
+      "title": "IKEA Bureau en Bureaustoel Set",
+      "price_eur": 100,
+      "score": 6,
+      "reason": "The set includes an IKEA chair and is within budget, but you’d be buying the bundle rather than just a chair.",
+      "judge": {
+        "id": "m2436222417",
+        "match": false,
+        "category": "over_budget",
+        "reason": "Set includes an IKEA office chair, but the listed price is €100, not under €100."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "chair",
+      "id": "a1523539627",
+      "title": "MOVING| TRANSPORT| VERHUISWAGEN IN AMSTERDAM EN OMGEVING",
+      "price_eur": 70,
+      "score": 0,
+      "reason": "This is a moving service, not furniture.",
+      "judge": {
+        "id": "a1523539627",
+        "match": false,
+        "category": "different_product",
+        "reason": "This is a moving/transport service, not an IKEA office chair."
+      },
+      "ms": 2421
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531511180",
+      "title": "Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade",
+      "price_eur": 275,
+      "score": 7,
+      "reason": "Matches the iPhone 13 family and is under budget, but it’s the smaller mini model rather than a standard iPhone 13.",
+      "judge": {
+        "id": "a1531511180",
+        "match": false,
+        "category": "wrong_model_or_spec",
+        "reason": "This is an iPhone 13 mini, not the regular iPhone 13 being watched for."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1517169600",
+      "title": "Apple iPhone 13 128GB | 4 Gratis Accessoires – Accu tot 100",
+      "price_eur": 279,
+      "score": 9,
+      "reason": "Direct iPhone 13 128GB listing at a good price under €350, with no obvious downside besides missing location.",
+      "judge": {
+        "id": "a1517169600",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1519094130",
+      "title": "Apple iPhone 13 256GB | 4 Gratis Accessoires – Accu tot 100%",
+      "price_eur": 309,
+      "score": 8,
+      "reason": "Direct iPhone 13 256GB under budget, though it’s a bit pricier than the 128GB options.",
+      "judge": {
+        "id": "a1519094130",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 256GB phone, priced under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1529860601",
+      "title": "Apple iPhone 13 • Refurbished • 24M Garantie • Vanaf 259,-",
+      "price_eur": 259,
+      "score": 9,
+      "reason": "Exact iPhone 13 refurbished listing with warranty and a strong price well below €350.",
+      "judge": {
+        "id": "a1529860601",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 refurbished listing, starting price under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531265476",
+      "title": "Apple iPhone 13 128GB Zwart | 24 Mnd Garantie | €269",
+      "price_eur": 269,
+      "score": 9,
+      "reason": "Exact iPhone 13 128GB with 24-month warranty and a very competitive price under budget.",
+      "judge": {
+        "id": "a1531265476",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531489099",
+      "title": "Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt",
+      "price_eur": 160,
+      "score": 1,
+      "reason": "The title looks inconsistent and it appears in the wrong category, so it’s likely not a real iPhone 13 listing.",
+      "judge": {
+        "id": "a1531489099",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1529610632",
+      "title": "Apple iPhone 13 Wit 256GB C Grade",
+      "price_eur": 260,
+      "score": 8,
+      "reason": "It’s an iPhone 13 at a good price, but the C grade condition and 256GB spec make it a less clean match.",
+      "judge": {
+        "id": "a1529610632",
+        "match": true,
+        "category": "match",
+        "reason": "Regular Apple iPhone 13 256GB phone, priced under €350."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531512320",
+      "title": "iPhone 13 Mini 128GB - Blauw - 12mnd garantie",
+      "price_eur": 219,
+      "score": 7,
+      "reason": "Good price for an iPhone 13 mini with warranty, but the mini model is smaller than the standard iPhone 13 you want.",
+      "judge": {
+        "id": "a1531512320",
+        "match": false,
+        "category": "wrong_model_or_spec",
+        "reason": "This is an iPhone 13 mini, not the regular iPhone 13 being watched for."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1346663439",
+      "title": "Apple iPhone 13 Pro Max 128GB Groen / Garantie / Nette staat",
+      "price_eur": 349,
+      "score": 3,
+      "reason": "It’s an iPhone 13 Pro Max, which is above the requested model even though the price is within budget.",
+      "judge": {
+        "id": "a1346663439",
+        "match": false,
+        "category": "wrong_model_or_spec",
+        "reason": "This is an iPhone 13 Pro Max, not the regular iPhone 13 being watched for."
+      },
+      "ms": 3304
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531265418",
+      "title": "iPhone vanaf €109 | Apple | 24 maanden garantie",
+      "price_eur": 109,
+      "score": 2,
+      "reason": "This is a broad iPhone ad rather than a specific iPhone 13 listing, so the match is unclear.",
+      "judge": {
+        "id": "a1531265418",
+        "match": false,
+        "category": "unclear",
+        "reason": "Generic 'iPhone from €109' listing does not specify that an iPhone 13 is available within budget."
+      },
+      "ms": 3304
+    }
+  ]
+}

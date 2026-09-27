@@ -18,6 +18,13 @@ export type Day = (typeof DAYS)[number];
 export const notifyValidator = v.union(v.literal("great"), v.literal("good"), v.literal("all"));
 export type Notify = Infer<typeof notifyValidator>;
 export const MIN_SCORE: Record<Notify, number> = { great: 8, good: 6, all: 0 };
+/** What each notify level means, in plain words: shown right under the choice. Each listing is scored 0–10. */
+export const NOTIFY_HELP: Record<Notify, string> = {
+  great: "Scores 8–10: exactly what you asked for, at a good price. Fewest e-mails; a so-so deal won't reach you.",
+  good: "Scores 6–10: also decent options, like an older model or a price near your limit. Catches the most real matches.",
+  all: "Every new listing that fits your filters, including accessories and look-alikes. Most e-mails.",
+};
+
 export const NOTIFY_LABEL: Record<Notify, string> = {
   great: "great matches only",
   good: "good matches",

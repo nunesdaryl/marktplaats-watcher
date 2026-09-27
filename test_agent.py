@@ -238,6 +238,7 @@ def test_watch_mode_tells_the_agent_to_propose_a_watch_instead_of_searching(monk
             yield AIMessageChunk(content="Ready to save.")
 
     monkeypatch.setattr(agent, "model", Recorder())
+    monkeypatch.setattr(agent, "watch_model", Recorder())
     agent.chat("Gazelle bike near 3511AB every morning at 8", [], mode="watch")
     agent.chat("Gazelle bike", [])
     assert "Watch it" in seen[0] and "propose_watch straight away" in seen[0]
@@ -341,3 +342,24 @@ def test_missing_settings_fail_with_a_clear_message(monkeypatch):
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
     with pytest.raises(RuntimeError, match="OPENAI_MODEL is not set"):
         agent.required_env("OPENAI_MODEL")
+
+
+def test_watch_mode_cannot_search_even_if_the_model_asks(monkeypatch):
+    class Searcher:
+        def __init__(self):
+            self.turn = 0
+
+        def stream(self, messages):
+            from langchain_core.messages import AIMessageChunk
+            self.turn += 1
+            if self.turn == 1:
+                yield AIMessageChunk(content="", tool_call_chunks=[
+                    {"name": "search_marktplaats", "args": '{"query": "iphone 13"}', "id": "c1", "index": 0}])
+            else:
+                yield AIMessageChunk(content="Ready.")
+
+    fetched = []
+    monkeypatch.setattr(agent, "watch_model", Searcher())
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: fetched.append(url) or PAGE)
+    done = agent.chat("iPhone 13 near 1012AB", [], mode="watch")
+    assert fetched == [] and done["searches"] == [] and done["listings"] == []

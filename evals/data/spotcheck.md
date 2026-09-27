@@ -1,0 +1,16 @@
+# Spot-check the judge (10 random labels)
+
+Put **yes** or **no** in the last column: do you agree with the judge?
+
+| # | Watching for | Listing | €  | Judge says | Why | Agree? |
+|---|---|---|---|---|---|---|
+| 1 | iPhone 13 phone, under €350 | [iPhone 13 Mini 128GB - Blauw - 12mnd garantie](https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531512320-iphone-13-mini-128gb-blauw-12mnd-garantie) | 219 | wrong_model_or_spec | This is an iPhone 13 mini, not the regular iPhone 13 being watched for. |  |
+| 2 | Mac mini, under €500 | [Mini Draadloos Toetsenbord met Touchpad, Scroll Wheel & 8 Kl](https://www.marktplaats.nl/v/computers-en-software/laptopstandaarden/a1530541852-mini-draadloos-toetsenbord-met-touchpad-scroll-wheel-8-kl) | 26 | different_product | Mini wireless keyboard, not a Mac mini. |  |
+| 3 | IKEA office chair, under €100 | [IKEA Bureau en Bureaustoel Set](https://www.marktplaats.nl/v/huis-en-inrichting/bureaus/m2436222417-ikea-bureau-en-bureaustoel-set) | 100 | over_budget | Set includes an IKEA office chair, but the listed price is €100, not under €100. |  |
+| 4 | Gazelle bike, under €400 | [Alle damesfietsen €80 // uitverkoop!](https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/a1526912893-alle-damesfietsen-80-uitverkoop) | 80 | different_product | General ladies' bikes listing with no indication they are Gazelle bikes. |  |
+| 5 | IKEA office chair, under €100 | [Ikea Langfjall  bureaustoel, blauw -wit](https://www.marktplaats.nl/v/huis-en-inrichting/bureaustoelen/a1527888579-ikea-langfjall-bureaustoel-blauw-wit) | 91 | match | IKEA Langfjall office chair, under €100. |  |
+| 6 | IKEA office chair, under €100 | [MOVING| TRANSPORT| VERHUISWAGEN IN AMSTERDAM EN OMGEVING](https://www.marktplaats.nl/v/diensten-en-vakmensen/verhuizers-en-opslag/a1523539627-moving-transport-verhuiswagen-in-amsterdam-en-omgeving) | 70 | different_product | This is a moving/transport service, not an IKEA office chair. |  |
+| 7 | Nintendo Switch OLED console, under €200 | [Nintendo Switch Consoles met garantie, vanaf](https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1504361788-nintendo-switch-consoles-met-garantie-vanaf) | 185 | unclear | Generic Nintendo Switch consoles listing with 'vanaf' pricing; it does not specify an OLED console under €200. |  |
+| 8 | Gazelle bike, under €400 | [Rado - Green Gazelle - Zonder minimumprijs - Heren -](https://www.marktplaats.nl/v/sieraden-tassen-en-uiterlijk/horloges-heren/a1531585953-rado-green-gazelle-zonder-minimumprijs-heren) | 2 | different_product | This is a Rado 'Green Gazelle' watch, not a Gazelle bicycle. |  |
+| 9 | IKEA office chair, under €100 | [Slede Stoel - Donkergrijs](https://www.marktplaats.nl/v/huis-en-inrichting/stoelen/a1525880965-slede-stoel-donkergrijs) | 47 | different_product | This is a sled-base chair and not listed as an IKEA office chair. |  |
+| 10 | iPhone 13 phone, under €350 | [Apple iPhone 13 128GB Zwart | 24 Mnd Garantie | €269](https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531265476-apple-iphone-13-128gb-zwart-24-mnd-garantie-269) | 269 | match | Regular Apple iPhone 13 128GB phone, priced under €350. |  |

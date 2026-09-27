@@ -128,6 +128,7 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
                     stats["listings"] = len(event["listings"])
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
+                    stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
                 yield json.dumps(event) + "\n"
         except Exception as e:
             stats["error"] = type(e).__name__

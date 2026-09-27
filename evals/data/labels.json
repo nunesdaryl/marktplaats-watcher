@@ -1,0 +1,301 @@
+{
+  "judge": "gpt-5.5",
+  "labels": {
+    "a1531500906": {
+      "id": "a1531500906",
+      "match": true,
+      "category": "match",
+      "reason": "Apple Mac Mini itself and under €500."
+    },
+    "a1529800322": {
+      "id": "a1529800322",
+      "match": false,
+      "category": "different_product",
+      "reason": "Bluetooth tracker, not a Mac mini."
+    },
+    "a1514987251": {
+      "id": "a1514987251",
+      "match": true,
+      "category": "match",
+      "reason": "Apple Mac mini itself and under €500."
+    },
+    "a1479696779": {
+      "id": "a1479696779",
+      "match": true,
+      "category": "match",
+      "reason": "Apple Mac mini itself and under €500."
+    },
+    "a1513969870": {
+      "id": "a1513969870",
+      "match": false,
+      "category": "different_product",
+      "reason": "Cisco network switch, not a Mac mini."
+    },
+    "a1530188640": {
+      "id": "a1530188640",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "USB-C hub/docking station for Mac Mini, not the Mac mini itself."
+    },
+    "a1530541852": {
+      "id": "a1530541852",
+      "match": false,
+      "category": "different_product",
+      "reason": "Mini wireless keyboard, not a Mac mini."
+    },
+    "a1530188553": {
+      "id": "a1530188553",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "Docking station/SSD enclosure for Mac Mini, not the Mac mini itself."
+    },
+    "a1480593582": {
+      "id": "a1480593582",
+      "match": true,
+      "category": "match",
+      "reason": "Apple Mac mini M1 itself and under €500."
+    },
+    "a1530504678": {
+      "id": "a1530504678",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "Stand/hub for Mac Mini or Mac Studio, not the Mac mini itself."
+    },
+    "a1531453566": {
+      "id": "a1531453566",
+      "match": true,
+      "category": "match",
+      "reason": "Gazelle Esprit T7 bicycle listed at €399, within the under-€400 budget."
+    },
+    "m2440128367": {
+      "id": "m2440128367",
+      "match": true,
+      "category": "match",
+      "reason": "Gazelle men's bicycles; appears to be the desired brand and item type, well within budget."
+    },
+    "m2443981207": {
+      "id": "m2443981207",
+      "match": true,
+      "category": "match",
+      "reason": "Gazelle Heavy Duty transport bicycle at €200, within budget."
+    },
+    "a1531585953": {
+      "id": "a1531585953",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is a Rado 'Green Gazelle' watch, not a Gazelle bicycle."
+    },
+    "a1526912893": {
+      "id": "a1526912893",
+      "match": false,
+      "category": "different_product",
+      "reason": "General ladies' bikes listing with no indication they are Gazelle bikes."
+    },
+    "m2442172752": {
+      "id": "m2442172752",
+      "match": true,
+      "category": "match",
+      "reason": "Gazelle Orange men's bicycle with seven gears at €45, within budget."
+    },
+    "a1531162081": {
+      "id": "a1531162081",
+      "match": false,
+      "category": "different_product",
+      "reason": "Adidas Gazelle shoes, not a bicycle."
+    },
+    "a1529684758": {
+      "id": "a1529684758",
+      "match": false,
+      "category": "different_product",
+      "reason": "Adidas Gazelle Bold shoes, not a bicycle."
+    },
+    "a1514986620": {
+      "id": "a1514986620",
+      "match": true,
+      "category": "match",
+      "reason": "Listing names Gazelle bicycle models and is priced at €325, within budget."
+    },
+    "a1504361788": {
+      "id": "a1504361788",
+      "match": false,
+      "category": "unclear",
+      "reason": "Generic Nintendo Switch consoles listing with 'vanaf' pricing; it does not specify an OLED console under €200."
+    },
+    "a1515866993": {
+      "id": "a1515866993",
+      "match": false,
+      "category": "unclear",
+      "reason": "Generic multi-console listing with starting price; no clear Nintendo Switch OLED console at the listed price."
+    },
+    "a1530454566": {
+      "id": "a1530454566",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is an OLED dock, not the console."
+    },
+    "a1524759986": {
+      "id": "a1524759986",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is a screen protector, not the console."
+    },
+    "a1528592460": {
+      "id": "a1528592460",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is an OLED dock plus AC adapter, not the console."
+    },
+    "a1530454557": {
+      "id": "a1530454557",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is a single Joy-Con controller, not the console."
+    },
+    "a1531325081": {
+      "id": "a1531325081",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is a single Joy-Con controller, not the console."
+    },
+    "a1530801137": {
+      "id": "a1530801137",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is a Joy-Con set, not the console."
+    },
+    "a1524760392": {
+      "id": "a1524760392",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is an OLED dock, not the console."
+    },
+    "a1524760585": {
+      "id": "a1524760585",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "This is an OLED dock/accessory, not the console."
+    },
+    "a1527888579": {
+      "id": "a1527888579",
+      "match": true,
+      "category": "match",
+      "reason": "IKEA Langfjall office chair, under €100."
+    },
+    "m2445344033": {
+      "id": "m2445344033",
+      "match": true,
+      "category": "match",
+      "reason": "IKEA office chair and well under budget."
+    },
+    "a1514751210": {
+      "id": "a1514751210",
+      "match": true,
+      "category": "match",
+      "reason": "IKEA Langfjall swivel/height-adjustable chair, suitable as an office chair and under budget."
+    },
+    "a1531509485": {
+      "id": "a1531509485",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is an IKEA Galant desk, not an office chair."
+    },
+    "a1473029656": {
+      "id": "a1473029656",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is a bar stool, not an IKEA office chair."
+    },
+    "m2418010098": {
+      "id": "m2418010098",
+      "match": true,
+      "category": "match",
+      "reason": "IKEA office chair with armrests, under budget."
+    },
+    "a1530191419": {
+      "id": "a1530191419",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is a side table, not an office chair."
+    },
+    "a1525880965": {
+      "id": "a1525880965",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is a sled-base chair and not listed as an IKEA office chair."
+    },
+    "m2436222417": {
+      "id": "m2436222417",
+      "match": false,
+      "category": "over_budget",
+      "reason": "Set includes an IKEA office chair, but the listed price is €100, not under €100."
+    },
+    "a1523539627": {
+      "id": "a1523539627",
+      "match": false,
+      "category": "different_product",
+      "reason": "This is a moving/transport service, not an IKEA office chair."
+    },
+    "a1531511180": {
+      "id": "a1531511180",
+      "match": false,
+      "category": "wrong_model_or_spec",
+      "reason": "This is an iPhone 13 mini, not the regular iPhone 13 being watched for."
+    },
+    "a1517169600": {
+      "id": "a1517169600",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+    },
+    "a1519094130": {
+      "id": "a1519094130",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 256GB phone, priced under €350."
+    },
+    "a1529860601": {
+      "id": "a1529860601",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 refurbished listing, starting price under €350."
+    },
+    "a1531265476": {
+      "id": "a1531265476",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+    },
+    "a1531489099": {
+      "id": "a1531489099",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 128GB phone, priced under €350."
+    },
+    "a1529610632": {
+      "id": "a1529610632",
+      "match": true,
+      "category": "match",
+      "reason": "Regular Apple iPhone 13 256GB phone, priced under €350."
+    },
+    "a1531512320": {
+      "id": "a1531512320",
+      "match": false,
+      "category": "wrong_model_or_spec",
+      "reason": "This is an iPhone 13 mini, not the regular iPhone 13 being watched for."
+    },
+    "a1346663439": {
+      "id": "a1346663439",
+      "match": false,
+      "category": "wrong_model_or_spec",
+      "reason": "This is an iPhone 13 Pro Max, not the regular iPhone 13 being watched for."
+    },
+    "a1531265418": {
+      "id": "a1531265418",
+      "match": false,
+      "category": "unclear",
+      "reason": "Generic 'iPhone from €109' listing does not specify that an iPhone 13 is available within budget."
+    }
+  },
+  "missing": [],
+  "cost_usd": 0.1139
+}

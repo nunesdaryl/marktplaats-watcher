@@ -1,0 +1,576 @@
+{
+  "collected_at": "2026-09-27 15:28",
+  "watches": [
+    {
+      "id": "mac",
+      "query": "mac mini",
+      "description": "Mac mini, under €500",
+      "max_price_eur": 500
+    },
+    {
+      "id": "bike",
+      "query": "gazelle fiets",
+      "description": "Gazelle bike, under €400",
+      "max_price_eur": 400
+    },
+    {
+      "id": "switch",
+      "query": "nintendo switch oled",
+      "description": "Nintendo Switch OLED console, under €200",
+      "max_price_eur": 200
+    },
+    {
+      "id": "chair",
+      "query": "ikea bureaustoel",
+      "description": "IKEA office chair, under €100",
+      "max_price_eur": 100
+    },
+    {
+      "id": "iphone",
+      "query": "iphone 13",
+      "description": "iPhone 13 phone, under €350",
+      "max_price_eur": 350
+    }
+  ],
+  "listings": [
+    {
+      "watch": "mac",
+      "id": "a1531500906",
+      "title": "Apple Mac Mini (Mid 2011) - Macintosh",
+      "price_eur": 15,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-overige-accessoires/a1531500906-apple-mac-mini-mid-2011-macintosh",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/57/574400fd-a01c-4805-a6ab-f2f99bc72906?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1529800322",
+      "title": "Mini Bluetooth Tracker met Apple Find My compatibiliteit - V",
+      "price_eur": 47,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/sieraden-tassen-en-uiterlijk/activity-trackers/a1529800322-mini-bluetooth-tracker-met-apple-find-my-compatibiliteit-v",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/82/825170e5-e802-4a93-88f6-bf169d4efdaf?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1514987251",
+      "title": "Apple Mac mini CTO 3 GHz Intel Core i5 16 GB RAM 512 GB PCIe",
+      "price_eur": 230,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/apple-desktops/a1514987251-apple-mac-mini-cto-3-ghz-intel-core-i5-16-gb-ram-512-gb-pcie",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/36/365ad8d6-d559-49b5-88e6-354967b64bd5?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1479696779",
+      "title": "Apple Mac mini 3.6 GHz Intel Core i3 8 GB RAM 128 GB PCIe",
+      "price_eur": 228,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/apple-desktops/a1479696779-apple-mac-mini-3-6-ghz-intel-core-i3-8-gb-ram-128-gb-pcie",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/1e/1e85fe20-a436-45b8-b013-05f71e296fd6?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1513969870",
+      "title": "Cisco C2960L-24PS-LL 24 Gigabit switch PoE+ 195W Budget",
+      "price_eur": 99,
+      "city": "Utrecht",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/netwerk-switches/a1513969870-cisco-c2960l-24ps-ll-24-gigabit-switch-poe-195w-budget",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/63/6346740f-d0cb-4a98-9e80-14df3e1ccd8d?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1530188640",
+      "title": "Qwiizlab USB-C Hub Docking Station voor Mac Mini M2/M1 met D",
+      "price_eur": 110,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/dockingstations/a1530188640-qwiizlab-usb-c-hub-docking-station-voor-mac-mini-m2-m1-met-d",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/d3/d391afd1-bbe0-4777-9008-eec57cfaf63f?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1530541852",
+      "title": "Mini Draadloos Toetsenbord met Touchpad, Scroll Wheel & 8 Kl",
+      "price_eur": 26,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/laptopstandaarden/a1530541852-mini-draadloos-toetsenbord-met-touchpad-scroll-wheel-8-kl",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/75/75ffd0f7-7a1f-4708-938f-7e1b55a74396?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1530188553",
+      "title": "UGREEN Docking Station & M.2 NVMe SSD Enclosure voor Mac Min",
+      "price_eur": 114,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/dockingstations/a1530188553-ugreen-docking-station-m-2-nvme-ssd-enclosure-voor-mac-min",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/f1/f1893a81-0d96-462f-bebc-8c7093db0ff1?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1480593582",
+      "title": "Apple Mac mini M1-Chip 8 GB RAM 256 GB PCIe SSD [Late 2020]",
+      "price_eur": 447,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/apple-desktops/a1480593582-apple-mac-mini-m1-chip-8-gb-ram-256-gb-pcie-ssd-late-2020",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/c3/c303cc8a-d8d8-46b6-b5d0-906e5883b66a?rule=eps_82.JPG"
+    },
+    {
+      "watch": "mac",
+      "id": "a1530504678",
+      "title": "Satechi Stand & Hub For Mac Mini / Studio With NVMe SSD Encl",
+      "price_eur": 89,
+      "city": "Ede",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/computers-en-software/dockingstations/a1530504678-satechi-stand-hub-for-mac-mini-studio-with-nvme-ssd-encl",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/c2/c29c07a8-d2a3-40aa-96e4-b0df2b1731b6?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "a1531453566",
+      "title": "Mechanische fiets | Gazelle Esprit T7 | -47%",
+      "price_eur": 399,
+      "city": null,
+      "distance_km": null,
+      "date": "10 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/a1531453566-mechanische-fiets-gazelle-esprit-t7-47",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/4b/4bd76a8e-26b2-4796-8e56-4234737a9e56?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "m2440128367",
+      "title": "Gazelle herenfietsen",
+      "price_eur": 40,
+      "city": "Middelburg",
+      "distance_km": null,
+      "date": "10 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-oldtimers/m2440128367-gazelle-herenfietsen",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/9fb7137d-a3b1-4e51-9c3f-48452449d94b?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "bike",
+      "id": "m2443981207",
+      "title": "Gazelle Heavy Duty transportfiets",
+      "price_eur": 200,
+      "city": "Hoogeveen",
+      "distance_km": null,
+      "date": "18 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2443981207-gazelle-heavy-duty-transportfiets",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/019c172a-3ca3-4a2b-8ac0-29ab81f52703?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "bike",
+      "id": "a1531585953",
+      "title": "Rado - Green Gazelle - Zonder minimumprijs - Heren -",
+      "price_eur": 2,
+      "city": null,
+      "distance_km": null,
+      "date": "18 sep 26",
+      "url": "https://www.marktplaats.nl/v/sieraden-tassen-en-uiterlijk/horloges-heren/a1531585953-rado-green-gazelle-zonder-minimumprijs-heren",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/d0/d050d594-5e85-4d38-87f9-e4b329a4df49?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "a1526912893",
+      "title": "Alle damesfietsen €80 // uitverkoop!",
+      "price_eur": 80,
+      "city": "Amsterdam",
+      "distance_km": null,
+      "date": "18 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/a1526912893-alle-damesfietsen-80-uitverkoop",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/82/821576dc-8621-433a-a7a8-8ce806b58161?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "m2442172752",
+      "title": "Gazelle Orange herenfiets met zeven versnellingen",
+      "price_eur": 45,
+      "city": "Arnhem",
+      "distance_km": null,
+      "date": "13 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-heren-herenfietsen/m2442172752-gazelle-orange-herenfiets-met-zeven-versnellingen",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/e3e991d0-1459-42eb-978a-fd5ca88f570a?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "bike",
+      "id": "a1531162081",
+      "title": "Adidas Gazelle – Blauw/Roze – Maat 36",
+      "price_eur": 40,
+      "city": "Puttershoek",
+      "distance_km": null,
+      "date": "13 sep 26",
+      "url": "https://www.marktplaats.nl/v/kleding-dames/schoenen/a1531162081-adidas-gazelle-blauw-roze-maat-36",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/b0/b031c320-9731-4358-9d7d-f77c3938eb14?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "a1529684758",
+      "title": "Adidas Gazelle Bold – Zwart/Wit – Maat 37.5",
+      "price_eur": 35,
+      "city": "Puttershoek",
+      "distance_km": null,
+      "date": "13 sep 26",
+      "url": "https://www.marktplaats.nl/v/kleding-dames/schoenen/a1529684758-adidas-gazelle-bold-zwart-wit-maat-37-5",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/31/316e6f57-8bcb-4165-8d72-95592efc5745?rule=eps_82.JPG"
+    },
+    {
+      "watch": "bike",
+      "id": "a1514986620",
+      "title": "Gazelle Heavy Duty, Gazelle NL, Gazelle Miss Grace",
+      "price_eur": 325,
+      "city": "Amsterdam",
+      "distance_km": null,
+      "date": "11 sep 26",
+      "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-omafietsen/a1514986620-gazelle-heavy-duty-gazelle-nl-gazelle-miss-grace",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/db/dbf0d1d6-4f0f-4ec1-b77a-e1deb40a554b?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1504361788",
+      "title": "Nintendo Switch Consoles met garantie, vanaf",
+      "price_eur": 185,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1504361788-nintendo-switch-consoles-met-garantie-vanaf",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/13/13d0e485-85ee-4bce-a6a4-7c331a697e8b?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1515866993",
+      "title": "Nintendo Switch Consoles & veel keuze, vanaf",
+      "price_eur": 175,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1515866993-nintendo-switch-consoles-veel-keuze-vanaf",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/5d/5da8d70a-32eb-488f-ab45-d1288be72f80?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1530454566",
+      "title": "Nintendo Switch OLED Dock Origineel (Klepje Zijkant Ontbr...",
+      "price_eur": 25,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1530454566-nintendo-switch-oled-dock-origineel-klepje-zijkant-ontbr",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/d5/d52d9c71-94f9-4f97-8ba6-de5557e4a23c?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1524759986",
+      "title": "Nintendo Switch OLED Screenprotector / Tempered Glass (Ni...",
+      "price_eur": 5,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1524759986-nintendo-switch-oled-screenprotector-tempered-glass-ni",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/ea/ea1a4402-7cda-4f87-9998-f9a119b623a0?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1528592460",
+      "title": "Nintendo Switch OLED Dock Origineel + AC Adapter",
+      "price_eur": 45,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1528592460-nintendo-switch-oled-dock-origineel-ac-adapter",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/48/4898ff93-7321-4c66-853f-f5ca426a703e?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1530454557",
+      "title": "Originele Nintendo Switch Joy Con OLED Wit Rechts",
+      "price_eur": 40,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1530454557-originele-nintendo-switch-joy-con-oled-wit-rechts",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/fe/fea95f67-092d-4cd9-b0ac-da63636c5a28?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1531325081",
+      "title": "Originele Nintendo Switch Joy Con OLED Wit Links",
+      "price_eur": 40,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1531325081-originele-nintendo-switch-joy-con-oled-wit-links",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/b7/b7ffac99-6a80-4d7a-b46e-eceb30219a88?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1530801137",
+      "title": "Originele Nintendo Switch Joy Con Wit OLED Set",
+      "price_eur": 80,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1530801137-originele-nintendo-switch-joy-con-wit-oled-set",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/c9/c941c366-3de9-47a2-ab20-90041683d20f?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1524760392",
+      "title": "Nintendo Switch Dock OLED Super Mario Edition Origineel",
+      "price_eur": 60,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1524760392-nintendo-switch-dock-oled-super-mario-edition-origineel",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/56/5608da06-1634-4906-9c6d-a3f218c4365c?rule=eps_82.JPG"
+    },
+    {
+      "watch": "switch",
+      "id": "a1524760585",
+      "title": "Nintendo Switch OLED Dock Origineel (Switch Accessoires)",
+      "price_eur": 33,
+      "city": "Voorschoten",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-nintendo-switch/a1524760585-nintendo-switch-oled-dock-origineel-switch-accessoires",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/9c/9c08ff11-1c2c-4b86-8e2c-91a7b1c16090?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "a1527888579",
+      "title": "Ikea Langfjall  bureaustoel, blauw -wit",
+      "price_eur": 91,
+      "city": "Vlijmen",
+      "distance_km": null,
+      "date": "Eergisteren",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/bureaustoelen/a1527888579-ikea-langfjall-bureaustoel-blauw-wit",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/ce/ce50c0ac-a1a0-495a-9473-fd5e363bcec7?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "m2445344033",
+      "title": "IKEA-bureaustoel",
+      "price_eur": 10,
+      "city": "Enschede",
+      "distance_km": null,
+      "date": "22 sep 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/bureaustoelen/m2445344033-ikea-bureaustoel",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/84ddf277-b056-465f-8011-b351f8e73126?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "chair",
+      "id": "a1514751210",
+      "title": "Ikea Langfjall draaibare vergaderstoel in hoogte verstelbaar",
+      "price_eur": 50,
+      "city": "Alphen aan den Rijn",
+      "distance_km": null,
+      "date": "22 sep 26",
+      "url": "https://www.marktplaats.nl/v/zakelijke-goederen/kantoor-en-winkelinrichting-kantoormeubilair-en-inrichting/a1514751210-ikea-langfjall-draaibare-vergaderstoel-in-hoogte-verstelbaar",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/be/be618811-dcd6-421e-9db2-ac3ad049f10b?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "a1531509485",
+      "title": "Gebruikte bureau IKEA Galant met glas",
+      "price_eur": 75,
+      "city": null,
+      "distance_km": null,
+      "date": "29 aug 26",
+      "url": "https://www.marktplaats.nl/v/zakelijke-goederen/kantoor-en-winkelinrichting-kantoormeubilair-en-inrichting/a1531509485-gebruikte-bureau-ikea-galant-met-glas",
+      "image": null
+    },
+    {
+      "watch": "chair",
+      "id": "a1473029656",
+      "title": "Barkruk Sebastian - Houten Witte Zitting",
+      "price_eur": 42,
+      "city": "Wijhe",
+      "distance_km": null,
+      "date": "29 aug 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/barkrukken/a1473029656-barkruk-sebastian-houten-witte-zitting",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/b5/b540d5fd-9375-480e-8926-65c9fe43b548?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "m2418010098",
+      "title": "Zwarte IKEA bureaustoel met armleuningen",
+      "price_eur": 15,
+      "city": "Utrecht",
+      "distance_km": null,
+      "date": "7 jul 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/bureaustoelen/m2418010098-zwarte-ikea-bureaustoel-met-armleuningen",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/c1f9d6e7-60e5-4e9c-9e96-87dc55b444e1?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "chair",
+      "id": "a1530191419",
+      "title": "Glazen Bijzettafel | Ø 50 cm",
+      "price_eur": 91,
+      "city": "Wijhe",
+      "distance_km": null,
+      "date": "7 jul 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/tafels-salontafels/a1530191419-glazen-bijzettafel-o-50-cm",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/79/790601a3-09d2-4662-afea-b18f94cf8a8a?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "a1525880965",
+      "title": "Slede Stoel - Donkergrijs",
+      "price_eur": 47,
+      "city": "Wijhe",
+      "distance_km": null,
+      "date": "7 jul 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/stoelen/a1525880965-slede-stoel-donkergrijs",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/ce/ce19bb2c-90f8-48d7-94d2-3a1242f61f23?rule=eps_82.JPG"
+    },
+    {
+      "watch": "chair",
+      "id": "m2436222417",
+      "title": "IKEA Bureau en Bureaustoel Set",
+      "price_eur": 100,
+      "city": "'s-Gravenhage",
+      "distance_km": null,
+      "date": "31 aug 26",
+      "url": "https://www.marktplaats.nl/v/huis-en-inrichting/bureaus/m2436222417-ikea-bureau-en-bureaustoel-set",
+      "image": "https://images.marktplaats.com/api/v1/hz-mp-pro-listing/images/f022187a-70cd-4fb6-b740-c82b5de0f7ca?rule=ecg_mp_eps$_82.jpg"
+    },
+    {
+      "watch": "chair",
+      "id": "a1523539627",
+      "title": "MOVING| TRANSPORT| VERHUISWAGEN IN AMSTERDAM EN OMGEVING",
+      "price_eur": 70,
+      "city": "Amsterdam",
+      "distance_km": null,
+      "date": "31 aug 26",
+      "url": "https://www.marktplaats.nl/v/diensten-en-vakmensen/verhuizers-en-opslag/a1523539627-moving-transport-verhuiswagen-in-amsterdam-en-omgeving",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/26/26b568e8-4927-4778-a71a-6dde864b4e02?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531511180",
+      "title": "Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade",
+      "price_eur": 275,
+      "city": "Sint Jansteen",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531511180-apple-iphone-13-mini-refurbished-128gb-blauw-a-grade",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/2e/2e356f89-e211-4579-b8d2-23dcad79988c?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1517169600",
+      "title": "Apple iPhone 13 128GB | 4 Gratis Accessoires – Accu tot 100",
+      "price_eur": 279,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1517169600-apple-iphone-13-128gb-4-gratis-accessoires-accu-tot-100",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/92/92d1e954-727c-4dfd-bbd7-9e274602f844?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1519094130",
+      "title": "Apple iPhone 13 256GB | 4 Gratis Accessoires – Accu tot 100%",
+      "price_eur": 309,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1519094130-apple-iphone-13-256gb-4-gratis-accessoires-accu-tot-100",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/d3/d3423870-b396-4e8e-8d61-8ac4de7120b4?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1529860601",
+      "title": "Apple iPhone 13 • Refurbished • 24M Garantie • Vanaf 259,-",
+      "price_eur": 259,
+      "city": "Haarlem",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1529860601-apple-iphone-13-refurbished-24m-garantie-vanaf-259",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/c0/c0bc4a5e-62e7-4f0e-bcf6-d1d19160d953?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531265476",
+      "title": "Apple iPhone 13 128GB Zwart | 24 Mnd Garantie | €269",
+      "price_eur": 269,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531265476-apple-iphone-13-128gb-zwart-24-mnd-garantie-269",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/5f/5f91029a-346a-4972-9a9d-95f876d15655?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531489099",
+      "title": "Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt",
+      "price_eur": 160,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/spelcomputers-en-games/spelcomputers-overige-accessoires/a1531489099-apple-iphone-13-128gb-green-iphone-1-dit-product-wordt",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/ce/ce410f1a-9542-4cda-8b67-666480c56e3d?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1529610632",
+      "title": "Apple iPhone 13 Wit 256GB C Grade",
+      "price_eur": 260,
+      "city": "Nijmegen",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1529610632-apple-iphone-13-wit-256gb-c-grade",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/da/da49dd3f-9769-4450-b285-dc5f2a0e07cf?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531512320",
+      "title": "iPhone 13 Mini 128GB - Blauw - 12mnd garantie",
+      "price_eur": 219,
+      "city": "Rosmalen",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531512320-iphone-13-mini-128gb-blauw-12mnd-garantie",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/81/814d48bb-792c-4dfc-9ad4-009404bd0acf?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1346663439",
+      "title": "Apple iPhone 13 Pro Max 128GB Groen / Garantie / Nette staat",
+      "price_eur": 349,
+      "city": "Heiloo",
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1346663439-apple-iphone-13-pro-max-128gb-groen-garantie-nette-staat",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/86/86b74eee-3e57-40db-aa34-cd27747f34e4?rule=eps_82.JPG"
+    },
+    {
+      "watch": "iphone",
+      "id": "a1531265418",
+      "title": "iPhone vanaf €109 | Apple | 24 maanden garantie",
+      "price_eur": 109,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531265418-iphone-vanaf-109-apple-24-maanden-garantie",
+      "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/82/826d4de6-0848-42b5-91a6-db5142fc77a0?rule=eps_82.JPG"
+    }
+  ]
+}
