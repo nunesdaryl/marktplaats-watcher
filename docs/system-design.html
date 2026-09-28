@@ -51,18 +51,20 @@
 <!-- ============================ COVER ============================ -->
 <div class="cover">
   <div>
+    <img src="../frontend/public/icon.svg" width="72" height="72" alt="Marktplaats Watcher logo: a robot looking through binoculars" style="display:block;margin-bottom:10px">
     <div class="kicker">FDE COHORT 1 · SYSTEM DESIGN DOCUMENT</div>
     <h1>How To Build A Marktplaats Watcher Agent</h1>
     <p style="font-size:13pt;color:var(--muted);margin-top:0">A chat agent that finds second-hand Mac Minis on Marktplaats.nl, built
       with LangChain on Azure AI Foundry, and a walk-through of every idea on the Day-2 Agent Engineering Cheat Sheet,
       applied to it. <b>Version 2 (section 12)</b> adds sign-in, watches that run on a schedule the user chooses in
       plain English, and AI-scored e-mail alerts. <b>Version 3 (section 13)</b> makes it demo-ready: Next.js, ChatGPT/Apple-style
-      management, evaluation, monitoring, measured cost, and fixes from two independent audits.</p>
+      management, evaluation, monitoring, measured cost, and fixes from two independent audits. <b>Section 14</b> covers the
+      brand: the Sieve design system and the switchable, animated robot logo.</p>
     <div class="eq"><span class="pill">Model (OpenAI gpt-5.4-mini)</span> + <span class="pill">Harness (FastAPI · loop · tool · guardrails)</span> = <span class="pill dark">Agent</span></div>
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
       <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 28 September 2026</td></tr>
-      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; human check pending), monitored, costed (section 13)</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code></td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
@@ -73,7 +75,7 @@
     every item on the cheat sheet to the code, with an honest status for each: <span class="tag built">BUILT</span>
     <span class="tag partial">PARTIAL</span> <span class="tag none">NOT IN MVP</span>. Sections 6–9 go deeper into loop,
     tool, security and evaluation engineering, section 10 covers deployment (Docker and Vercel), and section 12
-    describes version 2, section 13 the demo-ready version 3. Sections 1–11 describe version 1 as it was built on
+    describes version 2, section 13 the demo-ready version 3, and section 14 the design system and logo. Sections 1–11 describe version 1 as it was built on
     26 September; their line numbers refer to that version. Each section ends with a <b>Pattern</b> box: the reusable lesson for
     building your own agent.
   </div>
@@ -639,8 +641,10 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>Scorer on 49 real listings, labelled by a stronger judge model (gpt-5.5)</td><td>"Great" (≥8): <b>13 of 13</b> agreed with the judge (precision 100%), recall 68%.
     "Good" (≥6): precision 85%, <b>recall 90%</b>. Misses kept visible: an iPhone 13 scored 1, older or smaller models land
     near the line.</td></tr>
-  <tr><td>Human check of the judge</td><td>Pending: 10 labels in evals/data/spotcheck.md for the owner to answer. An AI second
-    opinion is kept separately (evals/data/spotcheck-ai-review.md) and never counts as the human check.</td></tr>
+  <tr><td>Human check of the judge</td><td><b>7 of 10</b> judge labels confirmed by the owner (28 Sep). The other 3 were
+    judged too strict: the judge called real matches non-matches (a €100 set for "under €100", a Gazelle listing, an
+    IKEA chair). The precision and recall above are still measured against the judge's labels. An AI second opinion is
+    kept separately (evals/data/spotcheck-ai-review.md) and never counts as the human check.</td></tr>
 </table>
 <p class="small">Rerun: <code>.venv/bin/python -m evals.run_scorer</code>, <code>evals.run_chat</code>, <code>evals.report</code>, <code>evals.cost</code>
   (a few cents; by hand after any prompt or model change, and weekly).</p>
@@ -694,8 +698,69 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
 <p class="small">Accepted on purpose: an e-mail AgentMail accepted but didn't confirm may arrive twice (better than losing
   it). Still open: the human checks in docs/demo/pre-demo-checklist.md, and, before charging money, the Marktplaats terms
   question, payments and commercial hosting.</p>
-<div class="pattern"><b>Pattern:</b> an evaluation that finds nothing proves nothing. Keep the first run's failures in the report,
+<div class="pattern"><b>Pattern (evaluation):</b> an evaluation that finds nothing proves nothing. Keep the first run's failures in the report,
   fix what's real in code, correct what was wrong in the test, and say which is which.</div>
+</section>
+
+<!-- ============================ 14 DESIGN AND LOGO ============================ -->
+<section>
+<h2>14. Design system and logo</h2>
+<p>A cosmetic restyle on 28 September: every feature, layout and piece of copy stayed the same, and only the visual layer
+  changed. It followed the <b>Spec → design → build</b> path from the FDE course.</p>
+<ol>
+  <li><b>Brief.</b> The design brief (<code>docs/design/claude-design-brief.md</code>) was built from:
+    <ul>
+      <li>the product and its buyer avatar</li>
+      <li>the Marketing Engineer skill pack's positioning (the mechanism, a score plus the reason, is the brand)</li>
+      <li>the course's "four decisions" (one spacing scale, two fonts, one accent colour, real states)</li>
+      <li>a study of Marktplaats' own look, so we don't copy it (<code>references/</code>)</li>
+    </ul></li>
+  <li><b>Claude Design</b> produced three directions. <b>B · Sieve</b> was chosen and built out: tokens, components,
+    screens, the e-mail pattern and social templates.</li>
+  <li><b>GPT Images</b> explored logo options for the FDE group.</li>
+  <li><b>The group's pick</b> was redrawn as clean vector in code and applied to the app.</li>
+</ol>
+
+<h3>Sieve, the design language</h3>
+<table>
+  <tr><th style="width:30%">Element</th><th>Choice</th></tr>
+  <tr><td>Colour</td><td>Warm graphite and warm off-white surfaces. <b>Teal</b> is the one accent (links, primary
+    buttons, focus). <b>Lilac</b> is the one highlight: the fill-in sentence pills, Watch mode, and the "good" score. There is
+    no orange or action blue, to stay clear of Marktplaats' own brand.</td></tr>
+  <tr><td>Type</td><td><b>Geist</b> for words and <b>Geist Mono</b> for every score, price and time (SIL OFL). Both are
+    self-hosted, because the site's security policy only allows fonts from its own origin.</td></tr>
+  <tr><td>Shape and space</td><td>Controls 6px, cards 8px, composer and menus 12px, sheets 16px; spacing 4/8/16/24/32/48.</td></tr>
+  <tr><td>Tokens</td><td>The same CSS custom-property names as before, now with light <i>and</i> dark values for every
+    token. The restyle was a token swap plus a few component touches, not a rewrite. Source:
+    <code>docs/design/sieve/tokens.css</code>, with a contrast table in its README (every pair passes WCAG AA in both
+    themes).</td></tr>
+  <tr><td>Everything else that shows the brand</td><td>The alert e-mail (Sieve colours, score badges, the logo), the OG
+    image, the browser theme colour, and the Clerk sign-in theme.</td></tr>
+</table>
+
+<h3>The logo: defined once, switchable, animated</h3>
+<p>The logo is a friendly robot looking through binoculars, with a watched source in the lenses. The FDE group chose
+  option <b>H</b>: the binoculars held at chest height, with a Marktplaats-style mark in both lenses. The trademark risk
+  was known and accepted, and "Not affiliated with Marktplaats" stays on the landing page, the e-mails and the social
+  images. The live logo animates from H to <b>I</b> (the binoculars raised to just below the eyes) and back, in a
+  4-second loop.</p>
+<pre>// frontend/src/brand/logo.js: one switch for the app, favicon, app icons, OG image and GIF
+export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i", lens: "marktplaats" };
+//   pose: "chest" (H) | "eyes" (I)      body: false = option J (face and hands only)
+//   lens: "marktplaats" | "dot" | "sieve" | "score" | "slot" | "none"   (another marketplace = one more entry)</pre>
+<ul>
+  <li><code>&lt;Logo&gt;</code> inlines the SVG built by <code>logoSvg()</code>. It's a pure function of the config
+    (unit-tested), so the sidebar, landing page and boot screen always agree.</li>
+  <li>The animation is CSS keyframes inside the SVG. It stops under <code>prefers-reduced-motion</code>, and favicons are
+    always still.</li>
+  <li><code>npm run brand</code> regenerates <code>icon.svg</code>, <code>apple-icon.png</code>, <code>icon-512.png</code>,
+    the OG image and <code>docs/design/logo-h-to-i.gif</code> from the same source. The GIF frames follow the same
+    easing curve as the CSS animation.</li>
+</ul>
+<div class="pattern"><b>Pattern:</b> put a brand element that people will keep changing behind one config and one
+  generator. The logo went through five versions in one afternoon: H, a more realistic redraw that was reverted,
+  I, J, and finally the animated H→I. Each switch was a one-line change plus a regenerate, with nothing to hunt down
+  across the app.</div>
 </section>
 
 </body>

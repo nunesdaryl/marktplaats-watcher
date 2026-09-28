@@ -37,3 +37,43 @@ Prepared corrections: “13 selected listings agreed with the model judge,” hi
 ## Record and approvals
 
 All relevant checklist rows stay ☐ with agent preparation notes. **No production changes made; no documents committed or pushed.** No Daryl approval has been received for rollback, enforcement or document commits. Remaining personal actions: ten judgments, phone test, private-window sign-ins and two presentations; production approvals are requested only when each prepared action is ready. [docs/demo/pre-demo-checklist.md](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/docs/demo/pre-demo-checklist.md>).
+
+## Continuation — 28 September 2026
+
+### 1. Judge spot-check — done (10/10 answered; 7/10 agreed)
+
+Daryl, 2026-09-28 14:24:49 CEST (recorded): answered **“Yes”** in this chat to row 4’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in the last column of [spotcheck.md](../../evals/data/spotcheck.md). This is agreement with the judge’s `different_product` label, not with the separate AI second opinion. No rationale was supplied or inferred.
+
+Daryl, 2026-09-28 14:35:13 CEST (recorded): answered **“Yes”** in this chat to row 3’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `over_budget` label for the €100 set. No rationale was supplied or inferred. This records the row judgment; application policy was not changed.
+
+**Correction from Daryl, 2026-09-28 14:37:51 CEST (recorded):** “Actually for Row 4 and Row 3 and Row 9 I agree with AI second opinion”. This supersedes the two earlier interpretations of “Yes” above. Rows **4 and 3 now contain `no`**, because the prepared AI second opinion disagrees with the judge on both. The earlier entries are retained only as history, not as Daryl’s current judgments.
+
+At the correction above, **row 9** was left pending because the prepared AI second opinion was **unsure**. That interim state is superseded by Daryl’s definite judgment below.
+
+Daryl, 2026-09-28 15:12:29 CEST (recorded), clarified row 9: **“It’s the right product, looking at the description it matches the desire”**. Recorded exactly `no` in the Agree? column, meaning disagreement with the judge’s `different_product` label. This is Daryl’s judgment; the separate AI second opinion remains unchanged.
+
+Daryl, 2026-09-28 15:23:42 CEST (recorded): answered **“Yes”** to row 1’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `wrong_model_or_spec` label for the iPhone 13 mini. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:25:00 CEST (recorded): answered **“Yes”** to row 2’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `different_product` label for the mini wireless keyboard. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:25:52 CEST (recorded): answered **“Yes”** to row 5’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `match` label for the IKEA Langfjall office chair. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:28:31 CEST (recorded): answered **“Yes”** to row 6’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `different_product` label for the moving/transport service. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:29:56 CEST (recorded): answered **“Yes”** to row 7’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `unclear` label for the Nintendo Switch consoles advert with a starting price but no OLED-specific price. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:36:03 CEST (recorded): answered **“Yes”** to row 8’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `different_product` label for the Rado Green Gazelle wristwatch. No additional rationale was supplied or inferred.
+
+Daryl, 2026-09-28 15:37:43 CEST (recorded): answered **“Yes”** to row 10’s question, “Agree with the judge: yes or no?”. Recorded exactly `yes` in [spotcheck.md](../../evals/data/spotcheck.md), agreeing with the judge’s `match` label for the standard iPhone 13. No additional rationale was supplied or inferred.
+
+**Judge spot-check complete: 10/10 answers recorded; 7/10 agreed.** Daryl agrees on rows 1, 2, 5, 6, 7, 8 and 10 and disagrees on rows **3, 4 and 9**. Row 3: Daryl agreed with the prepared AI view that the app’s inclusive €100 maximum permits the €100 set. Row 4: Daryl agreed with the prepared AI view that the live Gazelle brand field supports investigating the stock advert. Row 9: Daryl explicitly said the description matches the desired product. These are human judgments about the shown listings, not evidence that the judge saw their full descriptions or brand fields.
+
+Agent verification, 2026-09-28 15:37:43 CEST: regenerated [evals/report.md](../../evals/report.md) from saved results using `runpy.run_module('evals.report', run_name='__main__')` with dotenv loading replaced by a no-op and an audit hook rejecting environment-file reads. No model calls or application-code edits. Verified line 3 says **7/10 agreed** and names rows **3, 4, 9**; the measured cost section is preserved; every other report line and all saved scorer/chat/judge result files are unchanged. Checklist item 9 is now complete.
+
+The headline precision and recall remain measured against the original judge labels. Adopting Daryl’s three disputed judgments would change the evaluation reference and require recalculation; no revised precision/recall or human-validated scorer claim is made here. Other human checks remain unconfirmed in this continuation. No production changes, commits or pushes were made.
+
+The 27 September entries above are historical observations. The updated [brief](human-checks-agent-brief.md) governs this continuation, including the current rollback target and checks to perform.
+
+### 2. Mobile-data flow — awaiting Daryl
+
+Next check: on Daryl’s phone, Wi-Fi off and mobile data on, load the live app, sign in personally, open a watch and send one chat message. Daryl’s result, approximate load time, oddities and confirmation of the new logo/design are pending. This agent’s local browser runs on Daryl’s Mac and is not independent-network evidence.

@@ -67,7 +67,8 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
 ## Evaluation, cost and operations
 - **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, all 13
   "great match" e-mails agreed with the judge (100% precision, 68% recall) and "good matches" catches 90% of real
-  matches; a human check of the judge's labels is pending. Rerun with `.venv/bin/python -m evals.run_scorer`,
+  matches. A human check of 10 judge labels agreed with 7; on the other 3 the judge was too strict (it called real
+  matches non-matches). Rerun with `.venv/bin/python -m evals.run_scorer`,
   `evals.run_chat`, `evals.report`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
 - **Feedback and "would you pay?":** the in-app Feedback button e-mails each message to `OWNER_EMAIL`;

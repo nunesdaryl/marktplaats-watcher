@@ -1,6 +1,6 @@
 # Pre-demo checklist (course checklist §5)
 
-✅ = verified by the build session on 27 Sep 2026 · ☐ = Daryl does it before demo day (Sat 3 Oct)
+✅ = verified; see the dated evidence for who performed each check · ☐ = still open before demo day (Sat 3 Oct)
 
 | # | Check | Status | Evidence / how |
 |---|---|---|---|
@@ -12,9 +12,12 @@
 | 6 | No secrets visible (screen, repo, screenshots) | ✅ | gitleaks scan of the full history in CI; e-mail address blurred in docs screenshots |
 | 7 | Cost stated | ✅ | evals/report.md §4; demo script 2:30 |
 | 8 | Proof ready | ✅ | evals/report.md: chat 20/20, scorer precision/recall |
-| 9 | Judge spot-check done | ☐ | Agent, 27 Sep 2026 23:05: AI second opinion prepared separately; zero Daryl answers recorded. Row 4 asked first. evals.report now keeps cost §4 (801eddd). See human-checks-2026-09-27.md. |
+| 9 | Judge spot-check done | ✅ | Daryl, 2026-09-28 15:37:43 CEST: completed all 10 judgments; 7/10 agreed, disagreed on rows 3, 4 and 9. Report regenerated; measured cost §4 preserved. Precision/recall still use the judge’s labels. See human-checks-2026-09-27.md. |
 | 10 | Rollback path tested once | ☐ | Not performed; explicit Daryl approval pending. Round-two mixed-version risk handled 27 Sep (801eddd): roll back only to a deployment with the same API (cac3821), per the updated brief. See human-checks-2026-09-27.md. |
 | 11 | CSP enforced after a clean sign-in | ☐ | Agent, 27 Sep 2026 23:08: local enforcement blocked images.marktplaats.com; fixed 27 Sep (801eddd, now allowed). Still report-only: next is Daryl's private-window sign-in, then explicit approval to enforce. See human-checks-2026-09-27.md. |
 | 12 | Rehearsed twice (engineer and business version) | ☐ | No Daryl presentations/timings recorded. Prepare Version A and Version B; see human-checks-2026-09-27.md. |
 | 13 | Three conversations with real Marktplaats hunters | ☐ | Ask about the past: "the last time you looked for something second-hand, how did you keep an eye on it?" |
 | 14 | Old Azure course key rotated or deleted | ☐ | If it still exists in the Azure portal |
+| 15 | Light mode looks right after the redesign (28 Sep) | ☐ | Dark mode checked on desktop and phone by the build session; light mode only on paper (contrast table). Brief §6 |
+| 16 | Redesigned alert e-mail seen in the inbox | ☐ | Arrives with the next real match. Brief §7 |
+| 17 | Daryl's personal line in the LinkedIn launch post | ☐ | Fill in or delete the `[DARYL: …]` line. Brief §8 |

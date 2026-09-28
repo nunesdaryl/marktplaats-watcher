@@ -66,8 +66,8 @@ with the reason.* "That sentence *is* the product."
 **1:30.** Show the e-mail: "9 out of 10, and why."
 
 **1:50.** "How do I know it works? I tested it on 49 real listings against a stronger AI as the judge. When you choose
-'great matches only', all 13 listings it would e-mail were matches in the judge's eyes, and I'm checking those labels by
-hand. I also tested 20 conversations, including people trying to trick
+'great matches only', all 13 listings it would e-mail were matches in the judge's eyes, and I checked 10 of
+the judge's labels by hand: I agreed with 7, and on the other 3 the judge was too strict. I also tested 20 conversations, including people trying to trick
 it."
 
 **2:20.** "Cost: an hourly watch finding one new listing an hour is about 35 cents a month in AI cost, with a hard budget cap. When something breaks, I get a
