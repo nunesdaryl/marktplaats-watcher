@@ -16,6 +16,8 @@ export const metadata = {
       alt: "Check Marktplaats for a Mac mini under €500 every morning at 8 and e-mail me the good ones. A 9/10 match is e-mailed, a 0/10 docking station is skipped." }],
   },
   twitter: { card: "summary_large_image" },
+  // Generated from src/brand/logo.js by `npm run brand`
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], apple: "/apple-icon.png" },
   // Shared on LinkedIn and at the demo, not advertised to search engines (Marktplaats ToS art. 7.3 exposure)
   robots: { index: false, follow: false },
 };

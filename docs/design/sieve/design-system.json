@@ -1,0 +1,213 @@
+{
+ "v": 3,
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "m",
+   "order": [
+    "symbol.svg",
+    "symbol-on-dark.svg",
+    "symbol-mono-black.svg",
+    "symbol-mono-white.svg",
+    "lockup-horizontal-light.svg",
+    "lockup-horizontal-dark.svg",
+    "lockup-horizontal-mono-black.svg",
+    "lockup-horizontal-mono-white.svg",
+    "lockup-stacked-light.svg",
+    "lockup-stacked-dark.svg",
+    "lockup-stacked-mono-black.svg",
+    "lockup-stacked-mono-white.svg",
+    "wordmark-light.svg",
+    "wordmark-dark.svg",
+    "favicon.svg",
+    "favicon-16.png",
+    "favicon-32.png",
+    "apple-touch-icon.png",
+    "icon-512-maskable.png",
+    "icon-512.png"
+   ],
+   "files": {
+    "symbol.svg": {
+     "name": "symbol.svg",
+     "blob": "947b9f91b8197f4bf770cefa35a1e15d",
+     "size": 491,
+     "type": "image/svg+xml"
+    },
+    "symbol-on-dark.svg": {
+     "name": "symbol-on-dark.svg",
+     "blob": "3f84a173eccf0f5f4f3f950e9a5568a8",
+     "size": 544,
+     "type": "image/svg+xml"
+    },
+    "symbol-mono-black.svg": {
+     "name": "symbol-mono-black.svg",
+     "blob": "35d1dc8f3f5a083aa2755bfa091aa2a3",
+     "size": 660,
+     "type": "image/svg+xml"
+    },
+    "symbol-mono-white.svg": {
+     "name": "symbol-mono-white.svg",
+     "blob": "799c9b9e3d471304528f2dcf7ed84a16",
+     "size": 660,
+     "type": "image/svg+xml"
+    },
+    "lockup-horizontal-light.svg": {
+     "name": "lockup-horizontal-light.svg",
+     "blob": "e64bcdef99ecf7a81d8eee0374722a5a",
+     "size": 12138,
+     "type": "image/svg+xml"
+    },
+    "lockup-horizontal-dark.svg": {
+     "name": "lockup-horizontal-dark.svg",
+     "blob": "55d553baba6cd2da4f1e06276d1f46d7",
+     "size": 12204,
+     "type": "image/svg+xml"
+    },
+    "lockup-horizontal-mono-black.svg": {
+     "name": "lockup-horizontal-mono-black.svg",
+     "blob": "200bdd05d604fe818085087fca707ba3",
+     "size": 12437,
+     "type": "image/svg+xml"
+    },
+    "lockup-horizontal-mono-white.svg": {
+     "name": "lockup-horizontal-mono-white.svg",
+     "blob": "5c0cb9984d0420aabe2ed7bbd1e16f33",
+     "size": 12437,
+     "type": "image/svg+xml"
+    },
+    "lockup-stacked-light.svg": {
+     "name": "lockup-stacked-light.svg",
+     "blob": "24a69fa29bd08aa44bb45d32ffabf62b",
+     "size": 11665,
+     "type": "image/svg+xml"
+    },
+    "lockup-stacked-dark.svg": {
+     "name": "lockup-stacked-dark.svg",
+     "blob": "94732e5c0082477b5eebe012a7a17633",
+     "size": 11714,
+     "type": "image/svg+xml"
+    },
+    "lockup-stacked-mono-black.svg": {
+     "name": "lockup-stacked-mono-black.svg",
+     "blob": "627b3ed517455d57b5a17ad3984e8166",
+     "size": 11787,
+     "type": "image/svg+xml"
+    },
+    "lockup-stacked-mono-white.svg": {
+     "name": "lockup-stacked-mono-white.svg",
+     "blob": "caef9973df96a2d5ebb31881f2100e6c",
+     "size": 11787,
+     "type": "image/svg+xml"
+    },
+    "wordmark-light.svg": {
+     "name": "wordmark-light.svg",
+     "blob": "3e7a2e463b6e5dcf4dfd648cb64b9670",
+     "size": 12315,
+     "type": "image/svg+xml"
+    },
+    "wordmark-dark.svg": {
+     "name": "wordmark-dark.svg",
+     "blob": "ec32b3b18cded31c350ea0fed1537424",
+     "size": 12315,
+     "type": "image/svg+xml"
+    },
+    "favicon.svg": {
+     "name": "favicon.svg",
+     "blob": "f52033185897aa38e88a1378a4dce5f7",
+     "size": 491,
+     "type": "image/svg+xml"
+    },
+    "favicon-16.png": {
+     "name": "favicon-16.png",
+     "blob": "f9a52fab4c7f2ee9232214baaede26ae",
+     "size": 318,
+     "type": "image/png"
+    },
+    "favicon-32.png": {
+     "name": "favicon-32.png",
+     "blob": "46b77d8caf97ca023ef3b41a1c38a744",
+     "size": 594,
+     "type": "image/png"
+    },
+    "apple-touch-icon.png": {
+     "name": "apple-touch-icon.png",
+     "blob": "e3bfe3e9aa3ae46d3af04fc9444834d4",
+     "size": 1788,
+     "type": "image/png"
+    },
+    "icon-512-maskable.png": {
+     "name": "icon-512-maskable.png",
+     "blob": "8b8475f5dac23a0c872710be7c6c799f",
+     "size": 5359,
+     "type": "image/png"
+    },
+    "icon-512.png": {
+     "name": "icon-512.png",
+     "blob": "fd747a4465bfa5cf376db4a25d319edd",
+     "size": 11890,
+     "type": "image/png"
+    }
+   }
+  },
+  "Social": {
+   "name": "Social",
+   "tile": "l",
+   "order": [
+    "og-image.png",
+    "linkedin-carousel-01.png",
+    "linkedin-stat-card.png",
+    "linkedin-before-after.png"
+   ],
+   "files": {
+    "og-image.png": {
+     "name": "og-image.png",
+     "blob": "69e47d94fda1a3180532846228dbf857",
+     "size": 75943,
+     "type": "image/png"
+    },
+    "linkedin-carousel-01.png": {
+     "name": "linkedin-carousel-01.png",
+     "blob": "0336ab6c4f7787ec2d5e7d6d75c2f219",
+     "size": 86144,
+     "type": "image/png"
+    },
+    "linkedin-stat-card.png": {
+     "name": "linkedin-stat-card.png",
+     "blob": "23242ae24dc8f8f03d819a20cc627de6",
+     "size": 52978,
+     "type": "image/png"
+    },
+    "linkedin-before-after.png": {
+     "name": "linkedin-before-after.png",
+     "blob": "e2a64f7fe68b44ab9874b90671737399",
+     "size": 84507,
+     "type": "image/png"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "createdOnFiles": {
+  "at": "2026-09-28T08:12:33Z",
+  "v": 1
+ },
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "groups": [
+  "Logos",
+  "Social"
+ ],
+ "lastChange": {
+  "by": "Daryl",
+  "at": "2026-09-28T08:37:53Z",
+  "via": "Cowork",
+  "note": "Phase 2: full Sieve system (warmed neutrals), logo set, e-mail pattern, social templates"
+ },
+ "layout": "files",
+ "libraries": [],
+ "namespace": "MarktplaatsWatcher",
+ "sections": {},
+ "title": "Marktplaats Watcher"
+}

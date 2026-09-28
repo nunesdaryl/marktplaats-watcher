@@ -1,4 +1,5 @@
 import Landing from "./Landing.jsx";
+import Logo from "./components/Logo.jsx";
 
 // What shows before the app's JavaScript and Clerk have loaded. It is prerendered into the static HTML, so a
 // first-time visitor sees the landing page at once. Returning signed-in users (flag set by the app, read by a
@@ -7,7 +8,7 @@ export default function Boot({ landing }) {
   return (
     <>
       {landing && <div className="boot-landing"><Landing /></div>}
-      <div className={`boot-wait ${landing ? "" : "always"}`} aria-hidden="true"><span className="logo" style={{ width: 36, height: 36, fontSize: 20 }}>🛒</span></div>
+      <div className={`boot-wait ${landing ? "" : "always"}`} aria-hidden="true"><Logo size={36} /></div>
     </>
   );
 }
