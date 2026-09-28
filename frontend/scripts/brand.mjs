@@ -40,6 +40,31 @@ async function png(file, size) {
 await png("apple-icon.png", 180);
 await png("icon-512.png", 512);
 
+// The social preview (OG) image, 1200×627, in the Sieve style with the current logo (still pose)
+{
+  const dir = mkdtempSync(join(tmpdir(), "brand-og-"));
+  const fonts = fileURLToPath(new URL("../public/fonts/", import.meta.url));
+  const pill = (t) => `<span style="background:#bca8ff;color:#190d3b;border-radius:10px;padding:0 14px;box-decoration-break:clone;-webkit-box-decoration-break:clone">${t}</span>`;
+  const card = (score, title, why, good) => `<div style="flex:1;display:flex;gap:18px;align-items:center;background:${good ? "#252321" : "transparent"};border:1px solid rgba(232,224,212,.14);border-radius:12px;padding:20px 22px">
+    <span style="font:500 24px 'Geist Mono';padding:8px 14px;border-radius:8px;${good ? "background:#58d68e;color:#062414" : "background:#252321;color:#a9a49c"}">${score}</span>
+    <span><b style="display:block;font-size:22px;${good ? "" : "text-decoration:line-through;color:#a9a49c"}">${title}</b><span style="color:#a9a49c;font-size:18px">${why}</span></span></div>`;
+  const html = join(dir, "og.html");
+  writeFileSync(html, `<!doctype html><style>
+@font-face{font-family:Geist;src:url("file://${fonts}geist-sans-latin-400-normal.woff2");font-weight:400}
+@font-face{font-family:Geist;src:url("file://${fonts}geist-sans-latin-600-normal.woff2");font-weight:600}
+@font-face{font-family:"Geist Mono";src:url("file://${fonts}geist-mono-latin-500-normal.woff2");font-weight:500}
+body{margin:0;width:1200px;height:627px;background:#151412;color:#ece9e4;font-family:Geist;box-sizing:border-box;padding:56px 64px;display:flex;flex-direction:column}
+</style><body>
+<div style="display:flex;align-items:center;gap:14px">${logoSvg({ size: 56, animate: false })}<span style="font-size:26px;color:#a9a49c">Marktplaats <b style="color:#ece9e4;font-weight:600">Watcher</b></span></div>
+<h1 style="font-size:58px;line-height:1.18;font-weight:600;letter-spacing:-0.035em;margin:40px 0 0;max-width:1060px">Check Marktplaats for a ${pill("Mac mini under €500")} ${pill("every morning at 8")} and <span style="white-space:nowrap">e-mail</span> me ${pill("good matches")}, with the reason.</h1>
+<div style="display:flex;gap:20px;margin-top:auto">${card("9/10", "Mac mini i5, 16 GB, €230", "Well under €500. E-mailed.", true)}${card("0/10", "Mac Mini M4 Docking Station, €74", "Not a Mac mini. Skipped.", false)}</div>
+<div style="text-align:right;color:#928d85;font-size:16px;margin-top:14px">Not affiliated with Marktplaats</div>
+</body>`);
+  await shot(html, join(pub, "og-image.png"), 1200, 627, dir);
+  rmSync(dir, { recursive: true, force: true });
+  console.log("public/og-image.png  1200×627");
+}
+
 // The animated logo as a GIF (H to I and back, 4 s loop) for LinkedIn, Slack and slides: 100 frames rendered on one
 // sprite sheet by Chrome, cut into frames and encoded by ffmpeg (skipped when ffmpeg isn't installed).
 if (LOGO.animate) {

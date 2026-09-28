@@ -16,7 +16,7 @@ test("the subject names the watch and the best match", () => {
 
 test("listing titles from strangers are escaped, never rendered as HTML", () => {
   const { html } = renderEmail(content, "https://app.test");
-  expect(html).not.toContain("<img");
+  expect(html).not.toContain("<img src=x");                     // a listing title can't inject markup
   expect(html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
 });
 

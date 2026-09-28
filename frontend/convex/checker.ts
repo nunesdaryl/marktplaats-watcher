@@ -222,17 +222,25 @@ export function renderEmail(c: EmailContent, appUrl: string) {
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
     footer, `Manage or pause this watch: ${manageUrl}`,
   ].join("\n");
+  // Sieve colours (docs/design/sieve/email): inline styles and system fonts only; the badge colour follows the score
+  const badge = (score?: number) => score === undefined ? "" :
+    `<span style="display:inline-block;font:600 13px/20px ui-monospace,Menlo,monospace;padding:0 7px;border-radius:6px;${
+      score >= 8 ? "background:#157346;color:#ffffff" : score >= 6 ? "background:#ddd0ff;color:#25124f" : "background:#eeebe6;color:#5b5751"
+    }">${score}/10</span> `;
+  const base = appUrl.replace(/\/$/, "");
   const html = `<div style="display:none;max-height:0;overflow:hidden">${escape(preheader)}</div>
-<div style="font-family:system-ui,sans-serif;max-width:560px;color:#1d1d1f">
-<h2 style="font-size:18px">${escape(heading)}</h2>
-${top.map((a) => `<div style="border:1px solid #e5e5ea;border-radius:10px;padding:12px;margin:10px 0">
-<a href="${escape(a.url)}" style="font-weight:600;color:#0a66c2;text-decoration:none">${escape(a.title)}</a>
-<div style="color:#555;margin-top:4px">${escape(facts(a))}</div>
-<div style="margin-top:6px">${escape(a.reason)}</div>
-<a href="${escape(a.url)}" style="display:inline-block;margin-top:8px;color:#0a66c2">Open on Marktplaats</a></div>`).join("\n")}
+<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;color:#1b1a18;background:#fbfaf7;padding:20px;border-radius:12px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><img src="${escape(base)}/apple-icon.png" width="28" height="28" alt="" style="border-radius:7px">
+<span style="font-size:15px;color:#5b5751">Marktplaats <b style="color:#1b1a18">Watcher</b></span></div>
+<h2 style="font-size:18px;margin:0 0 6px">${escape(heading)}</h2>
+${top.map((a) => `<div style="background:#ffffff;border:1px solid #e2ded7;border-radius:8px;padding:12px 14px;margin:10px 0">
+<a href="${escape(a.url)}" style="font-weight:600;color:#1b1a18;text-decoration:none">${escape(a.title)}</a>
+<div style="color:#5b5751;margin-top:6px">${badge(a.score)}${escape(facts(a))}</div>
+<div style="margin-top:8px;padding-left:8px;border-left:2px solid #e2ded7">${escape(a.reason)}</div>
+<a href="${escape(a.url)}" style="display:inline-block;margin-top:10px;color:#0d6b62;font-weight:600">Open on Marktplaats</a></div>`).join("\n")}
 ${more > 0 ? `<p>…and ${more} more in the app, under Alerts.</p>` : ""}
-<p style="color:#888;font-size:12px;margin-top:20px">${escape(footer)}<br>
-<a href="${escape(manageUrl)}" style="color:#888">Manage or pause this watch</a></p></div>`;
+<p style="color:#6e6a63;font-size:12px;margin-top:20px">${escape(footer)}<br>
+<a href="${escape(manageUrl)}" style="color:#0d6b62">Manage or pause this watch</a></p></div>`;
   return { subject, text, html };
 }
 

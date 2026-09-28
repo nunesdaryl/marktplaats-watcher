@@ -58,6 +58,12 @@ Tests: `.venv/bin/python -m pytest -q` and `cd frontend && npm test && npm run t
 CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` and a gitleaks secret scan
 (`.github/workflows/ci.yml`). An uptime check runs every 30 minutes (`.github/workflows/uptime.yml`).
 
+## Design and logo
+The look follows the **Sieve** design system (`docs/design/sieve/`, made with Claude Design): warm graphite, one teal
+accent, lilac highlights for the fill-in sentence, Geist and Geist Mono (self-hosted). The logo is defined once in
+`frontend/src/brand/logo.js`. Change `LOGO` there, then run `cd frontend && npm run brand` to regenerate the favicon,
+app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `docs/design/logo-review.md`.
+
 ## Evaluation, cost and operations
 - **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, all 13
   "great match" e-mails agreed with the judge (100% precision, 68% recall) and "good matches" catches 90% of real
