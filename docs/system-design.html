@@ -65,7 +65,7 @@
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
       <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 28 September 2026</td></tr>
       <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14)</td></tr>
-      <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code></td></tr>
+      <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code> (<code>marktplaatswatcher.vercel.app</code> redirects here)</td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
     </table>
@@ -469,7 +469,9 @@ docker run --env-file .env -p 127.0.0.1:8000:8000 marktplaats-watcher:1.0-amd64 
   <li><b>Protection for a public URL:</b> 10 questions per minute per IP (429 after), a 15-minute result cache and at most
     30 Marktplaats fetches per hour per instance.</li>
   <li><b>Share the production URL</b> <code>https://marktplaats-watcher.vercel.app</code>. The per-deployment preview URLs
-    stay behind Vercel's login (Deployment Protection).</li>
+    stay behind Vercel's login (Deployment Protection). The no-hyphen address <code>marktplaatswatcher.vercel.app</code>
+    is a second project domain that permanently redirects (308) to the main one, so sign-in, sharing previews and e-mail
+    links all stay on one address.</li>
 </ul>
 <div class="box warn"><b>Two deployment bugs, both found by looking, not guessing.</b> (1) A rewrite to a separate
   <code>api/index.py</code> made FastAPI see every path as <code>/api/index</code>, so every GET route returned 404; a temporary

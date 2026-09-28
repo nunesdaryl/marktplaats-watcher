@@ -5,7 +5,8 @@ repo root unless they start with `cd frontend`.
 
 **Where things run:**
 - **Vercel** (project `daryl-nunes-projects/marktplaats-watcher`) serves the Next.js UI and the Python API, at
-  https://marktplaats-watcher.vercel.app.
+  https://marktplaats-watcher.vercel.app. The no-hyphen address https://marktplaatswatcher.vercel.app is a project
+  domain that 308-redirects there, keeping the path (Vercel → Settings → Domains).
 - **Convex** production (`chatty-sardine-719`) holds the data and runs the schedules.
 - **Clerk** handles login.
 - **AgentMail** (`marktplaats-watcher@agentmail.to`) sends e-mail.

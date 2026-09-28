@@ -2,6 +2,8 @@
 
 Tell it what you want on Marktplaats, pick how often to check, and get an e-mail when a good one shows up.
 
+**Live:** https://marktplaats-watcher.vercel.app (https://marktplaatswatcher.vercel.app, without the hyphen, redirects there).
+
 - **Sign in** with Clerk (your e-mail address is where alerts go).
 - **Chat** to search Marktplaats, or ask it to watch something: "tell me when a Gazelle bike shows up
   near 3511AB, every morning at 8". The chat only *proposes* a watch; you press **Save watch**.

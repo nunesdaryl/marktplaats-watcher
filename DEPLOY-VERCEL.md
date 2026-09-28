@@ -39,6 +39,14 @@ chat or the repo.
 
 In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
 
+**Second address.** `https://marktplaatswatcher.vercel.app` (no hyphen) is added under Vercel → project → Settings →
+Domains as a permanent (308) redirect to the main address, keeping the path. People who type it without the hyphen still
+arrive, and sign-in, sharing previews and e-mail links stay on one address. Added on 28 Sep 2026 with:
+```bash
+npx vercel api /v10/projects/marktplaats-watcher/domains -X POST \
+  -F name=marktplaatswatcher.vercel.app -F redirect=marktplaats-watcher.vercel.app -F redirectStatusCode=308
+```
+
 ## 3. Deploy
 ```bash
 cd frontend && npx convex deploy -y   # 1. Convex functions, schema and crons to production
