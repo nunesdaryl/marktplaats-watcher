@@ -16,3 +16,6 @@ frontend/next-env.d.ts
 
 # Local audit reproductions (temp paths, replay scripts)
 docs/audit/evidence-*/
+
+# Reference screenshots of third-party sites (kept local)
+references/img/
