@@ -74,6 +74,26 @@ The headline precision and recall remain measured against the original judge lab
 
 The 27 September entries above are historical observations. The updated [brief](human-checks-agent-brief.md) governs this continuation, including the current rollback target and checks to perform.
 
-### 2. Mobile-data flow — awaiting Daryl
+### 2. Mobile-data flow — passed, spacing observation open
 
-Next check: on Daryl’s phone, Wi-Fi off and mobile data on, load the live app, sign in personally, open a watch and send one chat message. Daryl’s result, approximate load time, oddities and confirmation of the new logo/design are pending. This agent’s local browser runs on Daryl’s Mac and is not independent-network evidence.
+Daryl, 2026-09-28 15:57:01 CEST (recorded), responded to the requested phone test (Wi-Fi off, mobile data on; load site, sign in, open a watch, send a chat message): **“All four worked, however the spacing on the progressive web app version of the mobile site could be a bit better for an iphone SE 2020”**.
+
+Recorded the four-step functional flow as passed on Daryl’s report. Checklist item 2 is complete. Recorded the **iPhone SE 2020 chat-screen spacing observation** as an open UX follow-up. Daryl subsequently supplied the screenshot below: it shows a partly obscured feedback link and no logo in the signed-in mobile header. No spacing code changes were made. Approximate load time remains unanswered. The screenshot confirms dark surfaces and teal accents; it does not confirm that Daryl saw the robot logo elsewhere. This agent’s local browser is on Daryl’s Mac and is not independent-network evidence.
+
+Daryl, 2026-09-28 15:57:53 CEST (recorded), clarified: **“The chat screen could be better spaced on mobile iPhone SE 2020”**. This identifies the affected screen; no clipping, overlap, keyboard problem or root cause was inferred.
+
+Daryl, 2026-09-28 16:01:24 CEST (recorded), asked **“Also nowhere once loaded do we see the logo while using the app?”** and supplied [this iPhone SE 2020 chat screenshot](evidence-2026-09-28/iphone-se-2020-chat-user.jpg). Original attachment preserved byte-for-byte; SHA-256 `2e3b6c0e298b25977961022df6636e44dc356d45c9c711eb62cf8f37ffaa0980`. The displayed screenshot clock reads 15:58; this note’s timestamp is the recording time, not a measured test duration.
+
+**Confirmed observations:** the signed-in new-chat header has a history icon, “New chat” title and profile avatar, with no robot logo; the feedback text is partly hidden behind the bottom navigation in this captured position. The screenshot contains a browser address bar and controls, so it directly establishes the mobile browser view. Daryl previously described the experience as the PWA; standalone installed-PWA behavior has not been independently verified.
+
+**Source check:** [App.jsx:156](../../frontend/src/App.jsx#L156) renders the mobile header without a logo, so this is omitted branding rather than evidence of a failed logo download. The logo is rendered by [Landing.jsx:29](../../frontend/src/Landing.jsx#L29), [Boot.jsx:11](../../frontend/src/Boot.jsx#L11), and [Sidebar.jsx:97](../../frontend/src/components/Sidebar.jsx#L97); the desktop branch begins at [App.jsx:140](../../frontend/src/App.jsx#L140). These explain why it is visible before/elsewhere in the flow but absent in the shown mobile workspace.
+
+**Spacing hypothesis, not a reproduced root cause:** fixed mobile composer/navigation combined with wrapped text and large vertical spacing may reduce usable room on a short screen ([styles.css:288](../../frontend/src/styles.css#L288), [styles.css:315](../../frontend/src/styles.css#L315), [styles.css:529](../../frontend/src/styles.css#L529); [ChatView.jsx:106](../../frontend/src/views/ChatView.jsx#L106)). The main area scrolls; the screenshot does not prove that feedback is permanently unreachable. On-device scroll, keyboard-open and standalone-PWA checks remain needed before claiming a complete diagnosis.
+
+**Open visual follow-ups:** persistent mobile branding and short-screen chat spacing/feedback visibility. Human functional pass remains valid; these visual findings are not marked resolved. No application edits, production changes or commits were made by this session.
+
+### 3. Production rollback — preparation only; awaiting dashboard sign-in
+
+Agent observation, 2026-09-28 15:57:01 CEST: Vercel redirected the project dashboard to sign-in. Daryl must sign in; no credentials were entered by the agent. The actual current and previous Production deployment IDs and commit hashes remain unverified. No rollback approval has been requested or received, and no production mutation was performed.
+
+Read-only local preparation found an empty `git diff cac3821 a6e5f0a -- agent.py main.py`; recent source versions share those API files. Local Git references do not establish which deployments are current/previous in Vercel. Before the drill, capture both actual Production deployments, compare their API files, identify the exact restoration target, then request Daryl’s approval. The drill follows the narrower previous-deployment rule in the [brief](human-checks-agent-brief.md), rather than treating any “last good” release in [RUNBOOK.md §2](../../RUNBOOK.md) as sufficient. Vercel’s auto-promotion state is still unverified.

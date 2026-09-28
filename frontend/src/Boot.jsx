@@ -8,7 +8,7 @@ export default function Boot({ landing }) {
   return (
     <>
       {landing && <div className="boot-landing"><Landing /></div>}
-      <div className={`boot-wait ${landing ? "" : "always"}`} aria-hidden="true"><Logo size={36} /></div>
+      <div className={`boot-wait ${landing ? "" : "always"}`} aria-hidden="true"><Logo size={56} /></div>
     </>
   );
 }

@@ -196,7 +196,7 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
   width: 272px; flex: none; display: flex; flex-direction: column; gap: 2px; padding: 12px 10px;
   background: var(--sidebar); border-right: 1px solid var(--line); overflow-y: auto;
 }
-.brand { display: flex; align-items: center; gap: 10px; padding: 6px 10px 14px; font-weight: 600; font-size: 15px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; font-weight: 600; font-size: 16px; }
 .nav-item {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px;
   background: none; text-align: left; font-size: 15px; color: var(--text);
@@ -292,7 +292,8 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
   backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid var(--line);
 }
-.topbar-title { flex: 1; text-align: center; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-title { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 16px; }
+.topbar-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--glass);
@@ -527,6 +528,12 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
   .page-head h1 { font-size: 30px; }
   .thread { padding: 16px 14px 20px; }
   .empty-chat { justify-content: flex-start; padding-top: 10vh; }
+  /* Phones: the composer is fixed above the tab bar, so reserve its height below the content; suggestions and the
+     feedback link can always be scrolled into view (short screens like the iPhone SE: 375×667) */
+  .shell.phone .empty-chat { gap: 16px; padding: max(24px, 5vh) 16px calc(150px + env(safe-area-inset-bottom)); }
+  .shell.phone .hello h1 { font-size: 26px; line-height: 1.2; }
+  .shell.phone .hello p { font-size: 15px; }
+  .shell.phone .suggestions .chip { padding: 7px 12px; font-size: 13px; }
   .shell.phone .empty-composer {
     position: fixed; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); width: auto; padding: 8px 12px 10px;
     background: linear-gradient(to top, var(--bg) 70%, transparent);

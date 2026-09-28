@@ -26,7 +26,7 @@ export default function Landing({ SignIn = Plain }) {
   return (
     <div className="landing">
       <header className="bar">
-        <Logo />
+        <Logo size={40} />
         <span className="name wordmark">Marktplaats <b>Watcher</b></span>
         <SignIn mode="modal"><button className="button plain">Sign in</button></SignIn>
       </header>

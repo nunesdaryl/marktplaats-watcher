@@ -94,7 +94,7 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
   return (
     <nav className="sidebar" aria-label="Main">
       <div className="brand">
-        <Logo /><span className="wordmark">Marktplaats <b>Watcher</b></span>
+        <Logo size={40} /><span className="wordmark">Marktplaats <b>Watcher</b></span>
         <button className="icon-button small" onClick={() => window.dispatchEvent(new Event("mw:search"))}
                 aria-label="Search (⌘K)" title="Search (⌘K)"><Icon name="search" size={16} /></button>
       </div>

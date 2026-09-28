@@ -3,6 +3,7 @@ import { AuthLoading, Authenticated, Unauthenticated, useMutation, useQuery } fr
 import { useEffect, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import Icon from "./components/Icon.jsx";
+import Logo from "./components/Logo.jsx";
 import MoveSheet from "./components/MoveSheet.jsx";
 import RenameSheet from "./components/RenameSheet.jsx";
 import RowMenu from "./components/RowMenu.jsx";
@@ -159,8 +160,10 @@ function Workspace() {
           : inChat
             ? <button className="icon-button" onClick={() => setSheet({ type: "history" })} aria-label="Chats"><Icon name="clock" /></button>
             : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" /></button>}
+        {/* The signature logo stays visible on every phone screen, next to the title */}
         <span className="topbar-title">
-          {inChat ? (currentChat?.title ?? "New chat")
+          <Logo size={30} />
+          {inChat ? <span className="topbar-text">{currentChat?.title ?? "New chat"}</span>
             : <button className="beta-pill" onClick={openFeedback}>Beta · Give feedback</button>}
         </span>
         {currentChat && <RowMenu items={actions.chatItems(currentChat)} label="Chat options" />}
