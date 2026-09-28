@@ -178,3 +178,7 @@ Read in full or as relevant excerpts during preparation and this human-check con
 - Daryl’s supplied [mobile screenshot](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/docs/demo/evidence-2026-09-28/iphone-se-2020-chat-user.jpg>) and [desktop logo-size screenshot](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/docs/demo/evidence-2026-09-28/desktop-logo-size-user.png>), both preserved unchanged.
 
 No `.env` files were opened. Source inspection and Daryl’s screenshot are not a substitute for Claude’s implementation verification or Daryl’s subsequent on-device approval.
+
+## Status (Claude, 2026-09-28)
+
+Tasks A and B implemented, checked locally at 375×667, 760px and 1280px, then committed and deployed on Daryl's OK (commit `14975e1`, Vercel production: success). Details and evidence: [human-checks-2026-09-27.md §2](human-checks-2026-09-27.md). Open: Daryl's on-device judgment (keyboard open, installed home-screen app, light mode).

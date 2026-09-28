@@ -20,6 +20,9 @@
 > "reduce motion", and the favicons stay H. GIF for LinkedIn, Slack and slides: `docs/design/logo-h-to-i.gif`, made by
 > `npm run brand`.
 >
+> **Sizes, 28 Sep:** the logo is the app's signature, so it's shown larger: 40px in the desktop sidebar and on the
+> landing page, 56px on the loading screen, and 30px in the phone top bar on every tab (it was missing on phones).
+
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
 > 1. Change `LOGO = { mark, pose, body, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
 >    `"none"`; the mark can be `"robot"` or `"sieve"`. A new marketplace is one more entry in `LENSES`.

@@ -92,6 +92,15 @@ Daryl, 2026-09-28 16:01:24 CEST (recorded), asked **“Also nowhere once loaded 
 
 **Open visual follow-ups:** persistent mobile branding and short-screen chat spacing/feedback visibility. Human functional pass remains valid; these visual findings are not marked resolved. No application edits, production changes or commits were made by this session.
 
+**Follow-up implemented and deployed (Claude, 2026-09-28, commit `14975e1`, Vercel production: success).** Daryl approved commit and deploy in chat. Changes, per [the handoff](claude-mobile-ui-handoff-2026-09-28.md):
+- Phone top bar: the robot logo (30px) on the Chat, Watches and Alerts tabs, and next to the chat title inside a chat (long titles are shortened with an ellipsis).
+- Phone new-chat screen: 26px heading, smaller suggestion chips, and bottom room for the fixed composer. At 375×667 the heading, all three suggestions and the feedback link sit above the composer.
+- Desktop: logo 40px in the sidebar and on the landing page, 56px on the loading screen; wordmark 16px.
+- Checks: `npm test` 73/73 and `npm run build` passed (a standard build, which may read local `.env` files).
+- Evidence (local browser at phone width, not an iPhone): [after, phone tabs](evidence-2026-09-28/after-phone-375-chat-watches-alerts.jpg), [after, chat thread and 760px](evidence-2026-09-28/after-phone-375-chat-thread-and-760.jpg), [after, desktop sidebar](evidence-2026-09-28/after-desktop-1280-sidebar-logo-40.jpg).
+
+**Still Daryl's to judge on the iPhone SE:** repeat the four phone steps; check spacing with the keyboard open, the installed home-screen app, and light mode. These visual findings are marked resolved only after that.
+
 ### 3. Production rollback — preparation only; awaiting dashboard sign-in
 
 Agent observation, 2026-09-28 15:57:01 CEST: Vercel redirected the project dashboard to sign-in. Daryl must sign in; no credentials were entered by the agent. The actual current and previous Production deployment IDs and commit hashes remain unverified. No rollback approval has been requested or received, and no production mutation was performed.

@@ -757,6 +757,11 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     the OG image and <code>docs/design/logo-h-to-i.gif</code> from the same source. The GIF frames follow the same
     easing curve as the CSS animation.</li>
 </ul>
+<p><b>The logo as signature (28 September).</b> An on-device check on an iPhone SE (2020) found two gaps: the logo
+  appeared nowhere once you were signed in on a phone, and on the short screen the typing box covered the feedback link.
+  The fix puts the logo (30px) in the phone top bar on every tab and next to the chat title, and makes the desktop logo
+  bigger: 40px in the sidebar and on the landing page, 56px on the loading screen. The phone's new-chat screen got a
+  smaller heading, smaller suggestion chips and room above the fixed typing box, so everything fits at 375×667.</p>
 <div class="pattern"><b>Pattern:</b> put a brand element that people will keep changing behind one config and one
   generator. The logo went through five versions in one afternoon: H, a more realistic redraw that was reverted,
   I, J, and finally the animated H→I. Each switch was a one-line change plus a regenerate, with nothing to hunt down

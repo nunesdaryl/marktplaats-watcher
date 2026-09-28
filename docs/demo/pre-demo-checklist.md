@@ -5,7 +5,7 @@
 | # | Check | Status | Evidence / how |
 |---|---|---|---|
 | 1 | Deployed and reachable without my laptop | ✅ | https://marktplaats-watcher.vercel.app, GitHub uptime workflow green |
-| 2 | Loads on a network I don’t control (mobile data) | ✅ | Daryl, 2026-09-28 15:57:01 CEST: reported all four phone steps worked (load, sign in, open watch, send chat). iPhone SE 2020 PWA chat-screen spacing could improve (Daryl clarified 2026-09-28 15:57:53 CEST); screenshot confirms absent mobile logo and partly obscured feedback; visual follow-ups open, load time pending. See human-checks-2026-09-27.md. |
+| 2 | Loads on a network I don’t control (mobile data) | ✅ | Daryl, 2026-09-28 15:57:01 CEST: reported all four phone steps worked (load, sign in, open watch, send chat). iPhone SE 2020 PWA chat-screen spacing could improve (Daryl clarified 2026-09-28 15:57:53 CEST); screenshot confirmed absent mobile logo and partly obscured feedback. Fixed and deployed 28 Sep (14975e1): logo in the phone top bar, new-chat screen fits above the composer; Daryl's on-device re-check pending, load time pending. See human-checks-2026-09-27.md. |
 | 3 | The pitch lands in 2–3 seconds | ✅ | Landing sentence + "Set up a free watch" above the fold; landing is in the HTML (no loading screen) |
 | 4 | Empty states are real | ✅ | First-run setup, "What are you looking for?", no watches, no matches yet, no alerts, nothing archived |
 | 5 | Error states are real | ✅ | AI offline (503 message), Marktplaats down, scoring down (nothing unscored is sent), unknown postcode, limits, duplicate watch |
@@ -21,3 +21,4 @@
 | 15 | Light mode looks right after the redesign (28 Sep) | ☐ | Dark mode checked on desktop and phone by the build session; light mode only on paper (contrast table). Brief §6 |
 | 16 | Redesigned alert e-mail seen in the inbox | ☐ | Arrives with the next real match. Brief §7 |
 | 17 | Daryl's personal line in the LinkedIn launch post | ☐ | Fill in or delete the `[DARYL: …]` line. Brief §8 |
+| 18 | Phone spacing and logo re-checked on the iPhone SE (28 Sep fix) | ☐ | Reload or re-add the home-screen app; check new chat (keyboard open too), the logo on all three tabs, light mode. See human-checks-2026-09-27.md §2 |
