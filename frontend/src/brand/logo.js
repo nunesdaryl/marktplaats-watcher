@@ -7,7 +7,7 @@
 //   body: true shows the white body bar under the robot; false (option J) keeps the focus on face and hands
 //   lens: what the robot sees in both lenses: "marktplaats" | "dot" | "sieve" | "score" | "slot" | "none"
 //         (a different marketplace later = one more entry in LENSES)
-export const LOGO = { mark: "robot", pose: "eyes", body: false, lens: "marktplaats" };
+export const LOGO = { mark: "robot", pose: "chest", body: true, lens: "marktplaats" };
 
 const C = {
   tile: "#1b1a18", teal: "#4fd1bf", white: "#f4f2ee", lilac: "#bca8ff", ink: "#1b1a18",

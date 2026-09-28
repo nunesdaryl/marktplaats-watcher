@@ -12,6 +12,9 @@
 > **Update, 28 Sep:** the live logo is now **J**: I without the white body bar, so the focus is on the face and hands
 > (`body: false`). Preview: `references/img/logo/logo-option-J-no-body.png`.
 >
+> **Live, 28 Sep:** **H** stays live while the logo is iterated (I and J are saved options: `pose: "eyes"`, and
+> `body: false`). New iterations are previewed first and only go live on request.
+>
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
 > 1. Change `LOGO = { mark, pose, body, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
 >    `"none"`; the mark can be `"robot"` or `"sieve"`. A new marketplace is one more entry in `LENSES`.
