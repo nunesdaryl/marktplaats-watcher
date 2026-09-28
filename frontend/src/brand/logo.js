@@ -5,9 +5,11 @@
 //         "sieve"  three bars narrowing to one dot (the Claude Design prototype)
 //   pose: "chest" (option H: binoculars held below the eyes) | "eyes" (option I: binoculars held at eye level)
 //   body: true shows the white body bar under the robot; false (option J) keeps the focus on face and hands
+//   animate: "h-to-i" loops the robot raising the binoculars from H to I and back (still under reduced motion);
+//            false = a still logo in the given pose. Favicons are always still.
 //   lens: what the robot sees in both lenses: "marktplaats" | "dot" | "sieve" | "score" | "slot" | "none"
 //         (a different marketplace later = one more entry in LENSES)
-export const LOGO = { mark: "robot", pose: "chest", body: true, lens: "marktplaats" };
+export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i", lens: "marktplaats" };
 
 const C = {
   tile: "#1b1a18", teal: "#4fd1bf", white: "#f4f2ee", lilac: "#bca8ff", ink: "#1b1a18",
@@ -34,25 +36,48 @@ const LENSES = {
   none: () => "",
 };
 
-function robot(lens, pose, body = true) {
+// How far the binoculars (and the eyes) move from H (raise 0) to I (raise 1), in view-box units
+const RAISE_BINOCULARS = 6.5, RAISE_EYES = 2;
+
+// H to I and back, in a 4 s loop: hold H, raise, hold I, lower. The same curve drives the GIF frames (raiseAt).
+const ANIMATION = `<style>
+@keyframes mwb{0%,22%{transform:translateY(0)}40%,72%{transform:translateY(-${RAISE_BINOCULARS}px)}90%,100%{transform:translateY(0)}}
+@keyframes mwe{0%,22%{transform:translateY(0)}40%,72%{transform:translateY(-${RAISE_EYES}px)}90%,100%{transform:translateY(0)}}
+.mw-b{animation:mwb 4s cubic-bezier(.45,0,.25,1) infinite}.mw-e{animation:mwe 4s cubic-bezier(.45,0,.25,1) infinite}
+@media (prefers-reduced-motion:reduce){.mw-b,.mw-e{animation:none}}
+</style>`;
+
+/** Raise (0 = H, 1 = I) at time t (0-1) in the loop; mirrors the CSS keyframes above, for rendering GIF frames. */
+export function raiseAt(t) {
+  const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
+  if (t < 0.22 || t >= 0.9) return 0;
+  if (t < 0.4) return ease((t - 0.22) / 0.18);
+  if (t < 0.72) return 1;
+  return 1 - ease((t - 0.72) / 0.18);
+}
+
+function robot(lens, raise, body = true, animate = false) {
   const see = LENSES[lens] ?? LENSES.none;
-  const y = pose === "eyes" ? 35.5 : 42;   // I: binoculars raised to just below the eyes; H: held lower, at the chest
+  const y = 42;   // binoculars at the chest (H); the moving group lifts them towards the eyes (I)
+  const lift = (by) => (animate || !raise ? "" : ` transform="translate(0 ${-by * raise})"`);
   return [
     `<rect width="64" height="64" rx="16" fill="${C.tile}"/>`,
+    animate ? ANIMATION : "",
     body ? "" : `<g transform="translate(0 4)">`,   // J: no body, so centre the face and hands in the tile
     // antenna, ears, head, smiling eyes
     `<path d="M32 8.5V13" stroke="${C.teal}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="7" r="2.8" fill="${C.teal}"/>`,
     `<rect x="11.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/><rect x="47.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/>`,
     `<rect x="16" y="13" width="32" height="25" rx="9" fill="${C.tile}" stroke="${C.white}" stroke-width="3"/>`,
-    `<path d="M23 ${pose === "eyes" ? 21.5 : 23.5}q3-3.4 6 0M35 ${pose === "eyes" ? 21.5 : 23.5}q3-3.4 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/>`,
-    // body and hands holding the binoculars
+    `<g class="mw-e"${lift(RAISE_EYES)}><path d="M23 23.5q3-3.4 6 0M35 23.5q3-3.4 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/></g>`,
     body ? `<rect x="23" y="49" width="18" height="8" rx="3" fill="${C.white}"/>` : "",
+    // hands holding the binoculars: bridge with hinge, two barrels (teal rims), dark lenses
+    `<g class="mw-b"${lift(RAISE_BINOCULARS)}>`,
     `<rect x="6.5" y="${y - 8}" width="9" height="15" rx="4.5" fill="${C.white}"/><rect x="48.5" y="${y - 8}" width="9" height="15" rx="4.5" fill="${C.white}"/>`,
-    // binoculars: bridge with hinge, two barrels (teal rims), dark lenses
     `<rect x="26" y="${y - 11}" width="12" height="9" rx="4" fill="${C.teal}"/><circle cx="32" cy="${y - 7.5}" r="2.2" fill="${C.tile}"/>`,
     `<circle cx="21" cy="${y}" r="11" fill="${C.teal}"/><circle cx="43" cy="${y}" r="11" fill="${C.teal}"/>`,
     `<circle cx="21" cy="${y}" r="7.6" fill="${C.tile}"/><circle cx="43" cy="${y}" r="7.6" fill="${C.tile}"/>`,
     see(21, y, 7.6), see(43, y, 7.6),
+    `</g>`,
     body ? "" : "</g>",
   ].join("");
 }
@@ -64,8 +89,9 @@ function sieve() {
 }
 
 /** The logo as an SVG string (64×64 view box). Pure: same input, same output, safe to inline. */
-export function logoSvg({ mark = LOGO.mark, pose = LOGO.pose, body = LOGO.body, lens = LOGO.lens, size } = {}) {
-  const content = mark === "sieve" ? sieve() : robot(lens, pose, body);
+export function logoSvg({ mark = LOGO.mark, pose = LOGO.pose, body = LOGO.body, lens = LOGO.lens, animate = LOGO.animate, raise, size } = {}) {
+  const r = raise ?? (pose === "eyes" ? 1 : 0);
+  const content = mark === "sieve" ? sieve() : robot(lens, r, body, Boolean(animate) && raise === undefined);
   const dims = size ? ` width="${size}" height="${size}"` : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"${dims} role="img" aria-label="Marktplaats Watcher">${content}</svg>`;
 }

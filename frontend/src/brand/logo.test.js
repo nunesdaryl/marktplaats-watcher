@@ -23,3 +23,21 @@ describe("logo", () => {
     expect(logoSvg({ size: 180 })).toContain('width="180" height="180"');
   });
 });
+
+describe("animated logo (H to I)", () => {
+  test("animates by default, still when asked, and respects reduced motion", () => {
+    const moving = logoSvg({ animate: "h-to-i" });
+    expect(moving).toContain("@keyframes mwb");
+    expect(moving).toContain("prefers-reduced-motion");
+    expect(logoSvg({ animate: false })).not.toContain("@keyframes");
+  });
+
+  test("raise positions the binoculars between H (0) and I (1) for GIF frames", async () => {
+    const { raiseAt } = await import("./logo.js");
+    expect(raiseAt(0)).toBe(0);
+    expect(raiseAt(0.5)).toBe(1);
+    expect(raiseAt(0.95)).toBe(0);
+    expect(logoSvg({ raise: 1 })).toContain('transform="translate(0 -6.5)"');
+    expect(logoSvg({ raise: 1 })).not.toContain("@keyframes");      // a frame is always still
+  });
+});

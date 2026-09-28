@@ -15,6 +15,11 @@
 > **Live, 28 Sep:** **H** stays live while the logo is iterated (I and J are saved options: `pose: "eyes"`, and
 > `body: false`). New iterations are previewed first and only go live on request.
 >
+> **Live, 28 Sep (latest):** the logo is **animated from H to I**. In a 4-second loop the robot raises the binoculars
+> from chest height to just below its eyes, holds, and lowers them (`animate: "h-to-i"`). It stays still under
+> "reduce motion", and the favicons stay H. GIF for LinkedIn, Slack and slides: `docs/design/logo-h-to-i.gif`, made by
+> `npm run brand`.
+>
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
 > 1. Change `LOGO = { mark, pose, body, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
 >    `"none"`; the mark can be `"robot"` or `"sieve"`. A new marketplace is one more entry in `LENSES`.
