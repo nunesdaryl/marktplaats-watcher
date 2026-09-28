@@ -21,4 +21,4 @@
 | 15 | Light mode looks right after the redesign (28 Sep) | ☐ | Dark mode checked on desktop and phone by the build session; light mode only on paper (contrast table). Brief §6 |
 | 16 | Redesigned alert e-mail seen in the inbox | ☐ | Arrives with the next real match. Brief §7 |
 | 17 | Daryl's personal line in the LinkedIn launch post | ☐ | Fill in or delete the `[DARYL: …]` line. Brief §8 |
-| 18 | Phone spacing and logo re-checked on the iPhone SE (28 Sep fix) | ☐ | Reload or re-add the home-screen app; check new chat (keyboard open too), the logo on all three tabs, light mode. See human-checks-2026-09-27.md §2 |
+| 18 | Phone spacing and logo re-checked on the iPhone SE (28 Sep fix) | ☐ | Reload or re-add the home-screen app; check new chat (keyboard open too), the logo on all three tabs, light mode. Steps and ChatGPT prompt: iphone-se-recheck-brief.md. Results: human-checks-2026-09-27.md §2 |
