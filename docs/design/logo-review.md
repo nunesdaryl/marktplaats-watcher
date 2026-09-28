@@ -5,8 +5,12 @@
 > binocular drawing was tried and reverted). The trademark risk below was known and accepted by the group.
 > The "Not affiliated with Marktplaats" line stays on the landing page, e-mails and social images.
 >
+> **Update, 28 Sep:** the live logo is now **I**: H with the binoculars raised to just below the robot's eyes, so
+> its smiling eyes still peek over the top (`pose: "eyes"`; H is `pose: "chest"`). Preview:
+> `references/img/logo/logo-option-I-eye-level.png`.
+>
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
-> 1. Change `LOGO = { mark, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
+> 1. Change `LOGO = { mark, pose, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
 >    `"none"`; the mark can be `"robot"` or `"sieve"`. A new marketplace is one more entry in `LENSES`.
 > 2. Run `cd frontend && npm run brand`. It regenerates `public/icon.svg`, `apple-icon.png` and `icon-512.png`.
 > 3. The app picks it up everywhere: sidebar, landing, boot screen, favicon, home-screen icon.

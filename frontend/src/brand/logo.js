@@ -3,9 +3,10 @@
 //
 //   mark: "robot"  a friendly agent looking through binoculars (chosen by the FDE group, 28 Sep 2026)
 //         "sieve"  three bars narrowing to one dot (the Claude Design prototype)
+//   pose: "chest" (option H: binoculars held below the eyes) | "eyes" (option I: binoculars held at eye level)
 //   lens: what the robot sees in both lenses: "marktplaats" | "dot" | "sieve" | "score" | "slot" | "none"
 //         (a different marketplace later = one more entry in LENSES)
-export const LOGO = { mark: "robot", lens: "marktplaats" };
+export const LOGO = { mark: "robot", pose: "eyes", lens: "marktplaats" };
 
 const C = {
   tile: "#1b1a18", teal: "#4fd1bf", white: "#f4f2ee", lilac: "#bca8ff", ink: "#1b1a18",
@@ -32,23 +33,24 @@ const LENSES = {
   none: () => "",
 };
 
-function robot(lens) {
+function robot(lens, pose) {
   const see = LENSES[lens] ?? LENSES.none;
+  const y = pose === "eyes" ? 35.5 : 42;   // I: binoculars raised to just below the eyes; H: held lower, at the chest
   return [
     `<rect width="64" height="64" rx="16" fill="${C.tile}"/>`,
     // antenna, ears, head, smiling eyes
     `<path d="M32 8.5V13" stroke="${C.teal}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="7" r="2.8" fill="${C.teal}"/>`,
     `<rect x="11.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/><rect x="47.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/>`,
     `<rect x="16" y="13" width="32" height="25" rx="9" fill="${C.tile}" stroke="${C.white}" stroke-width="3"/>`,
-    `<path d="M23 23.5q3-3.4 6 0M35 23.5q3-3.4 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/>`,
+    `<path d="M23 ${pose === "eyes" ? 21.5 : 23.5}q3-3.4 6 0M35 ${pose === "eyes" ? 21.5 : 23.5}q3-3.4 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/>`,
     // body and hands holding the binoculars
     `<rect x="23" y="49" width="18" height="8" rx="3" fill="${C.white}"/>`,
-    `<rect x="6.5" y="34" width="9" height="15" rx="4.5" fill="${C.white}"/><rect x="48.5" y="34" width="9" height="15" rx="4.5" fill="${C.white}"/>`,
+    `<rect x="6.5" y="${y - 8}" width="9" height="15" rx="4.5" fill="${C.white}"/><rect x="48.5" y="${y - 8}" width="9" height="15" rx="4.5" fill="${C.white}"/>`,
     // binoculars: bridge with hinge, two barrels (teal rims), dark lenses
-    `<rect x="26" y="31" width="12" height="9" rx="4" fill="${C.teal}"/><circle cx="32" cy="34.5" r="2.2" fill="${C.tile}"/>`,
-    `<circle cx="21" cy="42" r="11" fill="${C.teal}"/><circle cx="43" cy="42" r="11" fill="${C.teal}"/>`,
-    `<circle cx="21" cy="42" r="7.6" fill="${C.tile}"/><circle cx="43" cy="42" r="7.6" fill="${C.tile}"/>`,
-    see(21, 42, 7.6), see(43, 42, 7.6),
+    `<rect x="26" y="${y - 11}" width="12" height="9" rx="4" fill="${C.teal}"/><circle cx="32" cy="${y - 7.5}" r="2.2" fill="${C.tile}"/>`,
+    `<circle cx="21" cy="${y}" r="11" fill="${C.teal}"/><circle cx="43" cy="${y}" r="11" fill="${C.teal}"/>`,
+    `<circle cx="21" cy="${y}" r="7.6" fill="${C.tile}"/><circle cx="43" cy="${y}" r="7.6" fill="${C.tile}"/>`,
+    see(21, y, 7.6), see(43, y, 7.6),
   ].join("");
 }
 
@@ -59,8 +61,8 @@ function sieve() {
 }
 
 /** The logo as an SVG string (64×64 view box). Pure: same input, same output, safe to inline. */
-export function logoSvg({ mark = LOGO.mark, lens = LOGO.lens, size } = {}) {
-  const body = mark === "sieve" ? sieve() : robot(lens);
+export function logoSvg({ mark = LOGO.mark, pose = LOGO.pose, lens = LOGO.lens, size } = {}) {
+  const body = mark === "sieve" ? sieve() : robot(lens, pose);
   const dims = size ? ` width="${size}" height="${size}"` : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"${dims} role="img" aria-label="Marktplaats Watcher">${body}</svg>`;
 }
