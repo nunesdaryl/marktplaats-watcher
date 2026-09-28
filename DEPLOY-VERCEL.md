@@ -34,6 +34,8 @@ chat or the repo.
 | `AGENTMAIL_API_KEY` | your key |
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |
+| `OWNER_EMAIL` | where the daily health digest and feedback messages go |
+| `CHECKS_PAUSED` | optional kill switch: `1` stops all scheduled checks (RUNBOOK.md §1) |
 
 In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
 

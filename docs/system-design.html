@@ -56,15 +56,16 @@
     <p style="font-size:13pt;color:var(--muted);margin-top:0">A chat agent that finds second-hand Mac Minis on Marktplaats.nl, built
       with LangChain on Azure AI Foundry, and a walk-through of every idea on the Day-2 Agent Engineering Cheat Sheet,
       applied to it. <b>Version 2 (section 12)</b> adds sign-in, watches that run on a schedule the user chooses in
-      plain English, and AI-scored e-mail alerts.</p>
+      plain English, and AI-scored e-mail alerts. <b>Version 3 (section 13)</b> makes it demo-ready: Next.js, ChatGPT/Apple-style
+      management, evaluation, monitoring, measured cost, and fixes from two independent audits.</p>
     <div class="eq"><span class="pill">Model (OpenAI gpt-5.4-mini)</span> + <span class="pill">Harness (FastAPI · loop · tool · guardrails)</span> = <span class="pill dark">Agent</span></div>
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
-      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3)</td></tr>
-      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 "great" e-mails agreed with the judge model), monitored, costed (section 13)</td></tr>
+      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 28 September 2026</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; human check pending), monitored, costed (section 13)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code></td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
-      <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (editable in Excalidraw)</td></tr>
+      <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
     </table>
   </div>
   <div class="box">
@@ -612,7 +613,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
 <h2>13. Version 3: demo-ready (measured, monitored, managed)</h2>
 <p>Version 3 closes the gaps the course checklists found in version 2 (§2 Definition of done, §3 Evaluation, §4 Security,
   §5 Pre-demo) and adds what a user expects from a ChatGPT- or Apple-grade app. Everything below is live and tested:
-  29 pytest and 52 convex-test/vitest tests, CI on every branch with dependency audits and a secret scan.</p>
+  34 pytest and 68 convex-test/vitest tests, CI on every branch with dependency audits and a secret scan.</p>
 
 <h3>Product</h3>
 <ul>
@@ -624,6 +625,9 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     pinned section, folders, archive, ⌘K search, chats grouped by date.</li>
   <li><b>Plain-English notify levels</b> with their score ranges shown under the choice; copy rewritten with the agent-skill-pack
     copywriting method (docs/marketing/generated/in-app-copy.md), including a corrected privacy text.</li>
+  <li><b>Feedback &amp; suggestions</b> button (sidebar, phone top bar, new-chat screen) with a "Would you pay for this?"
+    question (No / Maybe / €2 / €5 / €10+ a month). Each message is e-mailed to the owner; <code>feedback:summary</code> counts
+    the answers. Stated willingness, not payment.</li>
 </ul>
 
 <h3>Evaluation (the "Prove" step)</h3>
@@ -632,10 +636,11 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>Chat golden set, 20 cases with written pass conditions and tool-call limits</td><td><b>20/20</b>. First run 18/20: "Watch it"
     mode could still search (prompt-only rule). Fixed in code: watch mode gets only the proposal tools. One pass condition was
     wrong and was corrected, stated in the report.</td></tr>
-  <tr><td>Scorer on 49 real listings, labelled by a stronger judge model (gpt-5.5)</td><td>"Great" (≥8): <b>precision 100%</b>, recall 68%.
+  <tr><td>Scorer on 49 real listings, labelled by a stronger judge model (gpt-5.5)</td><td>"Great" (≥8): <b>13 of 13</b> agreed with the judge (precision 100%), recall 68%.
     "Good" (≥6): precision 85%, <b>recall 90%</b>. Misses kept visible: an iPhone 13 scored 1, older or smaller models land
     near the line.</td></tr>
-  <tr><td>Human check of the judge</td><td>10 labels in evals/data/spotcheck.md for the owner to confirm.</td></tr>
+  <tr><td>Human check of the judge</td><td>Pending: 10 labels in evals/data/spotcheck.md for the owner to answer. An AI second
+    opinion is kept separately (evals/data/spotcheck-ai-review.md) and never counts as the human check.</td></tr>
 </table>
 <p class="small">Rerun: <code>.venv/bin/python -m evals.run_scorer</code>, <code>evals.run_chat</code>, <code>evals.report</code>, <code>evals.cost</code>
   (a few cents; by hand after any prompt or model change, and weekly).</p>
@@ -644,7 +649,8 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
 <p>A check with no new listings makes no AI call. One new listing: <b>€0.00048</b>; ten: €0.00272. An hourly watch costs about
   <b>€0.35/month</b> (worst case €1.96); a chat question about €0.002. Hosting runs on free tiers. The $10/month hard cap
   covers about 5,000 questions. <b>Risk found:</b> one very busy 15-minute watch can use most of the cap, which would pause
-  scoring for everyone; a per-user daily budget is the next step.</p>
+  scoring for everyone; a per-user daily budget is the next step. Since the audits, a check scores up to 20 new listings (the
+  rest wait for the next check); a 20-listing check hasn't been measured yet.</p>
 
 <h3>Failures reach a human</h3>
 <ul>
@@ -665,6 +671,29 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     CSP's strength is in connect-src, img-src and frame-ancestors).</li>
   <li>Not indexed by search engines: the product is shared on LinkedIn and at the demo only (ToS art. 7.3 exposure).</li>
 </ul>
+<h3>Hardening after two independent audits (27 September)</h3>
+<p>A second AI assistant audited the code against the course checklists twice, with reproductions for every claim
+  (docs/audit/). Each confirmed bug got a failing test first, then the fix:</p>
+<table>
+  <tr><th style="width:36%">Found</th><th>Now</th></tr>
+  <tr><td>A failed alert e-mail was lost; a listing was marked seen before it was sent</td><td>Retried at the next 3 checks,
+    each try stamped so two runs can't take the same alert; after 4 tries it stays "failed" and the digest reports it</td></tr>
+  <tr><td>A check still running could alert for a watch paused, archived or given a new search or price</td><td>Its result
+    is ignored; unsent alerts for the old search are dropped, never sent under the new name</td></tr>
+  <tr><td>Only the top 10 matches were remembered, so the 11th could later look "new"</td><td>Every listing on the page is
+    remembered; the first check of a new watch scores nothing (nothing is e-mailed then)</td></tr>
+  <tr><td>A maintenance page counted as "0 listings, fine" and could reset a watch's baseline</td><td>A retryable failure</td></tr>
+  <tr><td>A crash after claiming could push a weekly watch back a week; Check now during a check could start a second one;
+    a schedule changed mid-check was overwritten</td><td>A 30-minute lease per check: crashed checks come back within 30
+    minutes, Check now runs right after, and the new schedule is kept</td></tr>
+  <tr><td>A dry run changed data and could swallow real alerts</td><td>A dry run changes nothing</td></tr>
+  <tr><td>The CSP would have blocked photos from <code>images.marktplaats.com</code> once enforced</td><td>Allowed</td></tr>
+  <tr><td>Claims stronger than the evidence (demo script, LinkedIn drafts, privacy text)</td><td>Reworded to what was measured,
+    with the dates and limits</td></tr>
+</table>
+<p class="small">Accepted on purpose: an e-mail AgentMail accepted but didn't confirm may arrive twice (better than losing
+  it). Still open: the human checks in docs/demo/pre-demo-checklist.md, and, before charging money, the Marktplaats terms
+  question, payments and commercial hosting.</p>
 <div class="pattern"><b>Pattern:</b> an evaluation that finds nothing proves nothing. Keep the first run's failures in the report,
   fix what's real in code, correct what was wrong in the test, and say which is which.</div>
 </section>
