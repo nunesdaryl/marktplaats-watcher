@@ -8,7 +8,7 @@
 export const LOGO = { mark: "robot", lens: "marktplaats" };
 
 const C = {
-  tile: "#1b1a18", teal: "#4fd1bf", tealDark: "#2a9d8f", metal: "#cfcac2", white: "#f4f2ee", lilac: "#bca8ff", ink: "#1b1a18",
+  tile: "#1b1a18", teal: "#4fd1bf", white: "#f4f2ee", lilac: "#bca8ff", ink: "#1b1a18",
   mpOrange: "#eda566", mpNavy: "#2d3c4d",
 };
 
@@ -34,28 +34,21 @@ const LENSES = {
 
 function robot(lens) {
   const see = LENSES[lens] ?? LENSES.none;
-  // One binocular barrel: small eyepiece at the top (at the robot's eyes), widening to a big front lens
-  const barrel = (cx) => [
-    `<rect x="${cx - 4.5}" y="24" width="9" height="7" rx="2" fill="${C.tealDark}"/>`,
-    `<path d="M${cx - 6} 31H${cx + 6}L${cx + 8.5} 50H${cx - 8.5}Z" fill="${C.teal}" stroke="${C.teal}" stroke-width="3" stroke-linejoin="round"/>`,
-    `<rect x="${cx - 7.2}" y="36" width="14.4" height="2.6" rx="1.3" fill="${C.tealDark}"/>`,
-    `<circle cx="${cx}" cy="48" r="8" fill="${C.tealDark}"/><circle cx="${cx}" cy="48" r="6.2" fill="${C.tile}"/>`,
-    see(cx, 48, 6.2),
-  ].join("");
   return [
     `<rect width="64" height="64" rx="16" fill="${C.tile}"/>`,
-    // antenna, ears, head, smiling eyes just above the eyepieces
-    `<path d="M32 7V11" stroke="${C.teal}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="5.6" r="2.6" fill="${C.teal}"/>`,
-    `<rect x="11.5" y="15" width="5" height="11" rx="2.5" fill="${C.teal}"/><rect x="47.5" y="15" width="5" height="11" rx="2.5" fill="${C.teal}"/>`,
-    `<rect x="16" y="10.5" width="32" height="24" rx="9" fill="${C.tile}" stroke="${C.white}" stroke-width="3"/>`,
-    `<path d="M22.5 19.5q3-3.2 6 0M35.5 19.5q3-3.2 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/>`,
-    // body, then the binoculars held up with both hands
-    `<rect x="24" y="55" width="16" height="7" rx="3" fill="${C.white}"/>`,
-    barrel(21), barrel(43),
-    // centre hinge: focus knob on top, a column and two bridge plates joining the barrels
-    `<rect x="28.5" y="23" width="7" height="4" rx="1.5" fill="${C.metal}"/><rect x="30" y="26" width="4" height="19" rx="1.6" fill="${C.metal}"/>`,
-    `<rect x="26" y="30" width="12" height="3" rx="1.5" fill="${C.metal}"/><rect x="26" y="40" width="12" height="3" rx="1.5" fill="${C.metal}"/>`,
-    `<rect x="6.5" y="34" width="8" height="14" rx="4" fill="${C.white}"/><rect x="49.5" y="34" width="8" height="14" rx="4" fill="${C.white}"/>`,
+    // antenna, ears, head, smiling eyes
+    `<path d="M32 8.5V13" stroke="${C.teal}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="7" r="2.8" fill="${C.teal}"/>`,
+    `<rect x="11.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/><rect x="47.5" y="19" width="5" height="11" rx="2.5" fill="${C.teal}"/>`,
+    `<rect x="16" y="13" width="32" height="25" rx="9" fill="${C.tile}" stroke="${C.white}" stroke-width="3"/>`,
+    `<path d="M23 23.5q3-3.4 6 0M35 23.5q3-3.4 6 0" fill="none" stroke="${C.teal}" stroke-width="2.4" stroke-linecap="round"/>`,
+    // body and hands holding the binoculars
+    `<rect x="23" y="49" width="18" height="8" rx="3" fill="${C.white}"/>`,
+    `<rect x="6.5" y="34" width="9" height="15" rx="4.5" fill="${C.white}"/><rect x="48.5" y="34" width="9" height="15" rx="4.5" fill="${C.white}"/>`,
+    // binoculars: bridge with hinge, two barrels (teal rims), dark lenses
+    `<rect x="26" y="31" width="12" height="9" rx="4" fill="${C.teal}"/><circle cx="32" cy="34.5" r="2.2" fill="${C.tile}"/>`,
+    `<circle cx="21" cy="42" r="11" fill="${C.teal}"/><circle cx="43" cy="42" r="11" fill="${C.teal}"/>`,
+    `<circle cx="21" cy="42" r="7.6" fill="${C.tile}"/><circle cx="43" cy="42" r="7.6" fill="${C.tile}"/>`,
+    see(21, 42, 7.6), see(43, 42, 7.6),
   ].join("");
 }
 

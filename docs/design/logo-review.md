@@ -1,8 +1,8 @@
 # Logo review: Marktplaats Watcher (for the FDE group)
 
 > **Decision, 28 Sep 2026:** the FDE group chose **H**: the robot looking through binoculars, with the
-> Marktplaats-style ≥ mark in both lenses. It's live, redrawn as vector with more realistic binoculars (eyepieces,
-> barrels, centre hinge and focus knob, front lenses). The trademark risk below was known and accepted by the group.
+> Marktplaats-style ≥ mark in both lenses. It's live, redrawn as vector with the round-lens binoculars of the chosen H (a more realistic
+> binocular drawing was tried and reverted). The trademark risk below was known and accepted by the group.
 > The "Not affiliated with Marktplaats" line stays on the landing page, e-mails and social images.
 >
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
