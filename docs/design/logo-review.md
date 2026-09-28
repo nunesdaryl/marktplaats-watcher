@@ -9,8 +9,11 @@
 > its smiling eyes still peek over the top (`pose: "eyes"`; H is `pose: "chest"`). Preview:
 > `references/img/logo/logo-option-I-eye-level.png`.
 >
+> **Update, 28 Sep:** the live logo is now **J**: I without the white body bar, so the focus is on the face and hands
+> (`body: false`). Preview: `references/img/logo/logo-option-J-no-body.png`.
+>
 > **Switching the logo:** the logo is defined once, in `frontend/src/brand/logo.js`.
-> 1. Change `LOGO = { mark, pose, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
+> 1. Change `LOGO = { mark, pose, body, lens }`. The lens can be `"marktplaats"`, `"dot"`, `"sieve"`, `"score"`, `"slot"` or
 >    `"none"`; the mark can be `"robot"` or `"sieve"`. A new marketplace is one more entry in `LENSES`.
 > 2. Run `cd frontend && npm run brand`. It regenerates `public/icon.svg`, `apple-icon.png` and `icon-512.png`.
 > 3. The app picks it up everywhere: sidebar, landing, boot screen, favicon, home-screen icon.
