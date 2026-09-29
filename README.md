@@ -18,7 +18,7 @@ Browser (Next.js + Clerk + Convex client)
  ├─ chat ────────► FastAPI /api/chat (Clerk token checked) ─► OpenAI + tools
  │                  search_marktplaats · propose_watch · propose_watch_change (proposals only)
  └─ Save watch ──► Convex (users, watches, seen listings, alerts)
-Convex cron, every 15 min ─► due watches, one request per distinct item
+Convex cron, every 15 min ─► due watches (and those due within 2 min), one request per distinct item
    ─► FastAPI /api/internal/check (CRON_SECRET) ─► fetch + filter + drop seen + model scores new
    ─► Convex stores them ─► AgentMail e-mails the good ones
 ```

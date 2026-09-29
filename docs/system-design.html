@@ -598,7 +598,9 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>Convex for data and schedules; Python keeps scraping and the model</td><td>One tested copy of the scraper and prompts;
     Convex gives a realtime UI and crons without a server. Trade-off: two runtimes to deploy.</td></tr>
   <tr><td>One 15-minute dispatcher, per-watch <code>nextRunAt</code></td><td>Any schedule without per-user cron jobs; the shortest
-    interval is 15 minutes.</td></tr>
+    interval is 15 minutes. Since 29 Sep the dispatcher also takes watches due within the next 2 minutes: a check ends
+    shortly after its run started, so an "every 15 minutes" watch was due just after the next run and waited 30 (every
+    other run checked nothing). Trade-off: a daily or weekly check can run up to 2 minutes early.</td></tr>
   <tr><td>Chat proposes, user confirms</td><td>Human approval for every write; costs one click.</td></tr>
   <tr><td>Silent first check</td><td>No e-mail about listings that were already there; a new watch shows nothing until something new
     appears.</td></tr>
