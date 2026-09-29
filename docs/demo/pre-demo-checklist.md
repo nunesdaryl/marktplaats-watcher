@@ -22,3 +22,4 @@
 | 16 | Redesigned alert e-mail seen in the inbox | ☐ | Arrives with the next real match. Brief §7 |
 | 17 | Daryl's personal line in the LinkedIn launch post | ☐ | Fill in or delete the `[DARYL: …]` line. Brief §8 |
 | 18 | Phone spacing and logo re-checked on the iPhone SE (28 Sep fix) | ☐ | Reload or re-add the home-screen app; check new chat (keyboard open too), the logo on all three tabs, light mode. Steps and ChatGPT prompt: iphone-se-recheck-brief.md. Results: human-checks-2026-09-27.md §2 |
+| 19 | Feedback strip, screenshot, theme toggle and owner dashboard work on production (29 Sep) | ☐ | After deploy: Vercel → Analytics → enable Web Analytics once; send one feedback from the phone and check the screenshot on /admin; toggle light/dark. Local check passed: docs/demo/evidence-2026-09-29/ |

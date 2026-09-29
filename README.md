@@ -28,7 +28,7 @@ Convex cron, every 15 min ─► due watches, one request per distinct item
 | `agent.py` | The search tool, the watch-proposal tools, the chat loop, and the scoring used by scheduled checks. |
 | `main.py` | FastAPI: `POST /api/chat` (login required), `POST /api/internal/check` (Convex only), `GET /api/health`. |
 | `frontend/convex/` | Database schema, watches, the scheduled checker, e-mail, crons, and `schedule.ts` (next-check maths and plain-English wording, shared with the UI). |
-| `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page; desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup. |
+| `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page; desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup; the feedback strip, the theme toggle and the owner dashboard (`/admin`). |
 | `test_agent.py`, `frontend/convex/*.test.ts` | Offline tests (no model, no Marktplaats, no e-mail). |
 | `.env.example`, `frontend/.env.example` | Every setting, with where to find it. **Never commit real values.** |
 
@@ -73,8 +73,18 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   matches non-matches). Rerun with `.venv/bin/python -m evals.run_scorer`,
   `evals.run_chat`, `evals.report`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
-- **Feedback and "would you pay?":** the in-app Feedback button e-mails each message to `OWNER_EMAIL`;
+- **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
+  page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the
+  page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;
   `cd frontend && npx convex run --prod feedback:summary` counts the answers and lists the latest messages.
+- **Owner dashboard (`/admin`):** only the signed-in account whose e-mail is `OWNER_EMAIL` sees data (everyone else gets
+  "Not available"). It shows accounts, active people, watches, alerts, daily charts, the sign-up → first-alert funnel,
+  which features are used (Search now vs Watch it, schedules, phone vs desktop, light vs dark), would-pay answers,
+  health, and every feedback message with its screenshot and what the person did just before. Usage events are our
+  own (`frontend/convex/events.ts`): feature names only, never what people type, kept 90 days, deleted with "Delete my
+  data". Signed-out visitors are counted by Vercel Web Analytics (cookieless).
+- **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
+  theme" in the account menu goes back.
 - **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).
 - **Demo:** `docs/demo/` (problem statement, 3-minute script, pre-demo checklist).
 

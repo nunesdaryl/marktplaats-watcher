@@ -8,9 +8,11 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as chats from "../chats.js";
 import type * as checker from "../checker.js";
 import type * as crons from "../crons.js";
+import type * as events from "../events.js";
 import type * as feedback from "../feedback.js";
 import type * as folders from "../folders.js";
 import type * as health from "../health.js";
@@ -25,9 +27,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   chats: typeof chats;
   checker: typeof checker;
   crons: typeof crons;
+  events: typeof events;
   feedback: typeof feedback;
   folders: typeof folders;
   health: typeof health;

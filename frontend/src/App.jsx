@@ -1,7 +1,9 @@
-import { SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/clerk-react";
 import { AuthLoading, Authenticated, Unauthenticated, useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
+import AccountButton from "./components/AccountButton.jsx";
+import BetaBanner from "./components/BetaBanner.jsx";
 import Icon from "./components/Icon.jsx";
 import Logo from "./components/Logo.jsx";
 import MoveSheet from "./components/MoveSheet.jsx";
@@ -10,6 +12,7 @@ import RowMenu from "./components/RowMenu.jsx";
 import Sheet from "./components/Sheet.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import TabBar from "./components/TabBar.jsx";
+import ThemeToggle from "./components/ThemeToggle.jsx";
 import WatchSheet from "./components/WatchSheet.jsx";
 import Boot from "./Boot.jsx";
 import { useItemActions } from "./lib/actions.js";
@@ -17,6 +20,10 @@ import { SIGNED_IN_FLAG } from "./lib/boot.js";
 import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
 import { go, useMediaQuery, useRoute } from "./lib/router.js";
+import { capturePage } from "./lib/screenshot.js";
+import { useTheme } from "./lib/theme.js";
+import { Tracker, track } from "./lib/track.js";
+import AdminView from "./views/AdminView.jsx";
 import AlertsView from "./views/AlertsView.jsx";
 import FeedbackSheet from "./views/FeedbackSheet.jsx";
 import ArchivedView from "./views/ArchivedView.jsx";
@@ -76,6 +83,9 @@ function Workspace() {
   const archivedWatches = useQuery(api.watches.archived) ?? [];
   const route = useRoute();
   const desktop = useMediaQuery("(min-width: 900px)");
+  const { theme } = useTheme();
+  const isOwner = useQuery(api.admin.amOwner) ?? false;
+  const [capturing, setCapturing] = useState(false);
   const [sheet, setSheet] = useState(null);   // { type: "watch" | "privacy" | "history" | "rename" | "move", ... }
   const [renaming, setRenaming] = useState(null);   // "chat:<id>" | "watch:<id>" while renaming in the sidebar
   const [skippedOnboarding, setSkippedOnboarding] = useState(false);
@@ -107,7 +117,18 @@ function Workspace() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const openFeedback = () => setSheet({ type: "feedback" });
+  // Which pages are used, and in which theme (for the owner dashboard; no ids, no content)
+  useEffect(() => { track("page_view", { section: route.section || "chat", value: theme }); }, [route.section, route.id]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Feedback: first a picture of the page as it is now, then the sheet (so the sheet isn't in the picture)
+  const openFeedback = async () => {
+    if (capturing) return;
+    setCapturing(true);
+    track("feedback_opened", { section: route.section || "chat" });
+    const screenshot = await capturePage();
+    setCapturing(false);
+    setSheet({ type: "feedback", screenshot });
+  };
   const newWatch = (initial = {}) => setSheet({ type: "watch", mode: "create", initial });
   const closeSheet = () => setSheet(null);
   const actions = useItemActions({
@@ -122,14 +143,16 @@ function Workspace() {
   if (route.section === "w") content = <WatchView watch={watch} actions={actions} onEdit={(w) => setSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id })} />;
   else if (route.section === "alerts") content = <AlertsView />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
+  else if (route.section === "admin") content = <AdminView />;
   else if (route.section === "watches") content = <WatchesView watches={watches} actions={actions} onNew={() => newWatch()} />;
-  else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} onFeedback={openFeedback} />;
+  else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;
 
   const sheets = (
     <>
       {sheet?.type === "watch" && <WatchSheet {...sheet} onClose={(id) => { closeSheet(); if (id && sheet.mode === "create") go(`/w/${id}`); }} />}
-      {sheet?.type === "feedback" && <FeedbackSheet page={route.section || "chat"} toast={setToast} onClose={closeSheet} />}
+      {sheet?.type === "feedback" && <FeedbackSheet page={route.section || "chat"} screenshot={sheet.screenshot} toast={setToast} onClose={closeSheet} />}
       {sheet?.type === "privacy" && <PrivacySheet email={me?.email} onClose={closeSheet} />}
+      <Tracker />
       {sheet?.type === "history" && <HistorySheet chats={chats} actions={actions} onClose={closeSheet} />}
       {sheet?.type === "rename" && <RenameSheet kind={sheet.kind} item={sheet.item} onClose={closeSheet} />}
       {sheet?.type === "move" && <MoveSheet kind={sheet.kind} item={{ ...sheet.item, title: sheet.item.title }} onClose={closeSheet} />}
@@ -143,8 +166,11 @@ function Workspace() {
       <div className="shell">
         <Sidebar route={route} watches={watches} chats={chats} email={me?.email} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
-                 onFeedback={openFeedback} openSheet={setSheet} toast={setToast} />
-        <main className="main">{userError && <p className="banner" role="alert">{userError}</p>}{content}</main>
+                 onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} />
+        <main className="main">
+          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle />
+          {userError && <p className="banner" role="alert">{userError}</p>}{content}
+        </main>
         {sheets}
       </div>
     );
@@ -152,26 +178,30 @@ function Workspace() {
 
   const inChat = route.section === "" || route.section === "c";
   const currentChat = chats.find((c) => c._id === route.id);
+  const pageTitle = { w: watch?.title ?? "Watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: "Dashboard" }[route.section];
   return (
     <div className="shell phone">
       <header className="topbar">
         {route.section === "w" || route.section === "archived"
           ? <button className="icon-button" onClick={() => go("/watches")} aria-label="Back to watches"><Icon name="back" /></button>
           : inChat
-            ? <button className="icon-button" onClick={() => setSheet({ type: "history" })} aria-label="Chats"><Icon name="clock" /></button>
+            ? <button className="icon-button" onClick={() => { setSheet({ type: "history" }); track("history_opened"); }} aria-label="Chats"><Icon name="clock" /></button>
             : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" /></button>}
         {/* The signature logo stays visible on every phone screen, next to the title */}
         <span className="topbar-title">
           <Logo size={30} />
-          {inChat ? <span className="topbar-text">{currentChat?.title ?? "New chat"}</span>
-            : <button className="beta-pill" onClick={openFeedback}>Beta · Give feedback</button>}
+          <span className="topbar-text">{inChat ? currentChat?.title ?? "New chat" : pageTitle}</span>
         </span>
         {currentChat && <RowMenu items={actions.chatItems(currentChat)} label="Chat options" />}
+        <ThemeToggle />
         {inChat && route.section === "c"
           ? <button className="icon-button" onClick={() => go("/")} aria-label="New chat"><Icon name="compose" /></button>
-          : <UserButton />}
+          : <AccountButton />}
       </header>
-      <main className="main">{userError && <p className="banner" role="alert">{userError}</p>}{content}</main>
+      <main className="main">
+        <BetaBanner onFeedback={openFeedback} busy={capturing} />
+        {userError && <p className="banner" role="alert">{userError}</p>}{content}
+      </main>
       <TabBar route={route} />
       {sheets}
     </div>

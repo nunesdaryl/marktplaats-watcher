@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { track } from "../lib/track.js";
 
 function ScoreBadge({ score }) {
   if (score === undefined || score === null) return null;
@@ -12,7 +13,8 @@ export default function ListingCard({ listing, score, reason, meta }) {
   const price = listing.price_eur ?? listing.priceEur;
   const place = [listing.city ?? null, listing.distance_km != null ? `${listing.distance_km} km` : null].filter(Boolean).join(", ");
   return (
-    <a className="listing" href={listing.url} target="_blank" rel="noopener noreferrer">
+    <a className="listing" href={listing.url} target="_blank" rel="noopener noreferrer"
+       onClick={() => track(reason ? "alert_opened" : "listing_opened", { value: score ?? undefined })}>
       <div className="photo">
         {listing.image && !broken
           ? <img src={listing.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />

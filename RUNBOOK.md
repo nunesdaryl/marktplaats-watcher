@@ -20,6 +20,8 @@ repo root unless they start with `cd frontend`.
 | "Marktplaats Watcher: all good this week" | Mondays | Heartbeat: silence on a Monday means the digest itself is broken |
 | GitHub "uptime" workflow failed | GitHub e-mail | Site down, API down, or chat accepting requests without login |
 | GitHub "ci" failed | GitHub e-mail | Tests, build, dependency audit or secret scan failed |
+| Owner dashboard | https://marktplaats-watcher.vercel.app/admin/ (signed in as `OWNER_EMAIL`) | Usage, funnel, feedback with screenshots, and the same health summary as the digest |
+| Feedback e-mail "Feedback from …" | `OWNER_EMAIL` inbox | Someone used the feedback strip; the screenshot and context are on the dashboard |
 | Logs | Vercel → Logs; Convex dashboard → Logs | JSON lines: `check`, `chat_turn`, `csp_violation` (Vercel); `check_run`, `health_digest`, `checks_paused` (Convex) |
 
 ---
@@ -96,11 +98,18 @@ A failed alert e-mail is retried automatically at the next 3 checks (15 minutes 
 - **If sign-in breaks after enforcing:** rename it back (or roll back, §2).
 
 ## 8. A user asks to be deleted
-In the app: Privacy (shield icon) → **Delete my data** removes their watches, chats, folders, seen listings, alerts and
-the user row. Their Clerk account is separate: they delete it under their account menu, or the owner does it in the
+In the app: Privacy (shield icon) → **Delete my data** removes their watches, chats, folders, seen listings, alerts,
+feedback (with its screenshots), usage events and the user row. Usage events are also forgotten after 90 days (daily
+cron "forget usage events older than 90 days"). Their Clerk account is separate: they delete it under their account menu, or the owner does it in the
 Clerk dashboard → Users.
 
-## 9. Marktplaats asks us to stop
+## 9. Owner dashboard shows "Not available"
+Access is by e-mail: the dashboard only answers the signed-in account whose e-mail equals `OWNER_EMAIL` in Convex
+(`cd frontend && npx convex env get OWNER_EMAIL --prod`). Changing that variable changes who the owner is. Visitor and
+page-view counts (including signed-out visitors) are in Vercel → project → Analytics; Web Analytics must be enabled
+there once.
+
+## 10. Marktplaats asks us to stop
 Pause checks (§1) the same day. Chat search can be switched off by setting `MAX_FETCHES_PER_HOUR=0` in Vercel.
 Reply, and record the decision in `docs/system-design.html` §11/§13. The risk (ToS art. 7.3) was accepted knowingly for
 the portfolio version.

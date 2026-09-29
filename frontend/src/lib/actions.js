@@ -1,6 +1,7 @@
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { go } from "./router.js";
+import { track } from "./track.js";
 
 // The same "…" menu items everywhere a chat or watch appears (sidebar, phone lists, watch page, archive).
 // ui: { openSheet, newWatch, toast, route, startRename? }
@@ -37,12 +38,12 @@ export function useItemActions(ui) {
     { label: "Rename", icon: "edit", onSelect: () => (inline && ui.startRename ? ui.startRename("watch", w._id) : ui.openSheet({ type: "rename", kind: "watch", item: w })) },
     { label: w.pinned ? "Unpin" : "Pin", icon: "pin", onSelect: () => run(() => watch.pin({ id: w._id, pinned: !w.pinned })) },
     !full && { label: "Edit filters and schedule", icon: "edit", onSelect: () => ui.openSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id }) },
-    !full && { label: w.active ? "Pause" : "Resume", icon: w.active ? "pause" : "play", onSelect: () => run(() => watch.update({ id: w._id, active: !w.active })) },
+    !full && { label: w.active ? "Pause" : "Resume", icon: w.active ? "pause" : "play", onSelect: () => run(() => watch.update({ id: w._id, active: !w.active }), () => track(w.active ? "watch_paused" : "watch_resumed")) },
     { label: "Duplicate", icon: "copy", onSelect: () => ui.newWatch(watchFields(w)) },
     { label: "Move to folder…", icon: "folder", onSelect: () => ui.openSheet({ type: "move", kind: "watch", item: w }) },
     "divider",
-    { label: "Archive", icon: "archive", onSelect: () => run(() => watch.archive({ id: w._id, archived: true }), () => { leaveIfOpen("w", w._id); ui.toast("Watch archived and paused. Find it under Archived."); }) },
-    { label: "Delete", icon: "trash", danger: true, confirm: "Delete this watch?", onSelect: () => run(() => watch.remove({ id: w._id }), () => leaveIfOpen("w", w._id)) },
+    { label: "Archive", icon: "archive", onSelect: () => run(() => watch.archive({ id: w._id, archived: true }), () => { track("watch_archived"); leaveIfOpen("w", w._id); ui.toast("Watch archived and paused. Find it under Archived."); }) },
+    { label: "Delete", icon: "trash", danger: true, confirm: "Delete this watch?", onSelect: () => run(() => watch.remove({ id: w._id }), () => { track("watch_deleted"); leaveIfOpen("w", w._id); }) },
   ];
 
   return { chatItems, watchItems };

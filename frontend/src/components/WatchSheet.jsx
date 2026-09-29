@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import ScheduleEditor from "./ScheduleEditor.jsx";
 import Sheet from "./Sheet.jsx";
+import { scheduleKind, track } from "../lib/track.js";
 
 const HOURLY = { kind: "interval", everyMinutes: 60 };
 const number = (value) => (value === "" || value === null || value === undefined ? undefined : Number(value));
@@ -40,6 +41,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           postcode: f.postcode.trim() || null, maxDistanceKm: f.postcode.trim() ? number(f.maxDistanceKm) ?? null : null,
         });
       }
+      track("watch_saved", { kind: scheduleKind(f.schedule), value: f.notify, mode: mode === "create" ? "new" : "edit" });
       onClose(id);
     } catch (err) {
       setError(err.data ?? "Saving didn't work. Check your connection and try again.");

@@ -34,10 +34,14 @@ chat or the repo.
 | `AGENTMAIL_API_KEY` | your key |
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |
-| `OWNER_EMAIL` | where the daily health digest and feedback messages go |
+| `OWNER_EMAIL` | where the daily health digest and feedback messages go; also the only account that can open the dashboard at `/admin` |
 | `CHECKS_PAUSED` | optional kill switch: `1` stops all scheduled checks (RUNBOOK.md §1) |
 
 In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
+
+**Web Analytics.** Vercel → project → Analytics → Enable (once, free on Hobby). The app already includes the
+`@vercel/analytics` component, which counts page visits without cookies and strips query strings (chat and watch ids);
+it loads from the site's own origin, so the security policy needs no change.
 
 **Second address.** `https://marktplaatswatcher.vercel.app` (no hyphen) is added under Vercel → project → Settings →
 Domains as a permanent (308) redirect to the main address, keeping the path. People who type it without the hyphen still

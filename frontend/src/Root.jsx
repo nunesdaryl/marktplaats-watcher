@@ -1,8 +1,11 @@
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { Analytics } from "@vercel/analytics/next";
 import App from "./App.jsx";
-import { RouterBridge, useMediaQuery } from "./lib/router.js";
+import "./lib/errors.js";   // remembers the last few errors, sent along with feedback
+import { RouterBridge } from "./lib/router.js";
+import { useTheme } from "./lib/theme.js";
 
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -21,7 +24,7 @@ const clerkLook = (dark) => ({
 });
 
 export default function Root() {
-  const dark = useMediaQuery("(prefers-color-scheme: dark)");
+  const dark = useTheme().theme === "dark";   // the device setting, or the sun/moon choice
   if (!clerkKey || !convex) {
     return (
       <div className="setup">
@@ -36,6 +39,8 @@ export default function Root() {
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <RouterBridge />
         <App />
+        {/* Vercel Web Analytics: cookieless visitor and page counts, also for signed-out visitors. Ids are left out. */}
+        <Analytics beforeSend={(e) => ({ ...e, url: e.url.split("?")[0] })} />
       </ConvexProviderWithClerk>
     </ClerkProvider>
   );

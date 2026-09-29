@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { NOTIFY_LABEL, describe } from "../../convex/schedule";
 import ScheduleEditor from "../components/ScheduleEditor.jsx";
 import Sheet from "../components/Sheet.jsx";
+import { scheduleKind, track } from "../lib/track.js";
 
 const IDEAS = ["Mac mini", "Gazelle bike", "Nintendo Switch OLED", "IKEA Pello chair"];
 
@@ -19,6 +20,8 @@ export default function Onboarding({ email, onDone }) {
   const [busy, setBusy] = useState(false);
 
   async function close(watchId) {
+    track("onboarding_done", { kind: watchId ? "created a watch" : "skipped" });
+    if (watchId) track("watch_saved", { kind: scheduleKind(plan.schedule), value: plan.notify, mode: "setup" });
     await finish().catch(() => {});
     onDone(watchId);
   }
@@ -49,7 +52,7 @@ export default function Onboarding({ email, onDone }) {
       <ScheduleEditor schedule={plan.schedule} notify={plan.notify} onChange={setPlan} />
     </div>,
     <div key="where" className="stack">
-      <p className="lead">Alerts go to <strong>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
+      <p className="lead">Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
       <p className="sentence small">Checking Marktplaats for <mark>{query}{maxPrice ? ` under €${maxPrice}` : ""}</mark>{" "}
         <mark>{describe(plan.schedule)}</mark>, e-mailing you <mark>{NOTIFY_LABEL[plan.notify]}</mark>.</p>
       <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>

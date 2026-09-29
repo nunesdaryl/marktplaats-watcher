@@ -2,6 +2,7 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { NOTIFY_LABEL, describe } from "../../convex/schedule";
+import { scheduleKind, track } from "../lib/track.js";
 
 const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 export const watchFields = (p) => defined({ query: p.query, mustInclude: p.mustInclude, maxPriceEur: p.maxPriceEur,
@@ -33,6 +34,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
       if (p.type === "create") await create({ ...watchFields(p), schedule: p.schedule, notify: p.notify });
       else await update(defined({ id: p.watchId, schedule: p.schedule, notify: p.notify, active: p.active, maxPriceEur: p.maxPriceEur }));
       setState("saved");
+      if (p.type === "create") track("watch_saved", { kind: scheduleKind(p.schedule), value: p.notify, mode: "from chat" });
       onSaved?.();
     } catch (e) {
       setError(e.data ?? "Saving didn't work. Try again.");

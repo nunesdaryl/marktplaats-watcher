@@ -33,7 +33,8 @@ Site: https://marktplaats-watcher.vercel.app
 **2. New chat screen (dark mode).** Tap New chat. Without scrolling, can you see all of this above the typing box?
 - the heading "What are you looking for?"
 - all three suggestion chips
-- the "Free beta · Give feedback & suggestions" link
+- once the 29 Sep update is live: the "FREE BETA · Give feedback & suggestions" strip just under the top bar (before
+  that update, the same text is a link under the suggestions)
 
 Take a screenshot.
 
@@ -50,7 +51,8 @@ buttons. Screenshot one of them.
 **5. Home-screen app vs Safari.** If you use the home-screen app, do steps 2 and 4 there too. The phone's top edge (clock
 and battery) must not cover the top bar.
 
-**6. Light mode.** Settings → Display & Brightness → Light. Reopen the app and repeat steps 2 and 4. Check that text is
+**6. Light mode.** Once the 29 Sep update is live, tap the moon button in the top bar (next to your avatar); before
+that, use Settings → Display & Brightness → Light and reopen the app. Repeat steps 2 and 4. Check that text is
 readable, the logo looks right on the light background, and nothing is white-on-white. Screenshot. Switch back afterwards
 if you like.
 

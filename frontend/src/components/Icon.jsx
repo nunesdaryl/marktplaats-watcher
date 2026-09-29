@@ -26,6 +26,10 @@ const PATHS = {
   copy: "M8 8h11v11H8ZM5 16V5h11",
   search: "m20 20-4.35-4.35M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z",
   restore: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
+  sun: "M12 3v1.5m0 15V21M3 12h1.5m15 0H21M5.6 5.6l1.1 1.1m10.6 10.6 1.1 1.1m0-12.8-1.1 1.1M6.7 17.3l-1.1 1.1M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+  moon: "M20 14.3A8 8 0 0 1 9.7 4a8 8 0 1 0 10.3 10.3Z",
+  chart: "M5 20v-8m7 8V5m7 15v-5M3 20h18",
+  camera: "M4 8h3l2-3h6l2 3h3v11H4Zm8 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
 };
 
 export default function Icon({ name, size = 20, title }) {

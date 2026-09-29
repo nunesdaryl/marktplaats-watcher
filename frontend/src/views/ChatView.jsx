@@ -9,6 +9,7 @@ import RichText from "../lib/text.jsx";
 import { go } from "../lib/router.js";
 import { historyFor } from "../lib/history.js";
 import { streamChat } from "../lib/stream.js";
+import { track } from "../lib/track.js";
 
 const SUGGESTIONS = [
   ["Mac mini 16GB under €500", "search"],
@@ -42,7 +43,7 @@ function Assistant({ text, status, listings, proposals, savedProposals, search, 
   );
 }
 
-export default function ChatView({ chatId, watches, onWatch, onAdjust, onFeedback }) {
+export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
   const { getToken } = useAuth();
   const thread = useQuery(api.chats.messages, chatId ? { chatId } : "skip");
   const start = useMutation(api.chats.start);
@@ -56,9 +57,10 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust, onFeedbac
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [saved.length, live]);
   useEffect(() => { if (chatId && thread === null) go("/"); }, [chatId, thread]);   // deleted or not yours
 
-  async function send(message, sendMode = "search") {
+  async function send(message, sendMode = "search", fromChip = false) {
     message = message.trim();
     if (!message || live) return;
+    track("chat_sent", { mode: sendMode, kind: fromChip ? "suggestion" : chatId ? "follow-up" : "new chat" });
     const history = historyFor(saved);
     setLive({ user: message, status: sendMode === "watch" ? "Drafting a watch for you to check…" : "Thinking…", listings: [], text: "" });
     let id = chatId;
@@ -111,12 +113,11 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust, onFeedbac
         <div className="empty-composer"><Composer onSend={send} busy={!!live} autoFocus mode={mode} onModeChange={setMode} /></div>
         <div className="suggestions">
           {SUGGESTIONS.map(([s, m]) => (
-            <button key={s} className="chip" onClick={() => { setMode(m); send(s, m); }}>
+            <button key={s} className="chip" onClick={() => { setMode(m); track("chip_clicked", { mode: m }); send(s, m, true); }}>
               <span className="chip-kind">{m === "watch" ? "Watch" : "Search"}</span>{s}
             </button>
           ))}
         </div>
-        {onFeedback && <button className="button plain beta-note" onClick={onFeedback}>Free beta · Give feedback &amp; suggestions</button>}
       </section>
     );
   }

@@ -8,11 +8,14 @@ export default function PrivacySheet({ email, onClose }) {
   return (
     <Sheet title="Privacy and your data" onClose={onClose}>
       <div className="stack prose">
-        <p>Alerts go to <strong>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
+        <p>Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
         <p>We keep your e-mail address and your watches until you delete them. Chats and checked listings are deleted
           30 days after they were last used. Your messages, searches and listing details (titles, prices, places)
           are sent to OpenAI to answer and score them. Feedback you send is kept with your e-mail address so Daryl can
-          reply. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
+          reply, together with the page you were on, your screen size and browser, and (unless you untick it) a
+          screenshot of that page with your e-mail address hidden. To improve the app we record which features you use
+          (for example "saved a watch" or "opened an alert"), never what you type, and keep that for 90 days. Vercel
+          counts page visits without cookies. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
           Clerk, AgentMail, Vercel). Delete my data removes everything we store; close your login account separately
           under your account menu.</p>
         <p className="muted">A free portfolio project by Daryl Nunes, not affiliated with Marktplaats.</p>

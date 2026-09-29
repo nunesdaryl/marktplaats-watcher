@@ -7,6 +7,7 @@ import ListingCard from "../components/ListingCard.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import WatchSentence from "../components/WatchSentence.jsx";
 import { go, useNow } from "../lib/router.js";
+import { track } from "../lib/track.js";
 
 /** Asks once more before something that can't be undone (no browser dialogs). */
 export function ConfirmButton({ label, confirmLabel, onConfirm, icon }) {
@@ -55,7 +56,7 @@ export default function WatchView({ watch, onEdit, actions }) {
         <div className="actions">
           <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={16} />Edit</button>
           {!watch.archivedAt && (
-            <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }))}>
+            <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }).then(() => track(watch.active ? "watch_paused" : "watch_resumed")))}>
               <Icon name={watch.active ? "pause" : "play"} size={16} />{watch.active ? "Pause" : "Resume"}
             </button>
           )}

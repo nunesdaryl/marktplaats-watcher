@@ -63,8 +63,8 @@
     <div class="eq"><span class="pill">Model (OpenAI gpt-5.4-mini)</span> + <span class="pill">Harness (FastAPI · loop · tool · guardrails)</span> = <span class="pill dark">Agent</span></div>
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
-      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 28 September 2026</td></tr>
-      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14)</td></tr>
+      <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 29 September 2026</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14), and a feedback-and-usage loop for the owner (section 15)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code> (<code>marktplaatswatcher.vercel.app</code> redirects here)</td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
@@ -768,6 +768,42 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   generator. The logo went through five versions in one afternoon: H, a more realistic redraw that was reverted,
   I, J, and finally the animated H→I. Each switch was a one-line change plus a regenerate, with nothing to hunt down
   across the app.</div>
+</section>
+
+<!-- ============================ 15 FEEDBACK AND USAGE ============================ -->
+<section>
+<h2>15. Listening to users: feedback, screenshots and the owner dashboard</h2>
+<p>Added on 29 September, so that a beta tester can report a problem the moment they hit it, and the owner can see how
+  the app is really used before deciding what to change.</p>
+<table>
+  <tr><th style="width:26%">Part</th><th>How it works</th></tr>
+  <tr><td>Feedback strip</td><td>A slim "Free beta · Give feedback &amp; suggestions" bar on top of every signed-in page,
+    replacing the scattered beta links. The signed-out landing page is unchanged.</td></tr>
+  <tr><td>Screenshot</td><td>When the sheet opens, the page is drawn to a JPEG in the browser first (<code>modern-screenshot</code>,
+    bundled, no third party), so the sheet isn't in the picture. E-mail addresses are marked <code>data-private</code> and
+    blanked in the copy; scroll positions are kept. A ticked "Attach a screenshot" box with a preview lets people leave it
+    out. Upload goes straight to Convex file storage; the server keeps it only if it's an image under 1.5 MB. If
+    drawing takes longer than 2.5 s the sheet opens without it.</td></tr>
+  <tr><td>Debug context</td><td>Every message also carries the page path (no ids), screen size, phone or desktop, theme,
+    browser, the deployed commit and the last five errors in that tab. The owner's e-mail shows all of it and links to
+    the dashboard.</td></tr>
+  <tr><td>Usage events</td><td>Our own <code>events</code> table: about fifteen allowlisted names (page viewed, chat sent
+    in Search or Watch mode, suggestion used, watch saved with its schedule, paused, archived, alert opened, feedback,
+    theme switched). Never message text or search words. Batched every 10 s, at most 20 per call and 500 a day per
+    person, kept 90 days, deleted with "Delete my data". Signed-out visitors are counted by Vercel Web Analytics
+    (cookieless, query strings stripped).</td></tr>
+  <tr><td>Owner dashboard</td><td><code>/admin</code>: health (the same report as the daily digest), accounts, active
+    people (day, week, 30 days), watches, alerts, 30-day charts, the funnel from sign-up to first alert, feature and
+    page breakdowns, phone vs desktop, light vs dark, schedules, would-pay answers, and every feedback message with its
+    screenshot and the ten things the person did just before. The page is public; the data is not: every query checks
+    that the signed-in e-mail equals <code>OWNER_EMAIL</code> and returns nothing otherwise.</td></tr>
+  <tr><td>Light and dark</td><td>Still follows the device by default. A sun/moon button (top right) overrides it on that
+    device; a script in the page head applies the choice before first paint, so there's no flash. "Match device theme"
+    in the account menu goes back.</td></tr>
+</table>
+<div class="pattern"><b>Pattern:</b> collect product data you'd be comfortable showing the user. Feature names, not
+  content; a screenshot they can see and untick; a retention limit and a delete button that covers it all; and the
+  owner check on the server, not in the page.</div>
 </section>
 
 </body>

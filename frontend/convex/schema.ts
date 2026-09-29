@@ -17,6 +17,25 @@ export const listingCard = v.object({
 // The answers to "Would you pay for this?" (labels in feedback.ts)
 export const wouldPayValidator = v.union(v.literal("no"), v.literal("maybe"), v.literal("eur2"), v.literal("eur5"), v.literal("eur10"));
 
+// What the app adds to feedback so a bug can be reproduced: where it was sent from and what the screen was like
+export const feedbackContext = v.object({
+  path: v.string(),                        // e.g. "/watch/" (never the ids in the query string)
+  viewport: v.string(),                    // "375×667"
+  device: v.string(),                      // "phone" | "desktop"
+  theme: v.string(),                       // "light" | "dark"
+  version: v.optional(v.string()),         // the deployed git commit
+  browser: v.optional(v.string()),
+  errors: v.optional(v.array(v.string())), // the last few errors in that tab
+});
+
+// Usage events for the owner dashboard: which features are used, never what anyone types (events.ts)
+export const eventProps = v.object({
+  section: v.optional(v.string()),
+  mode: v.optional(v.string()),
+  kind: v.optional(v.string()),
+  value: v.optional(v.string()),
+});
+
 export default defineSchema({
   // Only what alerts need: the Clerk id and the e-mail address to send them to.
   users: defineTable({
@@ -40,8 +59,19 @@ export default defineSchema({
     message: v.optional(v.string()),
     wouldPay: v.optional(wouldPayValidator),
     page: v.optional(v.string()),
+    screenshotId: v.optional(v.id("_storage")),   // the page it was sent from, e-mail addresses masked (opt-out)
+    context: v.optional(feedbackContext),
     createdAt: v.number(),
   }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
+
+  // One row per feature use (kept 90 days), for the owner dashboard. No message text or search words.
+  events: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    props: v.optional(eventProps),
+    device: v.union(v.literal("phone"), v.literal("desktop")),
+    at: v.number(),
+  }).index("by_at", ["at"]).index("by_user_at", ["userId", "at"]),
 
   // One row per scheduler run, for the owner's health digest (kept 30 days).
   runs: defineTable({

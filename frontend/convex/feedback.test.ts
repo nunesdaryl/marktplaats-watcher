@@ -44,3 +44,31 @@ test("empty, too long and too frequent feedback is refused; delete-my-data remov
   await bob.mutation(api.users.deleteMyData, {});
   expect((await t.query(internal.feedback.summary, {})).total).toBe(0);
 });
+
+test("a screenshot and context are kept with feedback, oversized files are dropped, and both go with delete-my-data", async () => {
+  const t = convexTest(schema, modules);
+  const sent: any[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => { sent.push(JSON.parse(init.body as string)); return new Response("{}"); }));
+  const dana = t.withIdentity({ subject: "d", email: "d@example.com" });
+  await dana.mutation(api.users.store, {});
+  expect(await dana.mutation(api.feedback.generateUploadUrl, {})).toMatch(/^https?:/);
+  const jpeg = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array(1000)], { type: "image/jpeg" })));
+  const huge = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array(2_000_000)], { type: "image/jpeg" })));
+  const context = { path: "/watch/", viewport: "375×667", device: "phone", theme: "light", version: "abc1234",
+                    browser: "Safari 18 on iOS", errors: ["TypeError: x is undefined"] };
+  await dana.mutation(api.feedback.submit, { message: "The save button did nothing", screenshotId: jpeg, context });
+  await dana.mutation(api.feedback.submit, { message: "Second", screenshotId: huge });
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+  const rows = await t.run((ctx) => ctx.db.query("feedback").collect());
+  expect(rows[0].screenshotId).toBe(jpeg);
+  expect(rows[0].context?.errors).toEqual(["TypeError: x is undefined"]);
+  expect(rows[1].screenshotId).toBeUndefined();                       // over 1.5 MB: dropped
+  expect(await t.run((ctx) => ctx.storage.getUrl(huge))).toBeNull();  // and deleted
+  expect(sent[0].text).toContain("Screen: phone, 375×667, light mode, Safari 18 on iOS, version abc1234");
+  expect(sent[0].text).toContain("TypeError: x is undefined");
+  expect(sent[0].text).toContain("/admin/");
+
+  await dana.mutation(api.users.deleteMyData, {});
+  expect(await t.run((ctx) => ctx.storage.getUrl(jpeg))).toBeNull();
+});

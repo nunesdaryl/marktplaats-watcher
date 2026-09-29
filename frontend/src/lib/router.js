@@ -1,7 +1,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// App paths ("/c/<chatId>", "/w/<watchId>", "/watches", "/alerts", "/archived") <-> real, statically exported URLs
+// App paths ("/c/<chatId>", "/w/<watchId>", "/watches", "/alerts", "/archived", "/admin") <-> real, statically exported URLs
 // ("/chat/?id=…", "/watch/?id=…", "/watches/", "/alerts/", "/archived/"). Ids travel as query parameters, so every page
 // exists as a static file and a reload or shared link always works.
 const TO_URL = { c: (id) => `/chat/?id=${encodeURIComponent(id)}`, w: (id) => `/watch/?id=${encodeURIComponent(id)}` };
@@ -19,7 +19,7 @@ export function useRoute() {
   const id = params.get("id") ?? undefined;
   if (page === "chat" && id) return { section: "c", id };
   if (page === "watch" && id) return { section: "w", id };
-  if (page === "watches" || page === "alerts" || page === "archived") return { section: page };
+  if (page === "watches" || page === "alerts" || page === "archived" || page === "admin") return { section: page };
   return { section: "" };
 }
 

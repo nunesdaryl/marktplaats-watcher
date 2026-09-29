@@ -56,7 +56,8 @@ export async function deleteWatchData(ctx: MutationCtx, watchId: Id<"watches">) 
   await ctx.db.delete(watchId);
 }
 
-/** GDPR: remove everything we store about the signed-in user (watches, seen listings, alerts, e-mail). */
+/** GDPR: remove everything we store about the signed-in user (watches, seen listings, alerts, chats, feedback and its
+ * screenshots, usage events, e-mail). */
 export const deleteMyData = mutation({
   args: {},
   handler: async (ctx) => {
@@ -66,7 +67,11 @@ export const deleteMyData = mutation({
       await deleteWatchData(ctx, watch._id);
     for (const chat of await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect())
       await deleteChat(ctx, chat._id);
-    for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect())
+    for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect()) {
+      if (row.screenshotId) await ctx.storage.delete(row.screenshotId);
+      await ctx.db.delete(row._id);
+    }
+    for (const row of await ctx.db.query("events").withIndex("by_user_at", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(row._id);
     for (const folder of await ctx.db.query("folders").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(folder._id);

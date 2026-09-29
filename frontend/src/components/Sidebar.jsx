@@ -1,16 +1,16 @@
-import { UserButton } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { groupByDate } from "../lib/dates.js";
 import { go } from "../lib/router.js";
+import AccountButton from "./AccountButton.jsx";
 import Icon from "./Icon.jsx";
 import InlineRename from "./InlineRename.jsx";
 import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast }) {
+export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -104,6 +104,11 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
       <button className={`nav-item ${at("alerts") ? "active" : ""}`} onClick={() => go("/alerts")}>
         <Icon name="bell" size={18} />Alerts
       </button>
+      {isOwner && (
+        <button className={`nav-item ${at("admin") ? "active" : ""}`} onClick={() => go("/admin")}>
+          <Icon name="chart" size={18} />Dashboard
+        </button>
+      )}
 
       {(pinnedWatches.length > 0 || pinnedChats.length > 0) && (
         <>
@@ -172,8 +177,8 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
         <Icon name="feedback" size={18} />Feedback &amp; suggestions
       </button>
       <div className="account">
-        <UserButton />
-        <span className="email">{email}</span>
+        <AccountButton />
+        <span className="email" data-private>{email}</span>
         <button className="icon-button small" onClick={() => go("/archived")} aria-label="Archived" title="Archived">
           <Icon name="archive" size={16} />
         </button>
