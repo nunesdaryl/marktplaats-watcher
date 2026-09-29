@@ -11,7 +11,8 @@ Tell it what you want on Marktplaats, pick how often to check, and get an e-mail
   up to four times, or on chosen weekdays at a time (Amsterdam time).
 - **Alerts**: each new listing is scored 0 to 10 by the model with a one-line reason; you choose
   "great matches only", "good matches" or "every new listing". The first check of a new watch only notes
-  what is already listed, so you're only told about new ones.
+  what is already listed, so you're only told about new ones. The Alerts tab (and the sidebar on desktop)
+  shows how many arrived since you last looked.
 
 ```
 Browser (Next.js + Clerk + Convex client)

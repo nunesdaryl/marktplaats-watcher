@@ -102,7 +102,8 @@ iOS action sheets.
 - **Desktop app (ChatGPT style):** 272px sidebar with brand, search, New chat, Alerts, Pinned, Folders, Watches (green
   dot = active) and chats grouped by date, then Feedback & suggestions and the account row. The top block (brand,
   search, New chat, Alerts, Dashboard) and the account row are pinned; only the list between them scrolls (29 Sep).
-- **Phone app (Apple style):** frosted top bar plus a frosted **tab bar** (Chat / Watches / Alerts); sheets slide up.
+- **Phone app (Apple style):** frosted top bar plus a frosted **tab bar** (Chat / Watches / Alerts, with a count of
+  new alerts since 29 Sep); sheets slide up.
 - **Composer:** rounded 24px box with a **"Search now | Watch it" segmented switch**. In Watch mode the border, selected
   segment and send button turn amber.
 - **Listing card:** 4:3 photo, **score badge** (green ≥8, amber ≥6, glass otherwise), title, bold price plus place, the
@@ -114,10 +115,12 @@ iOS action sheets.
 - **Other screens:** Watches, Alerts, Archived, onboarding (3-step sheet), privacy, feedback (with "Would you pay?"
   chips), menus, toast.
 
-## E-mail (no brand today)
+## E-mail (no brand today; since 29 Sep it follows the Sieve template)
 
-- **Alert e-mail:** inline styles, `system-ui`, max-width 560px, one bordered card per listing with a blue link title,
+- **Alert e-mail (before the restyle):** inline styles, `system-ui`, max-width 560px, one bordered card per listing with a blue link title,
   "Scored 9/10, €230, City", the reason, "Open on Marktplaats", and a grey footer. No logo, no brand colour.
+- **Since 29 Sep:** the Sieve template: table layout (Outlook ignores flexbox), a dark-mode block, the logo, 40×48
+  score badges, a teal "Open on Marktplaats" button, and "Good match? Yes · Not right" links without emoji.
   - Subject: "{watch}: {n} new match(es), best {score}/10 at €{price}".
 - **Health digest:** plain `<pre>` monospace.
 

@@ -775,6 +775,33 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     never carried it over. The rule is now in the Sieve README.</td></tr>
 </table>
 
+<h3>Design audit: spec against code (29 September)</h3>
+<p>The sticky-logo gap raised the question of what else the design work specified but the app didn't do. Two reviewers
+  compared the Sieve design system and the design brief with the code, and the important findings were checked by hand.
+  The ten that users notice were fixed the same day:</p>
+<table>
+  <tr><th style="width:34%">Found</th><th>Fixed</th></tr>
+  <tr><td>The Alerts tab's count was specified and built, but never switched on</td><td>A count of alerts since the Alerts page was last
+    open, on the phone tab and the desktop sidebar ("9+" above nine); opening Alerts clears it</td></tr>
+  <tr><td>Delete confirm: white on the dark theme's red, 2.6:1</td><td>A <code>danger-ink</code> token (7.3:1); the red stays under the
+    mouse; the first step says it in red text</td></tr>
+  <tr><td>Emoji and exclamation marks in the e-mail and app, which the brief bans</td><td>"Yes / Not right", "Thanks."</td></tr>
+  <tr><td>The alert e-mail used flexbox and had no dark mode</td><td>The Sieve template: tables, a dark-mode block, large score badges,
+    a teal button</td></tr>
+  <tr><td>Watches said "Nothing watched yet" while loading</td><td>"Loading…" until the data is there</td></tr>
+  <tr><td>No visible focus on the chat composer and in menus</td><td>Focus rings</td></tr>
+  <tr><td>Paused watches told apart by colour only</td><td>An empty ring (paused) against a filled green dot (active)</td></tr>
+  <tr><td>Weight 700 used with only 400–600 loaded, so the browser faked bold</td><td>600 everywhere</td></tr>
+  <tr><td>Phone tap targets of 28–36px</td><td>At least 44px on touch screens</td></tr>
+  <tr><td>The landing headline was a live region that screen readers re-read every 3.2 s</td><td>A plain heading</td></tr>
+</table>
+<p>What's left is polish: the literal sizes and spacings that never moved to the tokens, and component details that
+  differ from their cards (MW-15). The docs now also record the robot logo's orange lenses as the FDE group's
+  accepted exception to "no orange". One slip while fixing: the new dark text on the delete button became unreadable
+  under the mouse, because the general hover style replaced the red; the browser check caught it before it shipped.</p>
+<div class="pattern"><b>Pattern:</b> a design system is a spec, so audit it like one: every "must" against the code, both
+  themes, keyboard and touch. And check a fix in the state the user will be in, here with the mouse still on the button.</div>
+
 <h3>The logo: defined once, switchable, animated</h3>
 <p>The logo is a friendly robot looking through binoculars, with a watched source in the lenses. The FDE group chose
   option <b>H</b>: the binoculars held at chest height, with a Marktplaats-style mark in both lenses. The trademark risk
