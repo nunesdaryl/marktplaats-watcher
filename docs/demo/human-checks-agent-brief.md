@@ -66,10 +66,13 @@ Expect the look to change for those 2 minutes: the previous deployment may still
    Production** (or **Instant Rollback**). Note the time.
 3. Verify:
    - the site loads
-   - `/api/health` returns 200
+   - `/api/health` returns **404** without a key (owner-only since 29 Sep, commit f969278). If the rolled-back
+     deployment is older than that, it answers 200 instead: expected for that old version, and the GitHub uptime
+     workflow will fail its "Health stays hidden" step until the latest deployment is promoted back (step 4)
    - a chat request without login returns 401:
      `curl -s -o /dev/null -w "%{http_code}" -X POST -H 'content-type: application/json' -d '{"message":"hi"}' https://marktplaats-watcher.vercel.app/api/chat`
-4. Promote the **latest** deployment back to Production. Verify the same three checks, and that the robot logo is back.
+4. Promote the **latest** deployment back to Production. Verify the same three checks (health 404 without a key), and
+   that the robot logo is back.
    Note the time.
 5. **Record:** both times, the minutes taken, anything confusing in RUNBOOK.md §2, and whether Vercel still
    auto-promotes new pushes after a rollback.

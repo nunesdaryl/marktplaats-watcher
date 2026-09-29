@@ -46,7 +46,8 @@ Chat keeps working. The next digest says "Checks are paused".
    Schema changes so far only *add* optional fields and tables, so an older deploy accepts newer data.
 3. Check: run the GitHub "uptime" workflow (Actions → uptime → Run workflow). It calls `/api/health` with the owner's
    key, checks that it's hidden (404) without it, and that the chat refuses requests without a login (401). Then sign
-   in and send one message.
+   in and send one message. Rolling back to a deployment from before 29 Sep (commit f969278) makes `/api/health` public
+   again and the uptime check fails its "hidden" step: promote a newer deployment as soon as possible.
 
 ## 3. OpenAI: cap reached, key revoked, or model gone
 - **Symptoms:**

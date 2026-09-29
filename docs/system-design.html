@@ -64,7 +64,7 @@
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
       <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 29 September 2026</td></tr>
-      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14), and a feedback-and-usage loop for the owner (section 15)</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (chat 20/20; scorer: 13/13 listings scored "great" agreed with the judge model; a human check agreed with 7 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14), and a feedback-and-usage loop that only the owner can see (section 15)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code> (<code>marktplaatswatcher.vercel.app</code> redirects here)</td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
@@ -219,7 +219,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     not through MCP. MCP was used <i>around</i> the agent: the Claude-in-Chrome extension (an MCP server) drove the
     browser evaluation. Exposing <code>search_marktplaats</code> as an MCP server would let other agents reuse it.</td></tr>
   <tr><td><b>APIs</b></td><td><span class="tag built">BUILT</span></td><td>We <i>provide</i> one API, FastAPI
-    <code>POST /api/chat</code> and <code>GET /api/health</code> (<code>main.py</code>). We <i>consume</i> three: Azure OpenAI (the model), PDOK (postcodes)
+    <code>POST /api/chat</code> and <code>GET /api/health</code> (<code>main.py</code>; health is owner-key only since 29 Sep). We <i>consume</i> three: Azure OpenAI (the model), PDOK (postcodes)
     and the Marktplaats public search page. That last one is not an official API: robots.txt allows the
     <code>/q/</code> pages, and the terms limit systematic use.</td></tr>
   <tr><td><b>Guardrails</b></td><td><span class="tag partial">PARTIAL</span></td><td>Input limits and role allowlist
@@ -454,7 +454,8 @@ cd frontend && npm run dev                        # UI on http://localhost:5173
     which also serves the built UI, so there is one port (8000) and one URL.</li>
   <li><b>No secrets inside:</b> <code>.dockerignore</code> excludes <code>.env</code>; users pass theirs with
     <code>--env-file</code>. Both exported files were scanned for the key: not present.</li>
-  <li><b>Least privilege:</b> runs as the unprivileged user <code>agent</code>; a health check probes <code>/api/health</code>.</li>
+  <li><b>Least privilege:</b> runs as the unprivileged user <code>agent</code>; a health check probes the home page (<code>/api/health</code> has been reserved for the owner's
+    uptime check since 29 Sep).</li>
   <li><b>Portable:</b> built for arm64 (Apple Silicon) and amd64 (Intel, Windows, most servers), exported with
     <code>docker save</code>, deleted, re-imported with <code>docker load</code> and run; the amd64 image answered as real x86_64.</li>
 </ul>
@@ -661,7 +662,8 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
 <h3>Failures reach a human</h3>
 <ul>
   <li>Daily health digest to the owner (only when something is wrong; a Monday heartbeat), from a per-run log.</li>
-  <li>GitHub uptime workflow every 30 minutes (site, API, and chat still refusing requests without login).</li>
+  <li>GitHub uptime workflow every 30 minutes (site, API, and chat still refusing requests without login; since 29 Sep also
+    that <code>/api/health</code> answers only with the owner's key and stays hidden, 404, without it).</li>
   <li>Kill switch <code>CHECKS_PAUSED=1</code>; structured JSON logs for checks, chat turns and CSP reports.</li>
   <li>RUNBOOK.md: kill switch, rollback, key rotation, OpenAI cap, alerts not arriving, page-format change, deletion requests.</li>
 </ul>
