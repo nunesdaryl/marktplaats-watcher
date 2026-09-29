@@ -99,7 +99,8 @@
   <tr><td>Does it work?</td><td>Yes, verified live. All 6 browser evaluation cases pass, including the happy flow, which
     found an <b>Apple Mac mini (Intel Core i5, 16 GB RAM, 512 GB) for €230</b>, locally and on the public Vercel
     URL. All 8 offline tests pass.</td></tr>
-  <tr><td>Main limits</td><td>It reads only the first results page (about 30 listings). Only about a third of listings
+  <tr><td>Main limits</td><td>It reads only the first results page (about 30 listings; since 29 Sep, scheduled checks read
+    every listing placed since the last check, section 16). Only about a third of listings
     carry a location, so distance filtering misses many private sellers. Marktplaats' terms (Art. 7.3) forbid repeated,
     systematic querying; the public site keeps the volume low with a 15-minute cache and an hourly cap.</td></tr>
 </table>
@@ -158,7 +159,7 @@
     replies with a tool call: <code>search_marktplaats(query="mac mini", max_price_eur=500, must_include="16gb")</code>.</li>
   <li><b>Act.</b> The loop checks the tool name against the one known tool, runs it, and appends the result as a
     <code>ToolMessage</code> carrying the same <code>tool_call_id</code>.</li>
-  <li><b>Tool.</b> Fetches <code>/q/mac-mini/</code> (15 s timeout), reads the page's embedded JSON (about 30
+  <li><b>Tool.</b> Fetches <code>/q/mac+mini/</code> (15 s timeout; <code>mac-mini</code> until 29 Sep, see section 16), reads the page's embedded JSON (about 30
     listings), keeps titles containing "16gb" (spaces and case ignored) priced at €500 or less, and returns compact JSON.</li>
   <li><b>Loop, round 2: think again.</b> The model now has the data and replies with text only, so the loop
     <b>stops</b>. That text is the answer.</li>
@@ -548,7 +549,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     at a time) instead of a cron string; <code>nextRun</code> in Amsterdam time across clock changes, and <code>describe</code>
     for the plain-English text the UI, chat and e-mail all use.</td></tr>
   <tr><td>Scheduled checks</td><td><code>frontend/convex/checker.ts</code>, <code>crons.ts</code>; <code>agent.py</code> →
-    <code>check_query</code>, <code>rank_listings</code></td><td>Claim due watches, one request per item, score only unseen listings,
+    <code>check_query</code>, <code>rank_listings</code></td><td>Claim due watches, one read per search and filters (every listing since the last check, section 16), score only new listings,
     record, e-mail. The first check of a new watch only records what is already listed.</td></tr>
   <tr><td>E-mail</td><td>AgentMail (<code>marktplaats-watcher@agentmail.to</code>)</td><td>Subject with the best score and price;
     titles escaped; "Open on Marktplaats" links; why-you-got-this footer.</td></tr>
@@ -624,7 +625,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     appears.</td></tr>
   <tr><td>AgentMail's shared domain</td><td>No DNS work for a demo; a custom domain improves deliverability later.</td></tr>
   <tr><td>Scheduled querying of Marktplaats</td><td>This is "repeated and systematic" (Art. 7.3). The operator accepted the risk for the
-    public portfolio version; it is reduced by one request per item, 5 watches per user and a 15-minute minimum.</td></tr>
+    public portfolio version; it is reduced by one read per search and filters (usually one request), 5 watches per user and a 15-minute minimum.</td></tr>
 </table>
 <p><b>Software factory (29 September):</b> the audit's Wave 1 (<code>docs/audit/2026-09-29-fde-course-audit.md</code>) is filed as
   specs MW-1 to MW-13 in the Linear team "Marktplaats Watcher" (key MW), bound to this repo by <code>.factory.json</code>. Each spec

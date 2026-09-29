@@ -277,7 +277,7 @@ Scanner.
 | Explains *why* a listing matters | No | Yes, a reason per listing | No | Not shown on the site |
 | "Must include" spec (e.g. 16gb) | Via keywords | Yes | Advanced filters on paid plans | Via AI description |
 | Only genuinely new listings | Yes | Yes (first check silent) | Yes | Yes |
-| Coverage | All Marktplaats results | First results page only (~30 listings) per check | Marktplaats, 2dehands, Vinted | + Facebook |
+| Coverage | All Marktplaats results | Every listing placed since the last check (since 29 Sep; was the first page, ~30 listings) | Marktplaats, 2dehands, Vinted | + Facebook |
 | Location filter | Yes (Marktplaats' own) | Postcode + radius; only listings showing a location (~1/3) | Yes | Yes |
 | Official / ToS-safe | Yes | No: reads public search pages, ToS art. 7.3 risk accepted | Unofficial | Unofficial |
 | Data retention | Marktplaats account | 30 days, one-click delete | Not checked | Not checked |

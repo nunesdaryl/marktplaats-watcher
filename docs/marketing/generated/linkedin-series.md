@@ -66,7 +66,7 @@
   one until after the demo.
 - **6. The limits I chose (Tue 6 Oct).** A list of limits, each a decision: OpenAI project with a **$10/month hard
   spend cap and a model allow-list**; checks no more often than **every 15 minutes**; **max 5 watches** per user;
-  reads **the first page** of public search results only; data kept **30 days**, with **delete-my-data**; not
+  each check reads **every listing placed since the last one** (the chat shows the first page); data kept **30 days**, with **delete-my-data**; not
   affiliated with Marktplaats. `[DARYL: actual OpenAI spend so far, from the usage page]`
   `[DARYL: the reason for the 15-minute floor and the 5-watch cap, in your words]`. Do not state a cost per check
   unless you have measured it.
@@ -186,7 +186,7 @@ What's the noisiest alert you ever turned off?
   why the chat can offer a watch but never saves one.
 - **P2:** Delete-my-data and 30-day retention as a launch requirement; e-mail that lands in the inbox, not spam
   (first real alert); the model allow-list.
-- **P3:** "First page only" and what that means for coverage; "not affiliated with Marktplaats" and reading public
+- **P3:** Coverage: from "first page only" to every new listing (29 Sep), and the robots.txt trade-off that took; "not affiliated with Marktplaats" and reading public
   search pages; the 15-minute floor vs competitors who check faster.
 - **P4:** What the FDE course demo day asked of a project `[DARYL]`; the one thing to measure next: a hand-labelled
   scoring eval (`validation.md` calls it the strongest portfolio upgrade). Post the numbers only once they exist.

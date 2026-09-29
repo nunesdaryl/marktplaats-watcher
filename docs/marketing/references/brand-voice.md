@@ -75,7 +75,7 @@ Every claim is concrete and every alert explains itself. If a sentence could be 
 
 ### Storytelling Style
 Specific example first, principle second. Real items (Mac mini 16GB, Gazelle bike near 3511, Switch OLED under €200),
-real times (every morning at 8, Fridays at 18:00), real numbers (first page, ~30 listings, a third have a location).
+real times (every morning at 8, Fridays at 18:00), real numbers (a check reads every listing since the last one, often one page; the chat shows ~30 listings).
 
 ## Platform Adaptations
 
@@ -96,7 +96,7 @@ real times (every morning at 8, Fridays at 18:00), real numbers (first page, ~30
 - **Primary goal:** Portfolio credibility, leading to interviews and client conversations (FDE / AI-engineering work).
 - **Brand association:** "Daryl ships real, safe, honest AI products end to end."
 - **Content pillars:** (1) Building agents that propose, not act; (2) Shipping it properly: auth, secrets, tests,
-  retention; (3) Honest limits and trade-offs (ToS, first page only, 15-minute floor); (4) Learning in public on the
+  retention; (3) Honest limits and trade-offs (ToS and robots.txt, 15-minute floor); (4) Learning in public on the
   FDE course.
 - **Audience transformation:** FROM "another student demo with a chat box" → TO "this person scopes, ships and runs
   a product like an engineer I'd hire."

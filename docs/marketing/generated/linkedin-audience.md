@@ -16,7 +16,7 @@
 ## What the portfolio audience looks for in an FDE project (checklist)
 
 1. **A real user and a real problem**, stated in one line.
-2. **Scoping judgement:** what you left out and why (e-mail only, first page only, 15-minute floor, 5 watches).
+2. **Scoping judgement:** what you left out and why (e-mail only, 15-minute floor, 5 watches, and the robots.txt trade-off behind reading every new listing).
 3. **Agent design that keeps a human in control:** chat proposes, user clicks Save.
 4. **Production hygiene:** Clerk token on every call, cron secret, no secrets in the image, retention + delete,
    escaped e-mails, tests + CI.

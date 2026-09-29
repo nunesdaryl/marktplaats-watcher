@@ -85,8 +85,9 @@ export default function Landing({ SignIn = Plain }) {
             your login account is closed separately, under your account menu.
           </p>
           <p>
-            Up to 5 watches per person, checked at most every 15 minutes. It reads the first page of Marktplaats'
-            public search results, so it's for watching, not for searching everything.
+            Up to 5 watches per person, checked at most every 15 minutes. Each check reads every listing placed since
+            the last one, with your price and distance applied by Marktplaats. A search in the chat shows the first
+            page of results.
           </p>
           <p>
             A free portfolio project by Daryl Nunes, not affiliated with Marktplaats. Alerts come from

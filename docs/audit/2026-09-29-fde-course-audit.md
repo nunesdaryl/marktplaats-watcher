@@ -402,7 +402,8 @@ vault's `Decisions.md`, `Evaluation Results.md` and `Permissions.md`. (§3.12)
 | Checklist 10–19, 21, 23–25 | Human checks and deploy follow-ups | see `docs/demo/pre-demo-checklist.md` | §6 |
 | AUDIT-09-26 #8 | Shared rate-limit store | 🟡 | §3.7 |
 | AUDIT-09-26 #9–13 | Old Azure key entries, skill-pack housekeeping, duplicates, fde-skill fixes | ❌ | §3.12 |
-| MVP Gaps #6, #7 | Egress allowlist; more than the first results page | ❌ | §3.4, §5 Wave 3 |
+| MVP Gaps #6 | Egress allowlist | ❌ | §3.4, §5 Wave 3 |
+| MVP Gaps #7 | More than the first results page | ✅ 29 Sep: checks read every listing since the last check (system design §16); official API access is MW-14 | §3.4 |
 
 ## Appendix C: where each finding came from
 Two sessions audited the project independently on 29 Sep; this report merges them.

@@ -68,8 +68,9 @@ There is one product and it is free.
 - "Other alert apps are faster." True: minimum interval here is 15 minutes; competitors advertise 3 minutes or
   seconds. Speed-focused resellers are not the target.
 - "Will it still exist next month?" Portfolio project, ToS risk accepted by the operator (Marktplaats terms art. 7.3).
-- Only the first results page (~30 listings) is read; the distance filter only keeps listings that show a location
-  (roughly a third).
+- Each check reads every listing placed since the last one, with the price and distance applied by Marktplaats
+  (at most 40 pages per check). The chat's search shows only the first results page (~30 listings), and its distance
+  filter keeps only listings that show a location (roughly a third).
 
 ### Influencers & Authorities
 - End users: Tweakers (tech buyers), consumer programmes and sites such as Radar / Consumentenbond on second-hand
@@ -112,8 +113,8 @@ Claims that are true and checkable today:
 - "Free." and "Nothing else, and nothing is sold or shared." (the second is landing page wording; "Free" is not yet
   said on the landing page)
 - "Up to 5 watches."
-Claims **not** to make: "be the first", "instant", "never miss a deal", "catches every listing" (first page only,
-15-minute minimum), any accuracy percentage for the scoring (not measured yet).
+Claims **not** to make: "be the first", "instant", "never miss a deal", "catches every listing" (capped at 40 pages per
+check, 15-minute minimum), any accuracy percentage for the scoring (not measured yet).
 Observed proof point: a real search for "mac mini" returned a Cisco network switch among the results. That is the
 noise the scoring exists to filter. `[NEEDS REVIEW: capture the actual score/reason the model gave that switch, as a
 screenshot, before using it publicly]`
