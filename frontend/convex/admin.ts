@@ -2,27 +2,40 @@
 // the signed-in account must match BOTH OWNER_CLERK_ID (the Clerk user id) and OWNER_EMAIL. Everyone else, signed in or
 // not, gets null, and the app treats /admin as a page that doesn't exist.
 // MVP scale: each query reads at most a few thousand rows per table (see LIMIT); fine for a beta, not for 100k users.
-import { v } from "convex/values";
-import { query, type QueryCtx } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import type { UserIdentity } from "convex/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
+import { describe, describeWhen } from "./schedule";
+import { activePatch } from "./watches";
 import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
 
 const DAY = 86_400_000;
 const LIMIT = 5000;
 
-/** True only for the owner: the Clerk user id AND the e-mail must both match. Not configured = nobody is the owner. */
-export async function isOwner(ctx: QueryCtx) {
+/** The owner rule: the Clerk user id AND the e-mail must both match. Not configured = nobody is the owner. */
+export function ownerMatches(identity: UserIdentity | null) {
   const ownerId = process.env.OWNER_CLERK_ID?.trim();
   const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
-  const identity = await ctx.auth.getUserIdentity();
   if (!ownerId || !ownerEmail || !identity) return false;
   return identity.subject === ownerId && identity.email?.trim().toLowerCase() === ownerEmail;
+}
+
+export async function isOwner(ctx: Pick<QueryCtx, "auth">) {
+  return ownerMatches(await ctx.auth.getUserIdentity());
+}
+
+async function requireOwner(ctx: Pick<QueryCtx, "auth">) {
+  if (!(await isOwner(ctx))) throw new ConvexError("Not found.");
 }
 
 export const amOwner = query({ args: {}, handler: async (ctx) => isOwner(ctx) });
 
 const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);   // UTC day, "2026-09-29"
+/** A schedule as a short label ("every 15 min", "daily", "weekly"); the same key filters the watch list. */
+const scheduleKey = (s: Doc<"watches">["schedule"]) => s.kind === "interval"
+  ? `every ${s.everyMinutes < 60 ? `${s.everyMinutes} min` : `${s.everyMinutes / 60} h`}` : s.kind;
 const countBy = <T,>(rows: T[], key: (r: T) => string | undefined) => {
   const out: Record<string, number> = {};
   for (const r of rows) { const k = key(r); if (k) out[k] = (out[k] ?? 0) + 1; }
@@ -106,12 +119,10 @@ export const dashboard = query({
       devices: countBy(events, (e) => e.device),
       themes: countBy(pageViews, (e) => e.props?.value),
       chatModes: countBy(events.filter((e) => e.name === "chat_sent"), (e) => e.props?.mode ?? "search"),
-      schedules: countBy(watches.filter(live), (w) => w.schedule.kind === "interval"
-        ? `every ${w.schedule.everyMinutes < 60 ? `${w.schedule.everyMinutes} min` : `${w.schedule.everyMinutes / 60} h`}`
-        : w.schedule.kind),
+      schedules: countBy(watches.filter(live), (w) => scheduleKey(w.schedule)),
       notify: countBy(watches.filter(live), (w) => w.notify),
       wouldPay: (Object.keys(WOULD_PAY) as (keyof typeof WOULD_PAY)[])
-        .map((key) => ({ name: WOULD_PAY[key], count: feedback.filter((f) => f.wouldPay === key).length })),
+        .map((key) => ({ key, name: WOULD_PAY[key], count: feedback.filter((f) => f.wouldPay === key).length })),
       health: await healthReport(ctx, now),
       capped: events.length === LIMIT * 4,
     };
@@ -120,16 +131,21 @@ export const dashboard = query({
 
 /** Feedback, newest first: message, would-pay answer, screenshot, context and what the person did just before. */
 export const feedback = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, { limit = 50 }) => {
+  args: { limit: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
+          handled: v.optional(v.boolean()) },
+  handler: async (ctx, { limit = 50, wouldPay, userId, handled }) => {
     if (!(await isOwner(ctx))) return null;
-    const rows = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(Math.min(200, limit));
+    const rows = (await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT))
+      .filter((f) => (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
+        && (handled === undefined || !!f.handledAt === handled))
+      .slice(0, Math.min(200, limit));
     return await Promise.all(rows.map(async (f) => {
       const user = await ctx.db.get(f.userId);
       const before = await ctx.db.query("events")
         .withIndex("by_user_at", (q) => q.eq("userId", f.userId).lte("at", f.createdAt)).order("desc").take(10);
       return {
-        _id: f._id, createdAt: f.createdAt, email: user?.email ?? "(deleted user)", message: f.message,
+        _id: f._id, userId: f.userId, createdAt: f.createdAt, handledAt: f.handledAt, wouldPayKey: f.wouldPay,
+        email: user?.email ?? "(deleted user)", message: f.message,
         wouldPay: f.wouldPay ? WOULD_PAY[f.wouldPay] : undefined, page: f.page, context: f.context,
         screenshotUrl: f.screenshotId ? await ctx.storage.getUrl(f.screenshotId) : null,
         before: before.reverse().map((e) => ({ at: e.at, name: e.name, props: e.props })),
@@ -137,3 +153,293 @@ export const feedback = query({
     }));
   },
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Drilldown: the exact records behind every number on the dashboard. All owner-only; nobody else gets anything.
+
+type Ctx = QueryCtx;
+const emailsOf = async (ctx: Ctx) => new Map((await ctx.db.query("users").take(LIMIT)).map((u) => [u._id as string, u.email]));
+const inRange = (t: number, since?: number, until?: number) => (since === undefined || t >= since) && (until === undefined || t < until);
+const watchStatus = (w: Doc<"watches">) => (w.archivedAt ? "archived" : w.active ? "active" : "paused");
+
+function watchRow(w: Doc<"watches">, email: string | undefined, alertCount: number, now: number) {
+  return {
+    _id: w._id, userId: w.userId, email: email ?? "(deleted user)", title: w.name ?? w.label, label: w.label,
+    query: w.query, mustInclude: w.mustInclude, maxPriceEur: w.maxPriceEur, postcode: w.postcode, maxDistanceKm: w.maxDistanceKm,
+    schedule: describe(w.schedule), scheduleKey: scheduleKey(w.schedule), notify: w.notify, status: watchStatus(w),
+    lastCheckedAt: w.lastCheckedAt, nextCheck: w.active && !w.archivedAt ? describeWhen(w.nextRunAt, now) : null,
+    lastError: w.lastError, createdAt: w.createdAt, alerts: alertCount,
+  };
+}
+
+function alertRow(a: Doc<"alerts">, email: string | undefined, watchTitle: string | undefined) {
+  return {
+    _id: a._id, userId: a.userId, watchId: a.watchId, email: email ?? "(deleted user)", watch: watchTitle ?? "Deleted watch",
+    title: a.title, priceEur: a.priceEur, city: a.city, url: a.url, image: a.image, score: a.score, reason: a.reason,
+    emailStatus: a.emailStatus, attempts: a.attempts ?? 1, createdAt: a.createdAt,
+  };
+}
+
+/** Which funnel steps an account reached (each step counts on its own, as on the dashboard's funnel). */
+function reachedSteps(u: Doc<"users">, has: { chat: Set<string>; watch: Set<string>; alert: Set<string> }) {
+  return [true, u.onboardedAt !== undefined, has.chat.has(u._id), has.watch.has(u._id), has.alert.has(u._id)];
+}
+export const FUNNEL = ["signed_up", "setup", "chatted", "watch", "alert"] as const;
+
+/** Every account: e-mail, dates, how far they got, and how much they use. `stage` = reached that funnel step;
+ *  `stuck` = reached the step before it but not this one. */
+export const users = query({
+  args: { search: v.optional(v.string()), stage: v.optional(v.string()), stuck: v.optional(v.string()),
+          activeSince: v.optional(v.number()) },
+  handler: async (ctx, { search, stage, stuck, activeSince }) => {
+    if (!(await isOwner(ctx))) return null;
+    const users = await ctx.db.query("users").take(LIMIT);
+    const watches = await ctx.db.query("watches").take(LIMIT);
+    const chats = await ctx.db.query("chats").take(LIMIT);
+    const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
+    const feedback = await ctx.db.query("feedback").take(LIMIT);
+    const events = await ctx.db.query("events").withIndex("by_at").order("desc").take(LIMIT * 4);
+    const has = {
+      chat: new Set<string>([...chats.map((c) => c.userId), ...events.filter((e) => e.name === "chat_sent").map((e) => e.userId)]),
+      watch: new Set<string>(watches.map((w) => w.userId)),
+      alert: new Set<string>(alerts.map((a) => a.userId)),
+    };
+    const lastActive = new Map<string, number>();
+    const bump = (id: string, t: number) => { if (t > (lastActive.get(id) ?? 0)) lastActive.set(id, t); };
+    events.forEach((e) => bump(e.userId, e.at));
+    chats.forEach((c) => bump(c.userId, c.updatedAt));
+    const devices = new Map<string, Set<string>>();
+    events.forEach((e) => { if (!devices.has(e.userId)) devices.set(e.userId, new Set()); devices.get(e.userId)!.add(e.device); });
+    const q = search?.trim().toLowerCase();
+    return users.map((u) => {
+      const reached = reachedSteps(u, has);
+      const mine = watches.filter((w) => w.userId === u._id);
+      return {
+        _id: u._id, email: u.email, createdAt: u.createdAt, onboardedAt: u.onboardedAt, lastActive: lastActive.get(u._id) ?? null,
+        devices: [...(devices.get(u._id) ?? [])], reached,
+        furthest: FUNNEL[reached.lastIndexOf(true)],
+        watchesActive: mine.filter((w) => watchStatus(w) === "active").length,
+        watchesPaused: mine.filter((w) => watchStatus(w) === "paused").length,
+        watchesArchived: mine.filter((w) => watchStatus(w) === "archived").length,
+        chats: chats.filter((c) => c.userId === u._id).length,
+        alerts: alerts.filter((a) => a.userId === u._id).length,
+        feedback: feedback.filter((f) => f.userId === u._id).length,
+      };
+    }).filter((u) => {
+      if (q && !u.email.toLowerCase().includes(q)) return false;
+      if (stage && !u.reached[FUNNEL.indexOf(stage as (typeof FUNNEL)[number])]) return false;
+      if (stuck) {
+        const i = FUNNEL.indexOf(stuck as (typeof FUNNEL)[number]);
+        if (i < 1 || !u.reached[i - 1] || u.reached[i]) return false;
+      }
+      if (activeSince !== undefined && (u.lastActive ?? 0) < activeSince) return false;
+      return true;
+    }).sort((a, b) => (b.lastActive ?? b.createdAt) - (a.lastActive ?? a.createdAt));
+  },
+});
+
+/** One account: everything it has and did. */
+export const user = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    if (!(await isOwner(ctx))) return null;
+    const u = await ctx.db.get(userId);
+    if (!u) return null;
+    const now = Date.now();
+    const watches = await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+    const titles = new Map(watches.map((w) => [w._id as string, w.name ?? w.label]));
+    const alerts = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", userId)).order("desc").take(200);
+    const chats = await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", userId)).order("desc").take(200);
+    const feedback = await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", userId)).order("desc").take(100);
+    const events = await ctx.db.query("events").withIndex("by_user_at", (q) => q.eq("userId", userId)).order("desc").take(300);
+    return {
+      _id: u._id, email: u.email, createdAt: u.createdAt, onboardedAt: u.onboardedAt,
+      watches: await Promise.all(watches.map(async (w) =>
+        watchRow(w, u.email, (await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).take(1000)).length, now))),
+      alerts: alerts.map((a) => alertRow(a, u.email, titles.get(a.watchId))),
+      chats: await Promise.all(chats.map(async (c) => ({
+        _id: c._id, title: c.title, updatedAt: c.updatedAt, pinned: !!c.pinned, archived: !!c.archivedAt,
+        messages: (await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", c._id)).take(500)).length,
+      }))),
+      feedback: feedback.map((f) => ({ _id: f._id, createdAt: f.createdAt, message: f.message, handledAt: f.handledAt,
+        wouldPay: f.wouldPay ? WOULD_PAY[f.wouldPay] : undefined, page: f.context?.path ?? f.page })),
+      events: events.map((e) => ({ _id: e._id, at: e.at, name: e.name, props: e.props, device: e.device })),
+    };
+  },
+});
+
+/** Every watch with its exact search, schedule and status. */
+export const watches = query({
+  args: { status: v.optional(v.string()), userId: v.optional(v.id("users")), scheduleKey: v.optional(v.string()),
+          notify: v.optional(v.string()), createdSince: v.optional(v.number()), createdUntil: v.optional(v.number()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const now = Date.now();
+    const emails = await emailsOf(ctx);
+    const rows = (await ctx.db.query("watches").take(LIMIT)).filter((w) =>
+      (!a.status || watchStatus(w) === a.status) && (!a.userId || w.userId === a.userId)
+      && (!a.scheduleKey || (scheduleKey(w.schedule) === a.scheduleKey && !w.archivedAt))
+      && (!a.notify || (w.notify === a.notify && !w.archivedAt)) && inRange(w.createdAt, a.createdSince, a.createdUntil));
+    const out = await Promise.all(rows.map(async (w) => watchRow(w, emails.get(w.userId),
+      (await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).take(1000)).length, now)));
+    return out.sort((x, y) => y.createdAt - x.createdAt);
+  },
+});
+
+/** One watch: its search, schedule, status, how many listings it has seen, and all its alerts. */
+export const watch = query({
+  args: { watchId: v.id("watches") },
+  handler: async (ctx, { watchId }) => {
+    if (!(await isOwner(ctx))) return null;
+    const w = await ctx.db.get(watchId);
+    if (!w) return null;
+    const owner = await ctx.db.get(w.userId);
+    const alerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watchId)).order("desc").take(500);
+    const seen = (await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", watchId)).take(5000)).length;
+    return {
+      ...watchRow(w, owner?.email, alerts.length, Date.now()), seen, timezone: w.timezone,
+      alertList: alerts.map((a) => alertRow(a, owner?.email, w.name ?? w.label)),
+    };
+  },
+});
+
+/** Alerts, newest first, filtered by time, watch, person, score or e-mail status. */
+export const alerts = query({
+  args: { since: v.optional(v.number()), until: v.optional(v.number()), watchId: v.optional(v.id("watches")),
+          userId: v.optional(v.id("users")), minScore: v.optional(v.number()), emailStatus: v.optional(v.string()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const titles = new Map((await ctx.db.query("watches").take(LIMIT)).map((w) => [w._id as string, w.name ?? w.label]));
+    const rows = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => {
+      const lower = a.since !== undefined ? q.gte("createdAt", a.since) : q;
+      return a.until !== undefined ? lower.lt("createdAt", a.until) : lower;
+    }).order("desc").take(LIMIT)).filter((x) =>
+      (!a.watchId || x.watchId === a.watchId) && (!a.userId || x.userId === a.userId)
+      && (a.minScore === undefined || (x.score ?? -1) >= a.minScore) && (!a.emailStatus || x.emailStatus === a.emailStatus));
+    return rows.map((x) => alertRow(x, emails.get(x.userId), titles.get(x.watchId)));
+  },
+});
+
+/** One alert, with its watch and person. */
+export const alert = query({
+  args: { alertId: v.id("alerts") },
+  handler: async (ctx, { alertId }) => {
+    if (!(await isOwner(ctx))) return null;
+    const x = await ctx.db.get(alertId);
+    if (!x) return null;
+    const [owner, w] = await Promise.all([ctx.db.get(x.userId), ctx.db.get(x.watchId)]);
+    return alertRow(x, owner?.email, w ? w.name ?? w.label : undefined);
+  },
+});
+
+/** Saved chats, most recently used first. */
+export const chats = query({
+  args: { userId: v.optional(v.id("users")), since: v.optional(v.number()), until: v.optional(v.number()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const rows = (await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT))
+      .filter((c) => (!a.userId || c.userId === a.userId) && inRange(c.updatedAt, a.since, a.until));
+    return Promise.all(rows.map(async (c) => ({
+      _id: c._id, userId: c.userId, email: emails.get(c.userId) ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt,
+      pinned: !!c.pinned, archived: !!c.archivedAt,
+      messages: (await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", c._id)).take(500)).length,
+    })));
+  },
+});
+
+/** One conversation, every message, with the listings and watch proposals the agent showed. */
+export const chat = query({
+  args: { chatId: v.id("chats") },
+  handler: async (ctx, { chatId }) => {
+    if (!(await isOwner(ctx))) return null;
+    const c = await ctx.db.get(chatId);
+    if (!c) return null;
+    const owner = await ctx.db.get(c.userId);
+    const messages = await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", chatId)).take(500);
+    return {
+      _id: c._id, userId: c.userId, email: owner?.email ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt,
+      pinned: !!c.pinned, archived: !!c.archivedAt,
+      messages: messages.map((m) => ({ _id: m._id, at: m._creationTime, role: m.role, content: m.content,
+        listings: m.listings ?? [], proposals: m.proposals ?? [], search: m.search ?? null, savedProposals: m.savedProposals ?? [] })),
+    };
+  },
+});
+
+/** The usage log behind every breakdown on the dashboard. */
+export const events = query({
+  args: { userId: v.optional(v.id("users")), name: v.optional(v.string()), section: v.optional(v.string()),
+          device: v.optional(v.string()), mode: v.optional(v.string()), value: v.optional(v.string()),
+          since: v.optional(v.number()), until: v.optional(v.number()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const rows = (await ctx.db.query("events").withIndex("by_at", (q) => {
+      const lower = a.since !== undefined ? q.gte("at", a.since) : q;
+      return a.until !== undefined ? lower.lt("at", a.until) : lower;
+    }).order("desc").take(LIMIT)).filter((e) =>
+      (!a.userId || e.userId === a.userId) && (!a.name || e.name === a.name) && (!a.device || e.device === a.device)
+      && (!a.section || (e.props?.section || "chat") === a.section) && (!a.mode || (e.props?.mode ?? "search") === a.mode)
+      && (!a.value || e.props?.value === a.value));
+    return rows.slice(0, 2000).map((e) => ({ _id: e._id, userId: e.userId, email: emails.get(e.userId) ?? "(deleted user)",
+      at: e.at, name: e.name, props: e.props, device: e.device }));
+  },
+});
+
+/** One day (a bar on a chart): who was active, and the chats, watches, alerts and sign-ups of that day. */
+export const day = query({
+  args: { day: v.string() },
+  handler: async (ctx, { day }) => {
+    if (!(await isOwner(ctx))) return null;
+    const since = Date.parse(`${day}T00:00:00Z`);
+    if (Number.isNaN(since)) return null;
+    const until = since + DAY;
+    const now = Date.now();
+    const emails = await emailsOf(ctx);
+    const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since).lt("at", until)).take(LIMIT);
+    const chats = (await ctx.db.query("chats").withIndex("by_updated", (q) => q.gte("updatedAt", since).lt("updatedAt", until)).take(LIMIT));
+    const watches = (await ctx.db.query("watches").take(LIMIT)).filter((w) => inRange(w.createdAt, since, until));
+    const alerts = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since).lt("createdAt", until)).take(LIMIT);
+    const titles = new Map((await ctx.db.query("watches").take(LIMIT)).map((w) => [w._id as string, w.name ?? w.label]));
+    const signups = (await ctx.db.query("users").take(LIMIT)).filter((u) => inRange(u.createdAt, since, until));
+    const active = new Map<string, number>();
+    [...events.map((e) => e.userId), ...chats.map((c) => c.userId)].forEach((id) => active.set(id, (active.get(id) ?? 0) + 1));
+    return {
+      day,
+      active: [...active.entries()].map(([userId, n]) => ({ userId, email: emails.get(userId) ?? "(deleted user)", actions: n })),
+      searches: events.filter((e) => e.name === "chat_sent" && e.props?.mode !== "watch").length,
+      watchChats: events.filter((e) => e.name === "chat_sent" && e.props?.mode === "watch").length,
+      chats: chats.map((c) => ({ _id: c._id, userId: c.userId, email: emails.get(c.userId) ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt })),
+      watches: watches.map((w) => watchRow(w, emails.get(w.userId), 0, now)),
+      alerts: alerts.map((x) => alertRow(x, emails.get(x.userId), titles.get(x.watchId))),
+      signups: signups.map((u) => ({ _id: u._id, email: u.email, createdAt: u.createdAt })),
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Safe actions for the owner (each confirmed in the dashboard)
+
+/** Pause or resume anyone's watch, exactly as the app does it for its owner (watches.activePatch). */
+export const setWatchActive = mutation({
+  args: { watchId: v.id("watches"), active: v.boolean() },
+  handler: async (ctx, { watchId, active }) => {
+    await requireOwner(ctx);
+    const w = await ctx.db.get(watchId);
+    if (!w) throw new ConvexError("That watch no longer exists.");
+    if (active && w.archivedAt) throw new ConvexError("This watch is archived; its owner has to restore it first.");
+    await ctx.db.patch(watchId, activePatch(w, active, Date.now()));
+  },
+});
+
+/** Mark feedback as handled (or not), so the list shows what still needs a look. */
+export const setFeedbackHandled = mutation({
+  args: { id: v.id("feedback"), handled: v.boolean() },
+  handler: async (ctx, { id, handled }) => {
+    await requireOwner(ctx);
+    if (!(await ctx.db.get(id))) throw new ConvexError("That feedback no longer exists.");
+    await ctx.db.patch(id, { handledAt: handled ? Date.now() : undefined });
+  },
+});
+

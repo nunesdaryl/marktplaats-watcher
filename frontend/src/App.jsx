@@ -33,7 +33,7 @@ import WatchesView from "./views/WatchesView.jsx";
 import WatchView from "./views/WatchView.jsx";
 
 // The owner dashboard's code is only downloaded by the owner (see the /admin branch below)
-const AdminView = lazy(() => import("./views/AdminView.jsx"));
+const AdminView = lazy(() => import("./views/admin/AdminView.jsx"));
 
 /** Phone: saved chats, opened from the clock button (or ⌘K), with search, date groups and a ••• menu per chat. */
 function HistorySheet({ chats, actions, onClose }) {

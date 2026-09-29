@@ -61,3 +61,91 @@ test("the dashboard counts usage, the funnel and feedback with what happened bef
   expect(f).toMatchObject({ email: "a@example.com", message: "The banner is great", wouldPay: "Maybe", screenshotUrl: null });
   expect(f.before.map((e) => e.name)).toEqual(["page_view", "chat_sent"]);
 });
+
+test("drilldown: every list and detail is owner-only, and the actions refuse everyone else", async () => {
+  const t = convexTest(schema, modules);
+  const someone = t.withIdentity({ subject: "s", email: "someone@example.com" });
+  const userId = await someone.mutation(api.users.store, {});
+  const watchId = await someone.mutation(api.watches.create,
+    { query: "gazelle fiets", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  for (const [fn, args] of [
+    [api.admin.users, {}], [api.admin.user, { userId }], [api.admin.watches, {}], [api.admin.watch, { watchId }],
+    [api.admin.alerts, {}], [api.admin.chats, {}], [api.admin.events, {}], [api.admin.day, { day: "2026-09-29" }],
+  ] as const) {
+    expect(await someone.query(fn as any, args as any)).toBeNull();
+    expect(await t.query(fn as any, args as any)).toBeNull();
+  }
+  await expect(someone.mutation(api.admin.setWatchActive, { watchId, active: false })).rejects.toThrow(/Not found/);
+});
+
+test("drilldown: accounts, their watches and chats, filters, and the funnel's 'stopped at'", async () => {
+  const t = convexTest(schema, modules);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
+  const aliceId = await alice.mutation(api.users.store, {});
+  await bob.mutation(api.users.store, {});
+  const watchId = await alice.mutation(api.watches.create,
+    { query: "gazelle fiets", maxPriceEur: 400, schedule: { kind: "interval", everyMinutes: 15 }, notify: "great" });
+  const chatId = await alice.mutation(api.chats.start, { content: "Mac mini 16GB under €500" });
+  await alice.mutation(api.chats.append, { chatId, role: "assistant", content: "Here is one.",
+    listings: [{ id: "m1", title: "Mac mini", price_eur: 230, city: "Utrecht", distance_km: null, url: "https://www.marktplaats.nl/v/x" }] });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("alerts", { userId: aliceId, watchId, listingId: "l1", title: "Gazelle Orange", priceEur: 350,
+      url: "https://www.marktplaats.nl/v/y", score: 9, reason: "Right model, under budget.", channel: "email",
+      emailStatus: "sent", createdAt: Date.now() });
+  });
+  await alice.mutation(api.events.track, { events: [{ name: "chat_sent", props: { mode: "search" }, device: "phone", at: Date.now() }] });
+
+  const users = (await owner.query(api.admin.users, {}))!;
+  expect(users.map((u) => u.email).sort()).toEqual(["alice@example.com", "bob@example.com"]);
+  const a = users.find((u) => u.email === "alice@example.com")!;
+  expect(a).toMatchObject({ watchesActive: 1, chats: 1, alerts: 1, furthest: "alert", devices: ["phone"] });
+  expect((await owner.query(api.admin.users, { stage: "watch" }))!.map((u) => u.email)).toEqual(["alice@example.com"]);
+  expect((await owner.query(api.admin.users, { stuck: "chatted" }))!.map((u) => u.email)).toEqual([]);   // bob never finished setup
+  expect((await owner.query(api.admin.users, { search: "BOB" }))!.map((u) => u.email)).toEqual(["bob@example.com"]);
+
+  const one = (await owner.query(api.admin.user, { userId: aliceId }))!;
+  expect(one.watches[0]).toMatchObject({ query: "gazelle fiets", maxPriceEur: 400, schedule: "every 15 minutes",
+    scheduleKey: "every 15 min", notify: "great", status: "active", alerts: 1 });
+  expect(one.chats[0]).toMatchObject({ title: "Mac mini 16GB under €500", messages: 2 });
+  expect(one.alerts[0]).toMatchObject({ title: "Gazelle Orange", score: 9, watch: "Gazelle fiets, under €400" });
+
+  expect((await owner.query(api.admin.watches, { scheduleKey: "every 15 min" }))!).toHaveLength(1);
+  expect((await owner.query(api.admin.watches, { notify: "good" }))!).toHaveLength(0);
+  expect((await owner.query(api.admin.alerts, { minScore: 9 }))![0].email).toBe("alice@example.com");
+  expect((await owner.query(api.admin.alerts, { minScore: 10 }))!).toHaveLength(0);
+  const convo = (await owner.query(api.admin.chat, { chatId }))!;
+  expect(convo.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
+  expect(convo.messages[1].listings[0].title).toBe("Mac mini");
+  expect((await owner.query(api.admin.events, { name: "chat_sent", mode: "search" }))!).toHaveLength(1);
+  const today = (await owner.query(api.admin.day, { day: "2026-09-29" }))!;
+  expect(today.signups).toHaveLength(2);
+  expect(today.alerts[0].title).toBe("Gazelle Orange");
+  expect(today.searches).toBe(1);
+});
+
+test("owner actions: pausing from the dashboard works like pausing in the app; feedback can be marked handled", async () => {
+  const t = convexTest(schema, modules);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const w1 = await alice.mutation(api.watches.create, { query: "fiets", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const w2 = await alice.mutation(api.watches.create, { query: "stoel", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  await t.run(async (ctx) => { for (const id of [w1, w2]) await ctx.db.patch(id, { seeded: true, lastError: "old" }); });
+  await owner.mutation(api.admin.setWatchActive, { watchId: w1, active: false });
+  await alice.mutation(api.watches.update, { id: w2, active: false });
+  vi.advanceTimersByTime(1000);
+  await owner.mutation(api.admin.setWatchActive, { watchId: w1, active: true });
+  await alice.mutation(api.watches.update, { id: w2, active: true });
+  const [a, b] = await t.run(async (ctx) => Promise.all([ctx.db.get(w1), ctx.db.get(w2)]));
+  const pick = (w: any) => ({ active: w.active, nextRunAt: w.nextRunAt, lastError: w.lastError, scheduleEditedAt: w.scheduleEditedAt });
+  expect(pick(a)).toEqual(pick(b));
+  expect(a!.lastError).toBeUndefined();
+
+  const fb = await alice.mutation(api.feedback.submit, { message: "Love it" });
+  await owner.mutation(api.admin.setFeedbackHandled, { id: fb, handled: true });
+  expect((await owner.query(api.admin.feedback, { handled: false }))!).toHaveLength(0);
+  expect((await owner.query(api.admin.feedback, { handled: true }))![0].handledAt).toBe(Date.now());
+});

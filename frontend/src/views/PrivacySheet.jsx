@@ -15,7 +15,8 @@ export default function PrivacySheet({ email, onClose }) {
           reply, together with the page you were on, your screen size and browser, and (unless you untick it) a
           screenshot of that page with your e-mail address hidden. To improve the app we record which features you use
           (for example "saved a watch" or "opened an alert"), never what you type, and keep that for 90 days. Vercel
-          counts page visits without cookies. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
+          counts page visits without cookies. To run the service, fix problems and improve it, Daryl (the owner) can see
+          your account, watches, alerts, saved chats and feedback in a private dashboard that only Daryl can open. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
           Clerk, AgentMail, Vercel). Delete my data removes everything we store; close your login account separately
           under your account menu.</p>
         <p className="muted">A free portfolio project by Daryl Nunes, not affiliated with Marktplaats.</p>

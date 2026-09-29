@@ -119,7 +119,25 @@ into both stores (DEPLOY-VERCEL.md §1), then redeploy. Visitor and
 page-view counts (including signed-out visitors) are in Vercel → project → Analytics; Web Analytics must be enabled
 there once.
 
-## 10. Marktplaats asks us to stop
+## 10. Using the dashboard to find a problem
+Every number on `/admin` opens its records: click an account to see its watches (the exact search), chats (the full
+conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
+app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.
+
+## 11. Vercel Web Analytics in the dashboard (token)
+The "Website visitors" section reads Vercel Web Analytics with `VERCEL_TOKEN` in Convex (prod and dev). Vercel tokens
+can't be read-only, so it's kept only in Convex's server settings, used by one owner-only function, and expires after
+90 days. When the dashboard says "token expired" (or to connect it the first time):
+1. vercel.com → Account Settings → Tokens → **Create**: name `marktplaats-watcher-dashboard`, scope: Daryl Nunes'
+   projects → **only the `marktplaats-watcher` project** (least access), expiration **90 days**. Copy it once. (The
+   first one was created on 29 Sep 2026 and expires on 28 Dec 2026.)
+2. Convex dashboard → project `marktplaats-watcher` → **Production** → Settings → Environment Variables →
+   `VERCEL_TOKEN` → paste → Save. (Same on the dev deployment if you use it locally.) Don't paste it into a chat or a
+   terminal command that's logged.
+3. Reload `/admin`; the section fills in. Delete the old token in Vercel.
+(The Vercel CLI can't create tokens for you: Vercel answers "Cannot create tokens for this app".)
+
+## 12. Marktplaats asks us to stop
 Pause checks (§1) the same day. Chat search can be switched off by setting `MAX_FETCHES_PER_HOUR=0` in Vercel.
 Reply, and record the decision in `docs/system-design.html` §11/§13. The risk (ToS art. 7.3) was accepted knowingly for
 the portfolio version.

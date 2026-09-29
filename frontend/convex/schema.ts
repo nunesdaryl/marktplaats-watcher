@@ -61,6 +61,7 @@ export default defineSchema({
     page: v.optional(v.string()),
     screenshotId: v.optional(v.id("_storage")),   // the page it was sent from, e-mail addresses masked (opt-out)
     context: v.optional(feedbackContext),
+    handledAt: v.optional(v.number()),          // the owner marked it handled on the dashboard
     createdAt: v.number(),
   }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
 

@@ -78,7 +78,12 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;
   `cd frontend && npx convex run --prod feedback:summary` counts the answers and lists the latest messages.
 - **Owner dashboard (`/admin`):** only the owner's account (its Clerk id `OWNER_CLERK_ID` **and** its e-mail `OWNER_EMAIL`
-  must both match) can open it; for everyone else, signed in or not, it behaves like a page that doesn't exist. It shows accounts, active people, watches, alerts, daily charts, the sign-up → first-alert funnel,
+  must both match) can open it; for everyone else, signed in or not, it behaves like a page that doesn't exist. Every
+  number, bar, funnel step and breakdown row opens the exact records behind it in a side panel (accounts and their
+  e-mails, each watch's exact search, every alert, full chat conversations, feedback, the usage log, one day), with
+  breadcrumbs, search, sorting, CSV download and a link per view. Safe owner actions: pause/resume a watch, mark
+  feedback handled, copy an e-mail. A "Website visitors" section pulls Vercel Web Analytics into the dashboard
+  (`frontend/convex/analytics.ts`, needs `VERCEL_TOKEN`). It shows accounts, active people, watches, alerts, daily charts, the sign-up → first-alert funnel,
   which features are used (Search now vs Watch it, schedules, phone vs desktop, light vs dark), would-pay answers,
   health, and every feedback message with its screenshot and what the person did just before. Usage events are our
   own (`frontend/convex/events.ts`): feature names only, never what people type, kept 90 days, deleted with "Delete my

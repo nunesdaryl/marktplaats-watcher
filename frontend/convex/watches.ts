@@ -81,6 +81,17 @@ export const create = mutation({
   },
 });
 
+/** Pause or resume, the same way from the app and from the owner dashboard: a resumed watch gets its next check from
+ *  its schedule (or right away if its first look hasn't happened yet), and any old error is cleared. */
+export function activePatch(watch: Doc<"watches">, active: boolean, now: number): Partial<Doc<"watches">> {
+  const patch: Partial<Doc<"watches">> = { active, scheduleEditedAt: now };
+  if (active) {
+    patch.nextRunAt = watch.seeded ? nextRun(watch.schedule, now, watch.timezone) : now;
+    patch.lastError = undefined;
+  }
+  return patch;
+}
+
 export const update = mutation({
   args: {
     id: v.id("watches"),
@@ -127,12 +138,13 @@ export const update = mutation({
       checkSchedule(change.schedule);
       patch.schedule = change.schedule;
     }
-    if (change.active !== undefined) patch.active = change.active;
+    if (change.active !== undefined) Object.assign(patch, activePatch({ ...watch, schedule: change.schedule ?? watch.schedule }, change.active, now));
     if (change.schedule || change.active !== undefined) patch.scheduleEditedAt = now;
-    if ((change.schedule || change.active) && patch.seeded !== false) {
-      patch.nextRunAt = watch.seeded ? nextRun(change.schedule ?? watch.schedule, now, watch.timezone) : now;
+    if (change.schedule && !change.active && patch.seeded !== false) {
+      patch.nextRunAt = watch.seeded ? nextRun(change.schedule, now, watch.timezone) : now;
       patch.lastError = undefined;
     }
+    if (patch.seeded === false) { patch.nextRunAt = now; }
     await ctx.db.patch(id, patch);
     if (patch.seeded === false) await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});   // first look now
   },

@@ -800,7 +800,16 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     screenshot and the ten things the person did just before. Owner-only on the server: every query checks that the
     signed-in account matches both <code>OWNER_CLERK_ID</code> (the Clerk user id) and <code>OWNER_EMAIL</code>, and
     returns nothing otherwise. For everyone else, signed in or not, <code>/admin</code> behaves like a page that doesn't
-    exist (sent to the start page, no link), and the dashboard's code is only downloaded after the owner check.</td></tr>
+    exist (sent to the start page, no link), and the dashboard's code is only downloaded after the owner check.
+    Every number, bar, funnel step and breakdown row opens the records behind it in a side panel: accounts (e-mails),
+    each watch's exact search and alerts, full chat conversations, feedback, the usage log, or one day. Breadcrumbs,
+    browser Back, search, sorting, CSV and a link per view; safe actions (pause/resume a watch, mark feedback handled)
+    need two taps. The privacy text tells users the owner can see their account, watches, alerts, chats and feedback.</td></tr>
+  <tr><td>Website visitors</td><td>A Convex action reads Vercel Web Analytics (visitors, page views, pages, referrers,
+    countries, devices, browsers) with a <code>VERCEL_TOKEN</code> scoped to this one Vercel project and expiring after
+    90 days (the first one ends 28 Dec 2026), kept only in Convex's server settings, and shows "not connected" or
+    "token expired" instead of failing. Vercel can't create such a token from the CLI, so it's made in the Vercel
+    dashboard and pasted into Convex by the owner; the agent only ever checked its length.</td></tr>
   <tr><td>Health endpoint</td><td><code>/api/health</code> answers only the owner's uptime check, which sends a random
     <code>HEALTH_KEY</code> (a Vercel secret and a GitHub repository secret, never pasted). Everyone else gets 404. The
     uptime workflow also checks that it stays hidden without the key.</td></tr>
