@@ -45,6 +45,7 @@ That's five UI sizes plus display. The old 11, 14, 16, 18, 20, 28 and 34px sizes
 - **Depth:** hairlines (`line`) first, and `shadow` only on floating things: cards, composer, menus, sheets. Frosted `glass` only on the phone bars.
 - **Motion:** `--ease` stays. `--dur-fast` 140ms for menus and hover, `--dur` 200ms for toast, card and pill fade-in, `--dur-sheet` 320ms (380ms on phones), and `--dur-breathe` 1600ms for the boot logo (scale 0.94 and 72% opacity at the midpoint). `prefers-reduced-motion` sets all of them to 0.
 - **Layout:** desktop from 900px with the 272px ChatGPT-style sidebar; phone below with the frosted top bar, the Chat / Watches / Alerts tab bar and bottom sheets. Touch targets are at least 44px, with safe-area insets.
+- **The logo never scrolls away** (as on Marktplaats, whose white header stays on top): the landing header is sticky and frosted like the phone top bar; the desktop sidebar pins the logo, search, New chat, Alerts and Dashboard at the top and the account row at the bottom, and only the list between them scrolls; the phone top bar is sticky. Added 29 Sep 2026, after Daryl found the logo scrolled out of view: `references/marktplaats-design-language.md` had noted Marktplaats' sticky header, but the brief and this system never carried it over.
 - **Focus:** a 3px `focus` ring with a 2px `bg` gap (`--focus-ring`), at least 3:1 on every surface.
 
 ## Logo

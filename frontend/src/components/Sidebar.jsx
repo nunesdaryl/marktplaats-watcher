@@ -93,22 +93,25 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
 
   return (
     <nav className="sidebar" aria-label="Main">
-      <div className="brand">
-        <Logo size={40} /><span className="wordmark">Marktplaats <b>Watcher</b></span>
-        <button className="icon-button small" onClick={() => window.dispatchEvent(new Event("mw:search"))}
-                aria-label="Search (⌘K)" title="Search (⌘K)"><Icon name="search" size={16} /></button>
-      </div>
-      <button className={`nav-item strong ${at("") ? "active" : ""}`} onClick={() => go("/")} title="New chat (⌘⇧O)">
-        <Icon name="compose" size={18} />New chat
-      </button>
-      <button className={`nav-item ${at("alerts") ? "active" : ""}`} onClick={() => go("/alerts")}>
-        <Icon name="bell" size={18} />Alerts
-      </button>
-      {isOwner && (
-        <button className={`nav-item ${at("admin") ? "active" : ""}`} onClick={() => go("/admin")}>
-          <Icon name="chart" size={18} />Dashboard
+      {/* Logo, search and the main places stay on screen while the list below scrolls (as on Marktplaats) */}
+      <div className="sidebar-top">
+        <div className="brand">
+          <Logo size={40} /><span className="wordmark">Marktplaats <b>Watcher</b></span>
+          <button className="icon-button small" onClick={() => window.dispatchEvent(new Event("mw:search"))}
+                  aria-label="Search (⌘K)" title="Search (⌘K)"><Icon name="search" size={16} /></button>
+        </div>
+        <button className={`nav-item strong ${at("") ? "active" : ""}`} onClick={() => go("/")} title="New chat (⌘⇧O)">
+          <Icon name="compose" size={18} />New chat
         </button>
-      )}
+        <button className={`nav-item ${at("alerts") ? "active" : ""}`} onClick={() => go("/alerts")}>
+          <Icon name="bell" size={18} />Alerts
+        </button>
+        {isOwner && (
+          <button className={`nav-item ${at("admin") ? "active" : ""}`} onClick={() => go("/admin")}>
+            <Icon name="chart" size={18} />Dashboard
+          </button>
+        )}
+      </div>
 
       {(pinnedWatches.length > 0 || pinnedChats.length > 0) && (
         <>

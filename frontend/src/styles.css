@@ -231,6 +231,14 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
   background: var(--sidebar); border-right: 1px solid var(--line); overflow-y: auto;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; font-weight: 600; font-size: 16px; }
+/* Pinned to the top and bottom of the sidebar while its list scrolls. The negative offsets cover the sidebar's own
+   12px padding, so nothing shows through above or below them */
+.sidebar-top {
+  position: sticky; top: -12px; z-index: 2; display: flex; flex-direction: column; gap: 2px;
+  margin: -12px -10px 0; padding: 12px 10px 6px; background: var(--sidebar); border-bottom: 1px solid var(--line);
+}
+.sidebar .account { position: sticky; bottom: -12px; z-index: 2; margin-left: -10px; margin-right: -10px;
+  padding-left: 18px; padding-right: 18px; padding-bottom: 12px; background: var(--sidebar); }
 .nav-item {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px;
   background: none; text-align: left; font-size: 15px; color: var(--text);
@@ -519,7 +527,12 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
 
 /* ---------- Landing ---------- */
 .landing { min-height: 100dvh; }
-.landing .bar { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
+/* The header with the logo stays on top while the page scrolls (as on Marktplaats), frosted like the phone top bar */
+.landing .bar {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+  background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--line);
+}
 .landing .bar .name { margin-right: auto; font-weight: 600; }
 .landing main { width: min(1000px, 100%); margin: 0 auto; padding: clamp(24px, 8vh, 88px) 20px 72px; }
 .landing .sentence { font-size: var(--display); font-weight: 600; line-height: var(--display-lh); letter-spacing: var(--tracking-display); max-width: 20ch; }
