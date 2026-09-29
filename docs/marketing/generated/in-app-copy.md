@@ -60,9 +60,11 @@ ToS art. 7.3 exposure in research.md? If not, keep SEO minimal and optimise for 
 has no relevance score and no explanation (research.md comparison table; competitors/marktplaats-saved-search.md).
 Watcher reads every new listing, scores it 0 to 10, says why in one line, and only e-mails the ones over the bar you
 picked, on the schedule you picked. Lead with the reason; the schedule is the supporting fact.
-Do not claim "Marktplaats only e-mails once a day" in public copy: that is reported by users and interested
-competitors, not verified (push behaviour is contested). `[DARYL: test the native saved search once and screenshot it
-before any copy compares frequency.]`
+**Verified 29 Sep 2026** (help pages for PC, Android and iOS; Daryl's logged-in account): saved searches match
+keywords in title and description, notify **daily** ("Bij nieuwe resultaten ontvang je dagelijks een melding"), and
+offer only two switches per search, push and e-mail. No schedule, no score, no reason. Public copy may say "a notice
+once a day (per its help pages)"; the general help page says "direct een melding", so never say "only once a day" as
+an absolute. The landing page's "Not another saved search" block uses this wording.
 
 ---
 

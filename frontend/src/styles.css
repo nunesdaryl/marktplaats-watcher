@@ -566,6 +566,17 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
 .sample .good .score { color: var(--great); }
 .sample .skip { opacity: 0.65; }
 .sample .skip strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+/* "Not another saved search": Marktplaats' own feature next to ours, two plain columns (one per row on phones) */
+.compare { margin-top: var(--space-6); }
+.compare h2 { font-size: var(--text-xl); line-height: var(--text-xl-lh); font-weight: 600; letter-spacing: var(--tracking-title); margin-bottom: var(--space-3); }
+.compare-cols { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.compare-cols > div { padding: var(--space-3); border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.compare-cols > .ours { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.compare h3 { font-size: var(--text-md); font-weight: 600; margin-bottom: var(--space-2); }
+.compare-cols > div:not(.ours) h3 { color: var(--text-2); }
+.compare ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text-2); }
+.compare .ours ul { color: var(--text); }
+.compare-note { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-3); }
 .steps { list-style: none; counter-reset: step; padding: 0; margin: 56px 0 0; display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .steps li { counter-increment: step; color: var(--text-2); }
 .steps li::before {

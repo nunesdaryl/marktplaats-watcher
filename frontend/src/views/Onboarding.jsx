@@ -41,6 +41,7 @@ export default function Onboarding({ email, onDone }) {
   const steps = [
     <div key="what" className="stack">
       <p className="lead">What should we keep an eye on?</p>
+      <p className="hint">We'll read every new listing for it and only e-mail the ones that fit, with the reason.</p>
       <input className="field big" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus maxLength={80}
              placeholder="e.g. Mac mini" aria-label="Item to watch" />
       <div className="suggestions left">{IDEAS.map((i) => <button key={i} type="button" className="chip" onClick={() => setQuery(i)}>{i}</button>)}</div>

@@ -1,0 +1,282 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Positioning audit of Marktplaats Watcher</title><style>
+  @page { size: A4; margin: 15mm 15mm 15mm 15mm; }
+  :root { --ink:#1d2330; --muted:#5b6472; --line:#d9dde3; --brand:#1f6f6b; --accent:#eea52d;
+          --ok:#1f7a3a; --part:#a06400; --no:#b3261e; --soft:#f3f6f7; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 -apple-system, "Helvetica Neue", Arial, sans-serif; color: var(--ink); margin: 0; }
+  h1 { font-size: 26pt; line-height: 1.15; margin: 0 0 6px; }
+  h2 { font-size: 16pt; color: var(--brand); border-bottom: 2px solid var(--brand); padding-bottom: 4px;
+       margin: 0 0 10px; break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14px 0 4px; break-after: avoid; }
+  p { margin: 5px 0 8px; }
+  code, .mono { font-family: "SF Mono", Menlo, monospace; font-size: 9pt; }
+  code { background: var(--soft); padding: 1px 4px; border-radius: 3px; }
+  pre { font: 8.2pt/1.4 "SF Mono", Menlo, monospace; background: var(--soft); border: 1px solid var(--line);
+        border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; white-space: pre-wrap; break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.3pt; break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+  th { background: var(--soft); }
+  tr { break-inside: avoid; }
+  
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .kicker { letter-spacing: .18em; font-size: 9pt; color: var(--brand); font-weight: 700; }
+  .eq { display: inline-flex; gap: 8px; align-items: center; margin: 18px 0; font: 600 11pt "SF Mono", Menlo, monospace; }
+  .pill { border: 1.5px solid var(--ink); border-radius: 999px; padding: 4px 12px; }
+  .pill.dark { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .box { border-left: 4px solid var(--brand); background: var(--soft); padding: 8px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .warn { border-left-color: var(--accent); }
+  .pattern { border-left: 4px solid var(--accent); padding: 6px 12px; margin: 10px 0; background: #fff8ec; break-inside: avoid; }
+  .pattern b { color: #8a5a00; }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: #fff; white-space: nowrap; }
+  .built { background: var(--ok); } .partial { background: var(--part); } .none { background: var(--no); }
+  .fig { text-align: center; margin: 8px 0; break-inside: avoid; }
+  .fig img { max-width: 100%; }
+  .caption { font-size: 8.5pt; color: var(--muted); margin-top: 3px; }
+  .shots { display: flex; gap: 10px; }
+  .shots .fig { flex: 1; }
+  .shots img { max-height: 95mm; border: 1px solid var(--line); border-radius: 6px; }
+  .meta td { border: none; padding: 2px 10px 2px 0; }
+  .small { font-size: 9pt; color: var(--muted); }
+  ol, ul { margin: 4px 0 10px 18px; padding: 0; }
+  li { margin: 2px 0; }
+
+  table { table-layout: fixed; width: 100%; }
+  tr { break-inside: avoid; }
+</style></head>
+<body><div class="kicker">POSITIONING · AUDIT · 29 SEPTEMBER 2026</div>
+<h1>Positioning audit: Marktplaats Watcher vs Marktplaats' own saved search</h1>
+<p>29 September 2026. Question from Daryl: how does the project differ from what Marktplaats already offers, what is the
+USP, and is that clear through the whole journey, from the landing page to sign-up, app use and the alert?</p>
+<p><strong>Sources:</strong></p>
+<ul>
+<li>Marktplaats' help pages: the general "Beheren opgeslagen zoekopdrachten" page plus its PC, Android and iOS versions, and the notification and search help. Read in Chrome, 29 Sep 2026.</li>
+<li>Daryl's logged-in Marktplaats account: the saved-searches page, <code>/notifications</code>, and a live "mac mini" search.</li>
+<li>Daryl's Gmail (read-only).</li>
+<li>This repo's code.</li>
+<li>The agent-skill-pack frameworks and the FDE course material.</li>
+</ul>
+<p>An earlier draft of this audit assumed, from the general help page alone, that native alerts are "instant" and
+"relevant". Daryl rejected it, and everything below was re-checked against primary sources and the live product.</p>
+<h2>1. The answers</h2>
+<p><strong>How we differ.</strong> Marktplaats' saved search is a keyword match with a daily notice. Watcher reads each new listing,
+judges it against what you asked for, and only e-mails the ones worth a look. Each one comes with a 0–10 score, a
+one-line reason, and your schedule.</p>
+<p><strong>The USP, in one line.</strong> "Marktplaats' saved search sends every ad that contains your words, once a day. Marktplaats
+Watcher reads each new ad for you and only e-mails the ones worth a look, with a score and the reason, when you
+choose."</p>
+<p><strong>Unique mechanism.</strong> The listing is <em>read and judged</em>, not keyword-matched. The score and the one-line reason are the
+visible proof of that. This is the "unspoken" mechanism: MPAlerts also reads listings with AI, but never shows why.</p>
+<p><strong>Contrarian belief.</strong> "A keyword match isn't a good match."</p>
+<p><strong>Was it clear through the journey?</strong> Not before this audit. The product never named the native feature, and
+several lines sounded like it: "every 30 minutes … every new listing", and an e-mail heading reading "New on
+Marktplaats for …". The scorecard in section 3 shows each step before and after the copy fixes.</p>
+<h2>2. Side by side (verified)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Marktplaats saved search</th>
+<th>Marktplaats Watcher</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Setup</td>
+<td>Type keywords, set filters, click "Bewaar je zoekopdracht"</td>
+<td>Say it in plain words in the chat (or the setup form), press Save</td>
+</tr>
+<tr>
+<td>Matching</td>
+<td>Keywords in title and description, spelling variants, plurals, <code>*</code></td>
+<td>Marktplaats' search plus your price and distance, then the model reads each new listing against what you asked</td>
+</tr>
+<tr>
+<td>Judgement</td>
+<td>None: every ad that matches counts</td>
+<td>Score 0–10 and a one-line reason for every new listing</td>
+</tr>
+<tr>
+<td>What you get</td>
+<td>Every match</td>
+<td>Only great (8+), good (6+) or all, your choice</td>
+</tr>
+<tr>
+<td>When</td>
+<td>Daily, per the PC, Android and iOS help pages ("dagelijks een melding"); no setting</td>
+<td>You choose: every 15 minutes up to weekly, or times like "weekdays at 8"</td>
+</tr>
+<tr>
+<td>Channels</td>
+<td>Two switches: push (app) and e-mail</td>
+<td>E-mail (one per check, not one per ad)</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>All results</td>
+<td>Every listing placed since the last check (since 29 Sep)</td>
+</tr>
+<tr>
+<td>Feedback</td>
+<td>None</td>
+<td>Rate each alert: good match, or not right and why</td>
+</tr>
+<tr>
+<td>First check</td>
+<td>n/a</td>
+<td>Silent: you only hear about new listings</td>
+</tr>
+<tr>
+<td>Price</td>
+<td>Free</td>
+<td>Free, up to 5 watches</td>
+</tr>
+<tr>
+<td>Terms</td>
+<td>Official</td>
+<td>Unofficial: robots.txt and terms art. 7.3 risk accepted (MW-14 is the official-API route)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Measured noise.</strong> A live "mac mini" search, page 1: 25 unique listings. About 9 weren't a Mac mini (adapters, docks,
+other Macs, wanted ads), and 10 were paid placements. The order is partly bought.</p>
+<p><strong>One contradiction to handle honestly.</strong> The general help page says "direct een melding … als eerste", but the
+platform pages say "dagelijks". Say "once a day, per its help pages", never "only once a day".</p>
+<p><strong>The native alert, in practice.</strong> Daryl's own saved search "mac mini 16gb" (e-mail on) produced no e-mails we could
+find, spam and trash included.</p>
+<h2>3. The journey, before and after</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Before</th>
+<th>After (29 Sep)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Link preview (Google, LinkedIn)</td>
+<td>"Marktplaats alerts that read the listings first…"</td>
+<td>Names the saved search, then the difference: reads each new listing, only the ones worth a look, score and reason, when you choose</td>
+</tr>
+<tr>
+<td>Landing hero</td>
+<td>One example promised "every 30 minutes … every new listing", which is the native feature</td>
+<td>All examples use a threshold ("good matches", "great matches only")</td>
+</tr>
+<tr>
+<td>Landing proof</td>
+<td>9/10 e-mailed, 0/10 skipped (strong)</td>
+<td>Unchanged</td>
+</tr>
+<tr>
+<td>Landing comparison</td>
+<td>None</td>
+<td>"Not another saved search": two columns, sourced</td>
+</tr>
+<tr>
+<td>Landing steps</td>
+<td>Step 2 led with speed</td>
+<td>Step 2: your schedule, "one e-mail with the good ones, not a ping per listing"; step 3 adds rating</td>
+</tr>
+<tr>
+<td>Sign-up / onboarding</td>
+<td>A keyword and price form, with no sign of the reading</td>
+<td>Helper line: "We'll read every new listing for it and only e-mail the ones that fit, with the reason"</td>
+</tr>
+<tr>
+<td>Empty chat</td>
+<td>"…to get the good new ones by e-mail"</td>
+<td>"…we read every new listing for you and e-mail only the good ones, with the reason"</td>
+</tr>
+<tr>
+<td>Proposal saved</td>
+<td>"Watch saved."</td>
+<td>Adds the silent first check and what happens after</td>
+</tr>
+<tr>
+<td>Notify "all"</td>
+<td>Didn't say it's the native behaviour</td>
+<td>"Most e-mails, like Marktplaats' own saved search"</td>
+</tr>
+<tr>
+<td>Watch page, empty</td>
+<td>"No new matches yet…"</td>
+<td>"No good ones yet. Every check reads the new listings and only keeps the ones that fit…"</td>
+</tr>
+<tr>
+<td>Alert e-mail</td>
+<td>"New on Marktplaats for …" (sounds like the native feature)</td>
+<td>"Worth a look on Marktplaats: …", and the footer says we read each listing</td>
+</tr>
+<tr>
+<td>Alerts page</td>
+<td>"that's how the scores get better" (nothing learns automatically)</td>
+<td>"every rating is read to check and improve the scores"</td>
+</tr>
+<tr>
+<td>Demo script and problem statement</td>
+<td>"e-mails at most once a day" (unsourced)</td>
+<td>Sourced wording, plus a 20-second answer to "why not the saved search?"</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Still weak after these copy fixes</strong> (feature work, not copy):</p>
+<ul>
+<li>Search mode shows no scores.</li>
+<li>The onboarding step is a form, not plain language.</li>
+<li>Nothing shows "we read N, sent 1".</li>
+</ul>
+<h2>4. Framework checks</h2>
+<ul>
+<li>
+<p><strong>Day 3 "five answers":</strong></p>
+<ul>
+<li>ICP: Dutch second-hand hunters for a specific item.</li>
+<li>Alternative: the saved search, or refreshing by hand.</li>
+<li>Differentiator: the reading and judging with a reason. It's a capability, it's true, it's verifiable in a demo, and it's harder to copy than a keyword alert.</li>
+<li>Value prop: fewer, better alerts, each with the reason.</li>
+</ul>
+<p>The landing page now names the alternative too; before, it never mentioned it.</p>
+</li>
+<li>
+<p><strong>Value Equation:</strong> <em>perceived likelihood</em> comes from showing the reason (the 9/10 vs 0/10 sample) and the rating
+  loop. <em>Effort</em>: plain words, one click to save. <em>Time delay</em>: as often as every 15 minutes, against a daily notice.</p>
+</li>
+<li><strong>Awareness and sophistication:</strong> buyers are solution-aware ("I know saved searches exist"), and "get notified" is a
+  sophistication 3–4 claim that everyone makes. So the <em>mechanism</em> leads: read, score, explain. The new comparison
+  block does exactly that.</li>
+<li><strong>Unique Mechanism:</strong> named in plain words ("reads every new listing and scores it 0 to 10, with the reason"). No
+  coined name yet; an optional name for the sieve is listed below.</li>
+<li><strong>Transformation test:</strong> from "scrolling past chargers and docks every day" to "one e-mail with the two worth a
+  look, and why". The landing sample shows this.</li>
+</ul>
+<h2>5. Risks</h2>
+<ul>
+<li><strong>The help pages contradict themselves</strong> (daily vs "direct"). Our wording is sourced and hedged.</li>
+<li><strong>Marktplaats is adding AI search</strong> ("Nieuwe zoekfuncties begrijpen gewone taal", reported Feb 2026). Plain-language
+  setup is not a lasting edge; the score and the reason are.</li>
+<li><strong>MPAlerts also filters with AI.</strong> Our edge there is price (free) and showing the why.</li>
+<li><strong>Terms and robots.txt:</strong> accepted for the demo. MW-14 applies for the official API.</li>
+<li><strong>No head-to-head proof yet:</strong> we have never counted, over the same week, how many alerts the native saved search
+  and Watcher send and how many are real matches.</li>
+<li><strong>Our own settings can contradict the pitch.</strong> A watch set to "all" sends every listing. On 29 Sep Daryl's "iphone"
+  watch sent 9–16 per e-mail. Demo with "good" or "great".</li>
+</ul>
+<h2>6. Next, as feature work (not in this change)</h2>
+<ol>
+<li>"We read N new listings, sent 1" in the e-mail and on the watch page: makes the sieve visible.</li>
+<li>Scores and reasons in search mode.</li>
+<li>Plain-language onboarding instead of the form.</li>
+<li>A one-week head-to-head against the native saved search: same query, count alerts and real matches.</li>
+<li>A feedback question: "What do you use today?"</li>
+<li>Optional: a name for the mechanism (the sieve).</li>
+</ol>
+<h2>7. Demo lines</h2>
+<ul>
+<li><strong>Opening (15 s):</strong> "Marktplaats' own saved search matches the words you typed and sends a notice once a day, with no
+  reason given. Search 'mac mini' and a third of the first page isn't a Mac mini."</li>
+<li><strong>If asked "why not the saved search?" (20 s):</strong> see the end of <code>docs/demo/demo-script.md</code>.</li>
+<li><strong>Say out loud:</strong> it's unofficial, the terms risk is accepted, and there's a plan (MW-14).</li>
+</ul>
+<p class="small">Source: docs/marketing/positioning-audit-2026-09-29.md in github.com/nunesdaryl/marktplaats-watcher.</p>
+</body></html>

@@ -8,7 +8,7 @@ const signingIn = () => { try { sessionStorage.setItem(SIGNING_IN_FLAG, "1"); } 
 // The product in one sentence: the same sentence you fill in when you set up a watch.
 const EXAMPLES = [
   ["Mac mini with 16GB under €500", "every morning at 8", "good matches"],
-  ["Gazelle bike within 10 km of 3511", "every 30 minutes", "every new listing"],
+  ["Gazelle bike within 10 km of 3511", "every evening at 7", "good matches"],
   ["Nintendo Switch OLED under €200", "on Fridays at 18:00", "great matches only"],
 ];
 
@@ -70,10 +70,34 @@ export default function Landing({ SignIn = Plain }) {
           </ul>
         </section>
 
+        {/* The question every visitor has: Marktplaats already has saved searches. Facts from its help pages, 29 Sep 2026 */}
+        <section className="compare" aria-labelledby="compare-title">
+          <h2 id="compare-title">Not another saved search</h2>
+          <div className="compare-cols">
+            <div>
+              <h3>Marktplaats' saved search</h3>
+              <ul>
+                <li>Matches the words you typed</li>
+                <li>Sends every ad that matches: accessories, look-alikes and wanted ads too</li>
+                <li>A notice once a day, with no reason given</li>
+              </ul>
+            </div>
+            <div className="ours">
+              <h3>Marktplaats Watcher</h3>
+              <ul>
+                <li>Understands what you asked for, in plain words</li>
+                <li>Reads every new listing and scores it 0 to 10, with the reason</li>
+                <li>E-mails only the ones worth a look, when you choose</li>
+              </ul>
+            </div>
+          </div>
+          <p className="compare-note">About Marktplaats' saved searches: its own help pages, September 2026.</p>
+        </section>
+
         <ol className="steps">
           <li><strong>Tell the chat what you want.</strong> "A Mac mini with 16GB, under €500, near Utrecht."</li>
-          <li><strong>Pick when to check.</strong> Every 15 minutes, every morning at 8, or only on weekends.</li>
-          <li><strong>Get an e-mail when a good one appears, with the reason.</strong> The first check only notes what's listed now, so you only hear about new ones.</li>
+          <li><strong>Pick when to check.</strong> Every 15 minutes, every morning at 8, or only on weekends. One e-mail with the good ones, not a ping per listing.</li>
+          <li><strong>Get an e-mail when a good one appears, with the reason.</strong> The first check only notes what's listed now, so you only hear about new ones. Rate each alert, so the scores keep getting checked.</li>
         </ol>
 
         <section id="privacy" className="fineprint">

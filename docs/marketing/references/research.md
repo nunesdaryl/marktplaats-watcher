@@ -216,9 +216,12 @@ Profiles in the `/analyseer-concurrent` format are in `../competitors/`. Summary
 - **Website:** https://www.marktplaats.nl
 - **Price Range:** Free, built in
 - **Active Offers:** n/a
-- **Notes:** E-mail to the logged-in address, reported as once a day at the time the search was saved. Whether the
-  app also sends push for saved searches is contested: one competitor says it doesn't, a 2026 AI blog says it does.
-  `[NEEDS REVIEW: Daryl to test in the app and screenshot the settings]`. In 2026 Marktplaats is adding AI:
+- **Notes (verified 29 Sep 2026):** the PC help page says "Bij nieuwe resultaten ontvang je dagelijks een melding";
+  the Android and iOS pages say "dagelijks een e-mail". Each saved search has two switches only: "Push notificaties"
+  (app) and "E-mail" (checked in Daryl's logged-in account). No schedule, threshold, score or reason. Matching is on
+  keywords in title and description (spelling variants, plurals, `*`). The general help page says "direct een
+  melding", which contradicts the platform pages. Daryl's own saved search "mac mini 16gb" (e-mail on) sent no
+  e-mails at all that we could find. In 2026 Marktplaats is adding AI:
   "Nieuwe zoekfuncties begrijpen gewone taal." (aiinsider.nl, 3 Feb 2026,
   https://aiinsider.nl/nieuws/marktplaats-2026-hoe-ai-advertenties-en-sociale-functies-verandert/). This weakens
   "plain language" as a long-term differentiator.
@@ -271,20 +274,23 @@ Scanner.
 |---|---|---|---|---|
 | Price | Free | Free | Free (2 alerts, 14 days) | €19.95+/month after trial |
 | How you set it up | Run a search with filters, save it | One plain-language sentence in a chat, then Save | Form | Form + AI description |
-| How often | Reported once a day, at the time you saved it | You choose: 15/30 min, 1–12 h, daily up to 4 times, or chosen weekdays | Every 15 min | Seconds to minutes |
-| Channel | E-mail (push contested `[NEEDS REVIEW]`) | E-mail | E-mail, Telegram, push, webhook | Push, e-mail, Telegram, Discord, RSS |
+| How often | Daily, per its PC/Android/iOS help pages (verified 29 Sep; the general page says "direct") | You choose: 15/30 min, 1–12 h, daily up to 4 times, or chosen weekdays | Every 15 min | Seconds to minutes |
+| Channel | Push and/or e-mail, one switch each (verified 29 Sep) | E-mail | E-mail, Telegram, push, webhook | Push, e-mail, Telegram, Discord, RSS |
 | Relevance filtering | Keyword + Marktplaats filters; no scoring | AI score 0–10 + one-line reason; you pick great / good / all | Filters (price, location, photos) | AI filters irrelevant results |
 | Explains *why* a listing matters | No | Yes, a reason per listing | No | Not shown on the site |
 | "Must include" spec (e.g. 16gb) | Via keywords | Yes | Advanced filters on paid plans | Via AI description |
 | Only genuinely new listings | Yes | Yes (first check silent) | Yes | Yes |
 | Coverage | All Marktplaats results | Every listing placed since the last check (since 29 Sep; was the first page, ~30 listings) | Marktplaats, 2dehands, Vinted | + Facebook |
-| Location filter | Yes (Marktplaats' own) | Postcode + radius; only listings showing a location (~1/3) | Yes | Yes |
-| Official / ToS-safe | Yes | No: reads public search pages, ToS art. 7.3 risk accepted | Unofficial | Unofficial |
+| Location filter | Yes (Marktplaats' own) | Postcode + radius, applied by Marktplaats in checks (since 29 Sep); the chat keeps only listings showing a location (~1/3) | Yes | Yes |
+| Official / ToS-safe | Yes | No: reads Marktplaats' search (the date-sorted endpoint robots.txt disallows, since 29 Sep); ToS art. 7.3 risk accepted | Unofficial | Unofficial |
 | Data retention | Marktplaats account | 30 days, one-click delete | Not checked | Not checked |
 
-**Read-out:** Watcher can't win on speed, coverage or channels. It wins on (1) free with no time limit, (2) a *reason*
-for every alert, (3) the most flexible calm schedule, (4) plain-language setup. Its real edge over the native feature
-is the score + reason and the schedule; its edge over paid apps is price and explanation.
+**Read-out (updated 29 Sep):** against paid apps Watcher can't win on speed or channels. Against the native saved
+search it now also checks more often (as often as every 15 minutes against a daily notice) and, since 29 Sep, reads
+every new listing, not one page. It wins on (1) free with no time limit, (2) a *reason* for every alert, (3) the most
+flexible calm schedule, (4) plain-language setup. Its real edge over the native feature is the score + reason and the
+schedule; its edge over paid apps is price and explanation. The full positioning audit is
+`docs/marketing/positioning-audit-2026-09-29.md`.
 
 ## Metadata
 

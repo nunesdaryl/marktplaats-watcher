@@ -108,7 +108,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
       <section className="chat empty-chat" aria-label="New chat">
         <div className="hello">
           <h1>What are you looking for?</h1>
-          <p>Search Marktplaats in plain words, or switch to Watch it to get the good new ones by e-mail.</p>
+          <p>Search Marktplaats in plain words, or switch to Watch it: we read every new listing for you and e-mail only the good ones, with the reason.</p>
         </div>
         <div className="empty-composer"><Composer onSend={send} busy={!!live} autoFocus mode={mode} onModeChange={setMode} /></div>
         <div className="suggestions">

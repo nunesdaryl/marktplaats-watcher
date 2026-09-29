@@ -11,8 +11,9 @@ Do one warm-up chat before going on stage, so the model is warm.
 
 ## Version A: engineers and FDE peers (3:00)
 
-**0:00, the problem (15 s).** "Marktplaats' saved search e-mails at most once a day, and a lot of it is junk. I searched for
-a Mac mini and got e-mailed a Cisco network switch."
+**0:00, the problem (15 s).** "Marktplaats' own saved search matches the words you typed and sends a notice once a day,
+with no reason given. Search 'mac mini' and a third of the first page isn't a Mac mini: adapters, docks, even a Cisco
+network switch."
 
 **0:15, Search now (30 s).** Type *Mac mini 16GB under €500*. Point out, in this order:
 - the status line streaming in
@@ -53,8 +54,8 @@ knowingly for a portfolio project, which is why it isn't indexed and has a 5-wat
 
 ## Version B: hiring managers and business people (3:00)
 
-**0:00.** "I kept missing good second-hand deals because I wasn't refreshing at the right moment, and the alerts I tried
-sent me a lot I didn't want."
+**0:00.** "Marktplaats already has saved searches. They match your words and send everything that matches, once a
+day. I wanted the opposite: fewer alerts, only the ones worth a look, and one sentence on why."
 
 **0:20.** Show the landing sentence: *Check Marktplaats for a Mac mini … every morning at 8 and e-mail me good matches,
 with the reason.* "That sentence *is* the product."
@@ -84,3 +85,10 @@ product."
 | The AI is slow or offline | Show the recorded alert e-mail and the eval report. The app shows "The chat can't reach its AI right now", which is also a real error state worth showing. |
 | Marktplaats returns nothing | Open a saved chat from your rehearsal in the sidebar (history is stored), photo cards included. |
 | Wi-Fi fails | Phone hotspot. The pre-demo check includes loading the site on mobile data. |
+
+## If asked: "Why not just use Marktplaats' saved search?" (20 s)
+"It matches the words you typed and sends every ad that matches, once a day, with no reason. I searched 'mac mini' and
+nine of the 25 listings on page one weren't Mac minis. This reads each new listing, scores it 0 to 10, says why, and
+only e-mails the ones worth a look, on the schedule you pick: every 15 minutes if you like. And you can tell it when it
+got one wrong." (Sources: Marktplaats' help pages for PC, Android and iOS, read 29 Sep 2026; the live search and Daryl's saved-search settings in his logged-in account, same day.
+The general help page also says "direct een melding", so say "per its help pages" if pushed.)

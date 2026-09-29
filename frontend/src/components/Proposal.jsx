@@ -51,7 +51,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
       )}
       {error && <p className="error" role="alert">{error}</p>}
       {state === "saved" ? (
-        <p className="done">{p.type === "create" ? "Watch saved." : "Change saved."}</p>
+        <p className="done">{p.type === "create" ? "Watch saved. The first check only notes what's listed now; after that, new ones that fit are e-mailed with the reason." : "Change saved."}</p>
       ) : (
         <div className="actions">
           <button className="button primary" onClick={save} disabled={state === "saving"}>

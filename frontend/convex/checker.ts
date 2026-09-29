@@ -227,8 +227,9 @@ export function renderEmail(c: EmailContent, appUrl: string) {
       .filter(Boolean).join(", ");
   const manageUrl = c.watchId ? `${appUrl.replace(/\/$/, "")}/watch/?id=${encodeURIComponent(c.watchId)}` : appUrl;
   const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
+    "We read each new listing and only e-mail the ones that fit what you asked for. " +
     "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
-  const heading = `New on Marktplaats for "${c.label}"`;
+  const heading = `Worth a look on Marktplaats: "${c.label}"`;
   // "Good match?" links (ratings.ts): they open a page in the app that records the answer, so mail scanners that
   // follow links without running the page can't rate anything
   const rateUrl = (a: (typeof top)[number], verdict: "good" | "not_right") => a._id && a.rateToken
