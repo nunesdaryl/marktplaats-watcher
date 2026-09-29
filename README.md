@@ -94,6 +94,8 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   `evals/report.md`.
 - **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
   theme" in the account menu goes back.
+- **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
+  with evidence, and a dated roadmap.
 - **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).
 - **Demo:** `docs/demo/` (problem statement, 3-minute script, pre-demo checklist).
 
