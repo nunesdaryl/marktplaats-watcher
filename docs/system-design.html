@@ -409,8 +409,18 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
   429 rate limit all passed on <code>https://marktplaats-watcher.vercel.app</code>.
   Evidence: <code>~/Downloads/marktplaats-watcher-eval.gif</code> (42 frames) and <code>docs/img/</code>.
   <b>Limit:</b> 6 live cases is a smoke test, not a benchmark. The course asks for 20+ labelled cases before production.</p>
+<h3>Layer 3 (29 September): the people who receive the alerts</h3>
+<p>Every alert, in the e-mail and on the Alerts page, asks "Good match? 👍 Yes · 👎 Not right". A 👍 needs nothing more:
+  it confirms what the score already said. A 👎 asks "Thanks, tell us why?" with optional chips (not what I asked for,
+  score too high, score too low, price isn't good, the reason is wrong) and a note. That is the information the scorer
+  can't get any other way. The e-mail links carry a code that rates only that one alert, so no sign-in is needed. The
+  page behind the link records the answer, not the link itself, so mail scanners that open links don't create ratings.
+  Each rating stores the alert's score and reason at that moment. The owner dashboard shows agreement per score band;
+  a 👍 on a 6–7 hints that "great" is too strict. <code>evals/pull_ratings.py</code> and <code>evals/report.py</code>
+  put a "What users said" section next to the judge-based precision.</p>
 <div class="pattern"><b>Pattern:</b> write the pass condition <i>before</i> running a case, test the happy flow and the
-  refusals, and treat every failure as a design question, not just a bug.</div>
+  refusals, and treat every failure as a design question, not just a bug. Then let real users label real outputs:
+  ask only when they disagree, and keep the judge and the users' numbers side by side.</div>
 </section>
 
 <!-- ============================ 9 HOW TO BUILD ============================ -->

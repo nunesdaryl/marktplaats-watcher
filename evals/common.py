@@ -15,6 +15,7 @@ LABELS = DATA / "labels.json"
 SCORER_RESULTS = DATA / "scorer_results.json"
 CHAT_RESULTS = DATA / "chat_results.json"
 SPOTCHECK = DATA / "spotcheck.md"
+USER_RATINGS = DATA / "user_ratings.json"   # people's "good match / not right" on real alerts (evals/pull_ratings.py)
 REPORT = Path(__file__).parent / "report.md"
 
 # USD per 1M tokens, standard tier (developers.openai.com/api/docs/pricing, checked 27 Sep 2026)

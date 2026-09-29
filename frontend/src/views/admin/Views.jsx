@@ -150,6 +150,23 @@ export function Feedback({ params, open }) {
   );
 }
 
+export function Ratings({ params, open }) {
+  const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId });
+  const cols = [
+    { key: "at", label: "When", render: (r) => when(r.at), mono: true },
+    { key: "verdict", label: "Said", render: (r) => (r.verdict === "good" ? "👍 Good match" : "👎 Not right"), sort: (r) => r.verdict },
+    { key: "score", label: "Score", render: (r) => <Score s={r.score} />, align: "right" },
+    { key: "title", label: "Listing", render: (r) => <strong>{r.title}</strong> },
+    { key: "reasons", label: "Why", render: (r) => [...r.reasons, r.note && `"${r.note}"`].filter(Boolean).join(" · ") || "–",
+      csv: (r) => [...r.reasons, r.note].filter(Boolean).join(" | "), sort: (r) => r.reasons.join() },
+    { key: "reason", label: "Scorer's reason", render: (r) => <span className="muted">{r.reason}</span> },
+    { key: "email", label: "Account", render: (r) => <Person email={r.email} /> },
+    { key: "source", label: "From" },
+  ];
+  return <Table name="ratings" columns={cols} rows={rows ?? undefined} searchKeys={["title", "note", "email", "reason"]}
+                onOpen={(r) => open({ view: "alert", title: r.title, params: { id: r.alertId } })} empty="No ratings here yet." />;
+}
+
 // ---------- Records ----------
 function Facts({ items }) {
   return <dl className="facts">{items.filter(Boolean).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>;
@@ -304,4 +321,4 @@ export function Day({ params, open }) {
 }
 
 export const VIEWS = { users: Users, user: User, watches: Watches, watch: Watch, alerts: Alerts, alert: Alert, chats: Chats,
-  chat: Chat, events: Events, feedback: Feedback, day: Day };
+  chat: Chat, events: Events, feedback: Feedback, day: Day, ratings: Ratings };

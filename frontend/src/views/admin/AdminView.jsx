@@ -9,7 +9,7 @@ import Overview from "./Overview.jsx";
 import { VIEWS } from "./Views.jsx";
 
 const KIND = { users: "Accounts", user: "Account", watches: "Watches", watch: "Watch", alerts: "Alerts", alert: "Alert",
-  chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day" };
+  chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day", ratings: "Ratings" };
 
 function DrillPanel({ drill }) {
   const { current, open, crumb, close } = drill;

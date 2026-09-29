@@ -88,6 +88,10 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   health, and every feedback message with its screenshot and what the person did just before. Usage events are our
   own (`frontend/convex/events.ts`): feature names only, never what people type, kept 90 days, deleted with "Delete my
   data". Signed-out visitors are counted by Vercel Web Analytics (cookieless).
+- **Users rate their alerts:** every alert (e-mail and Alerts page) asks "Good match? 👍 / 👎". 👎 asks why (chips +
+  note). Links in the e-mail work without signing in (a per-alert code, `RATING_SECRET`). The dashboard shows agreement
+  per score band; `.venv/bin/python -m evals.pull_ratings` then `evals.report` adds "What users said" to
+  `evals/report.md`.
 - **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
   theme" in the account menu goes back.
 - **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).

@@ -29,6 +29,7 @@ import ArchivedView from "./views/ArchivedView.jsx";
 import ChatView from "./views/ChatView.jsx";
 import Onboarding from "./views/Onboarding.jsx";
 import PrivacySheet from "./views/PrivacySheet.jsx";
+import RateView from "./views/RateView.jsx";
 import WatchesView from "./views/WatchesView.jsx";
 import WatchView from "./views/WatchView.jsx";
 
@@ -221,6 +222,8 @@ function SignedOut() {
 
 export default function App() {
   const route = useRoute();
+  // The e-mail's rating links work without signing in (the link's code is the permission)
+  if (route.section === "rate") return <RateView />;
   return (
     <>
       <AuthLoading><Boot landing={route.section === ""} /></AuthLoading>

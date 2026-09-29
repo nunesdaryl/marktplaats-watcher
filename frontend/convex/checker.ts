@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { MIN_SCORE, NOTIFY_LABEL, describe, nextRun } from "./schedule";
 import { deleteChat } from "./chats";
+import { ratingToken } from "./ratings";
 
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
@@ -198,7 +199,8 @@ const escape = (s: string) =>
 
 type EmailContent = {
   watchId?: string; label: string; summary: string; notify: string;
-  alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string }[];
+  alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string;
+            _id?: string; rateToken?: string | null }[];
 };
 
 /** The alert e-mail, as plain text and HTML. Listing titles are escaped: they come from strangers. */
@@ -219,9 +221,14 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
     "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
   const heading = `New on Marktplaats for "${c.label}"`;
+  // "Good match?" links (ratings.ts): they open a page in the app that records the answer, so mail scanners that
+  // follow links without running the page can't rate anything
+  const rateUrl = (a: (typeof top)[number], verdict: "good" | "not_right") => a._id && a.rateToken
+    ? `${appUrl.replace(/\/$/, "")}/rate/?a=${encodeURIComponent(a._id)}&v=${verdict}&t=${encodeURIComponent(a.rateToken)}` : null;
   const text = [
     heading, "",
-    ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`, ""]),
+    ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
+      ...(rateUrl(a, "good") ? [`Good match? Yes: ${rateUrl(a, "good")}  ·  Not right: ${rateUrl(a, "not_right")}`] : []), ""]),
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
     footer, `Manage or pause this watch: ${manageUrl}`,
   ].join("\n");
@@ -240,7 +247,11 @@ ${top.map((a) => `<div style="background:#ffffff;border:1px solid #e2ded7;border
 <a href="${escape(a.url)}" style="font-weight:600;color:#1b1a18;text-decoration:none">${escape(a.title)}</a>
 <div style="color:#5b5751;margin-top:6px">${badge(a.score)}${escape(facts(a))}</div>
 <div style="margin-top:8px;padding-left:8px;border-left:2px solid #e2ded7">${escape(a.reason)}</div>
-<a href="${escape(a.url)}" style="display:inline-block;margin-top:10px;color:#0d6b62;font-weight:600">Open on Marktplaats</a></div>`).join("\n")}
+<a href="${escape(a.url)}" style="display:inline-block;margin-top:10px;color:#0d6b62;font-weight:600">Open on Marktplaats</a>${
+  rateUrl(a, "good") ? `
+<div style="margin-top:10px;padding-top:8px;border-top:1px solid #eeebe6;font-size:13px;color:#5b5751">Good match?
+<a href="${escape(rateUrl(a, "good")!)}" style="color:#157346;font-weight:600;margin-left:6px">&#128077; Yes</a>
+<a href="${escape(rateUrl(a, "not_right")!)}" style="color:#b42318;font-weight:600;margin-left:12px">&#128078; Not right</a></div>` : ""}</div>`).join("\n")}
 ${more > 0 ? `<p>…and ${more} more in the app, under Alerts.</p>` : ""}
 <p style="color:#6e6a63;font-size:12px;margin-top:20px">${escape(footer)}<br>
 <a href="${escape(manageUrl)}" style="color:#0d6b62">Manage or pause this watch</a></p></div>`;
@@ -274,6 +285,7 @@ export const checkDue = internalAction({
     const deliver = async (mail: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string }) => {
       const content = await ctx.runQuery(internal.checker.emailContent, { watchId: mail.watchId, alertIds: mail.alertIds });
       if (!content || !content.alerts.length) return;
+      for (const a of content.alerts) (a as { rateToken?: string | null }).rateToken = await ratingToken(a._id);
       let status: "sent" | "failed" = "sent";
       try {
         await sendEmail(mail.to, renderEmail(content, appUrl));

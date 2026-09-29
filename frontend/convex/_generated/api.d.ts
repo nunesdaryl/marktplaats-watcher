@@ -17,6 +17,7 @@ import type * as events from "../events.js";
 import type * as feedback from "../feedback.js";
 import type * as folders from "../folders.js";
 import type * as health from "../health.js";
+import type * as ratings from "../ratings.js";
 import type * as schedule from "../schedule.js";
 import type * as users from "../users.js";
 import type * as watches from "../watches.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   feedback: typeof feedback;
   folders: typeof folders;
   health: typeof health;
+  ratings: typeof ratings;
   schedule: typeof schedule;
   users: typeof users;
   watches: typeof watches;

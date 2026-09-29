@@ -419,6 +419,63 @@ export const day = query({
 });
 
 // ---------------------------------------------------------------------------------------------------------------
+// What users say about their alerts (ratings.ts): is the scorer right?
+
+const band = (score?: number) => (score === undefined ? "unscored" : score >= 8 ? "great" : score >= 6 ? "good" : "low");
+const BANDS = [["great", "Great matches (8–10)"], ["good", "Good matches (6–7)"], ["low", "Below 6 (every-new-listing watches)"]] as const;
+const REASON_LABEL: Record<string, string> = {
+  not_asked: "Not what I asked for", score_too_high: "Score too high", score_too_low: "Score too low",
+  price: "Price isn't good", reason_wrong: "The reason is wrong",
+};
+
+/** How often users agree with the scorer, per score band, and why they don't. */
+export const ratingStats = query({
+  args: { days: v.optional(v.number()) },
+  handler: async (ctx, { days = 30 }) => {
+    if (!(await isOwner(ctx))) return null;
+    const since = Date.now() - Math.min(90, Math.max(7, days)) * DAY;
+    const ratings = (await ctx.db.query("ratings").withIndex("by_created").order("desc").take(LIMIT)).filter((r) => r.updatedAt >= since);
+    const alerts = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).take(LIMIT))
+      .filter((a) => a.emailStatus === "sent");
+    const good = ratings.filter((r) => r.verdict === "good").length;
+    const reasons: Record<string, number> = {};
+    ratings.forEach((r) => r.reasons?.forEach((x) => { reasons[x] = (reasons[x] ?? 0) + 1; }));
+    return {
+      rated: ratings.length, alertsSent: alerts.length, good, notRight: ratings.length - good,
+      fromEmail: ratings.filter((r) => r.source === "email").length,
+      bands: BANDS.map(([key, label]) => {
+        const rows = ratings.filter((r) => band(r.score) === key);
+        const g = rows.filter((r) => r.verdict === "good").length;
+        return { key, label, rated: rows.length, good: g, notRight: rows.length - g };
+      }),
+      reasons: Object.entries(REASON_LABEL).map(([key, label]) => ({ key, name: label, count: reasons[key] ?? 0 }))
+        .sort((a, b) => b.count - a.count),
+      // A 👍 on a 6–7 says "this could have been great": a hint the great threshold is too strict
+      goodCouldBeGreat: ratings.filter((r) => band(r.score) === "good" && r.verdict === "good").length,
+      withNote: ratings.filter((r) => r.note).length,
+    };
+  },
+});
+
+/** The ratings themselves, newest first: the listing, its score and reason, and what the user said. */
+export const ratings = query({
+  args: { verdict: v.optional(v.string()), reason: v.optional(v.string()), band: v.optional(v.string()),
+          userId: v.optional(v.id("users")) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const rows = (await ctx.db.query("ratings").withIndex("by_created").order("desc").take(LIMIT)).filter((r) =>
+      (!a.verdict || r.verdict === a.verdict) && (!a.reason || (r.reasons ?? []).includes(a.reason as never))
+      && (!a.band || band(r.score) === a.band) && (!a.userId || r.userId === a.userId));
+    return rows.sort((x, y) => y.updatedAt - x.updatedAt).map((r) => ({
+      _id: r._id, alertId: r.alertId, userId: r.userId, email: emails.get(r.userId) ?? "(deleted user)", at: r.updatedAt,
+      verdict: r.verdict, reasons: (r.reasons ?? []).map((x) => REASON_LABEL[x] ?? x), note: r.note ?? "",
+      score: r.score, title: r.title ?? "", reason: r.reason ?? "", source: r.source,
+    }));
+  },
+});
+
+// ---------------------------------------------------------------------------------------------------------------
 // Safe actions for the owner (each confirmed in the dashboard)
 
 /** Pause or resume anyone's watch, exactly as the app does it for its owner (watches.activePatch). */

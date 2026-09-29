@@ -450,3 +450,17 @@ def test_check_route_passes_the_first_check_flag_through(client, monkeypatch):
     client.post("/api/internal/check", headers={"X-Cron-Secret": "s3cret"},
                 json={"query": "mac mini", "watches": [{"id": "w1", "seeded": False}, {"id": "w2"}]})
     assert [w["seeded"] for w in seen["w"]] == [False, True]
+
+
+def test_report_user_section_counts_bands_and_reasons():
+    from evals.report import user_section
+    assert "No ratings yet" in "\n".join(user_section([]))
+    text = "\n".join(user_section([
+        {"verdict": "good", "reasons": [], "note": "", "score": 9, "title": "A"},
+        {"verdict": "not_right", "reasons": ["price"], "note": "too pricey", "score": 8, "title": "B"},
+        {"verdict": "good", "reasons": [], "note": "", "score": 6, "title": "C"},
+    ]))
+    assert "| great (8–10) | 2 | 1 | **50%** |" in text
+    assert "| good (6–7) | 1 | 1 | **100%** |" in text
+    assert "Price isn't good (1)" in text and '"too pricey"' in text
+    assert "early signals" in text

@@ -182,6 +182,54 @@ function Visitors({ days }) {
   );
 }
 
+/** Are the scores right? What users said when they rated their alerts (convex/ratings.ts). */
+function ScoreAccuracy({ days, go }) {
+  const s = useQuery(api.admin.ratingStats, { days });
+  if (!s) return null;
+  const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "–");
+  return (
+    <section className="panel">
+      <h2>Are the scores right? <span className="hint">from people rating their alerts</span></h2>
+      {s.rated === 0 ? (
+        <p className="hint">No ratings yet. Every alert (in the e-mail and on the Alerts page) now asks "Good match? 👍 / 👎";
+          answers arrive here.</p>
+      ) : (
+        <>
+          <div className="stats">
+            <Stat value={s.rated} name="Ratings" note={`${pct(s.rated, s.alertsSent)} of ${s.alertsSent} alerts sent · ${s.fromEmail} from e-mail`}
+                  onOpen={() => go("ratings", "All ratings")} />
+            <Stat value={pct(s.good, s.rated)} name="Said good match" note={`${s.good} 👍`} onOpen={() => go("ratings", "Rated good match", { verdict: "good" })} />
+            <Stat value={s.notRight} name="Said not right" note={`${s.withNote} with a note`} onOpen={() => go("ratings", "Rated not right", { verdict: "not_right" })} />
+            <Stat value={s.goodCouldBeGreat} name="👍 on a 6–7" note="could have been great: threshold hint"
+                  onOpen={() => go("ratings", "Good matches users liked", { verdict: "good", band: "good" })} />
+          </div>
+          <div className="breakdowns">
+            <section className="breakdown">
+              <h3>Do users agree, per score band?</h3>
+              <table className="band-table">
+                <thead><tr><th>Scored</th><th>Rated</th><th>👍</th><th>👎</th><th>Agree</th></tr></thead>
+                <tbody>
+                  {s.bands.map((b) => (
+                    <tr key={b.key} className={b.rated ? "openable" : ""} tabIndex={b.rated ? 0 : undefined}
+                        onClick={b.rated ? () => go("ratings", `Rated alerts: ${b.label}`, { band: b.key }) : undefined}
+                        onKeyDown={b.rated ? (e) => { if (e.key === "Enter") go("ratings", `Rated alerts: ${b.label}`, { band: b.key }); } : undefined}>
+                      <td>{b.label}</td><td className="num">{b.rated}</td><td className="num">{b.good}</td>
+                      <td className="num">{b.notRight}</td><td className="num strong">{pct(b.good, b.rated)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="breakdown-note">Agree = share of 👍. Low agreement on 8–10 means the scorer over-promises.</p>
+            </section>
+            <Breakdown title="Why not right" rows={s.reasons} empty="Nobody gave a reason yet"
+              onRow={(r) => go("ratings", `Not right: ${r.name}`, { reason: r.key })} />
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 /** The overview. `open(view)` starts a drilldown. */
 export default function Overview({ open }) {
   const [days, setDays] = useState(30);
@@ -258,6 +306,8 @@ export default function Overview({ open }) {
         <Breakdown title="Would you pay for this?" rows={data.wouldPay} empty="No answers yet"
                    onRow={(r) => go("feedback", `Would pay: ${r.name}`, { wouldPay: r.key })} />
       </div>
+
+      <ScoreAccuracy days={days} go={go} />
 
       <Visitors days={days} />
 

@@ -37,6 +37,7 @@ chat or the repo.
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |
 | `OWNER_EMAIL` | where the daily health digest and feedback messages go |
+| `RATING_SECRET` | random (generate and pipe in, never paste): signs the "Good match? 👍 / 👎" links in alert e-mails. Without it the e-mails have no rating links; rotating it makes older e-mails' links stop working |
 | `OWNER_CLERK_ID` | the owner's Clerk user id (`user_…`). The dashboard at `/admin` only answers the account matching **both** this and `OWNER_EMAIL`; if either is missing, nobody gets in |
 | `CHECKS_PAUSED` | optional kill switch: `1` stops all scheduled checks (RUNBOOK.md §1) |
 | `VERCEL_TOKEN` | a Vercel access token scoped to this project only (90-day expiry; current one ends 28 Dec 2026) for the dashboard's "Website visitors" section; secret; create and renew per RUNBOOK.md §11 |

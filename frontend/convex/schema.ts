@@ -28,6 +28,10 @@ export const feedbackContext = v.object({
   errors: v.optional(v.array(v.string())), // the last few errors in that tab
 });
 
+// Why a user said an alert was "not right" (ratings.ts); the chips on the rating step
+export const RATING_REASONS = ["not_asked", "score_too_high", "score_too_low", "price", "reason_wrong"] as const;
+export const ratingReason = v.union(...RATING_REASONS.map((r) => v.literal(r)));
+
 // Usage events for the owner dashboard: which features are used, never what anyone types (events.ts)
 export const eventProps = v.object({
   section: v.optional(v.string()),
@@ -64,6 +68,24 @@ export default defineSchema({
     handledAt: v.optional(v.number()),          // the owner marked it handled on the dashboard
     createdAt: v.number(),
   }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
+
+  // Users' verdicts on their alerts ("good match" / "not right, because …"): labelled examples for the scorer's
+  // evaluation (evals/report.py) and the owner dashboard. One per alert; a new rating replaces the old one.
+  ratings: defineTable({
+    alertId: v.id("alerts"),
+    userId: v.id("users"),
+    watchId: v.id("watches"),
+    verdict: v.union(v.literal("good"), v.literal("not_right")),
+    reasons: v.optional(v.array(ratingReason)),
+    note: v.optional(v.string()),
+    score: v.optional(v.number()),               // the alert's score when it was rated
+    notify: v.optional(v.string()),              // the watch's "which alerts" setting then
+    title: v.optional(v.string()),               // kept for the evaluation even after the alert is forgotten (30 days)
+    reason: v.optional(v.string()),              // the scorer's reason that was rated
+    source: v.union(v.literal("app"), v.literal("email")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_alert", ["alertId"]).index("by_user", ["userId"]).index("by_created", ["createdAt"]),
 
   // One row per feature use (kept 90 days), for the owner dashboard. No message text or search words.
   events: defineTable({

@@ -19,7 +19,7 @@ export function useRoute() {
   const id = params.get("id") ?? undefined;
   if (page === "chat" && id) return { section: "c", id };
   if (page === "watch" && id) return { section: "w", id };
-  if (page === "watches" || page === "alerts" || page === "archived" || page === "admin") return { section: page };
+  if (page === "watches" || page === "alerts" || page === "archived" || page === "admin" || page === "rate") return { section: page };
   return { section: "" };
 }
 

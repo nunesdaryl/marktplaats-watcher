@@ -30,3 +30,12 @@ test("every listing links to Marktplaats and the footer says why you got it", ()
   expect(text).toContain("Replies to this address aren't read.");
   expect(html).toContain("Best: Mac mini i5 16GB. Good price.");   // hidden inbox preview line
 });
+
+test("each alert has 'Good match?' links that open the app's rate page with that alert's code", () => {
+  const withIds = { ...content, alerts: content.alerts.map((a, i) => ({ ...a, _id: `al${i}`, rateToken: `tok${i}` })) };
+  const { text, html } = renderEmail(withIds, "https://app.test/");
+  expect(text).toContain("Good match? Yes: https://app.test/rate/?a=al0&v=good&t=tok0");
+  expect(text).toContain("Not right: https://app.test/rate/?a=al0&v=not_right&t=tok0");
+  expect(html.match(/Good match\?/g)).toHaveLength(2);
+  expect(renderEmail(content, "https://app.test").text).not.toContain("Good match?");   // no code, no links
+});

@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, read
+from evals.common import CHAT_RESULTS, LABELS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, read
 
 
 def eur(usd):
@@ -11,6 +11,42 @@ def eur(usd):
 
 def pct(x):
     return "n/a" if x is None else f"{x * 100:.0f}%"
+
+
+REASONS = {"not_asked": "Not what I asked for", "score_too_high": "Score too high", "score_too_low": "Score too low",
+           "price": "Price isn't good", "reason_wrong": "The reason is wrong"}
+
+
+def user_section(ratings):
+    """What people said about the alerts they got: a second, real-world check next to the judge (§1)."""
+    head = ["## 1b. What users said about their alerts", ""]
+    if not ratings:
+        return head + ["No ratings yet. Every alert e-mail and the Alerts page ask \"Good match? 👍 / 👎\"; run "
+                       "`.venv/bin/python -m evals.pull_ratings` to fetch them, then rerun this report.", ""]
+    def band(s):
+        return "unscored" if s is None else "great (8–10)" if s >= 8 else "good (6–7)" if s >= 6 else "below 6"
+    rows, reasons = {}, Counter()
+    for r in ratings:
+        b = rows.setdefault(band(r["score"]), [0, 0])
+        b[0] += 1
+        b[1] += r["verdict"] == "good"
+        reasons.update(r["reasons"])
+    lines = head + [f"**{len(ratings)} ratings** from people who received the alerts (in the e-mail or the app). "
+                    "\"Good match\" here is the user's own label, so this is precision measured by users, not by the judge.", "",
+                    "| Score band | Rated | Said good match | User precision |", "|---|---|---|---|"]
+    for name in ("great (8–10)", "good (6–7)", "below 6", "unscored"):
+        if name in rows:
+            n, g = rows[name]
+            lines.append(f"| {name} | {n} | {g} | **{pct(g / n)}** |")
+    lines.append("")
+    if reasons:
+        lines += ["**Why not right:** " + ", ".join(f"{REASONS.get(k, k)} ({n})" for k, n in reasons.most_common()), ""]
+    notes = [r for r in ratings if r["verdict"] == "not_right" and r["note"]][:5]
+    if notes:
+        lines += ["Latest notes:", *[f"- \"{r['note']}\" on *{r['title']}* (scored {r['score']})" for r in notes], ""]
+    if len(ratings) < 30:
+        lines += [f"*Only {len(ratings)} ratings so far: read these as early signals, not as a measurement.*", ""]
+    return lines
 
 
 def main():
@@ -45,6 +81,7 @@ def main():
             for fn in m["false_negatives"]:
                 lines.append(f"- Missed a match: {fn['title']} — scored {fn['score']}; judge: {fn['judge_reason']}")
             lines.append("")
+    lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [])
     lines += [
         "## 2. Does the chat do the right thing? (20-case golden set)", "",
         f"**{c['passed']}/{c['total']} passed.**", "", "| Category | Passed |", "|---|---|",

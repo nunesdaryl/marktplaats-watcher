@@ -126,6 +126,13 @@ Every number on `/admin` opens its records: click an account to see its watches 
 conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
 app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.
 
+## 11a. Alert ratings ("Good match?")
+Ratings arrive from the e-mail links and the Alerts page; see them on `/admin` → "Are the scores right?". If e-mails
+stop showing rating links, `RATING_SECRET` is missing in Convex (production). To rotate it, generate a new value and
+pipe it in (`K=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))"); npx convex env set RATING_SECRET "$K" --prod`);
+links in older e-mails then say "This link isn't valid", and those people can still rate in the app. For the
+evaluation: `.venv/bin/python -m evals.pull_ratings && .venv/bin/python -m evals.report`.
+
 ## 11. Vercel Web Analytics in the dashboard (token)
 The "Website visitors" section reads Vercel Web Analytics with `VERCEL_TOKEN` in Convex (prod and dev). Vercel tokens
 can't be read-only, so it's kept only in Convex's server settings, used by one owner-only function, and expires after

@@ -28,6 +28,10 @@ Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-
 - Missed a match: Apple Mac Mini (Mid 2011) - Macintosh — scored 4; judge: Apple Mac Mini itself and under €500.
 - Missed a match: Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 1; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
+## 1b. What users said about their alerts
+
+No ratings yet. Every alert e-mail and the Alerts page ask "Good match? 👍 / 👎"; run `.venv/bin/python -m evals.pull_ratings` to fetch them, then rerun this report.
+
 ## 2. Does the chat do the right thing? (20-case golden set)
 
 **20/20 passed.**
