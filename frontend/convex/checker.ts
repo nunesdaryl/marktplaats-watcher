@@ -240,29 +240,70 @@ export function renderEmail(c: EmailContent, appUrl: string) {
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
     footer, `Manage or pause this watch: ${manageUrl}`,
   ].join("\n");
-  // Sieve colours (docs/design/sieve/email): inline styles and system fonts only; the badge colour follows the score
-  const badge = (score?: number) => score === undefined ? "" :
-    `<span style="display:inline-block;font:600 13px/20px ui-monospace,Menlo,monospace;padding:0 7px;border-radius:6px;${
-      score >= 8 ? "background:#157346;color:#ffffff" : score >= 6 ? "background:#ddd0ff;color:#25124f" : "background:#eeebe6;color:#5b5751"
-    }">${score}/10</span> `;
+  // The Sieve e-mail pattern (docs/design/sieve/email/alert-email.template.html): tables and inline light colours, so
+  // Outlook and Gmail lay it out; a small prefers-color-scheme block switches to the dark values where it's supported.
+  // System fonts only; no emoji. Every text/fill pair is at least 4.5:1 in both schemes.
+  const sans = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const mono = "ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace";
+  const badge = (score?: number) => {
+    if (score === undefined) return "";
+    const [kind, bg, ink] = score >= 8 ? ["great", "#157346", "#ffffff"] : score >= 6 ? ["good", "#ddd0ff", "#25124f"] : ["neutral", "#eeebe6", "#5b5751"];
+    return `<td width="48" valign="top" style="padding:16px 0 16px 16px;"><div class="mw-${kind}" style="width:48px;height:40px;line-height:40px;border-radius:8px;background:${bg};color:${ink};font-family:${mono};font-size:15px;font-weight:600;text-align:center;letter-spacing:-0.3px;">${score}/10</div></td>`;
+  };
   const base = appUrl.replace(/\/$/, "");
-  const html = `<div style="display:none;max-height:0;overflow:hidden">${escape(preheader)}</div>
-<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;color:#1b1a18;background:#fbfaf7;padding:20px;border-radius:12px">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><img src="${escape(base)}/apple-icon.png" width="28" height="28" alt="" style="border-radius:7px">
-<span style="font-size:15px;color:#5b5751">Marktplaats <b style="color:#1b1a18">Watcher</b></span></div>
-<h2 style="font-size:18px;margin:0 0 6px">${escape(heading)}</h2>
-${top.map((a) => `<div style="background:#ffffff;border:1px solid #e2ded7;border-radius:8px;padding:12px 14px;margin:10px 0">
-<a href="${escape(a.url)}" style="font-weight:600;color:#1b1a18;text-decoration:none">${escape(a.title)}</a>
-<div style="color:#5b5751;margin-top:6px">${badge(a.score)}${escape(facts(a))}</div>
-<div style="margin-top:8px;padding-left:8px;border-left:2px solid #e2ded7">${escape(a.reason)}</div>
-<a href="${escape(a.url)}" style="display:inline-block;margin-top:10px;color:#0d6b62;font-weight:600">Open on Marktplaats</a>${
+  const card = (a: (typeof top)[number]) => `<tr><td style="padding:0 0 12px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="mw-card" style="border:1px solid #e4e0da;border-radius:10px;background:#ffffff;">
+<tr>${badge(a.score)}<td valign="top" style="padding:14px 16px 16px 16px;">
+<a href="${escape(a.url)}" class="mw-text mw-title" style="color:#1b1a18;font-family:${sans};font-size:16px;line-height:22px;font-weight:600;text-decoration:underline;text-decoration-color:#e4e0da;">${escape(a.title)}</a>
+<div class="mw-text2" style="color:#5b5751;font-family:${sans};font-size:14px;line-height:20px;margin:4px 0 0 0;">${escape(facts(a))}</div>
+<div class="mw-text" style="color:#1b1a18;font-family:${sans};font-size:15px;line-height:22px;margin:4px 0 12px 0;">${escape(a.reason)}</div>
+<a href="${escape(a.url)}" class="mw-btn" style="display:inline-block;background:#0d6b62;color:#ffffff;font-family:${sans};font-size:14px;line-height:20px;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:6px;">Open on Marktplaats</a>${
   rateUrl(a, "good") ? `
-<div style="margin-top:10px;padding-top:8px;border-top:1px solid #eeebe6;font-size:13px;color:#5b5751">Good match?
-<a href="${escape(rateUrl(a, "good")!)}" style="color:#157346;font-weight:600;margin-left:6px">&#128077; Yes</a>
-<a href="${escape(rateUrl(a, "not_right")!)}" style="color:#b42318;font-weight:600;margin-left:12px">&#128078; Not right</a></div>` : ""}</div>`).join("\n")}
-${more > 0 ? `<p>…and ${more} more in the app, under Alerts.</p>` : ""}
-<p style="color:#6e6a63;font-size:12px;margin-top:20px">${escape(footer)}<br>
-<a href="${escape(manageUrl)}" style="color:#0d6b62">Manage or pause this watch</a></p></div>`;
+<div class="mw-text2 mw-rule" style="margin:12px 0 0 0;padding:10px 0 0 0;border-top:1px solid #eeebe6;font-family:${sans};font-size:14px;line-height:20px;color:#5b5751;">Good match?
+<a href="${escape(rateUrl(a, "good")!)}" class="mw-link" style="color:#0d6b62;font-weight:600;margin-left:6px;">Yes</a> &middot;
+<a href="${escape(rateUrl(a, "not_right")!)}" class="mw-link" style="color:#0d6b62;font-weight:600;">Not right</a></div>` : ""}
+</td></tr></table></td></tr>`;
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
+<title>${escape(subject)}</title>
+<style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .mw-page { background: #0f0e0d !important; }
+  .mw-card { background: #1e1c1a !important; border-color: #34312d !important; }
+  .mw-text { color: #ece9e4 !important; }
+  .mw-text2 { color: #a9a49c !important; }
+  .mw-link { color: #4fd1bf !important; }
+  .mw-btn { background: #4fd1bf !important; color: #06201c !important; }
+  .mw-great { background: #58d68e !important; color: #062414 !important; }
+  .mw-good { background: #bca8ff !important; color: #190d3b !important; }
+  .mw-neutral { background: #2b2926 !important; color: #a9a49c !important; }
+  .mw-rule { border-color: #34312d !important; }
+  .mw-title { text-decoration-color: #4a4640 !important; }
+}
+</style></head>
+<body class="mw-page" style="margin:0;padding:0;background:#f4f2ee;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escape(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="mw-page" style="background:#f4f2ee;">
+<tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+<tr><td style="padding:0 0 16px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="padding:0 10px 0 0;"><img src="${escape(base)}/apple-icon.png" width="28" height="28" alt="" style="display:block;border:0;border-radius:7px;"></td>
+<td class="mw-text2" style="font-family:${sans};font-size:15px;line-height:20px;color:#5b5751;">Marktplaats <strong class="mw-text" style="color:#1b1a18;font-weight:600;">Watcher</strong></td>
+</tr></table></td></tr>
+<tr><td class="mw-card" style="background:#ffffff;border:1px solid #e4e0da;border-radius:12px;padding:24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="padding:0 0 16px 0;"><h1 class="mw-text" style="margin:0;font-family:${sans};font-size:20px;line-height:26px;font-weight:600;color:#1b1a18;letter-spacing:-0.2px;">${escape(heading)}</h1></td></tr>
+${top.map(card).join("\n")}
+${more > 0 ? `<tr><td class="mw-text2" style="font-family:${sans};font-size:15px;line-height:22px;color:#5b5751;">…and ${more} more in the app, under Alerts.</td></tr>` : ""}
+</table></td></tr>
+<tr><td class="mw-text2" style="padding:16px 4px 0 4px;font-family:${sans};font-size:13px;line-height:20px;color:#5b5751;">
+${escape(footer)}<br>
+<a href="${escape(manageUrl)}" class="mw-link" style="color:#0d6b62;text-decoration:underline;">Manage or pause this watch</a>
+</td></tr>
+</table></td></tr></table>
+</body></html>`;
   return { subject, text, html };
 }
 

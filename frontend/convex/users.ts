@@ -39,6 +39,15 @@ export const me = query({
   },
 });
 
+/** The Alerts page is open: its alerts are no longer "new" (the count on the Alerts tab). */
+export const markAlertsSeen = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx);
+    await ctx.db.patch(user._id, { alertsSeenAt: Date.now() });
+  },
+});
+
 /** The first-run setup was finished or skipped: don't show it again. */
 export const finishOnboarding = mutation({
   args: {},

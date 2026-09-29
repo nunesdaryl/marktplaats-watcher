@@ -18,8 +18,8 @@ The whole system in one line: **warm graphite surfaces, one teal accent, one lil
 - **`accent` (teal `#0d6b62` / `#4fd1bf`) is the one accent:** links, primary buttons, the active tab, the focus ring. In dark, text on teal is `accent-ink` `#06201c`, not white.
 - **`tag` (lilac `#ddd0ff` / `#bca8ff`) is the one highlight:** fill-in pills, schedule select pills, Watch mode, the proposal bar and the good badge. One loud element per screen.
 - **Scores:** `great` green for 8–10, `good` equal to `tag` for 6–7, and `glass` neutral below 6. Great and good differ in lightness as well as hue.
-- `danger` and `warn` always come with words. `logo-tile` lifts from `#1b1a18` to `#2b2926` on dark grounds.
-- **Distance from Marktplaats:** no orange or amber anywhere (the old `#f2a900` is gone), no action blue (`#0071e3` is gone), no navy-plus-blue pairing, no slab serif, no circle or arrow mark, no top stripe, no heart-save buttons, no ad-like flags.
+- `danger` and `warn` always come with words. Text on a `danger` fill uses `danger-ink` (white in light, `#2a0703` in dark: white on the dark theme's `#ff7a6b` is only 2.6:1). `logo-tile` lifts from `#1b1a18` to `#2b2926` on dark grounds.
+- **Distance from Marktplaats:** no orange or amber anywhere in the interface (the old `#f2a900` is gone), no action blue (`#0071e3` is gone), no navy-plus-blue pairing, no slab serif, no circle or arrow mark, no top stripe, no heart-save buttons, no ad-like flags. **One exception, decided 28 Sep:** the live logo is the FDE group's robot with binoculars, whose lenses show a Marktplaats-style orange and navy mark. The trademark risk was accepted by the group (`docs/design/logo-review.md`), and "Not affiliated with Marktplaats" stays on the landing page, e-mails and social images.
 
 ## Typography
 
@@ -36,7 +36,7 @@ The whole system in one line: **warm graphite surfaces, one teal accent, one lil
 | `text-sm` | 13 / 18 | 400 | Reason line, chips, hints, menus |
 | `text-xs` | 12 / 16 | 500 | Section and tab labels, meta |
 
-That's five UI sizes plus display. The old 11, 14, 16, 18, 20, 28 and 34px sizes map to the nearest step.
+That's five UI sizes plus display. The old 11, 14, 16, 18, 20, 28 and 34px sizes should map to the nearest step. **Status, 29 Sep:** an audit found many literal sizes and spacings still in `frontend/src/styles.css`; finishing the sweep is issue MW-15.
 
 ## Space, shape, depth, motion
 
@@ -50,10 +50,12 @@ That's five UI sizes plus display. The old 11, 14, 16, 18, 20, 28 and 34px sizes
 
 ## Logo
 
+> **The live logo is not the sieve symbol below.** On 28 Sep the FDE group chose the robot with binoculars (option H, now I; `docs/design/logo-review.md`), drawn in `frontend/src/brand/logo.js` and used for the favicon, app icons, sidebar, top bar, boot tile, e-mail and OG image. The sieve symbol remains the design-system mark and a fallback.
+
 - **Symbol:** a warm graphite tile with three teal bars narrowing to one lilac dot. It's a sieve: only the good ones get through. It works alone as the app icon, favicon, sidebar, top bar and boot tile, replacing the 🛒 emoji.
 - **Wordmark:** "Marktplaats" in Geist 400 `text-2`, "Watcher" in Geist 600 `text`. Watcher carries the weight, so the third-party name reads as context. The SVGs are outlined paths.
 - **Lockups:** horizontal and stacked, each in light, dark, mono black and mono white (see the Logos assets and the LogoSystem card). Clear space is 1/4 of the symbol width. Minimum sizes: symbol 16px (the favicon-16 drawing below 24px), horizontal lockup 120px wide, stacked 96px.
-- **Don't:** recolour the bars, add a circle behind the mark, set the wordmark in any other face, put the lockup on busy photos, or put anything orange next to it.
+- **Don't:** recolour the bars, add a circle behind the mark, set the wordmark in any other face, put the lockup on busy photos, or put anything orange next to it (the robot logo's lenses are the one accepted exception, see above).
 - **Boot screen:** the symbol at 64px on `bg`, breathing. There's no spinner.
 
 ## Components
@@ -111,6 +113,7 @@ Alpha tokens are composited on `bg`. Every pair passes in both themes.
 | `great` on `sidebar` | Active-watch dot | 3.0:1 | 5.26 | 10.49 |
 | `danger` on `bg` | Destructive text | 4.5:1 | 6.30 | 7.23 |
 | `danger` on `elevated` | Menu destructive item | 4.5:1 | 6.57 | 6.15 |
+| `danger-ink` on `danger` | Confirm-delete button (added 29 Sep) | 4.5:1 | 6.57 | 7.30 |
 | `warn` on `bg` | Watch error line | 4.5:1 | 6.38 | 9.20 |
 | `focus` on `bg` | Focus ring | 3.0:1 | 6.10 | 9.82 |
 | `focus` on `surface` | Focus ring in groups | 3.0:1 | 5.36 | 9.06 |

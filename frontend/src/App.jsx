@@ -96,6 +96,8 @@ function Workspace() {
   const [userError, setUserError] = useState("");
   const [toast, setToast] = useState("");
   const watches = watchesOrLoading ?? [];
+  const newAlertCount = useQuery(api.watches.newAlertCount) ?? 0;
+  const newAlerts = newAlertCount >= 10 ? "9+" : newAlertCount || null;   // on the Alerts tab and sidebar row
   const desktopRef = useRef(desktop);
   desktopRef.current = desktop;
 
@@ -151,7 +153,7 @@ function Workspace() {
   else if (route.section === "alerts") content = <AlertsView />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
   else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
-  else if (route.section === "watches") content = <WatchesView watches={watches} actions={actions} onNew={() => newWatch()} />;
+  else if (route.section === "watches") content = <WatchesView watches={watchesOrLoading} actions={actions} onNew={() => newWatch()} />;
   else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;
 
   const sheets = (
@@ -173,7 +175,7 @@ function Workspace() {
       <div className="shell">
         <Sidebar route={route} watches={watches} chats={chats} email={me?.email} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
-                 onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} />
+                 onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
           <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle />
           {userError && <p className="banner" role="alert">{userError}</p>}{content}
@@ -209,7 +211,7 @@ function Workspace() {
         <BetaBanner onFeedback={openFeedback} busy={capturing} />
         {userError && <p className="banner" role="alert">{userError}</p>}{content}
       </main>
-      <TabBar route={route} />
+      <TabBar route={route} newAlerts={newAlerts} />
       {sheets}
     </div>
   );

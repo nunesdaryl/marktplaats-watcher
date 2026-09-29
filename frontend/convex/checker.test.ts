@@ -296,3 +296,23 @@ test("a watch due within 2 minutes is taken by this run, so 'every 15 minutes' d
   await t2.run((ctx) => ctx.db.patch(id2, { nextRunAt: Date.now() + 3 * 60_000 }));
   expect(await t2.mutation(internal.checker.claimDue, { now: Date.now() })).toEqual([]);
 });
+
+test("the Alerts tab counts alerts since the page was last open, and opening it clears the count", async () => {
+  const { t, alice, id } = await seededWatch();
+  const insert = (n: number) => t.run(async (ctx) => {
+    const w = (await ctx.db.get(id))!;
+    for (let i = 0; i < n; i++)
+      await ctx.db.insert("alerts", { userId: w.userId, watchId: id, listingId: `l${Date.now()}-${i}`, title: "Mac mini", url: "https://x.test",
+        score: 9, reason: "match", channel: "email", emailStatus: "sent", createdAt: Date.now() });
+  });
+  vi.setSystemTime(Date.now() + 1000);
+  await insert(2);
+  expect(await alice.query(api.watches.newAlertCount, {})).toBe(2);
+  vi.setSystemTime(Date.now() + 1000);
+  await alice.mutation(api.users.markAlertsSeen, {});
+  expect(await alice.query(api.watches.newAlertCount, {})).toBe(0);
+  vi.setSystemTime(Date.now() + 1000);
+  await insert(12);
+  expect(await alice.query(api.watches.newAlertCount, {})).toBe(10);    // capped: the tab shows "9+"
+  expect(await t.query(api.watches.newAlertCount, {})).toBe(0);         // signed out
+});

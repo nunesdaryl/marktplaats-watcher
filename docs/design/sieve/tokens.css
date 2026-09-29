@@ -32,6 +32,7 @@
   --good: var(--tag);
   --good-ink: var(--tag-ink);  /* NEW */
   --danger: #b42318;
+  --danger-ink: #ffffff;
   --warn: #8f4a0c;
   --overlay: rgba(20,17,14,0.36);
   --glass: rgba(251,250,247,0.8);
@@ -106,6 +107,7 @@
     --good: var(--tag);
     --good-ink: var(--tag-ink);
     --danger: #ff7a6b;
+    --danger-ink: #2a0703;
     --warn: #f5a65c;
     --overlay: rgba(0,0,0,0.58);
     --glass: rgba(21,20,18,0.78);

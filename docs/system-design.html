@@ -756,12 +756,14 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><th style="width:30%">Element</th><th>Choice</th></tr>
   <tr><td>Colour</td><td>Warm graphite and warm off-white surfaces. <b>Teal</b> is the one accent (links, primary
     buttons, focus). <b>Lilac</b> is the one highlight: the fill-in sentence pills, Watch mode, and the "good" score. There is
-    no orange or action blue, to stay clear of Marktplaats' own brand.</td></tr>
+    no orange or action blue, to stay clear of Marktplaats' own brand. The one exception is the logo's lenses (below), the
+    FDE group's accepted choice.</td></tr>
   <tr><td>Type</td><td><b>Geist</b> for words and <b>Geist Mono</b> for every score, price and time (SIL OFL). Both are
     self-hosted, because the site's security policy only allows fonts from its own origin.</td></tr>
   <tr><td>Shape and space</td><td>Controls 6px, cards 8px, composer and menus 12px, sheets 16px; spacing 4/8/16/24/32/48.</td></tr>
   <tr><td>Tokens</td><td>The same CSS custom-property names as before, now with light <i>and</i> dark values for every
-    token. The restyle was a token swap plus a few component touches, not a rewrite. Source:
+    token. The restyle was a token swap plus a few component touches, not a rewrite. (An audit on 29 Sep found many
+    literal sizes and spacings left behind; finishing that sweep is MW-15.) Source:
     <code>docs/design/sieve/tokens.css</code>, with a contrast table in its README (every pair passes WCAG AA in both
     themes).</td></tr>
   <tr><td>Everything else that shows the brand</td><td>The alert e-mail (Sieve colours, score badges, the logo), the OG

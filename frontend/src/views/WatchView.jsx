@@ -18,7 +18,8 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, icon }) {
     return () => clearTimeout(id);
   }, [asking]);
   return (
-    <button className={`button ${asking ? "destructive" : ""}`} onClick={() => (asking ? onConfirm() : setAsking(true))}>
+    // Sieve Button spec: the first step says it in red text, the confirm step is the red button
+    <button className={`button ${asking ? "destructive" : "danger-text"}`} onClick={() => (asking ? onConfirm() : setAsking(true))}>
       {icon && <Icon name={icon} size={16} />}{asking ? confirmLabel : label}
     </button>
   );

@@ -47,6 +47,7 @@ export default defineSchema({
     email: v.string(),
     createdAt: v.number(),
     onboardedAt: v.optional(v.number()),   // set when the first-run setup is finished or skipped
+    alertsSeenAt: v.optional(v.number()),  // last time the Alerts page was open: newer alerts count as new
   }).index("by_clerkId", ["clerkId"]),
 
   // Folders group chats and watches, like ChatGPT Projects. Deleting a folder never deletes what's in it.

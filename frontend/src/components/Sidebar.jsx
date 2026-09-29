@@ -10,7 +10,7 @@ import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner }) {
+export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -105,6 +105,7 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
         </button>
         <button className={`nav-item ${at("alerts") ? "active" : ""}`} onClick={() => go("/alerts")}>
           <Icon name="bell" size={18} />Alerts
+          {newAlerts && <span className="new-count" aria-label={`${newAlerts} new`}>{newAlerts}</span>}
         </button>
         {isOwner && (
           <button className={`nav-item ${at("admin") ? "active" : ""}`} onClick={() => go("/admin")}>

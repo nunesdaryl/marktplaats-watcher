@@ -154,7 +154,7 @@ export function Ratings({ params, open }) {
   const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId });
   const cols = [
     { key: "at", label: "When", render: (r) => when(r.at), mono: true },
-    { key: "verdict", label: "Said", render: (r) => (r.verdict === "good" ? "👍 Good match" : "👎 Not right"), sort: (r) => r.verdict },
+    { key: "verdict", label: "Said", render: (r) => (r.verdict === "good" ? "Good match" : "Not right"), sort: (r) => r.verdict },
     { key: "score", label: "Score", render: (r) => <Score s={r.score} />, align: "right" },
     { key: "title", label: "Listing", render: (r) => <strong>{r.title}</strong> },
     { key: "reasons", label: "Why", render: (r) => [...r.reasons, r.note && `"${r.note}"`].filter(Boolean).join(" · ") || "–",

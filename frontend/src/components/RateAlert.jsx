@@ -7,7 +7,7 @@ import WhyNotRight from "./WhyNotRight.jsx";
 
 const LABEL = Object.fromEntries(REASONS);
 
-/** Under an alert: "Good match?" 👍 → Thanks. 👎 → Thanks, tell us why? The answer can be changed any time. */
+/** Under an alert: "Good match?" Yes → Thanks. Not right → Thanks, tell us why? The answer can be changed any time. */
 export default function RateAlert({ alertId, rating }) {
   const rate = useMutation(api.ratings.rate);
   const explain = useMutation(api.ratings.explain);
@@ -19,7 +19,7 @@ export default function RateAlert({ alertId, rating }) {
 
   const choose = (verdict) => run(rate({ alertId, verdict }).then(() => {
     track("alert_rated", { value: verdict });
-    setThanks("Thanks!");
+    setThanks("Thanks.");
     setAsking(verdict === "not_right");
   }));
 
@@ -37,7 +37,7 @@ export default function RateAlert({ alertId, rating }) {
     const why = rating.verdict === "not_right" && [...rating.reasons.map((r) => LABEL[r] ?? r), rating.note].filter(Boolean).join(" · ");
     return (
       <div className="rate done">
-        <span>{thanks || "You said:"} <strong>{rating.verdict === "good" ? "👍 Good match" : "👎 Not right"}</strong>{why ? ` (${why})` : ""}</span>
+        <span>{thanks || "You said:"} <strong>{rating.verdict === "good" ? "Good match" : "Not right"}</strong>{why ? ` (${why})` : ""}</span>
         <button className="link-button small" onClick={() => (rating.verdict === "good" ? choose("not_right") : setAsking(true))}>
           {rating.verdict === "good" ? "Not right after all?" : "Tell us why"}
         </button>
@@ -49,8 +49,8 @@ export default function RateAlert({ alertId, rating }) {
   return (
     <div className="rate">
       <span className="rate-q">Good match?</span>
-      <button className="button small-button rate-yes" disabled={busy} onClick={() => choose("good")}>👍 Yes</button>
-      <button className="button small-button rate-no" disabled={busy} onClick={() => choose("not_right")}>👎 Not right</button>
+      <button className="button small-button rate-yes" disabled={busy} onClick={() => choose("good")}>Yes</button>
+      <button className="button small-button rate-no" disabled={busy} onClick={() => choose("not_right")}>Not right</button>
       {error && <p className="error small">{error}</p>}
     </div>
   );

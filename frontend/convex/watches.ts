@@ -239,6 +239,20 @@ export const archived = query({
   },
 });
 
+export const NEW_ALERTS_CAP = 10;   // the tab shows "9+" from here on, so counting further is wasted reads
+
+/** How many alerts arrived since the Alerts page was last open (at most NEW_ALERTS_CAP): the count on the Alerts tab. */
+export const newAlertCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await currentUser(ctx);
+    if (!user) return 0;
+    const since = user.alertsSeenAt ?? user.createdAt;
+    const latest = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", user._id)).order("desc").take(NEW_ALERTS_CAP);
+    return latest.filter((a) => a.createdAt > since).length;
+  },
+});
+
 /** The signed-in user's latest alerts across all watches, newest first (the Alerts tab). */
 export const alerts = query({
   args: {},

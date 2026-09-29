@@ -5,7 +5,8 @@ import RowMenu from "../components/RowMenu.jsx";
 import { go } from "../lib/router.js";
 
 /** The phone's Watches tab: inset grouped lists like iOS Settings, pinned first, folders, and the archive. */
-export default function WatchesView({ watches, actions, onNew }) {
+export default function WatchesView({ watches: watchesOrLoading, actions, onNew }) {
+  const watches = watchesOrLoading ?? [];
   const folders = useQuery(api.folders.list) ?? [];
   const row = (w) => {
     const best = w.alerts[0];
@@ -30,7 +31,7 @@ export default function WatchesView({ watches, actions, onNew }) {
         <h1 id="watches-title">Watches</h1>
         <button className="button tinted" onClick={onNew}><Icon name="plus" size={16} />New</button>
       </header>
-      {watches.length === 0 ? (
+      {watchesOrLoading === undefined ? <p className="muted" role="status">Loading…</p> : watches.length === 0 ? (
         <p className="empty-note">Nothing watched yet. Ask the chat to keep an eye on something, or tap New.</p>
       ) : (
         <>

@@ -36,7 +36,8 @@ export default function Landing({ SignIn = Plain }) {
       </header>
 
       <main>
-        <h1 className="sentence" aria-live="polite">
+        {/* No aria-live: the examples change every 3.2 s, and a live region would re-read the headline in a loop */}
+        <h1 className="sentence">
           Check Marktplaats for a <span className="tag" key={what}>{what}</span>{" "}
           <span className="tag" key={when}>{when}</span> and <span className="nowrap">e-mail</span> me{" "}
           <span className="tag" key={which}>{which}</span>, with the reason.

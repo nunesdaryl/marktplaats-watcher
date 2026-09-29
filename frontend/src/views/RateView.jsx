@@ -1,4 +1,4 @@
-// The page behind the alert e-mail's "Good match? 👍 Yes · 👎 Not right" links. No sign-in: the link's code rates only
+// The page behind the alert e-mail's "Good match? Yes · Not right" links. No sign-in: the link's code rates only
 // that one alert (convex/ratings.ts). The page records the answer itself (not the link), so mail scanners that open
 // links without running pages don't create ratings.
 import { useMutation } from "convex/react";
@@ -39,7 +39,7 @@ export default function RateView() {
         {state === "error" && <p className="error" role="alert">{error}</p>}
         {state === "saved" && verdict === "good" && (
           <>
-            <h1>Thanks!</h1>
+            <h1>Thanks.</h1>
             <p className="muted">Good to hear it was a good match. That tells us the score got it right.</p>
             <button className="link-button" onClick={() => record("not_right")}>Actually, it wasn't right</button>
           </>

@@ -47,7 +47,7 @@ The images live locally in `references/img/logo/` and are not in git.
 | `logo-options-2-binoculars-A-B-C-D.png` | **Binocular lenses** (no character) | A: dot · B: `>*` (should be `>_`; a generation error) · C: sieve bars · D: Marktplaats-style | A and C yes | Reads as glasses or goggles rather than binoculars |
 | `logo-options-3-robot-binoculars-A-B-C-D.png` | **Robot holding binoculars** | A: lilac dot in a lens · B: `>_` terminal prompt · C: sieve bars · D: Marktplaats-style | A and C mostly; B gets busy | Most literal "watching"; a character is harder to keep crisp as a favicon |
 | `logo-options-4-robot-lenses-E-F-G-H.png` | **Robot, lens contents** | E: listing card (€230) + 9/10 · F: 9/10 in both lenses · G: swappable source slot (dashed) + dot · H: orange mark in one lens | E and F lose the text at 32px; G reads well | E and F show the score, our differentiator; G shows the "watch any marketplace" idea |
-| `logo-option-5-robot-H-marktplaats-both-lenses-REJECTED.png` | **H redrawn** | The Marktplaats-style ≥ mark in both lenses | Yes | **Comparison only: trademark risk.** Never for the app, the repo or LinkedIn |
+| `logo-option-5-robot-H-marktplaats-both-lenses-REJECTED.png` | **H redrawn** | The Marktplaats-style ≥ mark in both lenses | Yes | **Comparison only: trademark risk.** Never for the app, the repo or LinkedIn. *(Superseded 28 Sep: the group chose H anyway, see the decision at the top.)* |
 
 **The swappable lens (Daryl's insight).** The lens is a **source slot**. Today the robot watches Marktplaats; later the
 same mark could watch Vinted, eBay or 2dehands with only the lens content changed. The master logo stays neutral, and
@@ -65,7 +65,7 @@ the source is named in the slot.
 - **The name already does the job:** "Marktplaats Watcher" says what is watched, in plain words. Describing what we
   work with is fine; using their mark is not.
 
-D and any "real logo" tile are **comparison-only**: never for the app, the repo or LinkedIn.
+D and any "real logo" tile are **comparison-only**: never for the app, the repo or LinkedIn. *(Written before the vote; the group then chose H, with the risk accepted. See the decision at the top.)*
 
 ## Questions for the group
 

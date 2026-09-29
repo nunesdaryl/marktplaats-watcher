@@ -39,3 +39,15 @@ test("each alert has 'Good match?' links that open the app's rate page with that
   expect(html.match(/Good match\?/g)).toHaveLength(2);
   expect(renderEmail(content, "https://app.test").text).not.toContain("Good match?");   // no code, no links
 });
+
+test("the HTML follows the Sieve e-mail pattern: tables, a dark-mode block, score badges, no emoji", () => {
+  const withIds = { ...content, alerts: content.alerts.map((a, i) => ({ ...a, _id: `al${i}`, rateToken: `tok${i}` })) };
+  const { html } = renderEmail(withIds, "https://app.test");
+  expect(html).toContain('role="presentation"');                 // table layout: Outlook ignores flexbox
+  expect(html).not.toContain("display:flex");
+  expect(html).toContain("@media (prefers-color-scheme: dark)");
+  expect(html).toContain('<meta name="color-scheme" content="light dark">');
+  expect(html).toContain('class="mw-great"');                      // 9/10 and 8/10 are great matches
+  expect(html).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|&#12807[78];/u);
+  expect(html).not.toMatch(/!<|!\s*$/m);                          // no exclamation marks in the copy
+});

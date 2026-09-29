@@ -191,23 +191,23 @@ function ScoreAccuracy({ days, go }) {
     <section className="panel">
       <h2>Are the scores right? <span className="hint">from people rating their alerts</span></h2>
       {s.rated === 0 ? (
-        <p className="hint">No ratings yet. Every alert (in the e-mail and on the Alerts page) now asks "Good match? 👍 / 👎";
+        <p className="hint">No ratings yet. Every alert (in the e-mail and on the Alerts page) now asks "Good match? Yes / Not right";
           answers arrive here.</p>
       ) : (
         <>
           <div className="stats">
             <Stat value={s.rated} name="Ratings" note={`${pct(s.rated, s.alertsSent)} of ${s.alertsSent} alerts sent · ${s.fromEmail} from e-mail`}
                   onOpen={() => go("ratings", "All ratings")} />
-            <Stat value={pct(s.good, s.rated)} name="Said good match" note={`${s.good} 👍`} onOpen={() => go("ratings", "Rated good match", { verdict: "good" })} />
+            <Stat value={pct(s.good, s.rated)} name="Said good match" note={`${s.good} said yes`} onOpen={() => go("ratings", "Rated good match", { verdict: "good" })} />
             <Stat value={s.notRight} name="Said not right" note={`${s.withNote} with a note`} onOpen={() => go("ratings", "Rated not right", { verdict: "not_right" })} />
-            <Stat value={s.goodCouldBeGreat} name="👍 on a 6–7" note="could have been great: threshold hint"
+            <Stat value={s.goodCouldBeGreat} name="Good match on a 6–7" note="could have been great: threshold hint"
                   onOpen={() => go("ratings", "Good matches users liked", { verdict: "good", band: "good" })} />
           </div>
           <div className="breakdowns">
             <section className="breakdown">
               <h3>Do users agree, per score band?</h3>
               <table className="band-table">
-                <thead><tr><th>Scored</th><th>Rated</th><th>👍</th><th>👎</th><th>Agree</th></tr></thead>
+                <thead><tr><th>Scored</th><th>Rated</th><th>Yes</th><th>Not right</th><th>Agree</th></tr></thead>
                 <tbody>
                   {s.bands.map((b) => (
                     <tr key={b.key} className={b.rated ? "openable" : ""} tabIndex={b.rated ? 0 : undefined}
@@ -219,7 +219,7 @@ function ScoreAccuracy({ days, go }) {
                   ))}
                 </tbody>
               </table>
-              <p className="breakdown-note">Agree = share of 👍. Low agreement on 8–10 means the scorer over-promises.</p>
+              <p className="breakdown-note">Agree = share of "Good match". Low agreement on 8–10 means the scorer over-promises.</p>
             </section>
             <Breakdown title="Why not right" rows={s.reasons} empty="Nobody gave a reason yet"
               onRow={(r) => go("ratings", `Not right: ${r.name}`, { reason: r.key })} />

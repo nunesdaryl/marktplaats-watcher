@@ -1,4 +1,5 @@
-import { useQuery } from "convex/react";
+import { useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
 import ListingCard from "../components/ListingCard.jsx";
@@ -9,6 +10,10 @@ export default function AlertsView() {
   const alerts = useQuery(api.watches.alerts);
   const ratings = useQuery(api.ratings.mine) ?? {};
   const now = useNow();
+  // Seeing the page clears the count on the Alerts tab, also for alerts that arrive while it's open
+  const markSeen = useMutation(api.users.markAlertsSeen);
+  const newest = alerts?.[0]?._id;
+  useEffect(() => { if (alerts !== undefined) markSeen().catch(() => {}); }, [newest, alerts === undefined]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <section className="page" aria-labelledby="alerts-title">
       <header className="page-head">

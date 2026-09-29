@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { REASONS } from "../lib/ratings.js";
 
-/** "Thanks, tell us why?" after a 👎: optional chips and a note. Sending is optional too. */
+/** "Thanks, tell us why?" after "Not right": optional chips and a note. Sending is optional too. */
 export default function WhyNotRight({ initial = { reasons: [], note: "" }, onSend, busy }) {
   const [reasons, setReasons] = useState(initial.reasons ?? []);
   const [note, setNote] = useState(initial.note ?? "");
