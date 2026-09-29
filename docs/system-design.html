@@ -619,6 +619,10 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>Scheduled querying of Marktplaats</td><td>This is "repeated and systematic" (Art. 7.3). The operator accepted the risk for the
     public portfolio version; it is reduced by one request per item, 5 watches per user and a 15-minute minimum.</td></tr>
 </table>
+<p><b>Software factory (29 September):</b> the audit's Wave 1 (<code>docs/audit/2026-09-29-fde-course-audit.md</code>) is filed as
+  specs MW-1 to MW-13 in the Linear team "Marktplaats Watcher" (key MW), bound to this repo by <code>.factory.json</code>. Each spec
+  has acceptance criteria, files, non-goals, tests and verify steps; the build loop only takes issues the owner marks
+  <code>agent-ready</code>, and merges stay with the owner.</p>
 <p><b>Next steps:</b> (1) Telegram, Discord or WhatsApp as extra alert channels (<code>alerts.channel</code> is already in the schema);
   (2) a 50-listing labelled scoring evaluation; (3) a domain for a Clerk production instance and a custom e-mail sender
   (planned for after the 3 Oct demo; the steps, including re-linking existing accounts by e-mail, are in DEPLOY-VERCEL.md);

@@ -1138,16 +1138,19 @@ concrete fixes.</p>
 <h2>5. Roadmap</h2>
 <p>Each item is written as done-when (Given/When/Then), so it can go straight into the factory as an issue.</p>
 <h3>Wave 1: the week after the demo (from 5 Oct 2026)</h3>
+<p>Filed on 29 September as factory specs <strong>MW-1 to MW-13</strong> in the Linear team "Marktplaats Watcher" (key MW; the repo's
+<code>.factory.json</code> binds it), in the order below. Each waits for the operator's <code>agent-ready</code> label before the build loop
+picks it up.</p>
 <ol>
-<li><strong>Tools never raise.</strong> Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
+<li><strong>(MW-1) Tools never raise.</strong> Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
    then the user sees "postcode service unavailable", and the other watches in the group still run. (§3.3)</li>
-<li><strong>Ranker output check.</strong> Given the model leaves out a listing id, when a check scores, then the missing ids are
+<li><strong>(MW-2) Ranker output check.</strong> Given the model leaves out a listing id, when a check scores, then the missing ids are
    re-scored once and otherwise skipped and logged; the watch still delivers the rest. (§3.3)</li>
-<li><strong>Token caps and turn deadline.</strong> Given any chat, when it runs, then no model call exceeds <code>max_tokens</code> and the
+<li><strong>(MW-3) Token caps and turn deadline.</strong> Given any chat, when it runs, then no model call exceeds <code>max_tokens</code> and the
    turn ends within 60 s with a clear message. (§3.3)</li>
-<li><strong>Per-user daily budget and chat kill switch.</strong> Given a user hits the daily allowance, when they chat, then they
+<li><strong>(MW-4) Per-user daily budget and chat kill switch.</strong> Given a user hits the daily allowance, when they chat, then they
    get a friendly limit message; setting <code>CHAT_PAUSED=1</code> stops chat for everyone. (§3.9)</li>
-<li><strong>Evaluation gate:</strong><ul>
+<li><strong>(MW-5) Evaluation gate:</strong><ul>
 <li>human-corrected labels</li>
 <li>failure categories counted</li>
 <li><code>PROMPT_VERSION</code> in results</li>
@@ -1156,18 +1159,18 @@ concrete fixes.</p>
 (§3.5)</li>
 </ul>
 </li>
-<li><strong>Request ids and errors in the digest.</strong> Given a chat or check fails, when the digest runs, then it lists the
+<li><strong>(MW-6) Request ids and errors in the digest.</strong> Given a chat or check fails, when the digest runs, then it lists the
    count and the latest request ids. (§3.6)</li>
-<li><strong>Stream timeout.</strong> Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
+<li><strong>(MW-7) Stream timeout.</strong> Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
    composer. (§3.8)</li>
-<li><strong>Outbound timeouts</strong> on the AgentMail and check-API calls. (§3.7)</li>
-<li><strong>ADRs 0001–0008 and <code>docs/nfr.md</code>.</strong> (§3.1, §3.2)</li>
-<li><strong>Remeasure cost at the 20-listing cap.</strong> (§3.9)</li>
-<li><strong>The server writes the agent's turns.</strong> Given a signed-in user, when the browser calls <code>chats.append</code> with
+<li><strong>(MW-8) Outbound timeouts</strong> on the AgentMail and check-API calls. (§3.7)</li>
+<li><strong>(MW-9) ADRs 0001–0008 and <code>docs/nfr.md</code>.</strong> (§3.1, §3.2)</li>
+<li><strong>(MW-10) Remeasure cost at the 20-listing cap.</strong> (§3.9)</li>
+<li><strong>(MW-11) The server writes the agent's turns.</strong> Given a signed-in user, when the browser calls <code>chats.append</code> with
     <code>role: "assistant"</code>, then it is rejected; assistant turns are written by the backend only. (§3.4)</li>
-<li><strong>Evals name the real model.</strong> Given <code>OPENAI_MODEL</code> is changed, when the evals run, then <code>evals/report.md</code> shows
+<li><strong>(MW-12) Evals name the real model.</strong> Given <code>OPENAI_MODEL</code> is changed, when the evals run, then <code>evals/report.md</code> shows
     that model and its price. (§3.5)</li>
-<li><strong>Ratings follow their watch.</strong> Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
+<li><strong>(MW-13) Ratings follow their watch.</strong> Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
     too, and the privacy text states how long ratings are kept. (§3.4)</li>
 </ol>
 <h3>Wave 2: October 2026</h3>

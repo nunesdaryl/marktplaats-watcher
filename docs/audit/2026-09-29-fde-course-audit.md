@@ -280,33 +280,37 @@ Each item is written as done-when (Given/When/Then), so it can go straight into 
 
 ### Wave 1: the week after the demo (from 5 Oct 2026)
 
-1. **Tools never raise.** Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
+Filed on 29 September as factory specs **MW-1 to MW-13** in the Linear team "Marktplaats Watcher" (key MW; the repo's
+`.factory.json` binds it), in the order below. Each waits for the operator's `agent-ready` label before the build loop
+picks it up.
+
+1. **(MW-1) Tools never raise.** Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
    then the user sees "postcode service unavailable", and the other watches in the group still run. (§3.3)
-2. **Ranker output check.** Given the model leaves out a listing id, when a check scores, then the missing ids are
+2. **(MW-2) Ranker output check.** Given the model leaves out a listing id, when a check scores, then the missing ids are
    re-scored once and otherwise skipped and logged; the watch still delivers the rest. (§3.3)
-3. **Token caps and turn deadline.** Given any chat, when it runs, then no model call exceeds `max_tokens` and the
+3. **(MW-3) Token caps and turn deadline.** Given any chat, when it runs, then no model call exceeds `max_tokens` and the
    turn ends within 60 s with a clear message. (§3.3)
-4. **Per-user daily budget and chat kill switch.** Given a user hits the daily allowance, when they chat, then they
+4. **(MW-4) Per-user daily budget and chat kill switch.** Given a user hits the daily allowance, when they chat, then they
    get a friendly limit message; setting `CHAT_PAUSED=1` stops chat for everyone. (§3.9)
-5. **Evaluation gate:**
+5. **(MW-5) Evaluation gate:**
     - human-corrected labels
     - failure categories counted
     - `PROMPT_VERSION` in results
     - a CI job on prompt changes and a weekly scheduled run
     - UAT sign-off line
     (§3.5)
-6. **Request ids and errors in the digest.** Given a chat or check fails, when the digest runs, then it lists the
+6. **(MW-6) Request ids and errors in the digest.** Given a chat or check fails, when the digest runs, then it lists the
    count and the latest request ids. (§3.6)
-7. **Stream timeout.** Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
+7. **(MW-7) Stream timeout.** Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
    composer. (§3.8)
-8. **Outbound timeouts** on the AgentMail and check-API calls. (§3.7)
-9. **ADRs 0001–0008 and `docs/nfr.md`.** (§3.1, §3.2)
-10. **Remeasure cost at the 20-listing cap.** (§3.9)
-11. **The server writes the agent's turns.** Given a signed-in user, when the browser calls `chats.append` with
+8. **(MW-8) Outbound timeouts** on the AgentMail and check-API calls. (§3.7)
+9. **(MW-9) ADRs 0001–0008 and `docs/nfr.md`.** (§3.1, §3.2)
+10. **(MW-10) Remeasure cost at the 20-listing cap.** (§3.9)
+11. **(MW-11) The server writes the agent's turns.** Given a signed-in user, when the browser calls `chats.append` with
     `role: "assistant"`, then it is rejected; assistant turns are written by the backend only. (§3.4)
-12. **Evals name the real model.** Given `OPENAI_MODEL` is changed, when the evals run, then `evals/report.md` shows
+12. **(MW-12) Evals name the real model.** Given `OPENAI_MODEL` is changed, when the evals run, then `evals/report.md` shows
     that model and its price. (§3.5)
-13. **Ratings follow their watch.** Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
+13. **(MW-13) Ratings follow their watch.** Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
     too, and the privacy text states how long ratings are kept. (§3.4)
 
 ### Wave 2: October 2026
