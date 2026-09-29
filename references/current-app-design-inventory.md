@@ -98,8 +98,10 @@ iOS action sheets.
   - Then the lede, a primary CTA "Set up a free watch", and "From a real check…" sample rows (9/10 green; 0/10 struck
     through and faded).
   - Then 3 steps and the privacy fine print.
+  - The header (logo, name, Sign in) is sticky and frosted, so the logo stays on screen while scrolling (29 Sep).
 - **Desktop app (ChatGPT style):** 272px sidebar with brand, search, New chat, Alerts, Pinned, Folders, Watches (green
-  dot = active) and chats grouped by date, then Feedback & suggestions and the account row.
+  dot = active) and chats grouped by date, then Feedback & suggestions and the account row. The top block (brand,
+  search, New chat, Alerts, Dashboard) and the account row are pinned; only the list between them scrolls (29 Sep).
 - **Phone app (Apple style):** frosted top bar plus a frosted **tab bar** (Chat / Watches / Alerts); sheets slide up.
 - **Composer:** rounded 24px box with a **"Search now | Watch it" segmented switch**. In Watch mode the border, selected
   segment and send button turn amber.
