@@ -600,7 +600,8 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>One 15-minute dispatcher, per-watch <code>nextRunAt</code></td><td>Any schedule without per-user cron jobs; the shortest
     interval is 15 minutes. Since 29 Sep the dispatcher also takes watches due within the next 2 minutes: a check ends
     shortly after its run started, so an "every 15 minutes" watch was due just after the next run and waited 30 (every
-    other run checked nothing). Trade-off: a daily or weekly check can run up to 2 minutes early.</td></tr>
+    other run checked nothing). Confirmed on production: the 12:34 run checked 4 watches where the old pattern gave 0.
+    Trade-off: a daily or weekly check can run up to 2 minutes early.</td></tr>
   <tr><td>Chat proposes, user confirms</td><td>Human approval for every write; costs one click.</td></tr>
   <tr><td>Silent first check</td><td>No e-mail about listings that were already there; a new watch shows nothing until something new
     appears.</td></tr>
@@ -823,6 +824,11 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   produced only a Preview build, so production silently kept the old version. The deploy check now filters on the
   Production environment, and <code>vercel redeploy &lt;preview&gt; --target production</code> rebuilds the commit with the
   production settings (DEPLOY-VERCEL.md §3).</p>
+<p class="small">Two regressions from the same day, found by Daryl and fixed within the hour: the dashboard's chart
+  bars reused the CSS class <code>bar</code>, which is also the landing page header, so the header turned teal and the
+  teal "Sign in" link vanished for signed-out visitors (now <code>chart-bar</code>); and Clerk's dark account menu showed
+  "Manage account" and "Sign out" dark on dark (explicit colours for its items now). Lesson: check the signed-out
+  landing page and third-party widgets after every styling change, not only the screens you changed.</p>
 <div class="pattern"><b>Pattern:</b> collect product data you'd be comfortable showing the user. Feature names, not
   content; a screenshot they can see and untick; a retention limit and a delete button that covers it all; and the
   owner check on the server, not in the page.</div>
