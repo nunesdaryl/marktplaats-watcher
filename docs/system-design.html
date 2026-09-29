@@ -610,7 +610,8 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     public portfolio version; it is reduced by one request per item, 5 watches per user and a 15-minute minimum.</td></tr>
 </table>
 <p><b>Next steps:</b> (1) Telegram, Discord or WhatsApp as extra alert channels (<code>alerts.channel</code> is already in the schema);
-  (2) a 50-listing labelled scoring evaluation; (3) a domain for a Clerk production instance and a custom e-mail sender;
+  (2) a 50-listing labelled scoring evaluation; (3) a domain for a Clerk production instance and a custom e-mail sender
+  (planned for after the 3 Oct demo; the steps, including re-linking existing accounts by e-mail, are in DEPLOY-VERCEL.md);
   (4) 3–5 beta users and their quotes; (5) a shared store for the chat rate limit and page cache.</p>
 <div class="pattern"><b>Pattern:</b> let the model <i>propose</i> and the user <i>decide</i>. Keep every write behind the user's own
   login and a click, and the model's mistakes (or a stranger's injected text) stay suggestions.</div>
@@ -828,7 +829,10 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   bars reused the CSS class <code>bar</code>, which is also the landing page header, so the header turned teal and the
   teal "Sign in" link vanished for signed-out visitors (now <code>chart-bar</code>); and Clerk's dark account menu showed
   "Manage account" and "Sign out" dark on dark (explicit colours for its items now). Lesson: check the signed-out
-  landing page and third-party widgets after every styling change, not only the screens you changed.</p>
+  landing page and third-party widgets after every styling change, not only the screens you changed. A third fix the
+  same day: after signing in with Google the landing page flashed before the app, because the "signed in" marker is only
+  written once the app has loaded. Pressing Sign in now sets a marker for that tab, so the page you return to shows the
+  logo placeholder and then the app.</p>
 <div class="pattern"><b>Pattern:</b> collect product data you'd be comfortable showing the user. Feature names, not
   content; a screenshot they can see and untick; a retention limit and a delete button that covers it all; and the
   owner check on the server, not in the page.</div>

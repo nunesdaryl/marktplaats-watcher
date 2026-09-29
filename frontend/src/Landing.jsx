@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import Logo from "./components/Logo.jsx";
+import { SIGNING_IN_FLAG } from "./lib/boot.js";
+
+// Remember in this tab that sign-in started, so the page after signing in doesn't flash the landing page (boot.js)
+const signingIn = () => { try { sessionStorage.setItem(SIGNING_IN_FLAG, "1"); } catch {} };
 
 // The product in one sentence: the same sentence you fill in when you set up a watch.
 const EXAMPLES = [
@@ -28,7 +32,7 @@ export default function Landing({ SignIn = Plain }) {
       <header className="bar">
         <Logo size={40} />
         <span className="name wordmark">Marktplaats <b>Watcher</b></span>
-        <SignIn mode="modal"><button className="button plain">Sign in</button></SignIn>
+        <SignIn mode="modal"><button className="button plain" onClick={signingIn}>Sign in</button></SignIn>
       </header>
 
       <main>
@@ -41,7 +45,7 @@ export default function Landing({ SignIn = Plain }) {
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
           say why. Only the ones worth a look reach your inbox. Free, up to 5 watches.
         </p>
-        <SignIn mode="modal"><button className="button primary large">Set up a free watch</button></SignIn>
+        <SignIn mode="modal"><button className="button primary large" onClick={signingIn}>Set up a free watch</button></SignIn>
         <p className="cta-note">No card, no app to install. Sign in with your e-mail or Google.</p>
 
         <section className="sample" aria-labelledby="sample-title">

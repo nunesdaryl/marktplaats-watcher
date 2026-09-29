@@ -16,7 +16,7 @@ import ThemeToggle from "./components/ThemeToggle.jsx";
 import WatchSheet from "./components/WatchSheet.jsx";
 import Boot from "./Boot.jsx";
 import { useItemActions } from "./lib/actions.js";
-import { SIGNED_IN_FLAG } from "./lib/boot.js";
+import { SIGNED_IN_FLAG, SIGNING_IN_FLAG } from "./lib/boot.js";
 import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
 import { go, useMediaQuery, useRoute } from "./lib/router.js";
@@ -100,7 +100,7 @@ function Workspace() {
 
   useEffect(() => {
     storeUser().catch((e) => setUserError(e.data ?? "We couldn't load your account. Refresh to try again."));
-    try { localStorage.setItem(SIGNED_IN_FLAG, "1"); } catch {}   // next visit: skip the landing-page flash
+    try { localStorage.setItem(SIGNED_IN_FLAG, "1"); sessionStorage.removeItem(SIGNING_IN_FLAG); } catch {}   // next visit: skip the landing-page flash
   }, [storeUser]);
 
   // Keyboard: ⌘K search, ⌘⇧O new chat (Esc is handled by menus and sheets themselves)

@@ -92,6 +92,24 @@ npx vercel redeploy <preview-deployment-url> --target production
 Vercel's **FastAPI preset** serves the `app` in `main.py` directly, with the original request paths.
 Don't add a rewrite to a separate `api/index.py`: it hands FastAPI the path `/api/index` and every route 404s.
 
+## Moving Clerk from Development to Production (planned for after the demo, 3 Oct 2026)
+The sign-in boxes say "Development mode" because the app uses a Clerk development instance. A production instance
+needs, in this order:
+1. **A domain the owner buys** (about €10/year). Clerk production can't run on `*.vercel.app`. Keep "Marktplaats" out
+   of the name (trademark). Add it to the Vercel project as the main address; the vercel.app addresses redirect to it.
+2. **Clerk DNS records** (about five CNAMEs for the sign-in frontend, accounts pages and e-mail), shown in the Clerk
+   dashboard when the production instance is created, added at the domain registrar.
+3. **An own Google OAuth client** (Google Cloud → APIs & Services → Credentials, consent screen with name, logo and
+   privacy link). The owner pastes its client id and secret into Clerk; development mode borrows Clerk's.
+4. **New keys, switched together:** `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (`pk_live_…`) and `CLERK_ISSUER` in Vercel,
+   `CLERK_JWT_ISSUER_DOMAIN` in Convex, the `convex` JWT template with the `email` claim, and the CSP (the new
+   `clerk.<domain>` instead of `*.clerk.accounts.dev`). Rehearse once on a preview first.
+5. **Users:** a production instance has its own user list, so everyone signs in again. Convex rows are keyed by the
+   Clerk id; re-link each existing account by its e-mail on first sign-in so nobody loses watches, chats or alerts.
+6. `OWNER_CLERK_ID` becomes the owner's new production id.
+Production removes the "Development mode" line only; the "Secured by Clerk" badge stays on the free plan (hiding it
+needs Clerk Pro, about $25/month).
+
 ## Honest limits of this setup
 - The chat rate limit and the Marktplaats page cache live **in memory per serverless instance**, so with
   several instances the real limits are looser. Chat now requires a login, which is the main protection
