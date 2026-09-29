@@ -337,9 +337,10 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     allows. Since 29 Sep 2026 scheduled checks read the date-sorted <code>/lrp/api/search</code>, which robots.txt
     disallows: the only way to see every new listing, with the watch's price and distance applied by Marktplaats.
     That is the owner's decision. The terms (Art. 7.3) also forbid "repeated and systematic" querying.
-    The public site makes at most one request per new search, reuses a 15-minute cache and stops at 30 fetches an
-    hour per instance. It is still a public service, so this is a knowingly accepted risk for a short demo. A scheduled
-    version would need permission or Marktplaats' own saved-search e-mails instead.</li>
+    The chat makes at most one request per new search, reuses a 15-minute cache and stops at 30 fetches an hour per
+    instance; checks read only the days since their last check, usually one request. It is still a knowingly accepted
+    risk. The way out is Marktplaats' official API (section 16): partner access, applied for once this is more than a
+    demo.</li>
   <li><b>No login on the public site.</b> Anyone with the URL can use it. Rate limits reduce, but do not remove, the
     cost risk. The limits live in memory per serverless instance.</li>
   <li><b>Staying on topic is a prompt rule.</b> A clever prompt could make the model talk about something else. It still
@@ -856,6 +857,52 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <div class="pattern"><b>Pattern:</b> collect product data you'd be comfortable showing the user. Feature names, not
   content; a screenshot they can see and untick; a retention limit and a delete button that covers it all; and the
   owner check on the server, not in the page.</div>
+</section>
+
+<!-- ============================ 16 DATA SOURCE ============================ -->
+<section>
+<h2>16. Where the listings come from: coverage, and the official API (29 September)</h2>
+<p>Two defects, found by asking "does a check really read only the first page?" and checking the code and the live
+  site, not the docs:</p>
+<table>
+  <tr><th>Found</th><th>Fix (live 29 Sep)</th></tr>
+  <tr><td>The search words were sent as <code>/q/mac-mini/</code>, which Marktplaats reads as the single word
+    "mac-mini": 163 results, nearly all shop ads, instead of 622 for "mac mini".</td>
+    <td>Spaces become <code>+</code>, as on the site itself. Every watch took a silent first look under the corrected
+    search (9 checked, 0 e-mails).</td></tr>
+  <tr><td>A check read one page: 30 listings in Marktplaats' own order, which ignores sorting and filters. Most
+    matches were never read (iPhone 13 under &euro;500: 25 on page 1 of 139 in five pages).</td>
+    <td>Checks read the date-sorted search with the watch's price and distance applied by Marktplaats, page after page
+    through every day since the last successful check. Marktplaats sorts by day only (0 violations in 45 pages; within
+    a day in no set order), so reading whole days is what makes it complete. A filtered watch needs about one request.
+    "New" = unseen and placed after the newest listing of the last check (a watermark), so refreshed old listings are
+    remembered, not sent. At most 40 pages; hitting that logs <code>coverage_capped</code>.</td></tr>
+</table>
+<p>What didn't work, measured before choosing: any fixed number of pages (new listings sat on page 8 for "gazelle",
+  page 18 for "fiets"); and "read until the newest listing of the last check", because even Marktplaats' own
+  "Datum (nieuw-oud)" is not in time order within a day.</p>
+
+<h3>The alternatives we looked at</h3>
+<table>
+  <tr><th>Source</th><th>What it offers</th><th>Why not now</th></tr>
+  <tr><td>Official Marktplaats API v1/v2 (<code>api.marktplaats.nl</code>)</td>
+    <td>A legitimate <code>GET /v1/search</code>: query, category, postcode + distance, descriptions, up to 200 per page,
+    at most 5,000 results. OAuth2 (client credentials); agreed use instead of scraping.</td>
+    <td>Partner access only: both answer 401 without credentials, and the docs don't say how to get them. Sorting is
+    default, location or price, <b>not date</b>, so a check would have to page through all matches (fine for a
+    filtered watch under 5,000).</td></tr>
+  <tr><td>Apify actor "panjan/marktplaats"</td>
+    <td>A hosted scraper of the same site: query, postcode, radius, category, condition; at most 100 results a run.</td>
+    <td>Same terms and robots.txt risk, moved to someone else; fewer results than we read ourselves; $20/month plus
+    usage; 3 monthly users, one maintainer.</td></tr>
+  <tr><td>The public <code>/q/</code> page only</td><td>Allowed by robots.txt.</td>
+    <td>No sorting or filters: the 30 listings it shows miss most new ones.</td></tr>
+</table>
+<p><b>Next step:</b> apply to Marktplaats for API access (issue MW-14). If granted, the checks switch to
+  <code>/v1/search</code> with the watch's filters, and the robots.txt and terms risk in section 7 goes away.</p>
+<div class="pattern"><b>Pattern:</b> "does it really do X?" is answered by the code and a live run, not by memory or
+  docs. Both defects here had passed every test, because the tests used a saved page, and a saved page can't show
+  what the live site leaves out.</div>
 </section>
 
 </body>
