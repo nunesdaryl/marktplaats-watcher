@@ -49,6 +49,7 @@ export const claimDue = internalMutation({
           id: w._id, description: w.label, max_price_eur: w.maxPriceEur ?? null,
           must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId), seeded: w.seeded,
+          watermark: w.seeded ? w.watermark ?? null : null, last_checked_at: w.seeded ? w.lastReadAt ?? null : null,
         });
       }
       for (let i = 0; i < payload.length; i += MAX_WATCHES_PER_REQUEST)
@@ -67,6 +68,7 @@ const listing = v.object({
 const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
+  newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
 });
 
 /** Store what a check found. Returns the e-mails to send: one per watch with good new listings.
@@ -130,7 +132,13 @@ export const record = internalMutation({
       }
       // On to the real next time, unless the schedule changed (or "Check now" was pressed) during this check
       const keepNext = (watch.scheduleEditedAt ?? -1) >= now;
-      await ctx.db.patch(watch._id, { seeded: true, lastCheckedAt: now, lastError: undefined,
+      // The watermark only rises once set (a first look starts it), so a listing is never "new" twice. null: the
+      // search had no numbered listings, so it starts at 0. Missing: an older search service; it stays unset, and
+      // the first check with the current one is a silent first look
+      const watermark = typeof r.newestId === "number"
+        ? (watch.seeded && watch.watermark !== undefined ? Math.max(watch.watermark, r.newestId) : r.newestId)
+        : r.newestId === null ? watch.watermark ?? 0 : watch.watermark;
+      await ctx.db.patch(watch._id, { seeded: true, watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);
       if (newAlerts.length && user) emails.push({ watchId: watch._id, alertIds: newAlerts, to: user.email });
@@ -337,7 +345,7 @@ export const checkDue = internalAction({
 });
 
 /** One-off, after a change to what a search returns (29 Sep 2026: "mac mini" was searched as the literal word
- * "mac-mini"): every live watch takes a new silent first look, so the listings the corrected search shows are
+ * "mac-mini"; then the date-sorted, filtered search): every live watch takes a new silent first look, so the listings the corrected search shows are
  * remembered instead of e-mailed as new. `npx convex run --prod checker:rebaseline` */
 export const rebaseline = internalMutation({
   args: {},
@@ -346,7 +354,7 @@ export const rebaseline = internalMutation({
     let count = 0;
     for (const w of await ctx.db.query("watches").collect()) {
       if (!w.seeded || w.archivedAt !== undefined) continue;
-      await ctx.db.patch(w._id, { seeded: false, ...(w.active ? { nextRunAt: now } : {}) });
+      await ctx.db.patch(w._id, { seeded: false, watermark: undefined, ...(w.active ? { nextRunAt: now } : {}) });
       count++;
     }
     return { rebaselined: count };

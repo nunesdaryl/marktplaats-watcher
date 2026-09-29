@@ -3,6 +3,8 @@ import math
 import os
 import re
 import time
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Literal
@@ -79,11 +81,14 @@ def listing_image(item):
 def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10):
     """Filtered listings from a search page (at most `limit`; None = all). stats["readable"] is False when the page
     has no listings data at all (a maintenance page or a redesign), which is not the same as zero results."""
-    match = NEXT_DATA.search(html)
-    try:
-        listings = find_listings(json.loads(match.group(1))) if match else None
-    except ValueError:  # the page changed shape: treat as "no listings", don't crash
-        listings = None
+    if isinstance(html, list):     # listings already read from the search (read_since)
+        listings = html
+    else:
+        match = NEXT_DATA.search(html)
+        try:
+            listings = find_listings(json.loads(match.group(1))) if match else None
+        except ValueError:  # the page changed shape: treat as "no listings", don't crash
+            listings = None
     results = []
     stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
@@ -428,21 +433,96 @@ def rank_listings(description, listings):
 
 
 MAX_RANK_PER_CHECK = 20
+PAGE_SIZE = 30
+MAX_PAGES = 40        # 1,200 listings since the last check; beyond that a check logs "coverage_capped"
+SEARCH_API = "https://www.marktplaats.nl/lrp/api/search"
+AMSTERDAM = ZoneInfo("Europe/Amsterdam")
+MONTHS = {"jan": 1, "feb": 2, "mrt": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "okt": 10,
+          "nov": 11, "dec": 12}
 
 
-def check_query(query, watches):
-    """Fetch one search page, then filter it per watch, keep only unseen listings and rank those.
-    watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids}]"""
+def fetch_search(query, filters, offset):
+    """One page of a search, sorted by date, with the watch's price and distance applied by Marktplaats itself.
+    Only this endpoint takes a sort and filters: the /q/ page ignores both and shows 30 listings in its own order,
+    so most matches were never read (29 Sep 2026). Robots.txt disallows it; using it is the owner's decision.
+    Raises httpx.HTTPError, or ValueError when the answer has no listings."""
+    params = {"query": query.strip().lower(), "searchInTitleAndDescription": "true", "sortBy": "SORT_INDEX",
+              "sortOrder": "DECREASING", "limit": PAGE_SIZE, "offset": offset, "viewOptions": "list-view", **filters}
+    for attempt in (1, 2):
+        res = httpx.get(SEARCH_API, params=params, timeout=15.0,
+                        headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
+        if res.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+            break
+        time.sleep(1)
+    res.raise_for_status()
+    data = res.json()
+    if not isinstance(data, dict) or not isinstance(data.get("listings"), list):
+        raise ValueError("no listings in the answer")
+    return data
+
+
+def search_filters(w):
+    """A watch's price and distance, as Marktplaats' own search filters."""
+    filters = {}
+    if w.get("max_price_eur") is not None:
+        filters["attributeRanges[]"] = f"PriceCents:null:{int(w['max_price_eur']) * 100}"
+    if w.get("postcode") and w.get("max_distance_km"):
+        filters["postcode"] = w["postcode"].replace(" ", "").upper()
+        filters["distanceMeters"] = int(w["max_distance_km"]) * 1000
+    return filters
+
+
+def days_old(label, today):
+    """How many days ago a listing was placed, from Marktplaats' date label ("Vandaag", "Gisteren", "26 sep 26").
+    None when the label can't be read."""
+    if label in ("Vandaag", "Gisteren", "Eergisteren"):
+        return ("Vandaag", "Gisteren", "Eergisteren").index(label)
+    m = re.match(r"(\d{1,2}) (\w{3})\w*\.? '?(\d{2})$", label or "")
+    if not m or m[2].lower() not in MONTHS:
+        return None
     try:
-        html = fetch_page(search_url(query), capped=False)
-    except httpx.HTTPError as e:
-        return [{"watchId": w["id"], "ok": False, "error": "Marktplaats didn't answer at the last check. We'll try again soon."}
-                for w in watches]
-    if not parse_listings(html, limit=None)[1]["readable"]:
-        # A maintenance or redesigned page: report a failure, so the baseline stays and it's retried soon
-        return [{"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."}
-                for w in watches]
-    results, to_rank = [], []
+        return (today - date(2000 + int(m[3]), MONTHS[m[2].lower()], int(m[1]))).days
+    except ValueError:
+        return None
+
+
+def listing_number(item_id):
+    """Marktplaats numbers listings as they're placed (m2448176040): a higher number is a newer listing."""
+    item_id = item_id or ""
+    return int(item_id[1:]) if item_id[:1] == "m" and item_id[1:].isdigit() else None
+
+
+def read_since(query, filters, since_days, today):
+    """Every listing of a search placed since the day of the last check (`since_days` days ago; 0 = today).
+    Sorted by date, Marktplaats orders by day only (within a day in no set order, so a new listing can be on any
+    page of that day), so this reads page after page until one reaches an older day. With the watch's own
+    filters that's usually one page."""
+    listings, ids = [], set()
+    for page in range(MAX_PAGES):
+        data = fetch_search(query, filters, page * PAGE_SIZE)
+        batch = data["listings"]
+        for item in batch:
+            if item.get("itemId") not in ids:
+                ids.add(item.get("itemId"))
+                listings.append(item)
+        # Paid "Dagtopper" listings are shown first whatever their day: they don't say where the reading is
+        ages = [days_old(item.get("date"), today) for item in batch if item.get("priorityProduct", "NONE") == "NONE"]
+        older = any(a is not None and a > since_days for a in ages)
+        if older or len(batch) < PAGE_SIZE or page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
+            return listings
+    print(json.dumps({"event": "coverage_capped", "query": query, "pages": MAX_PAGES}))
+    return listings
+
+
+def check_query(query, watches, now=None):
+    """Read each watch's search since its last check (its own price and distance applied by Marktplaats), keep
+    only new listings and rank those. New means unseen and placed after the newest listing of the last check (the
+    watermark): an older listing that was refreshed or only now matches is remembered, not sent.
+    watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids, seeded, watermark,
+    last_checked_at}]"""
+    now = now or datetime.now(AMSTERDAM)
+    today = now.astimezone(AMSTERDAM).date()
+    plans, results, to_rank = [], [], []
     for w in watches:
         home = None
         if w.get("postcode"):
@@ -453,26 +533,59 @@ def check_query(query, watches):
             if home is None:
                 results.append({"watchId": w["id"], "ok": False, "error": f"We couldn't find postcode {w['postcode']}. Edit the watch to use another postcode."})
                 continue
-        # Every listing on the page counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
-        listings, _ = parse_listings(html, w.get("max_price_eur"), home,
+        # A first look, or a watch checked before this change, notes today's listings; after that, the days since
+        # the last check (a weekly watch reads a week)
+        last = w.get("last_checked_at") if w.get("seeded", True) and w.get("watermark") is not None else None
+        since = max((today - datetime.fromtimestamp(last / 1000, AMSTERDAM).date()).days, 0) if last else 0
+        filters = search_filters(w)
+        plans.append((w, home, (json.dumps(filters, sort_keys=True), since)))
+
+    # Watches with the same filters share one read; different ones are read in parallel (a broad one takes ~10 s)
+    def read(key):
+        try:
+            return read_since(query, json.loads(key[0]), key[1], today)
+        except (httpx.HTTPError, ValueError) as e:
+            return e
+    keys = list(dict.fromkeys(key for _, _, key in plans))
+    with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
+        reads = dict(zip(keys, pool.map(read, keys)))
+
+    for w, home, key in plans:
+        if isinstance(reads[key], httpx.HTTPError):
+            results.append({"watchId": w["id"], "ok": False, "error": "Marktplaats didn't answer at the last check. We'll try again soon."})
+            continue
+        if isinstance(reads[key], ValueError):
+            # A maintenance or redesigned answer: report a failure, so the baseline stays and it's retried soon
+            results.append({"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."})
+            continue
+        raw = reads[key]
+        # Every listing read counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
+        listings, _ = parse_listings(raw, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)
+        newest = max((n for i in raw if (n := listing_number(i.get("itemId"))) is not None), default=None)
         seen = set(w.get("seen_ids") or [])
-        fresh = [item for item in listings if item["id"] and item["id"] not in seen]
-        if not w.get("seeded", True):
-            fresh = []                     # first check: only remember what's there, nothing is e-mailed, so don't score
+        mark = w.get("watermark")
+        fresh = [item for item in listings if item["id"] and item["id"] not in seen
+                 and (not mark or (listing_number(item["id"]) or 0) > mark)]
+        if not w.get("seeded", True) or w.get("watermark") is None:
+            # First check, or the first since checks moved to the date-sorted search (no watermark yet): only
+            # remember what's there, nothing is e-mailed, so don't score
+            fresh = []
         # Bound the scoring per check; listings beyond the bound stay unseen and are scored at the next check
         waiting = {item["id"] for item in fresh[MAX_RANK_PER_CHECK:]}
         listings = [item for item in listings if item["id"] not in waiting]
-        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK]))
+        # The watermark may only pass what was handled: it stops just below the oldest listing still waiting
+        waiting_numbers = [n for i in waiting if (n := listing_number(i)) is not None]
+        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK], min(waiting_numbers) - 1 if waiting_numbers else newest))
 
     # Rank the watches in parallel: each is one model call, so a group of 20 takes about as long as one
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = list(pool.map(lambda job: rank_listings(job[0].get("description") or query, job[2]), to_rank))
-    for (w, listings, _), fresh in zip(to_rank, ranked):
+    for (w, listings, _, newest), fresh in zip(to_rank, ranked):
         if any(item["score"] is None for item in fresh):
             # Never e-mail unscored listings: report a failure so nothing is marked seen, and it's retried soon
             results.append({"watchId": w["id"], "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."})
             continue
         results.append({"watchId": w["id"], "ok": True, "currentIds": [i["id"] for i in listings if i["id"]],
-                        "listings": fresh})
+                        "listings": fresh, "newestId": newest})
     return results

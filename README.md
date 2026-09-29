@@ -124,13 +124,19 @@ most Linux/cloud servers. The container runs as a non-root user; its health chec
 uptime check).
 
 ## Limits
-- The tool reads the first results page only (about 30 listings). A distance filter keeps only listings
-  that have a location, which is roughly a third of them; many private sellers show no location there.
-  Postcode to coordinates uses PDOK, the Dutch government's free address service.
-- It fetches only the public `/q/` search page, which robots.txt allows. It never uses `/lrp/api/`.
-  One page is fetched per search, and seller details are never kept.
+- The chat's search reads the first results page only (about 30 listings), from the public `/q/` page,
+  which robots.txt allows. A distance filter keeps only listings that have a location, which is roughly a
+  third of them; many private sellers show no location there. Postcode to coordinates uses PDOK, the Dutch
+  government's free address service.
+- Scheduled checks read every listing placed since the last check. They use Marktplaats' date-sorted search
+  (`/lrp/api/search`, the one behind the site's "Datum (nieuw-oud)" sort), with the watch's price and
+  distance applied by Marktplaats. Robots.txt disallows that path; using it is the owner's decision
+  (29 Sep 2026), because the `/q/` page ignores sorting and filters and showed only a fraction of the
+  matches. Marktplaats sorts by day, not by time, so a check reads all of the days since its last check:
+  usually one page for a watch with a price and distance, more for a broad one (at most 40 pages).
+  "New" means unseen and placed after the newest listing of the last check. Seller details are never kept.
 - Marktplaats' terms (Art. 7.3) forbid repeated, systematic querying. Scheduled watches do exactly that;
-  the operator has accepted this risk for the public portfolio version. Watches for the same item share
-  one request, each user has at most 5 watches, and the shortest interval is 15 minutes.
+  the operator has accepted this risk for the public portfolio version. Watches with the same search and
+  filters share one read, each user has at most 5 watches, and the shortest interval is 15 minutes.
 - Data kept: e-mail address, watches, listings already seen and alerts, 30 days (purged daily).
   "Delete my data" removes all of it. Listing titles and search text are sent to OpenAI for scoring.

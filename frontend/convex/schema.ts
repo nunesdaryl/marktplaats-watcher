@@ -141,6 +141,8 @@ export default defineSchema({
     notify: notifyValidator,
     active: v.boolean(),
     seeded: v.boolean(),            // false until the first check has recorded what is already listed
+    watermark: v.optional(v.number()),   // newest Marktplaats listing number handled: only newer ones are new
+    lastReadAt: v.optional(v.number()),  // last check that read Marktplaats: the next one reads from that day on
     nextRunAt: v.number(),
     lastCheckedAt: v.optional(v.number()),
     lastError: v.optional(v.string()),

@@ -151,6 +151,53 @@ test("rebaseline: every live watch takes a new silent first look, nothing is e-m
   expect((await t.run((ctx) => ctx.db.get(id)))!.seeded).toBe(true);
 });
 
+test("the watermark and last check time go with each check; the watermark only rises", async () => {
+  const { t, id } = await seededWatch();
+  const check = async (newestId: number | null) => {
+    const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
+    await t.mutation(internal.checker.record, { now: Date.now(), dryRun: false,
+      results: [{ watchId: group.watches[0].id, ok: true, currentIds: [], listings: [], newestId }] });
+    vi.setSystemTime(Date.now() + 61 * 60_000);                          // due again an hour later
+    return group.watches[0];
+  };
+  expect(await check(1100)).toMatchObject({ watermark: null, last_checked_at: null });   // none yet
+  const second = await check(1090);
+  expect(second.watermark).toBe(1100);                                   // 1090 doesn't lower it
+  expect(second.last_checked_at).toBe(Date.parse("2026-09-27T10:00:00Z"));
+  // A failed check doesn't move it: the next one still reads from the last check that worked
+  const [failing] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
+  await t.mutation(internal.checker.record, { now: Date.now(), dryRun: false,
+    results: [{ watchId: failing.watches[0].id, ok: false, error: "down" }] });
+  vi.setSystemTime(Date.now() + 61 * 60_000);
+  expect((await check(null)).watermark).toBe(1100);
+  await check(1200);
+  expect((await t.run((ctx) => ctx.db.get(id)))!.watermark).toBe(1200);
+});
+
+test("no numbered listings starts the watermark at 0; an older search service leaves it unset", async () => {
+  const { t, id } = await seededWatch();
+  const report = (extra: object) => t.mutation(internal.checker.record, { now: Date.now(), dryRun: false,
+    results: [{ watchId: id, ok: true, currentIds: [], listings: [], ...extra }] });
+  await report({});
+  expect((await t.run((ctx) => ctx.db.get(id)))!.watermark).toBeUndefined();
+  await report({ newestId: null });
+  expect((await t.run((ctx) => ctx.db.get(id)))!.watermark).toBe(0);
+});
+
+test("a different search, or a rebaseline, starts without a watermark", async () => {
+  const { t, alice, id } = await seededWatch();
+  await t.run((ctx) => ctx.db.patch(id, { watermark: 1100 }));
+  await alice.mutation(api.watches.update, { id, query: "iphone 13" });
+  expect((await t.run((ctx) => ctx.db.get(id)))!.watermark).toBeUndefined();
+  await t.run((ctx) => ctx.db.patch(id, { seeded: true, watermark: 1100 }));
+  await t.mutation(internal.checker.rebaseline, {});
+  const after = (await t.run((ctx) => ctx.db.get(id)))!;
+  expect(after.seeded).toBe(false);
+  expect(after.watermark).toBeUndefined();
+  const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
+  expect(group.watches[0]).toMatchObject({ watermark: null, last_checked_at: null });   // a first look
+});
+
 // Round 2 of the audit (R1, R2, R3, R7): its reproductions, now expecting the fixed behaviour
 const item400 = { ...listing("old-result"), price_eur: 400 };
 async function macMiniUnder500() {

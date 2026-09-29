@@ -220,8 +220,10 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     browser evaluation. Exposing <code>search_marktplaats</code> as an MCP server would let other agents reuse it.</td></tr>
   <tr><td><b>APIs</b></td><td><span class="tag built">BUILT</span></td><td>We <i>provide</i> one API, FastAPI
     <code>POST /api/chat</code> and <code>GET /api/health</code> (<code>main.py</code>; health is owner-key only since 29 Sep). We <i>consume</i> three: Azure OpenAI (the model), PDOK (postcodes)
-    and the Marktplaats public search page. That last one is not an official API: robots.txt allows the
-    <code>/q/</code> pages, and the terms limit systematic use.</td></tr>
+    and Marktplaats search. That last one is not an official API: the chat reads the public <code>/q/</code> page,
+    which robots.txt allows; scheduled checks read the date-sorted <code>/lrp/api/search</code>, which robots.txt
+    disallows (the owner's decision, 29 Sep 2026: <code>/q/</code> ignores sorting and filters, so most matches were
+    never read). The terms limit systematic use.</td></tr>
   <tr><td><b>Guardrails</b></td><td><span class="tag partial">PARTIAL</span></td><td>Input limits and role allowlist
     (<code>main.py</code> lines 22–28), a per-IP rate limit (lines 32–48), a scope rule and "titles are data" in the
     prompt, the tool-name allowlist, timeouts, bounded output, errors without stack traces (<code>main.py</code> lines
@@ -331,8 +333,10 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
 </table>
 <h3>Accepted risks (stated plainly)</h3>
 <ul>
-  <li><b>Marktplaats terms of service.</b> robots.txt allows the <code>/q/</code> search pages the tool reads, and it never
-    calls the disallowed <code>/lrp/api/</code>. But the terms (Art. 7.3) forbid "repeated and systematic" querying.
+  <li><b>Marktplaats terms of service and robots.txt.</b> The chat reads the <code>/q/</code> search pages, which robots.txt
+    allows. Since 29 Sep 2026 scheduled checks read the date-sorted <code>/lrp/api/search</code>, which robots.txt
+    disallows: the only way to see every new listing, with the watch's price and distance applied by Marktplaats.
+    That is the owner's decision. The terms (Art. 7.3) also forbid "repeated and systematic" querying.
     The public site makes at most one request per new search, reuses a 15-minute cache and stops at 30 fetches an
     hour per instance. It is still a public service, so this is a knowingly accepted risk for a short demo. A scheduled
     version would need permission or Marktplaats' own saved-search e-mails instead.</li>
@@ -500,8 +504,10 @@ docker run --env-file .env -p 127.0.0.1:8000:8000 marktplaats-watcher:1.0-amd64 
     approval steps yet.</td></tr>
   <tr><td>Azure gpt-5.6-sol, not a local model</td><td>About 1.6 s per call against about 10 s on a local
     <code>qwen3:4b</code>, plus Azure's content filter. The trade-off: listing data and questions go to the cloud.</td></tr>
-  <tr><td>Public search page, cached, capped per hour</td><td>No official buyer API exists. Stays within robots.txt, but the
-    terms risk is accepted (section 7).</td></tr>
+  <tr><td>Date-sorted, filtered search for checks; public page for the chat</td><td>No official buyer API exists. The
+    public page showed only 30 listings in its own order, so checks missed new ones; the date-sorted search reads
+    every listing since the last check, usually in one request. It is disallowed by robots.txt, and the terms risk
+    is accepted (section 7).</td></tr>
   <tr><td>Public URL with rate limits, no login</td><td>Easy for others to try. The trade-off: cost and abuse risk;
     acceptable only with a temporary, approved key.</td></tr>
   <tr><td>Client sends the history</td><td>A stateless server is simple. The trade-off: no memory between browser

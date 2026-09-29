@@ -130,6 +130,7 @@ export const update = mutation({
         for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", id)).collect())
           await ctx.db.delete(row._id);
         patch.seeded = false;
+        patch.watermark = undefined;         // a different search: its own newest listings
         patch.nextRunAt = now;
         patch.leaseUntil = undefined;        // the new search can be checked right away; the old run's result is ignored
       }

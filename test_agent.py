@@ -17,6 +17,19 @@ import agent  # noqa: E402
 PAGE = (Path(__file__).parent / "tests" / "search_page.html").read_text()  # sanitised, synthetic sellers
 
 
+@pytest.fixture(autouse=True)
+def search_from_fake_page(monkeypatch):
+    """Scheduled checks read the date-sorted search (fetch_search). Tests that fake a search page with fetch_page
+    get that page's listings as its one and only page. Tests of the reading itself replace this."""
+    def fake(query, filters, offset):
+        match = agent.NEXT_DATA.search(agent.fetch_page(agent.search_url(query), capped=False) or "")
+        listings = agent.find_listings(json.loads(match.group(1))) if match else None
+        if listings is None:
+            raise ValueError("no listings in the answer")
+        return {"listings": listings if offset == 0 else [], "maxAllowedPageNumber": 1}
+    monkeypatch.setattr(agent, "fetch_search", fake)
+
+
 def test_parses_listings_without_seller_data():
     listings = agent.parse_listings(PAGE)[0]
     assert len(listings) == 6
@@ -156,7 +169,7 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
 
     monkeypatch.setattr(agent, "ranker", FakeRanker())
     all_ids = [i["id"] for i in agent.parse_listings(PAGE, limit=None)[0]]
-    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": all_ids[1:]}])
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": all_ids[1:]}])
     assert result["ok"] and result["currentIds"] == all_ids
     assert [i["id"] for i in result["listings"]] == [all_ids[0]]     # only the one not seen before
     assert result["listings"][0]["score"] == 7 and result["listings"][0]["reason"] == "fair price"
@@ -167,6 +180,143 @@ def test_search_url_uses_plus_for_spaces_like_the_site():
     assert agent.search_url("Mac Mini ") == "https://www.marktplaats.nl/q/mac+mini/"
     assert agent.search_url("iphone 13 pro") == "https://www.marktplaats.nl/q/iphone+13+pro/"
     assert agent.search_url("fiets/kinder") == "https://www.marktplaats.nl/q/fiets%2Fkinder/"   # stays one path part
+
+
+def api_page(rows, max_page=167):
+    """rows: (number, date label[, "DAGTOPPER"])"""
+    return {"maxAllowedPageNumber": max_page, "listings": [
+        {"itemId": f"m{r[0]}", "title": f"Mac mini {r[0]}", "vipUrl": f"/v/m{r[0]}", "date": r[1],
+         "priceInfo": {"priceCents": 40000}, "priorityProduct": r[2] if len(r) > 2 else "NONE"} for r in rows]}
+
+
+def serve_search(monkeypatch, pages):
+    """Date-sorted pages by number; records (filters, page) of each read."""
+    read = []
+    def fake(query, filters, offset):
+        read.append((json.dumps(filters, sort_keys=True), offset // agent.PAGE_SIZE))
+        return pages[offset // agent.PAGE_SIZE]
+    monkeypatch.setattr(agent, "fetch_search", fake)
+    monkeypatch.setattr(agent, "ranker", CountingRanker())
+    return read
+
+
+NOW = agent.datetime(2026, 9, 29, 21, 0, tzinfo=agent.AMSTERDAM)
+EARLIER_TODAY = int(agent.datetime(2026, 9, 29, 20, 45, tzinfo=agent.AMSTERDAM).timestamp() * 1000)
+YESTERDAY = int(agent.datetime(2026, 9, 28, 23, 50, tzinfo=agent.AMSTERDAM).timestamp() * 1000)
+
+
+def today_page(first, n=30):
+    # Within a day Marktplaats shows listings in no set order: mix old and new numbers
+    return [(first - (i * 7919) % 97, "Vandaag") for i in range(n)]
+
+
+def test_check_reads_every_page_of_the_days_since_the_last_check(monkeypatch):
+    # Checked yesterday at 23:50: today's and yesterday's listings are read, the reading stops at an older day
+    pages = [api_page(today_page(5000)), api_page(today_page(4900, 20) + [(3000 + i, "Gisteren") for i in range(10)]),
+             api_page([(2900 + i, "Gisteren") for i in range(25)] + [(2000 + i, "27 sep 26") for i in range(5)]),
+             api_page([(1000 + i, "20 sep 26") for i in range(30)])]
+    read = serve_search(monkeypatch, pages)
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": YESTERDAY}], now=NOW)
+    assert [p for _, p in read] == [0, 1, 2]
+    # checked earlier today: only today's listings; page 2 reaches yesterday, so it stops there
+    read.clear()
+    agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert [p for _, p in read] == [0, 1]
+
+
+def test_paid_listings_of_older_days_dont_end_the_reading(monkeypatch):
+    page1 = [(100, "20 sep 26", "DAGTOPPER"), (101, "12 sep 26", "DAGTOPPER")] + today_page(5000, 28)
+    read = serve_search(monkeypatch, [api_page(page1), api_page([(4000 + i, "Gisteren") for i in range(30)])])
+    agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert [p for _, p in read] == [0, 1]
+
+
+def test_new_means_unseen_and_newer_than_the_watermark(monkeypatch):
+    # A refreshed old listing (number below the watermark) shows up as today's, and was never seen: not sent
+    serve_search(monkeypatch, [api_page([(5001, "Vandaag"), (4000, "Vandaag"), (4999, "Vandaag"), (3000, "Gisteren")])])
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["m4999"], "watermark": 4500,
+                                          "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert [i["id"] for i in r["listings"]] == ["m5001"]
+    assert set(r["currentIds"]) == {"m5001", "m4000", "m4999", "m3000"}     # all remembered
+    assert r["newestId"] == 5001
+
+
+def test_first_look_reads_all_of_today_and_starts_the_watermark(monkeypatch):
+    read = serve_search(monkeypatch, [api_page(today_page(5000)), api_page(today_page(4950, 10) + [(10, "Gisteren")] * 5)])
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "seeded": False}], now=NOW)
+    assert [p for _, p in read] == [0, 1] and r["listings"] == [] and r["newestId"] == 5000
+
+
+def test_the_watchs_price_and_distance_go_to_marktplaats_and_same_filters_share_a_read(monkeypatch):
+    monkeypatch.setattr(agent, "postcode_location", lambda pc: (52.37, 4.89))
+    read = serve_search(monkeypatch, [api_page([(10, "Gisteren")])])
+    w = {"seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}
+    agent.check_query("iphone 13", [{**w, "id": "a", "max_price_eur": 500, "postcode": "1012 ab", "max_distance_km": 20},
+                                    {**w, "id": "b", "max_price_eur": 500, "postcode": "1012AB", "max_distance_km": 20},
+                                    {**w, "id": "c"}], now=NOW)
+    assert sorted(f for f, _ in read) == sorted(json.dumps(f, sort_keys=True) for f in [   # read in parallel
+        {"attributeRanges[]": "PriceCents:null:50000", "postcode": "1012AB", "distanceMeters": 20000}, {}])
+
+
+def test_reading_stops_at_the_last_page_and_at_the_cap(monkeypatch):
+    w = [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}]
+    read = serve_search(monkeypatch, [api_page(today_page(5000), max_page=2), api_page(today_page(4000), max_page=2)])
+    agent.check_query("mac mini", w, now=NOW)
+    assert [p for _, p in read] == [0, 1]                               # Marktplaats' own last page
+    read = serve_search(monkeypatch, [api_page(today_page(5000)), api_page(today_page(4000, 3))])
+    agent.check_query("mac mini", w, now=NOW)
+    assert [p for _, p in read] == [0, 1]                               # a short page is the last one
+    monkeypatch.setattr(agent, "MAX_PAGES", 3)
+    read = serve_search(monkeypatch, [api_page(today_page(9000 - 100 * i)) for i in range(5)])
+    agent.check_query("mac mini", w, now=NOW)
+    assert [p for _, p in read] == [0, 1, 2]                            # the safety cap
+
+
+def test_scoring_bound_keeps_the_watermark_below_listings_still_waiting(monkeypatch):
+    serve_search(monkeypatch, [api_page([(5000 - i, "Vandaag") for i in range(25)] + [(10, "Gisteren")])])
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100, "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert len(r["listings"]) == agent.MAX_RANK_PER_CHECK
+    assert r["newestId"] == 5000 - 24 - 1                               # the 5 waiting ones get read again next time
+
+
+def test_a_failing_later_page_fails_that_watch(monkeypatch):
+    def fake(query, filters, offset):
+        if offset:
+            raise ValueError("no listings in the answer")
+        return api_page(today_page(5000))
+    monkeypatch.setattr(agent, "fetch_search", fake)
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert not r["ok"] and "unexpected page" in r["error"]
+
+
+def test_a_watch_without_a_watermark_takes_a_silent_first_look(monkeypatch):
+    # Watches checked before the date-sorted search have no watermark: their seen list is from the old page, so
+    # everything would look new. They note what's there instead, whichever of the API and Convex deploys first
+    read = serve_search(monkeypatch, [api_page(today_page(5000, 10) + [(10, "Gisteren")])])
+    [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["m1"], "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert r["ok"] and r["listings"] == [] and r["newestId"] == 5000 and len(r["currentIds"]) == 11
+
+
+def test_listing_dates_are_read_as_days_ago():
+    today = agent.date(2026, 9, 29)
+    assert [agent.days_old(x, today) for x in ["Vandaag", "Gisteren", "Eergisteren", "26 sep 26", "14 sep. '26", "?"]] == \
+        [0, 1, 2, 3, 15, None]
+
+
+def test_fetch_search_asks_for_date_order_with_filters_and_rejects_odd_answers(monkeypatch):
+    import httpx
+    calls = []
+    def fake_get(url, params=None, **kw):
+        calls.append((url, params))
+        return httpx.Response(200, json={"hasErrors": True}, request=httpx.Request("GET", url))
+    monkeypatch.undo()                                                  # the real fetch_search, a fake network
+    monkeypatch.setattr(agent.httpx, "get", fake_get)
+    with pytest.raises(ValueError):
+        agent.fetch_search("Mac Mini", {"postcode": "1012AB"}, 30)
+    url, params = calls[0]
+    assert url == "https://www.marktplaats.nl/lrp/api/search"
+    assert params["query"] == "mac mini" and params["offset"] == 30 and params["postcode"] == "1012AB"
+    assert params["sortBy"] == "SORT_INDEX" and params["sortOrder"] == "DECREASING"
 
 
 def test_ranking_failure_leaves_listings_unranked_instead_of_dropping_them(monkeypatch):
@@ -286,7 +436,7 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
         def invoke(self, messages):
             raise RuntimeError("model down")
     monkeypatch.setattr(agent, "ranker", DownRanker())
-    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
     assert result == {"watchId": "w1", "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
@@ -307,7 +457,7 @@ def test_check_query_ranks_watches_in_parallel(monkeypatch):
 
     monkeypatch.setattr(agent, "ranker", SlowRanker())
     started = time.time()
-    results = agent.check_query("mac mini", [{"id": f"w{i}", "seen_ids": []} for i in range(6)])
+    results = agent.check_query("mac mini", [{"id": f"w{i}", "watermark": 0, "seen_ids": []} for i in range(6)])
     assert all(r["ok"] for r in results) and peak[0] > 1
     assert time.time() - started < 0.2 * 6 * 0.6                  # clearly faster than one after another
 
@@ -429,7 +579,7 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     # A readable page that really has no listings is still fine
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page([]))
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
-    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": []}
+    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": [], "newestId": None}
 
 
 def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
@@ -446,7 +596,7 @@ def test_scoring_per_check_is_bounded_and_the_rest_waits_unseen(monkeypatch):
     ranker = CountingRanker()
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(ids))
     monkeypatch.setattr(agent, "ranker", ranker)
-    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": []}])
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
     assert len(result["listings"]) == agent.MAX_RANK_PER_CHECK
     assert result["currentIds"] == ids[:agent.MAX_RANK_PER_CHECK]   # the 5 unscored ones stay unseen: scored next time
 
@@ -457,6 +607,10 @@ def test_check_route_passes_the_first_check_flag_through(client, monkeypatch):
     client.post("/api/internal/check", headers={"X-Cron-Secret": "s3cret"},
                 json={"query": "mac mini", "watches": [{"id": "w1", "seeded": False}, {"id": "w2"}]})
     assert [w["seeded"] for w in seen["w"]] == [False, True]
+    assert [w["watermark"] for w in seen["w"]] == [None, None]          # an older caller doesn't send these
+    client.post("/api/internal/check", headers={"X-Cron-Secret": "s3cret"}, json={"query": "mac mini", "watches": [
+        {"id": "w1", "watermark": 2448176040, "last_checked_at": 1790709591725}]})
+    assert seen["w"][0]["watermark"] == 2448176040 and seen["w"][0]["last_checked_at"] == 1790709591725
 
 
 def test_report_user_section_counts_bands_and_reasons():
