@@ -17,9 +17,15 @@ const clerkLook = (dark) => ({
     borderRadius: "6px", fontFamily: "Geist, system-ui, sans-serif",
     ...(dark
     ? { colorPrimary: "#4fd1bf", colorTextOnPrimaryBackground: "#06201c", colorBackground: "#1e1c1a", colorText: "#ece9e4",
-        colorTextSecondary: "#a9a49c", colorInputBackground: "#252321", colorInputText: "#ece9e4" }
+        colorTextSecondary: "#a9a49c", colorInputBackground: "#252321", colorInputText: "#ece9e4", colorNeutral: "#ece9e4" }
     : { colorPrimary: "#0d6b62", colorTextOnPrimaryBackground: "#ffffff", colorBackground: "#fbfaf7", colorText: "#1b1a18",
-        colorTextSecondary: "#5b5751", colorInputBackground: "#eeebe6", colorInputText: "#1b1a18" }),
+        colorTextSecondary: "#5b5751", colorInputBackground: "#eeebe6", colorInputText: "#1b1a18", colorNeutral: "#1b1a18" }),
+  },
+  // The account menu's items ("Manage account", "Sign out") use their own colour; in dark mode it was dark on dark
+  elements: {
+    userButtonPopoverActionButton: { color: dark ? "#ece9e4" : "#1b1a18" },
+    userButtonPopoverCustomItemButton: { color: dark ? "#ece9e4" : "#1b1a18", opacity: 1 },
+    userButtonPopoverActionButtonIcon: { color: dark ? "#a9a49c" : "#5b5751" },
   },
 });
 

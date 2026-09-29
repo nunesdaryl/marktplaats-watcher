@@ -37,7 +37,7 @@ function DayChart({ title, daily, keys, onDay, onTitle, hideSum }) {
                   title={`${dayLabel(d.day)}: ${keys.map((k) => `${d[k.key]} ${k.name}`).join(", ")}`}
                   aria-label={`${dayLabel(d.day)}: ${keys.map((k) => `${d[k.key]} ${k.name}`).join(", ")}`}>
             {keys.map((k) => d[k.key] > 0 && (
-              <span key={k.key} className={`bar ${k.tone ?? ""}`} style={{ height: `${(d[k.key] / max) * 100}%` }} />
+              <span key={k.key} className={`chart-bar ${k.tone ?? ""}`} style={{ height: `${(d[k.key] / max) * 100}%` }} />
             ))}
           </button>
         ))}
