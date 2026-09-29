@@ -1,5 +1,6 @@
-// The owner dashboard (/admin): usage, the funnel, feedback with screenshots, and health. Only the signed-in user whose
-// e-mail is OWNER_EMAIL gets any data; everyone else gets null. The /admin page itself is public, the data is not.
+// The owner dashboard (/admin): usage, the funnel, feedback with screenshots, and health. Only the owner gets any data:
+// the signed-in account must match BOTH OWNER_CLERK_ID (the Clerk user id) and OWNER_EMAIL. Everyone else, signed in or
+// not, gets null, and the app treats /admin as a page that doesn't exist.
 // MVP scale: each query reads at most a few thousand rows per table (see LIMIT); fine for a beta, not for 100k users.
 import { v } from "convex/values";
 import { query, type QueryCtx } from "./_generated/server";
@@ -10,11 +11,13 @@ import { healthReport } from "./health";
 const DAY = 86_400_000;
 const LIMIT = 5000;
 
-/** True only for the owner (OWNER_EMAIL, compared case-insensitively). */
+/** True only for the owner: the Clerk user id AND the e-mail must both match. Not configured = nobody is the owner. */
 export async function isOwner(ctx: QueryCtx) {
-  const owner = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  const ownerId = process.env.OWNER_CLERK_ID?.trim();
+  const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
   const identity = await ctx.auth.getUserIdentity();
-  return !!owner && !!identity?.email && identity.email.trim().toLowerCase() === owner;
+  if (!ownerId || !ownerEmail || !identity) return false;
+  return identity.subject === ownerId && identity.email?.trim().toLowerCase() === ownerEmail;
 }
 
 export const amOwner = query({ args: {}, handler: async (ctx) => isOwner(ctx) });

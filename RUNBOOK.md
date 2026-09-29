@@ -20,7 +20,7 @@ repo root unless they start with `cd frontend`.
 | "Marktplaats Watcher: all good this week" | Mondays | Heartbeat: silence on a Monday means the digest itself is broken |
 | GitHub "uptime" workflow failed | GitHub e-mail | Site down, API down, or chat accepting requests without login |
 | GitHub "ci" failed | GitHub e-mail | Tests, build, dependency audit or secret scan failed |
-| Owner dashboard | https://marktplaats-watcher.vercel.app/admin/ (signed in as `OWNER_EMAIL`) | Usage, funnel, feedback with screenshots, and the same health summary as the digest |
+| Owner dashboard | https://marktplaats-watcher.vercel.app/admin/ (signed in as the owner) | Usage, funnel, feedback with screenshots, and the same health summary as the digest |
 | Feedback e-mail "Feedback from …" | `OWNER_EMAIL` inbox | Someone used the feedback strip; the screenshot and context are on the dashboard |
 | Logs | Vercel → Logs; Convex dashboard → Logs | JSON lines: `check`, `chat_turn`, `csp_violation` (Vercel); `check_run`, `health_digest`, `checks_paused` (Convex) |
 
@@ -44,7 +44,9 @@ Chat keeps working. The next digest says "Checks are paused".
    cd frontend && npx convex deploy -y
    ```
    Schema changes so far only *add* optional fields and tables, so an older deploy accepts newer data.
-3. Check: `/api/health` returns 200, the chat without a login returns 401, and sign in and send one message.
+3. Check: run the GitHub "uptime" workflow (Actions → uptime → Run workflow). It calls `/api/health` with the owner's
+   key, checks that it's hidden (404) without it, and that the chat refuses requests without a login (401). Then sign
+   in and send one message.
 
 ## 3. OpenAI: cap reached, key revoked, or model gone
 - **Symptoms:**
@@ -104,9 +106,15 @@ feedback (with its screenshots), usage events and the user row. Usage events are
 cron "forget usage events older than 90 days"). Their Clerk account is separate: they delete it under their account menu, or the owner does it in the
 Clerk dashboard → Users.
 
-## 9. Owner dashboard shows "Not available"
-Access is by e-mail: the dashboard only answers the signed-in account whose e-mail equals `OWNER_EMAIL` in Convex
-(`cd frontend && npx convex env get OWNER_EMAIL --prod`). Changing that variable changes who the owner is. Visitor and
+## 9. The owner can't open /admin (it goes to the start page)
+`/admin` exists only for the owner: the signed-in account must match **both** `OWNER_CLERK_ID` (the Clerk user id) and
+`OWNER_EMAIL` in Convex (`cd frontend && npx convex env get OWNER_CLERK_ID --prod`, same for `OWNER_EMAIL`). If either is
+missing or different, nobody gets in, and everyone else, signed in or not, sees no dashboard, no link and no data. The
+dashboard's code is only downloaded after the server confirms the owner.
+
+`/api/health` is owner-only too: it answers 404 unless the request carries `X-Health-Key` equal to `HEALTH_KEY`
+(Vercel env var + GitHub repository secret used by the uptime workflow). To rotate it, generate a new key and pipe it
+into both stores (DEPLOY-VERCEL.md §1), then redeploy. Visitor and
 page-view counts (including signed-out visitors) are in Vercel → project → Analytics; Web Analytics must be enabled
 there once.
 

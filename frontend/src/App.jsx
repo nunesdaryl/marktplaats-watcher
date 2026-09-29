@@ -1,6 +1,6 @@
 import { SignInButton } from "@clerk/clerk-react";
 import { AuthLoading, Authenticated, Unauthenticated, useMutation, useQuery } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import AccountButton from "./components/AccountButton.jsx";
 import BetaBanner from "./components/BetaBanner.jsx";
@@ -23,7 +23,6 @@ import { go, useMediaQuery, useRoute } from "./lib/router.js";
 import { capturePage } from "./lib/screenshot.js";
 import { useTheme } from "./lib/theme.js";
 import { Tracker, track } from "./lib/track.js";
-import AdminView from "./views/AdminView.jsx";
 import AlertsView from "./views/AlertsView.jsx";
 import FeedbackSheet from "./views/FeedbackSheet.jsx";
 import ArchivedView from "./views/ArchivedView.jsx";
@@ -32,6 +31,9 @@ import Onboarding from "./views/Onboarding.jsx";
 import PrivacySheet from "./views/PrivacySheet.jsx";
 import WatchesView from "./views/WatchesView.jsx";
 import WatchView from "./views/WatchView.jsx";
+
+// The owner dashboard's code is only downloaded by the owner (see the /admin branch below)
+const AdminView = lazy(() => import("./views/AdminView.jsx"));
 
 /** Phone: saved chats, opened from the clock button (or ⌘K), with search, date groups and a ••• menu per chat. */
 function HistorySheet({ chats, actions, onClose }) {
@@ -84,7 +86,8 @@ function Workspace() {
   const route = useRoute();
   const desktop = useMediaQuery("(min-width: 900px)");
   const { theme } = useTheme();
-  const isOwner = useQuery(api.admin.amOwner) ?? false;
+  const ownerCheck = useQuery(api.admin.amOwner);   // undefined while loading
+  const isOwner = ownerCheck === true;
   const [capturing, setCapturing] = useState(false);
   const [sheet, setSheet] = useState(null);   // { type: "watch" | "privacy" | "history" | "rename" | "move", ... }
   const [renaming, setRenaming] = useState(null);   // "chat:<id>" | "watch:<id>" while renaming in the sidebar
@@ -120,6 +123,9 @@ function Workspace() {
   // Which pages are used, and in which theme (for the owner dashboard; no ids, no content)
   useEffect(() => { track("page_view", { section: route.section || "chat", value: theme }); }, [route.section, route.id]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  // /admin doesn't exist for anyone but the owner: they're sent to the start page like any unknown address
+  useEffect(() => { if (route.section === "admin" && ownerCheck === false) go("/"); }, [route.section, ownerCheck]);
+
   // Feedback: first a picture of the page as it is now, then the sheet (so the sheet isn't in the picture)
   const openFeedback = async () => {
     if (capturing) return;
@@ -143,7 +149,7 @@ function Workspace() {
   if (route.section === "w") content = <WatchView watch={watch} actions={actions} onEdit={(w) => setSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id })} />;
   else if (route.section === "alerts") content = <AlertsView />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
-  else if (route.section === "admin") content = <AdminView />;
+  else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
   else if (route.section === "watches") content = <WatchesView watches={watches} actions={actions} onNew={() => newWatch()} />;
   else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;
 
@@ -178,7 +184,7 @@ function Workspace() {
 
   const inChat = route.section === "" || route.section === "c";
   const currentChat = chats.find((c) => c._id === route.id);
-  const pageTitle = { w: watch?.title ?? "Watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: "Dashboard" }[route.section];
+  const pageTitle = { w: watch?.title ?? "Watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: isOwner ? "Dashboard" : "" }[route.section];
   return (
     <div className="shell phone">
       <header className="topbar">

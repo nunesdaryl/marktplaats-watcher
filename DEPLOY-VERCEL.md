@@ -12,6 +12,7 @@ chat or the repo.
 | Convex | `cd frontend && npx convex login`, then `npx convex dev --configure new --team <team> --project marktplaats-watcher --dev-deployment cloud --once` | Production URL, printed by `npx convex deploy` |
 | AgentMail | console.agentmail.to → API Keys → create. The inbox is `marktplaats-watcher@agentmail.to`. | `AGENTMAIL_API_KEY` |
 | Cron secret | `openssl rand -hex 32` | `CRON_SECRET` (same value in Vercel and Convex) |
+| Health key | `openssl rand -hex 32`, piped straight into both stores (never pasted): `printf %s "$K" \| gh secret set HEALTH_KEY` and `printf %s "$K" \| npx vercel env add HEALTH_KEY production` | `HEALTH_KEY` (Vercel + the GitHub repository secret the uptime check uses) |
 
 ## 2. Environment variables
 **Vercel** → Project → Settings → Environment Variables (Production):
@@ -21,6 +22,7 @@ chat or the repo.
 | `OPENAI_MODEL` | model name |
 | `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
 | `CRON_SECRET` | the random string |
+| `HEALTH_KEY` | the health key; without it `/api/health` answers 404 to everyone |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
 | `NEXT_PUBLIC_CONVEX_URL` | `https://<prod-deployment>.convex.cloud` (public, used at build time) |
 | `RATE_PER_MINUTE`, `MAX_FETCHES_PER_HOUR` | optional, defaults 10 and 30 |
@@ -34,7 +36,8 @@ chat or the repo.
 | `AGENTMAIL_API_KEY` | your key |
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |
-| `OWNER_EMAIL` | where the daily health digest and feedback messages go; also the only account that can open the dashboard at `/admin` |
+| `OWNER_EMAIL` | where the daily health digest and feedback messages go |
+| `OWNER_CLERK_ID` | the owner's Clerk user id (`user_…`). The dashboard at `/admin` only answers the account matching **both** this and `OWNER_EMAIL`; if either is missing, nobody gets in |
 | `CHECKS_PAUSED` | optional kill switch: `1` stops all scheduled checks (RUNBOOK.md §1) |
 
 In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
@@ -68,7 +71,9 @@ npx vercel redeploy <preview-deployment-url> --target production
 ```
 
 ## 4. Verify after deploying
-- [ ] `/api/health` returns `{"ok":true}`
+- [ ] `/api/health` returns **404** without the key, and `{"ok":true}` with `-H "X-Health-Key: …"` (or just check the
+      GitHub "uptime" workflow, which tests both)
+- [ ] `/admin` signed out shows the landing page; signed in as anyone but the owner it goes to the start page
 - [ ] `curl -X POST .../api/chat -H 'content-type: application/json' -d '{"message":"hi"}'` → **401**
 - [ ] `curl -X POST .../api/internal/check -H 'content-type: application/json' -d '{"query":"x","watches":[{"id":"w"}]}'` → **401**
 - [ ] Sign in, search "Mac mini 16GB under €500", press **Watch this search**, save with "every hour"
@@ -78,7 +83,7 @@ npx vercel redeploy <preview-deployment-url> --target production
 - [ ] A second account can't see the first account's watches
 - [ ] "Delete my data" empties the watches panel
 - [ ] The "Free beta · Give feedback & suggestions" strip opens feedback with a screenshot preview; after sending, it
-      shows on `/admin` (signed in as `OWNER_EMAIL`) with the screenshot
+      shows on `/admin` (signed in as the owner) with the screenshot
 - [ ] The sun/moon button switches the theme and a reload keeps it
 
 ## Routing note

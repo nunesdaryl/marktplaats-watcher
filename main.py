@@ -192,7 +192,15 @@ async def csp_report(http: Request):
     return JSONResponse({}, status_code=204)
 
 
-@app.get("/api/health")
+# Health: only for the owner's uptime check, which sends HEALTH_KEY. Anyone else gets a plain 404, as if the route
+# didn't exist (the owner's own view of health is the /admin dashboard).
+def health_caller(x_health_key: str = Header(default="")):
+    key = os.getenv("HEALTH_KEY", "")
+    if not key or not hmac.compare_digest(x_health_key.encode(), key.encode()):
+        raise HTTPException(404, "Not Found")
+
+
+@app.get("/api/health", dependencies=[Depends(health_caller)])
 def health():
     return {"ok": True}
 

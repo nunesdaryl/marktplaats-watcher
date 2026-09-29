@@ -131,7 +131,7 @@
   <tr><th style="width:20%">Component</th><th style="width:34%">File</th><th>Responsibility</th></tr>
   <tr><td>Chat UI</td><td><code>frontend/src/App.jsx</code>, <code>styles.css</code></td><td>Sends the message and the history;
     shows answers as readable listing cards; only <code>marktplaats.nl</code> links are clickable.</td></tr>
-  <tr><td>API</td><td><code>main.py</code></td><td><code>POST /api/chat</code> and <code>GET /api/health</code>. Validates input size and
+  <tr><td>API</td><td><code>main.py</code></td><td><code>POST /api/chat</code> and <code>GET /api/health</code> (owner key only since 29 Sep). Validates input size and
     roles; rate-limits per IP; always answers with JSON; hides internal errors; serves the built UI in Docker.</td></tr>
   <tr><td>Agent loop</td><td><code>agent.py</code> → <code>chat()</code> (line 154)</td><td>Think, act, stop, repeat: at most
     5 model calls.</td></tr>
@@ -795,8 +795,13 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <tr><td>Owner dashboard</td><td><code>/admin</code>: health (the same report as the daily digest), accounts, active
     people (day, week, 30 days), watches, alerts, 30-day charts, the funnel from sign-up to first alert, feature and
     page breakdowns, phone vs desktop, light vs dark, schedules, would-pay answers, and every feedback message with its
-    screenshot and the ten things the person did just before. The page is public; the data is not: every query checks
-    that the signed-in e-mail equals <code>OWNER_EMAIL</code> and returns nothing otherwise.</td></tr>
+    screenshot and the ten things the person did just before. Owner-only on the server: every query checks that the
+    signed-in account matches both <code>OWNER_CLERK_ID</code> (the Clerk user id) and <code>OWNER_EMAIL</code>, and
+    returns nothing otherwise. For everyone else, signed in or not, <code>/admin</code> behaves like a page that doesn't
+    exist (sent to the start page, no link), and the dashboard's code is only downloaded after the owner check.</td></tr>
+  <tr><td>Health endpoint</td><td><code>/api/health</code> answers only the owner's uptime check, which sends a random
+    <code>HEALTH_KEY</code> (a Vercel secret and a GitHub repository secret, never pasted). Everyone else gets 404. The
+    uptime workflow also checks that it stays hidden without the key.</td></tr>
   <tr><td>Light and dark</td><td>Still follows the device by default. A sun/moon button (top right) overrides it on that
     device; a script in the page head applies the choice before first paint, so there's no flash. "Match device theme"
     in the account menu goes back.</td></tr>

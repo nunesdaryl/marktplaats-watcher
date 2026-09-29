@@ -8,6 +8,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-29T10:00:00Z"));
   process.env.OWNER_EMAIL = "Owner@Example.com";
+  process.env.OWNER_CLERK_ID = "o";
   process.env.AGENTMAIL_API_KEY = "am_test";
   process.env.AGENTMAIL_INBOX_ID = "inbox@test";
 });
@@ -22,8 +23,16 @@ test("only the owner gets dashboard data", async () => {
   expect(await someone.query(api.admin.dashboard, {})).toBeNull();
   expect(await someone.query(api.admin.feedback, {})).toBeNull();
   expect(await owner.query(api.admin.amOwner, {})).toBe(true);
-  delete process.env.OWNER_EMAIL;
+  // The owner's e-mail on another account (or the owner's account with another e-mail) is not the owner
+  const lookalike = t.withIdentity({ subject: "x", email: "owner@example.com" });
+  expect(await lookalike.query(api.admin.amOwner, {})).toBe(false);
+  expect(await lookalike.query(api.admin.dashboard, {})).toBeNull();
+  expect(await t.withIdentity({ subject: "o", email: "someone@example.com" }).query(api.admin.amOwner, {})).toBe(false);
+  delete process.env.OWNER_CLERK_ID;
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);   // not configured: nobody is the owner
+  process.env.OWNER_CLERK_ID = "o";
+  delete process.env.OWNER_EMAIL;
+  expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
 test("the dashboard counts usage, the funnel and feedback with what happened before it", async () => {

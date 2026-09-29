@@ -2,7 +2,6 @@ import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import Icon from "../components/Icon.jsx";
-import { go } from "../lib/router.js";
 
 // Visitors and page views, including people who never signed in, are counted by Vercel Web Analytics
 const VERCEL_ANALYTICS = "https://vercel.com/daryl-nunes-projects/marktplaats-watcher/analytics";
@@ -141,14 +140,7 @@ export default function AdminView() {
   const data = useQuery(api.admin.dashboard, owner ? { days } : "skip");
   const feedback = useQuery(api.admin.feedback, owner ? {} : "skip");
 
-  if (owner === false) {
-    return (
-      <section className="page">
-        <div className="page-head"><h1>Not available</h1><p className="lede">This page is only for the owner of Marktplaats Watcher.</p></div>
-        <button className="button tinted" onClick={() => go("/")}>Back to chat</button>
-      </section>
-    );
-  }
+  if (owner === false) return null;   // App.jsx only mounts this for the owner; the server returns no data to anyone else
   if (!data) return <section className="page"><p className="hint" role="status">Loading the dashboard…</p></section>;
 
   const t = data.totals;

@@ -26,7 +26,7 @@ Convex cron, every 15 min ─► due watches, one request per distinct item
 | file | what it is |
 |---|---|
 | `agent.py` | The search tool, the watch-proposal tools, the chat loop, and the scoring used by scheduled checks. |
-| `main.py` | FastAPI: `POST /api/chat` (login required), `POST /api/internal/check` (Convex only), `GET /api/health`. |
+| `main.py` | FastAPI: `POST /api/chat` (login required), `POST /api/internal/check` (Convex only), `GET /api/health` (owner's uptime check only: needs `HEALTH_KEY`, 404 for everyone else). |
 | `frontend/convex/` | Database schema, watches, the scheduled checker, e-mail, crons, and `schedule.ts` (next-check maths and plain-English wording, shared with the UI). |
 | `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page; desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup; the feedback strip, the theme toggle and the owner dashboard (`/admin`). |
 | `test_agent.py`, `frontend/convex/*.test.ts` | Offline tests (no model, no Marktplaats, no e-mail). |
@@ -77,8 +77,8 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the
   page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;
   `cd frontend && npx convex run --prod feedback:summary` counts the answers and lists the latest messages.
-- **Owner dashboard (`/admin`):** only the signed-in account whose e-mail is `OWNER_EMAIL` sees data (everyone else gets
-  "Not available"). It shows accounts, active people, watches, alerts, daily charts, the sign-up → first-alert funnel,
+- **Owner dashboard (`/admin`):** only the owner's account (its Clerk id `OWNER_CLERK_ID` **and** its e-mail `OWNER_EMAIL`
+  must both match) can open it; for everyone else, signed in or not, it behaves like a page that doesn't exist. It shows accounts, active people, watches, alerts, daily charts, the sign-up → first-alert funnel,
   which features are used (Search now vs Watch it, schedules, phone vs desktop, light vs dark), would-pay answers,
   health, and every feedback message with its screenshot and what the person did just before. Usage events are our
   own (`frontend/convex/events.ts`): feature names only, never what people type, kept 90 days, deleted with "Delete my
@@ -107,7 +107,8 @@ docker run -d --name marktplaats-watcher --env-file .env -p 127.0.0.1:8000:8000 
 # open http://localhost:8000
 ```
 Pick the file that matches the machine: `arm64` for Apple Silicon, `amd64` for Intel Macs, Windows and
-most Linux/cloud servers. The container runs as a non-root user and reports its health at `/api/health`.
+most Linux/cloud servers. The container runs as a non-root user; its health check loads the home page (`/api/health` is reserved for the owner's
+uptime check).
 
 ## Limits
 - The tool reads the first results page only (about 30 listings). A distance filter keeps only listings

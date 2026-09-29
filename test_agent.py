@@ -93,6 +93,17 @@ def client(monkeypatch):
     return c
 
 
+def test_health_is_hidden_without_the_owner_key(client, monkeypatch):
+    monkeypatch.delenv("HEALTH_KEY", raising=False)
+    assert client.get("/api/health").status_code == 404                        # not configured: hidden for everyone
+    monkeypatch.setenv("HEALTH_KEY", "k3y")
+    assert client.get("/api/health").status_code == 404                        # no key
+    assert client.get("/api/health", headers={"X-Health-Key": "wrong"}).status_code == 404
+    signed_in = {"Authorization": f"Bearer {client.token()}"}                   # a login is not enough
+    assert client.get("/api/health", headers=signed_in).status_code == 404
+    assert client.get("/api/health", headers={"X-Health-Key": "k3y"}).json() == {"ok": True}
+
+
 def test_chat_needs_a_valid_login(client, monkeypatch):
     monkeypatch.setattr(client.main, "chat", lambda *a: {"answer": "ok"})
     assert client.post("/api/chat", json={"message": "hi"}).status_code == 401
