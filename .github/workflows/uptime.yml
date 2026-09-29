@@ -11,10 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: API health (owner-only: needs the HEALTH_KEY repository secret; everyone else gets 404)
+      - name: "API health (owner-only, needs the HEALTH_KEY repository secret; everyone else gets 404)"
         env:
           HEALTH_KEY: ${{ secrets.HEALTH_KEY }}
-        run: curl --fail --silent --show-error --max-time 20 -H "X-Health-Key: $HEALTH_KEY" https://marktplaats-watcher.vercel.app/api/health
+        run: |
+          curl --fail --silent --show-error --max-time 20 -H "X-Health-Key: $HEALTH_KEY" https://marktplaats-watcher.vercel.app/api/health
       - name: Health stays hidden from strangers
         run: |
           code=$(curl --silent --max-time 20 -o /dev/null -w "%{http_code}" https://marktplaats-watcher.vercel.app/api/health)
