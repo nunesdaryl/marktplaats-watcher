@@ -137,6 +137,20 @@ test("the first check tells the search service not to score anything", async () 
   expect(group.watches[0].seeded).toBe(false);
 });
 
+test("rebaseline: every live watch takes a new silent first look, nothing is e-mailed for it", async () => {
+  const { t, alice, id } = await seededWatch();
+  const paused = await alice.mutation(api.watches.create, { ...watchArgs, query: "iphone" });
+  await t.run((ctx) => ctx.db.patch(paused, { seeded: true, active: false, nextRunAt: Date.parse("2026-10-01T00:00:00Z") }));
+  expect(await t.mutation(internal.checker.rebaseline, {})).toEqual({ rebaselined: 2 });
+  const [live, stopped] = await t.run(async (ctx) => [await ctx.db.get(id), await ctx.db.get(paused)]);
+  expect(live).toMatchObject({ seeded: false, nextRunAt: Date.now() });            // checked at the next run
+  expect(stopped).toMatchObject({ seeded: false, nextRunAt: Date.parse("2026-10-01T00:00:00Z") });  // still paused
+  fakeServices(() => ["other-1", "other-2"]);                                      // what the corrected search shows
+  await t.action(internal.checker.checkDue, {});
+  expect(await alerts(t)).toHaveLength(0);
+  expect((await t.run((ctx) => ctx.db.get(id)))!.seeded).toBe(true);
+});
+
 // Round 2 of the audit (R1, R2, R3, R7): its reproductions, now expecting the fixed behaviour
 const item400 = { ...listing("old-result"), price_eur: 400 };
 async function macMiniUnder500() {

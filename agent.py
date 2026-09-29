@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Literal
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote_plus, urlsplit
 
 import httpx
 from dotenv import load_dotenv
@@ -139,8 +139,10 @@ def fetch_page(url, capped=True):
 
 
 def search_url(query):
-    # Only the public /q/ search page, which robots.txt allows (never /lrp/api/)
-    return f"https://www.marktplaats.nl/q/{quote(query.strip().lower().replace(' ', '-'))}/"
+    # Only the public /q/ search page, which robots.txt allows (never /lrp/api/). Spaces become "+", as on the site
+    # itself: "mac-mini" searches for the literal word "mac-mini" (29 Sep 2026: 163 results, nearly all shop ads,
+    # instead of 622 for "mac mini")
+    return f"https://www.marktplaats.nl/q/{quote_plus(query.strip().lower())}/"
 
 
 @tool

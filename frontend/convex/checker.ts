@@ -336,6 +336,23 @@ export const checkDue = internalAction({
   },
 });
 
+/** One-off, after a change to what a search returns (29 Sep 2026: "mac mini" was searched as the literal word
+ * "mac-mini"): every live watch takes a new silent first look, so the listings the corrected search shows are
+ * remembered instead of e-mailed as new. `npx convex run --prod checker:rebaseline` */
+export const rebaseline = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    let count = 0;
+    for (const w of await ctx.db.query("watches").collect()) {
+      if (!w.seeded || w.archivedAt !== undefined) continue;
+      await ctx.db.patch(w._id, { seeded: false, ...(w.active ? { nextRunAt: now } : {}) });
+      count++;
+    }
+    return { rebaselined: count };
+  },
+});
+
 /** Retention: forget seen listings, alerts and untouched chats after 30 days. */
 export const purgeOld = internalMutation({
   args: {},

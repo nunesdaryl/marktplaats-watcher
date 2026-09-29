@@ -162,6 +162,13 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
     assert result["listings"][0]["score"] == 7 and result["listings"][0]["reason"] == "fair price"
 
 
+def test_search_url_uses_plus_for_spaces_like_the_site():
+    # "mac-mini" searches for the literal word "mac-mini": 163 results, nearly all shop ads, instead of 622
+    assert agent.search_url("Mac Mini ") == "https://www.marktplaats.nl/q/mac+mini/"
+    assert agent.search_url("iphone 13 pro") == "https://www.marktplaats.nl/q/iphone+13+pro/"
+    assert agent.search_url("fiets/kinder") == "https://www.marktplaats.nl/q/fiets%2Fkinder/"   # stays one path part
+
+
 def test_ranking_failure_leaves_listings_unranked_instead_of_dropping_them(monkeypatch):
     class BrokenRanker:
         def invoke(self, messages):
