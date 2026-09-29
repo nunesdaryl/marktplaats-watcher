@@ -38,6 +38,19 @@ export function go(path) {
   else window.location.assign(url);
 }
 
+/** Props for a real link to an app path: a plain click stays in the app (same tab); Cmd/Ctrl/Shift-click or a
+ * middle click still opens a new tab or window, as people expect from a link. */
+export function linkTo(path, onPlainClick) {
+  return {
+    href: toUrl(path),
+    onClick: (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      (onPlainClick ?? (() => go(path)))();
+    },
+  };
+}
+
 export function useMediaQuery(query) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {

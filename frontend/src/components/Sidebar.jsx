@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { groupByDate } from "../lib/dates.js";
-import { go } from "../lib/router.js";
+import { go, linkTo } from "../lib/router.js";
 import AccountButton from "./AccountButton.jsx";
 import Icon from "./Icon.jsx";
 import InlineRename from "./InlineRename.jsx";
@@ -96,7 +96,10 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
       {/* Logo, search and the main places stay on screen while the list below scrolls (as on Marktplaats) */}
       <div className="sidebar-top">
         <div className="brand">
-          <Logo size={40} /><span className="wordmark">Marktplaats <b>Watcher</b></span>
+          {/* The logo goes home (the start screen), as on Marktplaats */}
+          <a className="home-link" aria-label="Marktplaats Watcher, home" {...linkTo("/")}>
+            <Logo size={40} /><span className="wordmark">Marktplaats <b>Watcher</b></span>
+          </a>
           <button className="icon-button small" onClick={() => window.dispatchEvent(new Event("mw:search"))}
                   aria-label="Search (⌘K)" title="Search (⌘K)"><Icon name="search" size={16} /></button>
         </div>

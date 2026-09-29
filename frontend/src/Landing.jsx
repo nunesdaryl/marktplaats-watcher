@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Logo from "./components/Logo.jsx";
 import { SIGNING_IN_FLAG } from "./lib/boot.js";
+import { linkTo } from "./lib/router.js";
 
 // Remember in this tab that sign-in started, so the page after signing in doesn't flash the landing page (boot.js)
 const signingIn = () => { try { sessionStorage.setItem(SIGNING_IN_FLAG, "1"); } catch {} };
@@ -30,8 +31,12 @@ export default function Landing({ SignIn = Plain }) {
   return (
     <div className="landing">
       <header className="bar">
-        <Logo size={40} />
-        <span className="name wordmark">Marktplaats <b>Watcher</b></span>
+        {/* The logo goes home, as on Marktplaats; this is home, so it scrolls back to the top */}
+        <a className="home-link" aria-label="Marktplaats Watcher, home"
+           {...linkTo("/", () => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }))}>
+          <Logo size={40} />
+          <span className="name wordmark">Marktplaats <b>Watcher</b></span>
+        </a>
         <SignIn mode="modal"><button className="button plain" onClick={signingIn}>Sign in</button></SignIn>
       </header>
 

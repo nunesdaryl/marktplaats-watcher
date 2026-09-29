@@ -547,7 +547,13 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding: 1px 5px; 
   background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid var(--line);
 }
-.landing .bar .name { margin-right: auto; font-weight: 600; }
+.landing .bar .name { font-weight: 600; }
+/* The logo and name are a link home (as on Marktplaats): no link colour or underline */
+.home-link { display: flex; align-items: center; gap: 10px; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--radius); }
+.home-link:hover { text-decoration: none; }
+.landing .bar .home-link { margin-right: auto; }
+.brand .home-link { flex: 1; }
+.topbar .home-link { flex: none; min-width: var(--touch); min-height: var(--touch); justify-content: center; }
 .landing main { width: min(1000px, 100%); margin: 0 auto; padding: clamp(24px, 8vh, 88px) 20px 72px; }
 .landing .sentence { font-size: var(--display); font-weight: 600; line-height: var(--display-lh); letter-spacing: var(--tracking-display); max-width: 20ch; }
 .landing .tag { animation: tag-in 0.45s ease-out; }

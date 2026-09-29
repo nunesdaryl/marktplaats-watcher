@@ -19,7 +19,7 @@ import { useItemActions } from "./lib/actions.js";
 import { SIGNED_IN_FLAG, SIGNING_IN_FLAG } from "./lib/boot.js";
 import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
-import { go, useMediaQuery, useRoute } from "./lib/router.js";
+import { go, useMediaQuery, useRoute, linkTo } from "./lib/router.js";
 import { capturePage } from "./lib/screenshot.js";
 import { useTheme } from "./lib/theme.js";
 import { Tracker, track } from "./lib/track.js";
@@ -198,7 +198,7 @@ function Workspace() {
             : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" /></button>}
         {/* The signature logo stays visible on every phone screen, next to the title */}
         <span className="topbar-title">
-          <Logo size={30} />
+          <a className="home-link" aria-label="Marktplaats Watcher, home" {...linkTo("/")}><Logo size={30} /></a>
           <span className="topbar-text">{inChat ? currentChat?.title ?? "New chat" : pageTitle}</span>
         </span>
         {currentChat && <RowMenu items={actions.chatItems(currentChat)} label="Chat options" />}
