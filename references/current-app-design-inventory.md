@@ -99,6 +99,8 @@ iOS action sheets.
     through and faded).
   - Then 3 steps and the privacy fine print.
   - The header (logo, name, Sign in) is sticky and frosted, so the logo stays on screen while scrolling (29 Sep).
+  - The logo and name link home (30 Sep): on the landing page they scroll back to the top; in the app, the sidebar
+    and phone top-bar logo go to the start screen, in the same tab.
 - **Desktop app (ChatGPT style):** 272px sidebar with brand, search, New chat, Alerts, Pinned, Folders, Watches (green
   dot = active) and chats grouped by date, then Feedback & suggestions and the account row. The top block (brand,
   search, New chat, Alerts, Dashboard) and the account row are pinned; only the list between them scrolls (29 Sep).
