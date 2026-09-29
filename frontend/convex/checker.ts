@@ -14,6 +14,9 @@ const MAX_ALERTS_PER_EMAIL = 5;
 const MAX_WATCHES_PER_REQUEST = 20;          // keeps one request to the Python API well inside its time limit
 const RETRY_MS = 30 * 60_000;                // a failed check is tried again within 30 minutes
 const LEASE_MS = 30 * 60_000;                // a claimed check that never reports back is due again after this
+// A check finishes a little after the run that claimed it, so its next time lands just after the next run starts. A
+// short leeway lets that run take it, instead of an "every 15 minutes" watch waiting 30 (seen on 29 Sep 2026).
+const GRACE_MS = 2 * 60_000;
 const MAX_EMAIL_ATTEMPTS = 4;                // an alert e-mail is tried at most 4 times, 15 minutes apart
 const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_SEEN_SENT = 1000;
@@ -25,7 +28,7 @@ export const claimDue = internalMutation({
   args: { now: v.number(), dryRun: v.optional(v.boolean()) },
   handler: async (ctx, { now, dryRun = false }) => {
     const due = await ctx.db.query("watches")
-      .withIndex("by_active_next", (q) => q.eq("active", true).lte("nextRunAt", now))
+      .withIndex("by_active_next", (q) => q.eq("active", true).lte("nextRunAt", now + GRACE_MS))
       .take(MAX_WATCHES_PER_RUN);
     const byQuery = new Map<string, typeof due>();
     for (const w of due) {

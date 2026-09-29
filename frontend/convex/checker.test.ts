@@ -224,3 +224,14 @@ test("R7: a listing id that appears twice is previewed once, like a real run rec
   const preview = await t.mutation(internal.checker.record, { now: Date.now(), results: [r], dryRun: true });
   expect(preview[0].preview!.alerts).toHaveLength(1);
 });
+
+test("a watch due within 2 minutes is taken by this run, so 'every 15 minutes' doesn't skip a round", async () => {
+  const { t, id } = await seededWatch({ kind: "interval", everyMinutes: 15 });
+  // Its last check finished 40 s after the previous run started: due 40 s after this run starts
+  await t.run((ctx) => ctx.db.patch(id, { nextRunAt: Date.now() + 40_000 }));
+  expect(await t.mutation(internal.checker.claimDue, { now: Date.now() })).toHaveLength(1);
+  // Not something due later than the leeway
+  const { t: t2, id: id2 } = await seededWatch({ kind: "interval", everyMinutes: 15 });
+  await t2.run((ctx) => ctx.db.patch(id2, { nextRunAt: Date.now() + 3 * 60_000 }));
+  expect(await t2.mutation(internal.checker.claimDue, { now: Date.now() })).toEqual([]);
+});
