@@ -231,7 +231,7 @@ concrete fixes.
 ### 3.11 Startup cycle and go-to-market (Day 3)
 | Course rule | Status | Evidence | Recommended fix | Effort · Wave |
 |---|---|---|---|---|
-| Positioning's five answers: ICP, personas, alternative, differentiator, value prop (D3-SU p33) | 🟡 | Parts in `docs/marketing/` and the demo script | One page with all five, in the champion's words | S · 3 |
+| Positioning's five answers: ICP, personas, alternative, differentiator, value prop (D3-SU p33) | 🟡 | All five on one page since 29 Sep: `docs/marketing/positioning-audit-2026-09-29.md` (alternative verified against Marktplaats' own saved search; the landing page now names it) | The same five in the champion's words, from interviews | S · 3 |
 | Commitment over compliments (D3-SU p19–20) | ❌ | "Would you pay" answers only | Ask for a small commitment (a pilot slot, an intro) in the beta | S · 3 |
 | PMF signal: Sean Ellis 40% "very disappointed" (D3-SU p29) | ❌ | Not asked | Add the question to the feedback sheet after two weeks of use | S · 3 |
 | Pricing hypothesis and decision rule (D3-SU p41; D1 p131) | ❌ | None | "€2/month for 10 watches; 5 sign-ups in a week or change the promise" | S · 3 |
