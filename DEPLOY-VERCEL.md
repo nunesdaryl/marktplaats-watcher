@@ -39,7 +39,7 @@ chat or the repo.
 
 In Clerk, add `https://marktplaats-watcher.vercel.app` to the allowed origins / production domain.
 
-**Web Analytics.** Vercel → project → Analytics → Enable (once, free on Hobby). The app already includes the
+**Web Analytics.** Vercel → project → Analytics → Enable (once, free on Hobby; enabled on 29 Sep 2026). The app already includes the
 `@vercel/analytics` component, which counts page visits without cookies and strips query strings (chat and watch ids);
 it loads from the site's own origin, so the security policy needs no change.
 
@@ -59,6 +59,14 @@ git push origin main                  # 2. Vercel builds the Next.js static expo
 Convex is deployed from a logged-in CLI on purpose: Vercel then never holds a Convex deploy key (which can
 replace every backend function). Deploy Convex **before** pushing a UI that depends on new functions.
 
+**Check that a Production deployment exists for the commit.** On 29 Sep, pushing `main` right after the same commit
+on `wave1-demo-ready` gave only a Preview build, so production kept the old version. Check with
+`gh api "repos/{owner}/{repo}/deployments?sha=$(git rev-parse HEAD)&environment=Production"` (filter on Production: the
+Preview has the same commit). If it's missing, rebuild that commit for production with the production settings:
+```bash
+npx vercel redeploy <preview-deployment-url> --target production
+```
+
 ## 4. Verify after deploying
 - [ ] `/api/health` returns `{"ok":true}`
 - [ ] `curl -X POST .../api/chat -H 'content-type: application/json' -d '{"message":"hi"}'` → **401**
@@ -69,6 +77,9 @@ replace every backend function). Deploy Convex **before** pushing a UI that depe
 - [ ] A new matching listing arrives by e-mail from `marktplaats-watcher@agentmail.to`
 - [ ] A second account can't see the first account's watches
 - [ ] "Delete my data" empties the watches panel
+- [ ] The "Free beta · Give feedback & suggestions" strip opens feedback with a screenshot preview; after sending, it
+      shows on `/admin` (signed in as `OWNER_EMAIL`) with the screenshot
+- [ ] The sun/moon button switches the theme and a reload keeps it
 
 ## Routing note
 Vercel's **FastAPI preset** serves the `app` in `main.py` directly, with the original request paths.

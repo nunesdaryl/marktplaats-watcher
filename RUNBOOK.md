@@ -36,7 +36,8 @@ Chat keeps working. The next digest says "Checks are paused".
 
 ## 2. Roll back a bad release
 1. **UI or API:** Vercel dashboard → Deployments → the last good one → **Promote to Production**. This takes seconds.
-   Or revert the commit on `main` and push.
+   Or revert the commit on `main` and push. After any deploy, check that it really went to Production (not only
+   Preview); DEPLOY-VERCEL.md §3 has the check and the fix (`npx vercel redeploy <url> --target production`).
 2. **Convex functions or schema:**
    ```bash
    git checkout <last-good-commit> -- frontend/convex

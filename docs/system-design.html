@@ -773,8 +773,8 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <!-- ============================ 15 FEEDBACK AND USAGE ============================ -->
 <section>
 <h2>15. Listening to users: feedback, screenshots and the owner dashboard</h2>
-<p>Added on 29 September, so that a beta tester can report a problem the moment they hit it, and the owner can see how
-  the app is really used before deciding what to change.</p>
+<p>Added and deployed on 29 September, so that a beta tester can report a problem the moment they hit it, and the owner
+  can see how the app is really used before deciding what to change.</p>
 <table>
   <tr><th style="width:26%">Part</th><th>How it works</th></tr>
   <tr><td>Feedback strip</td><td>A slim "Free beta · Give feedback &amp; suggestions" bar on top of every signed-in page,
@@ -801,6 +801,10 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     device; a script in the page head applies the choice before first paint, so there's no flash. "Match device theme"
     in the account menu goes back.</td></tr>
 </table>
+<p class="small">Deploy lesson from the same day: pushing <code>main</code> right after the same commit on the working branch
+  produced only a Preview build, so production silently kept the old version. The deploy check now filters on the
+  Production environment, and <code>vercel redeploy &lt;preview&gt; --target production</code> rebuilds the commit with the
+  production settings (DEPLOY-VERCEL.md §3).</p>
 <div class="pattern"><b>Pattern:</b> collect product data you'd be comfortable showing the user. Feature names, not
   content; a screenshot they can see and untick; a retention limit and a delete button that covers it all; and the
   owner check on the server, not in the page.</div>
