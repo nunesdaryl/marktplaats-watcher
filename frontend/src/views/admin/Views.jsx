@@ -8,10 +8,11 @@ import ListingCard from "../../components/ListingCard.jsx";
 import RichText from "../../lib/text.jsx";
 import { ConfirmButton } from "../WatchView.jsx";
 import { FeedbackItem } from "./Overview.jsx";
-import { DAY, dayLabel, euro, label, when } from "./nav.js";
+import { DAY, dateFilters, dayLabel, euro, label, when } from "./nav.js";
+import FilterBar from "./FilterBar.jsx";
 import Table from "./Table.jsx";
 
-const num = (v) => (v === undefined || v === null || v === "" ? undefined : Number(v));
+const num = (v) => (v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v));
 const STAGES = { signed_up: "Signed up", setup: "Finished setup", chatted: "Chatted", watch: "Saved a watch", alert: "Got an alert" };
 const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
 
@@ -81,77 +82,70 @@ const eventCols = (withPerson = true) => [
 ];
 
 // ---------- Lists ----------
-export function Users({ params, open }) {
-  const rows = useQuery(api.admin.users, { stage: params.stage, stuck: params.stuck, activeSince: num(params.activeSince) }) ?? undefined;
-  return <Table name="accounts" columns={userCols} rows={rows ?? undefined} searchKeys={["email"]}
+const watchStatusOptions = { key: "status", label: "Status", options: [["active", "Active"], ["paused", "Paused"], ["archived", "Archived"]] };
+const emailStatusOptions = { key: "emailStatus", label: "E-mail", options: [["pending", "Pending"], ["sent", "Sent"], ["failed", "Failed"], ["dry-run", "Dry run"]] };
+function ListTable({ params, update, filter, ...table }) {
+  return <div className="stack"><FilterBar params={params} update={update} {...filter} />
+    <Table {...table} params={params} update={update} /></div>;
+}
+
+export function Users({ params, open, update }) {
+  const rows = useQuery(api.admin.users, { stage: params.stage, stuck: params.stuck, activeSince: num(params.activeSince), userId: params.userId, ...dateFilters(params) }) ?? undefined;
+  return <ListTable params={params} update={update} filter={{ status: { key: "stage", label: "Stage", options: Object.entries(STAGES) } }} name="accounts" columns={userCols} rows={rows ?? undefined} searchKeys={["email"]}
                 onOpen={(u) => open({ view: "user", title: u.email, params: { id: u._id } })} empty="No accounts match." />;
 }
 
-export function Watches({ params, open }) {
-  const [status, setStatus] = useState(params.status ?? "");
-  const rows = useQuery(api.admin.watches, { status: status || undefined, scheduleKey: params.scheduleKey, notify: params.notify,
-    userId: params.userId, createdSince: num(params.createdSince), createdUntil: num(params.createdUntil) });
-  const chips = (
-    <div className="chips" role="group" aria-label="Status">
-      {["", "active", "paused", "archived"].map((s) => (
-        <button key={s} className={`chip ${status === s ? "selected" : ""}`} aria-pressed={status === s} onClick={() => setStatus(s)}>{s || "all"}</button>
-      ))}
-    </div>
-  );
-  return <Table name="watches" columns={watchCols()} rows={rows ?? undefined} searchKeys={["title", "query", "email", "postcode"]}
-                chips={chips} onOpen={(w) => open({ view: "watch", title: w.title, params: { id: w._id } })} empty="No watches match." />;
+export function Watches({ params, open, update }) {
+  const rows = useQuery(api.admin.watches, { status: params.status, scheduleKey: params.scheduleKey, notify: params.notify,
+    userId: params.userId, watchId: params.watchId, createdSince: num(params.createdSince), createdUntil: num(params.createdUntil), behind: params.behind === "yes" || undefined, ...dateFilters(params) });
+  return <ListTable params={params} update={update} filter={{ watch: true, status: watchStatusOptions }}
+    name="watches" columns={watchCols()} rows={rows ?? undefined} searchKeys={["title", "query", "mustInclude", "email", "postcode"]}
+    onOpen={(w) => open({ view: "watch", title: w.title, params: { id: w._id } })} empty="No watches match." />;
 }
 
-export function Alerts({ params, open }) {
-  const rows = useQuery(api.admin.alerts, { since: num(params.since), until: num(params.until), minScore: num(params.minScore),
+export function Alerts({ params, open, update }) {
+  const rows = useQuery(api.admin.alerts, { ...dateFilters(params), minScore: num(params.minScore),
     emailStatus: params.emailStatus, watchId: params.watchId, userId: params.userId });
-  return <Table name="alerts" columns={alertCols()} rows={rows ?? undefined} searchKeys={["title", "watch", "email", "city"]}
+  return <ListTable params={params} update={update} filter={{ watch: true, score: true, status: emailStatusOptions }} name="alerts" columns={alertCols()} rows={rows ?? undefined} searchKeys={["title", "listingId", "watch", "email", "city"]}
                 onOpen={(a) => open({ view: "alert", title: a.title, params: { id: a._id } })} empty="No alerts in this range." />;
 }
 
-export function Chats({ params, open }) {
-  const rows = useQuery(api.admin.chats, { userId: params.userId, since: num(params.since), until: num(params.until) });
-  return <Table name="chats" columns={chatCols()} rows={rows ?? undefined} searchKeys={["title", "email"]}
+export function Chats({ params, open, update }) {
+  const rows = useQuery(api.admin.chats, { userId: params.userId, status: params.status, ...dateFilters(params) });
+  return <ListTable params={params} update={update} filter={{ status: { key: "status", label: "Status", options: [["active", "Active"], ["archived", "Archived"], ["pinned", "Pinned"]] } }} name="chats" columns={chatCols()} rows={rows ?? undefined} searchKeys={["title", "email"]}
                 onOpen={(c) => open({ view: "chat", title: c.title, params: { id: c._id } })} empty="No saved chats." />;
 }
 
-export function Events({ params, open }) {
+export function Events({ params, open, update }) {
   const rows = useQuery(api.admin.events, { name: params.name, section: params.section, device: params.device, mode: params.mode,
-    value: params.value, userId: params.userId, since: num(params.since), until: num(params.until) });
-  return <Table name="activity" columns={eventCols()} rows={rows ?? undefined} searchKeys={["email", "name"]}
+    value: params.value, userId: params.userId, ...dateFilters(params) });
+  return <ListTable params={params} update={update} filter={{ status: { key: "name", label: "Kind", options: [
+    ["page_view", "Page view"], ["chat_sent", "Chat sent"], ["watch_saved", "Watch saved"], ["alert_opened", "Alert opened"],
+    ["listing_opened", "Listing opened"], ["feedback_sent", "Feedback sent"], ["theme_changed", "Theme changed"],
+  ] } }} name="activity" columns={eventCols()} rows={rows ?? undefined} searchKeys={["email", "name", "device", eventDetails]}
                 onOpen={(e) => open({ view: "user", title: e.email, params: { id: e.userId } })} empty="No activity recorded here yet." />;
 }
 
-export function Feedback({ params, open }) {
-  const [handled, setHandled] = useState(params.handled ?? "");
+export function Feedback({ params, open, update }) {
   const rows = useQuery(api.admin.feedback, { limit: 200, wouldPay: params.wouldPay, userId: params.userId,
-    handled: handled === "" ? undefined : handled === "yes" });
+    handled: params.handled ? params.handled === "yes" : undefined, search: params.q, ...dateFilters(params) });
   const setDone = useMutation(api.admin.setFeedbackHandled);
-  return (
-    <div className="stack">
-      <div className="chips" role="group" aria-label="Handled">
-        {[["", "all"], ["no", "to do"], ["yes", "handled"]].map(([v, t]) => (
-          <button key={v} className={`chip ${handled === v ? "selected" : ""}`} aria-pressed={handled === v} onClick={() => setHandled(v)}>{t}</button>
-        ))}
-      </div>
-      {rows === undefined ? <p className="hint">Loading…</p> : rows.length === 0 ? <p className="hint">No feedback here.</p> : (
-        <ul className="fb-list">
-          {rows.map((f) => (
-            <FeedbackItem key={f._id} f={f}
-              onPerson={() => open({ view: "user", title: f.email, params: { id: f.userId } })}
-              action={<button className={`button ${f.handledAt ? "" : "tinted"}`}
-                              onClick={() => setDone({ id: f._id, handled: !f.handledAt })}>
-                        <Icon name={f.handledAt ? "restore" : "compose"} size={15} />{f.handledAt ? `Handled ${when(f.handledAt)} · reopen` : "Mark handled"}
-                      </button>} />
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+  const shown = rows;
+  return <div className="stack">
+    <FilterBar params={params} update={update} status={{ key: "handled", label: "Status", options: [["no", "To do"], ["yes", "Handled"]] }} />
+    {shown === undefined ? <p className="hint">Loading…</p> : shown.length === 0 ? <p className="hint">No feedback here.</p> : (
+      <ul className="fb-list">{shown.map((f) => <FeedbackItem key={f._id} f={f}
+        onPerson={() => open({ view: "user", title: f.email, params: { id: f.userId } })}
+        action={<button className={`button ${f.handledAt ? "" : "tinted"}`}
+          onClick={() => setDone({ id: f._id, handled: !f.handledAt })}>
+          <Icon name={f.handledAt ? "restore" : "compose"} size={15} />{f.handledAt ? `Handled ${when(f.handledAt)} · reopen` : "Mark handled"}
+        </button>} />)}</ul>
+    )}
+  </div>;
 }
 
-export function Ratings({ params, open }) {
-  const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId });
+export function Ratings({ params, open, update }) {
+  const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId, watchId: params.watchId, minScore: num(params.minScore), ...dateFilters(params) });
   const cols = [
     { key: "at", label: "When", render: (r) => when(r.at), mono: true },
     { key: "verdict", label: "Said", render: (r) => (r.verdict === "good" ? "Good match" : "Not right"), sort: (r) => r.verdict },
@@ -163,8 +157,56 @@ export function Ratings({ params, open }) {
     { key: "email", label: "Account", render: (r) => <Person email={r.email} /> },
     { key: "source", label: "From" },
   ];
-  return <Table name="ratings" columns={cols} rows={rows ?? undefined} searchKeys={["title", "note", "email", "reason"]}
+  return <ListTable params={params} update={update} filter={{ watch: true, score: true, status: { key: "verdict", label: "Verdict", options: [["good", "Good match"], ["not_right", "Not right"]] } }} name="ratings" columns={cols} rows={rows ?? undefined} searchKeys={["title", "note", "email", "reason"]}
                 onOpen={(r) => open({ view: "alert", title: r.title, params: { id: r.alertId } })} empty="No ratings here yet." />;
+}
+
+export function Runs({ params, open, update }) {
+  const rows = useQuery(api.admin.runs, { ...dateFilters(params), requestId: params.requestId, failed: params.status === "failed" ? true : undefined });
+  return <ListTable params={params} update={update} filter={{ user: false, status: { key: "status", label: "Status", options: [["failed", "Failed"]] } }}
+    name="runs" rows={rows ?? undefined} searchKeys={["requestId"]} columns={[
+      { key: "at", label: "When", render: (r) => when(r.at) }, { key: "requestId", label: "Request ID" },
+      { key: "checked", label: "Checked" }, { key: "failed", label: "Failed" },
+      { key: "emails", label: "E-mails" }, { key: "emailFailures", label: "E-mail failures" },
+      { key: "paused", label: "Paused", render: (r) => r.paused ? "Yes" : "No" },
+    ]} onOpen={(r) => open({ view: "run", title: r.requestId ?? "Run", params: { id: r._id } })} />;
+}
+
+export function Errors({ params, open, update }) {
+  const rows = useQuery(api.admin.errors, { ...dateFilters(params), kind: params.kind, requestId: params.requestId });
+  return <ListTable params={params} update={update} filter={{ user: false, status: { key: "kind", label: "Kind", options: [["chat", "Chat"], ["check", "Check"]] } }}
+    name="errors" rows={rows ?? undefined} searchKeys={["requestId", "message", "kind"]} columns={[
+      { key: "at", label: "When", render: (r) => when(r.at) }, { key: "kind", label: "Kind" },
+      { key: "requestId", label: "Request ID" }, { key: "message", label: "Message" },
+    ]} onOpen={(r) => open({ view: "error", title: r.requestId, params: { id: r._id } })} />;
+}
+
+export function Audits({ params, open, update }) {
+  const rows = useQuery(api.admin.audits, { ...dateFilters(params), userId: params.userId, watchId: params.watchId,
+    kind: params.kind, minScore: num(params.minScore), requestId: params.requestId });
+  return <ListTable params={params} update={update} filter={{ watch: true, score: true,
+    status: { key: "kind", label: "Kind", options: [["handled", "Handled"], ["never_read", "Never read"], ["rescored", "Rescored"], ["never_scored", "Never scored"]] } }}
+    name="delivery-audit" rows={rows ?? undefined} searchKeys={["title", "listingId", "requestId", "watch", "email"]} columns={[
+      { key: "at", label: "When", render: (r) => when(r.at) }, { key: "title", label: "Listing", render: (r) => <a href={r.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{r.title}</a> },
+      { key: "score", label: "Score" }, { key: "kind", label: "Kind" }, { key: "watch", label: "Watch" },
+      { key: "email", label: "Account" }, { key: "requestId", label: "Request ID" },
+    ]} onOpen={(r) => open({ view: "watch", title: r.watch, params: { id: r.watchId } })} />;
+}
+
+export function CatchUps({ params, open, update }) {
+  const rows = useQuery(api.admin.alerts, { ...dateFilters(params), userId: params.userId, watchId: params.watchId,
+    minScore: num(params.minScore), emailStatus: params.emailStatus, catchUp: true });
+  return <ListTable params={params} update={update} filter={{ watch: true, score: true, status: emailStatusOptions }}
+    name="catch-ups" columns={alertCols()} rows={rows ?? undefined} searchKeys={["title", "listingId", "watch", "email"]}
+    onOpen={(a) => open({ view: "alert", title: a.title, params: { id: a._id } })} />;
+}
+
+export function Operation({ params, view }) {
+  const row = useQuery(api.admin.operation, view === "run" ? { runId: params.id } : { errorId: params.id });
+  if (row === undefined) return <p className="hint">Loading…</p>;
+  if (!row) return <p className="hint">Record not found.</p>;
+  return <dl className="facts">{Object.entries(row).filter(([key]) => !key.startsWith("_")).map(([key, value]) =>
+    <div key={key}><dt>{key}</dt><dd>{key === "at" ? when(value) : String(value ?? "–")}</dd></div>)}</dl>;
 }
 
 // ---------- Records ----------
@@ -321,4 +363,5 @@ export function Day({ params, open }) {
 }
 
 export const VIEWS = { users: Users, user: User, watches: Watches, watch: Watch, alerts: Alerts, alert: Alert, chats: Chats,
-  chat: Chat, events: Events, feedback: Feedback, day: Day, ratings: Ratings };
+  chat: Chat, events: Events, feedback: Feedback, day: Day, ratings: Ratings, runs: Runs, errors: Errors,
+  audits: Audits, catchups: CatchUps, run: Operation, error: Operation };

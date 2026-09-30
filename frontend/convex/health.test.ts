@@ -134,3 +134,25 @@ test("chat and check errors reach the digest, dashboard, and retention purge", a
   delete process.env.API_TO_CONVEX_SECRET;
   delete process.env.OWNER_CLERK_ID;
 });
+
+test("delivery audit headlines use matches and watches for plural counts", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const ids: import("./_generated/dataModel").Id<"watches">[] = [];
+  for (let i = 0; i < 5; i++) ids.push(await alice.mutation(api.watches.create,
+    { query: `bike ${i}`, schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" }));
+  await t.run(async (ctx) => {
+    for (let i = 0; i < ids.length; i++) {
+      const watch = await ctx.db.get(ids[i]);
+      const misses = Array.from({ length: i === 0 ? 7 : 6 }, (_, j) => ({
+        listingId: `${i}-${j}`, title: "Bike", url: "https://example.com", score: 8, kind: "never_read" as const,
+      }));
+      await ctx.db.insert("audits", { at: now, watchId: ids[i], userId: watch!.userId, requestId: `audit-${i}`,
+        ok: false, read: 0, scored: 0, missCount: misses.length, misses });
+    }
+  });
+  const report = await t.query(internal.health.report, { now });
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.headline).toBe("31 missed matches on 5 watches");
+});

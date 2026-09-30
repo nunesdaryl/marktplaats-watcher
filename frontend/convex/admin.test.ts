@@ -160,3 +160,45 @@ test("owner actions: pausing from the dashboard works like pausing in the app; f
   expect((await owner.query(api.admin.feedback, { handled: false }))!).toHaveLength(0);
   expect((await owner.query(api.admin.feedback, { handled: true }))![0].handledAt).toBe(Date.now());
 });
+
+test("owner lists filter operational records, catch-ups, and existing records by user and date", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const other = t.withIdentity({ subject: "x", email: "x@example.com" });
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
+  const aliceId = await alice.mutation(api.users.store, {});
+  const bobId = await bob.mutation(api.users.store, {});
+  const aliceWatch = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const bobWatch = await bob.mutation(api.watches.create, { query: "car", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const now = Date.now();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("runs", { at: now, checked: 2, failed: 0, emails: 1, emailFailures: 0, requestId: "run-new" });
+    await ctx.db.insert("runs", { at: now - 1000, checked: 1, failed: 1, emails: 0, emailFailures: 0, requestId: "run-old" });
+    await ctx.db.insert("errors", { at: now, kind: "chat", requestId: "error-new", message: "new" });
+    await ctx.db.insert("errors", { at: now - 1000, kind: "check", requestId: "error-old", message: "old" });
+    for (const [userId, watchId, at, title, catchUp] of [
+      [aliceId, aliceWatch, now, "Alice bike", true], [bobId, bobWatch, now - 1000, "Bob car", false],
+    ] as const) {
+      await ctx.db.insert("alerts", { userId, watchId, listingId: title, title, url: "https://example.com", score: 8,
+        reason: "match", channel: "email", emailStatus: "sent", catchUp, createdAt: at });
+      await ctx.db.insert("audits", { at, userId, watchId, requestId: title, ok: false, read: 1, scored: 1, missCount: 1,
+        misses: [{ listingId: title, title, url: "https://example.com", score: 8, kind: "never_read" }] });
+      await ctx.db.insert("feedback", { userId, message: title, createdAt: at });
+    }
+  });
+  for (const fn of [api.admin.runs, api.admin.errors, api.admin.audits])
+    expect(await other.query(fn as any, {})).toBeNull();
+  expect(await other.query(api.admin.search, { text: "bike" })).toBeNull();
+  expect(await other.query(api.admin.operation, {})).toBeNull();
+  expect((await owner.query(api.admin.runs, { since: now }))?.map((r) => r.requestId)).toEqual(["run-new"]);
+  expect((await owner.query(api.admin.errors, { since: now, kind: "chat" }))?.map((r) => r.requestId)).toEqual(["error-new"]);
+  expect((await owner.query(api.admin.audits, { since: now, userId: aliceId }))?.map((r) => r.title)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.audits, { userId: bobId }))?.map((r) => r.title)).toEqual(["Bob car"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: aliceId, since: now }))?.map((r) => r.title)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: bobId }))?.length).toBe(0);
+  expect((await owner.query(api.admin.users, { userId: aliceId, since: now }))?.map((r) => r.email)).toEqual(["alice@example.com"]);
+  expect((await owner.query(api.admin.watches, { userId: bobId, since: now }))?.map((r) => r.query)).toEqual(["car"]);
+  expect((await owner.query(api.admin.feedback, { userId: aliceId, since: now, search: "bike" }))?.map((r) => r.message)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.search, { text: "error-new" }))?.[0]).toMatchObject({ view: "error", title: "error-new" });
+});

@@ -67,7 +67,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string };
   type Issue = { kind: string; severity: "high" | "medium" | "low"; headline: string; count: number; items: Item[] };
   const issues: Issue[] = [];
-  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : word === "missed match" || word === "watch" ? "es" : "s"}`;
   if (errors.length >= 5) issues.push({ kind: "errors", severity: "high", headline: plural(errors.length, "error"), count: errors.length,
     items: errors.map((e) => ({ label: `${e.kind} error: ${e.message}`, requestId: e.requestId })) });
   if (!lastRun || now - lastRun.at > STUCK_AFTER) issues.push({ kind: "scheduler_stuck", severity: "high", headline: "Scheduler hasn't run", count: 1,
