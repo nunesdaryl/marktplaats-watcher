@@ -664,7 +664,7 @@ def check_query(query, watches, now=None):
 def audit_watch(w, now=None):
     """Compare the last day's eligible listings with what this watch handled and alerted."""
     result = {"watchId": w.get("id", ""), "ok": True, "read": 0, "candidates": 0,
-              "scored": 0, "misses": [], "missCount": 0}
+              "scored": 0, "unscored": 0, "misses": [], "missCount": 0}
     try:
         now = now or datetime.now(AMSTERDAM)
         today = now.astimezone(AMSTERDAM).date()
@@ -673,7 +673,7 @@ def audit_watch(w, now=None):
             home = postcode_location(w["postcode"].replace(" ", "").upper())
             if home is None:
                 raise ValueError("The watch's postcode could not be found.")
-        raw = read_since(w["query"], search_filters(w), 1, today)
+        raw, _ = read_since(w["query"], search_filters(w), 1, today)
         eligible = [item for item in raw if item.get("priorityProduct", "NONE") == "NONE"
                     and (age := days_old(item.get("date"), today)) is not None and 0 <= age <= 1]
         listings, _ = parse_listings(eligible, w.get("max_price_eur"), home,
@@ -681,10 +681,13 @@ def audit_watch(w, now=None):
                                      w.get("must_include"), limit=None)
         result["read"] = len(listings)
         seen, alerted = set(w.get("seen_ids") or []), set(w.get("alerted_ids") or [])
+        baseline = set(w.get("baseline_ids") or [])
         last = w.get("last_read_at")
         last_day = datetime.fromtimestamp(last / 1000, AMSTERDAM).date() if last else None
-        handled = [item for item in listings if item["id"] and item["id"] in seen and item["id"] not in alerted]
-        never_read = [item for item in listings if item["id"] and item["id"] not in seen and last_day
+        handled = [item for item in listings if item["id"] and item["id"] in seen
+                   and item["id"] not in alerted and item["id"] not in baseline]
+        never_read = [item for item in listings if item["id"] and item["id"] not in seen
+                      and item["id"] not in baseline and last_day
                       and days_old(item.get("date"), today) > (today - last_day).days]
         candidates = [(item, "handled") for item in handled] + [(item, "never_read") for item in never_read]
         result["candidates"] = len(candidates)
@@ -692,15 +695,17 @@ def audit_watch(w, now=None):
         if chosen:
             ranked = rank_listings(w.get("description") or w["query"],
                                    [item for item, _ in chosen], raise_on_failure=True)
-            result["scored"] = len(ranked)
-            if len(ranked) != len(chosen) or any(item.get("score") is None for item in ranked):
-                raise ValueError("The AI did not score every candidate.")
+            if len(ranked) != len(chosen):
+                raise ValueError("The AI did not return every candidate.")
+            result["unscored"] = sum(item.get("score") is None for item in ranked)
+            result["scored"] = len(ranked) - result["unscored"]
             threshold = {"great": 8, "good": 6, "all": 10}.get(w.get("notify"), 10) + 1
             misses = [{"id": item["id"], "title": item["title"], "url": item["url"],
                        "score": item["score"], "kind": kind}
-                      for item, (_, kind) in zip(ranked, chosen) if item["score"] >= threshold]
+                      for item, (_, kind) in zip(ranked, chosen)
+                      if item.get("score") is not None and item["score"] >= threshold]
             result["missCount"] = len(misses)
-            result["misses"] = misses[:5]
+            result["misses"] = sorted(misses, key=lambda item: item["score"], reverse=True)[:5]
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"

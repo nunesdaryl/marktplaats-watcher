@@ -144,7 +144,8 @@ export const record = internalMutation({
       const watermark = typeof r.newestId === "number"
         ? (watch.seeded && watch.watermark !== undefined ? Math.max(watch.watermark, r.newestId) : r.newestId)
         : r.newestId === null ? watch.watermark ?? 0 : watch.watermark;
-      await ctx.db.patch(watch._id, { seeded: true, watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
+      await ctx.db.patch(watch._id, { seeded: true, ...(!watch.seeded ? { seededAt: now } : {}),
+        watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
         backlog: r.waiting || undefined, coverageCapped: r.capped || undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);

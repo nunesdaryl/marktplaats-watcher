@@ -263,6 +263,7 @@ class AuditWatch(CheckWatch):
     notify: Literal["great", "good", "all"]
     alerted_ids: list[str] = Field(default=[])
     seen_ids: list[str] = Field(default=[])
+    baseline_ids: list[str] = Field(default=[])
     last_read_at: int | None = Field(default=None, ge=0)
 
 

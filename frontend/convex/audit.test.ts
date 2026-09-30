@@ -49,6 +49,36 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     latestMisses: [{ listingId: "m1", url: "https://www.marktplaats.nl/v/m1" }] });
 });
 
+test("audit groups send only listings created near the first look as baseline", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const id = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const first = Date.now();
+  await t.run(async (ctx) => {
+    await ctx.db.patch(id, { seeded: true, seededAt: first, lastReadAt: first });
+    await ctx.db.insert("seenListings", { watchId: id, listingId: "baseline", lastSeenAt: first });
+  });
+  vi.setSystemTime(first + 3 * 60_000);
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "later", lastSeenAt: Date.now() }));
+  const groups = await t.query(internal.audit.groups, { now: Date.now() });
+  expect(groups[0].watches[0]).toMatchObject({ seen_ids: ["later", "baseline"], baseline_ids: ["baseline"] });
+  await t.run((ctx) => ctx.db.patch(id, { seededAt: undefined }));
+  const withoutTime = await t.query(internal.audit.groups, { now: Date.now() });
+  expect(withoutTime[0].watches[0].baseline_ids).toEqual([]);
+});
+
+test("audit records unscored candidates without failing the watch", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const id = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.mutation(internal.audit.record, { at: Date.now(), requestId: "audit-unscored.0", results: [
+    { watchId: id, ok: true, read: 1, candidates: 1, scored: 0, unscored: 1, missCount: 0, misses: [] },
+  ] });
+  expect((await t.run((ctx) => ctx.db.query("audits").collect()))[0]).toMatchObject({ ok: true, unscored: 1 });
+});
+
 test("failed audit is a problem and audit rows expire after 30 days", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });

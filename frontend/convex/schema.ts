@@ -124,6 +124,7 @@ export default defineSchema({
     ok: v.boolean(),
     read: v.number(),
     scored: v.number(),
+    unscored: v.optional(v.number()),
     missCount: v.number(),
     misses: v.array(v.object({
       listingId: v.string(), title: v.string(), url: v.string(), score: v.number(),
@@ -174,6 +175,7 @@ export default defineSchema({
     notify: notifyValidator,
     active: v.boolean(),
     seeded: v.boolean(),            // false until the first check has recorded what is already listed
+    seededAt: v.optional(v.number()),
     watermark: v.optional(v.number()),   // newest Marktplaats listing number handled: only newer ones are new
     lastReadAt: v.optional(v.number()),  // last check that read Marktplaats: the next one reads from that day on
     nextRunAt: v.number(),
