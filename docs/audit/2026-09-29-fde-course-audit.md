@@ -27,8 +27,9 @@ on-device checks.
 **Status, 30 September (evening).** Wave 1 was pulled forward and all 15 of its factory issues (MW-1 to MW-13, MW-15, MW-16) are built, reviewed
 and live, except the parts that need Daryl (§5). That closes the harness-hardening group (tools never raise, token
 and per-user caps, request ids with errors in the digest) and most of the evaluation group (human-corrected labels,
-failure categories, prompt versions, a weekly CI run that waits for its key). The scorecard below is the 29 September
-snapshot and was not re-scored.
+failure categories, prompt versions, a weekly CI run that waits for its key). Seen working in production the same evening
+(a live chat counted and saved by the server; scheduled checks with 0 failures). The scorecard below is the
+29 September snapshot and was not re-scored.
 
 ### Scorecard
 

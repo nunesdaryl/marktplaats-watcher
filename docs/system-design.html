@@ -1064,6 +1064,10 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <tr><td>MW-9</td><td>ADRs 0001–0013 in <code>docs/adr/</code> and <code>docs/nfr.md</code>; p95 and availability honestly
     "not measured yet".</td><td>Every number checked against the code and the merged issues.</td></tr>
 </table>
+<p><b>Seen in production.</b> After the merges Daryl asked the live chat two questions (a search and a watch).
+  Production data showed both counted against his daily allowance and both answers saved by the server, the watch
+  proposal included; the errors table stayed empty. The scheduled checks ran every 15 minutes with 0 failures and
+  0 timeouts.</p>
 <p><b>Rollback, rehearsed.</b> Production was rolled back to the previous deployment and promoted forward again, 6 seconds
   each way, with the pages and the chat login checked both times. The catch, now in RUNBOOK §2: after a rollback Vercel
   stops putting new pushes live until a deployment is promoted.</p>
