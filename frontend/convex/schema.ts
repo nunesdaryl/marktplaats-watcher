@@ -86,7 +86,8 @@ export default defineSchema({
     source: v.union(v.literal("app"), v.literal("email")),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_alert", ["alertId"]).index("by_user", ["userId"]).index("by_created", ["createdAt"]),
+  }).index("by_alert", ["alertId"]).index("by_user", ["userId"]).index("by_created", ["createdAt"])
+    .index("by_watch", ["watchId"]).index("by_updated", ["updatedAt"]),
 
   // One row per feature use (kept 90 days), for the owner dashboard. No message text or search words.
   events: defineTable({

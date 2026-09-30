@@ -403,17 +403,20 @@ export const rebaseline = internalMutation({
   },
 });
 
-/** Retention: forget seen listings, alerts and untouched chats after 30 days. */
+/** Retention: forget seen listings, alerts and untouched chats after 30 days, and ratings after 12 months. */
 export const purgeOld = internalMutation({
   args: {},
   handler: async (ctx) => {
     const cutoff = Date.now() - RETENTION_MS;
+    const ratingsCutoff = new Date();
+    ratingsCutoff.setUTCMonth(ratingsCutoff.getUTCMonth() - 12);
     const seen = await ctx.db.query("seenListings").withIndex("by_lastSeen", (q) => q.lt("lastSeenAt", cutoff)).take(500);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff)).take(500);
     const chats = await ctx.db.query("chats").withIndex("by_updated", (q) => q.lt("updatedAt", cutoff)).take(100);
-    for (const row of [...seen, ...alerts]) await ctx.db.delete(row._id);
+    const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.lt("updatedAt", ratingsCutoff.getTime())).take(500);
+    for (const row of [...seen, ...alerts, ...ratings]) await ctx.db.delete(row._id);
     for (const chat of chats) await deleteChat(ctx, chat._id);
-    if (seen.length === 500 || alerts.length === 500 || chats.length === 100)
+    if (seen.length === 500 || alerts.length === 500 || chats.length === 100 || ratings.length === 500)
       await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});
   },
 });

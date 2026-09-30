@@ -92,7 +92,8 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
 - **Users rate their alerts:** every alert (e-mail and Alerts page) asks "Good match? 👍 / 👎". 👎 asks why (chips +
   note). Links in the e-mail work without signing in (a per-alert code, `RATING_SECRET`). The dashboard shows agreement
   per score band; `.venv/bin/python -m evals.pull_ratings` then `evals.report` adds "What users said" to
-  `evals/report.md`.
+  `evals/report.md`. Ratings are kept for 12 months after their last update, and deleted with the watch or with
+  "Delete my data".
 - **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
   theme" in the account menu goes back.
 - **Software factory queue:** Linear team "Marktplaats Watcher" (MW), bound by `.factory.json`. Wave 1 of the audit
