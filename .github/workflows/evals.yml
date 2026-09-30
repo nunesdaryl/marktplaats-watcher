@@ -38,7 +38,7 @@ jobs:
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
         run: |
           .venv/bin/python -m evals.run_chat
-          .venv/bin/python -m evals.run_scorer
+          .venv/bin/python -m evals.run_scorer --runs 3
           .venv/bin/python -m evals.report
       - name: Check evaluation gate
         if: steps.key.outputs.available == 'true'

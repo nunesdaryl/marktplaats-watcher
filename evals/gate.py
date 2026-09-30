@@ -4,10 +4,17 @@ from evals.common import CHAT_RESULTS, LISTINGS, SCORER_RESULTS, SPOTCHECK, read
 from evals.report import scorer_metrics, spotcheck_overrides
 
 
-def corrected_great_precision(scorer, listings, spotcheck):
+def corrected_great_precisions(scorer, listings, spotcheck):
     overrides, _, _ = spotcheck_overrides(listings, spotcheck)
-    return scorer_metrics(scorer["scored"], overrides,
-                          {"great": scorer["metrics"]["great"]["threshold"]})["great"]["precision"]
+    runs = scorer.get("runs", [scorer])
+    return [scorer_metrics(run["scored"], overrides,
+                           {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["precision"]
+            for run in runs]
+
+
+def corrected_great_precision(scorer, listings, spotcheck):
+    values = corrected_great_precisions(scorer, listings, spotcheck)
+    return sorted(values, key=lambda value: -1 if value is None else value)[len(values) // 2]
 
 
 def check(chat, scorer, listings, spotcheck):
@@ -20,7 +27,9 @@ def main():
     listings, spotcheck = read(LISTINGS)["listings"], SPOTCHECK.read_text()
     precision = corrected_great_precision(scorer, listings, spotcheck)
     passed = check(chat, scorer, listings, spotcheck)
-    print(f"Chat: {chat['passed']}/{chat['total']}; corrected great precision: {precision}")
+    values = corrected_great_precisions(scorer, listings, spotcheck)
+    formatted = ", ".join("n/a" if value is None else f"{value:.3f}".rstrip("0").rstrip(".") for value in values)
+    print(f"Chat: {chat['passed']}/{chat['total']}; corrected great precision runs {formatted} → median {precision}")
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20 and great precision at least 90%")
 
