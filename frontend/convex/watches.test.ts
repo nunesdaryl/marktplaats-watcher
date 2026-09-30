@@ -165,17 +165,17 @@ test("many watches for one item are split into requests of at most 20", async ()
   expect(calls.map((c) => c.body.watches.length)).toEqual([20, 5]);
 });
 
-test("the newest 1000 seen listings are sent, not the first 1000 by id", async () => {
+test("the newest 1500 seen listings are sent, not the first 1500 by id", async () => {
   const { t, alice } = setup();
   const id = await alice.mutation(api.watches.create, macMini);
   await t.run(async (ctx) => {
-    for (let i = 0; i < 1005; i++)
+    for (let i = 0; i < 1505; i++)
       await ctx.db.insert("seenListings", { watchId: id, listingId: `a${String(i).padStart(5, "0")}`, lastSeenAt: i });
   });
   const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
   const sent = group.watches[0].seen_ids;
-  expect(sent).toHaveLength(1000);
-  expect(sent).toContain("a01004");          // newest kept
+  expect(sent).toHaveLength(1500);
+  expect(sent).toContain("a01504");          // newest kept
   expect(sent).not.toContain("a00000");      // oldest dropped
 });
 

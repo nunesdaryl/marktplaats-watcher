@@ -40,6 +40,21 @@ test("a stuck scheduler is a problem", async () => {
   expect(problems[0]).toMatch(/hasn't run since/);
 });
 
+test("the digest reports active watches with a large backlog or capped coverage", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.health.logRun, { at: Date.now(), checked: 1, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const id = await alice.mutation(api.watches.create, { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(id, { backlog: 99 }));
+  expect((await t.action(internal.health.digest, { dryRun: true })).problems).toEqual([]);
+  await t.run((ctx) => ctx.db.patch(id, { backlog: 100 }));
+  expect((await t.action(internal.health.digest, { dryRun: true })).problems)
+    .toContain('1 watch(es) can\'t keep up: "Mac mini" (backlog 100).');
+  await t.run((ctx) => ctx.db.patch(id, { backlog: undefined, coverageCapped: true }));
+  expect((await t.action(internal.health.digest, { dryRun: true })).problems)
+    .toContain('1 watch(es) can\'t keep up: "Mac mini" (backlog 0).');
+});
+
 test("the kill switch stops all checks and shows up in the digest", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });

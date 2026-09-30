@@ -20,7 +20,7 @@ const LEASE_MS = 30 * 60_000;                // a claimed check that never repor
 const GRACE_MS = 2 * 60_000;
 const MAX_EMAIL_ATTEMPTS = 4;                // an alert e-mail is tried at most 4 times, 15 minutes apart
 const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
-const MAX_SEEN_SENT = 1000;
+const MAX_SEEN_SENT = 1500;              // must exceed MAX_PAGES * PAGE_SIZE in agent.py
 const RETENTION_MS = 30 * 86_400_000;
 
 function isTimeout(e: unknown): boolean {
@@ -74,6 +74,7 @@ const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
+  waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
 });
 
 /** Store what a check found. Returns the e-mails to send: one per watch with good new listings.
@@ -144,6 +145,7 @@ export const record = internalMutation({
         ? (watch.seeded && watch.watermark !== undefined ? Math.max(watch.watermark, r.newestId) : r.newestId)
         : r.newestId === null ? watch.watermark ?? 0 : watch.watermark;
       await ctx.db.patch(watch._id, { seeded: true, watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
+        backlog: r.waiting || undefined, coverageCapped: r.capped || undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);
       if (newAlerts.length && user) emails.push({ watchId: watch._id, alertIds: newAlerts, to: user.email });
