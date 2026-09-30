@@ -1202,6 +1202,37 @@ def test_audit_watch_uses_real_read_since_result(monkeypatch):
     assert (result["read"], result["scored"], result["missCount"]) == (1, 1, 1)
 
 
+def test_audit_watch_check_alive_keeps_only_current_listings(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    ids = ["live", "gone", "sold", "reserved", "error", "redirect", "missing"]
+    raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Gisteren",
+            "priceInfo": {"priceCents": 2500}} for ident in ids]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
+                        [dict(item, score=9) for item in listings])
+
+    def fetch(url, **kwargs):
+        ident = url.rsplit("/", 1)[-1]
+        assert kwargs["timeout"] == 10.0
+        if ident == "error":
+            raise agent.httpx.ConnectError("offline")
+        status = 404 if ident == "gone" else 200
+        target = "https://www.marktplaats.nl/" if ident == "redirect" else url
+        body = {"sold": "sold Verkocht", "reserved": "reserved Gereserveerd", "missing": "no listing"}.get(ident, ident)
+        return agent.httpx.Response(status, text=body, request=agent.httpx.Request("GET", target))
+
+    monkeypatch.setattr(agent.httpx, "get", fetch)
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ids, "check_alive": True}, now)
+    assert result["ok"] is True
+    assert result["missCount"] == 1
+    assert result["misses"] == [{"id": "live", "title": "live", "url": "https://www.marktplaats.nl/v/live",
+                                 "score": 9, "kind": "handled", "price_eur": 25}]
+
+
 def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
     from fastapi.testclient import TestClient
     import main
@@ -1226,6 +1257,7 @@ def test_audit_route_accepts_full_seen_history(client, monkeypatch):
     ids = [f"old{i}" for i in range(3000)]
     response = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
                            json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good",
-                                              "seen_ids": ids, "baseline_ids": ids}]})
+                                              "seen_ids": ids, "baseline_ids": ids, "check_alive": True}]})
     assert response.status_code == 200
     assert received[0]["seen_ids"] == ids and received[0]["baseline_ids"] == ids
+    assert received[0]["check_alive"] is True

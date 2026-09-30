@@ -1,4 +1,5 @@
 import json
+import html
 import math
 import os
 import re
@@ -701,11 +702,31 @@ def audit_watch(w, now=None):
             result["scored"] = len(ranked) - result["unscored"]
             threshold = {"great": 8, "good": 6, "all": 10}.get(w.get("notify"), 10) + 1
             misses = [{"id": item["id"], "title": item["title"], "url": item["url"],
-                       "score": item["score"], "kind": kind}
+                       "score": item["score"], "kind": kind,
+                       **({"price_eur": item.get("price_eur")} if w.get("check_alive") else {})}
                       for item, (_, kind) in zip(ranked, chosen)
                       if item.get("score") is not None and item["score"] >= threshold]
+            misses.sort(key=lambda item: item["score"], reverse=True)
+            if w.get("check_alive"):
+                alive = []
+                for miss in misses:
+                    try:
+                        page = httpx.get(miss["url"], timeout=10.0, follow_redirects=True,
+                                         headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
+                        page.raise_for_status()
+                        final_url, original_url = urlsplit(str(page.url)), urlsplit(miss["url"])
+                        same_listing = (final_url.hostname == original_url.hostname
+                                        and (final_url.path.rstrip("/") == original_url.path.rstrip("/")
+                                             or miss["id"] in final_url.path))
+                        body = html.unescape(page.text).lower()
+                        if (same_listing and miss["title"].lower() in body
+                                and "verkocht" not in body and "gereserveerd" not in body):
+                            alive.append(miss)
+                    except (httpx.HTTPError, ValueError):
+                        pass
+                misses = alive
             result["missCount"] = len(misses)
-            result["misses"] = sorted(misses, key=lambda item: item["score"], reverse=True)[:5]
+            result["misses"] = misses[:10 if w.get("check_alive") else 5]
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"

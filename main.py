@@ -265,6 +265,7 @@ class AuditWatch(CheckWatch):
     seen_ids: list[str] = Field(default=[])
     baseline_ids: list[str] = Field(default=[])
     last_read_at: int | None = Field(default=None, ge=0)
+    check_alive: bool = False
 
 
 class AuditRequest(BaseModel):
