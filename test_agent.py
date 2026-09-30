@@ -513,10 +513,13 @@ def test_reading_stops_at_the_last_page_and_at_the_cap(monkeypatch):
 def test_seen_window_exceeds_one_complete_read():
     checker = (Path(__file__).parent / "frontend" / "convex" / "checker.ts").read_text()
     sent = int(re.search(r"const MAX_SEEN_SENT = (\d+);", checker).group(1))
+    main = (Path(__file__).parent / "main.py").read_text()
+    check_limit = int(re.search(r"seen_ids: list\[str\] = Field\(default=\[\], max_length=(\d+)\)", main).group(1))
     python = (Path(__file__).parent / "agent.py").read_text()
     pages = int(re.search(r"^MAX_PAGES = (\d+)", python, re.MULTILINE).group(1))
     size = int(re.search(r"^PAGE_SIZE = (\d+)", python, re.MULTILINE).group(1))
     assert sent > pages * size
+    assert check_limit >= sent
 
 
 def test_full_read_reports_coverage_cap(monkeypatch):
@@ -1037,6 +1040,18 @@ def test_check_route_passes_the_first_check_flag_through(client, monkeypatch):
     assert seen["w"][0]["watermark"] == 2448176040 and seen["w"][0]["last_checked_at"] == 1790709591725
 
 
+def test_check_route_accepts_full_seen_window(client, monkeypatch):
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(["new"]))
+    ranker = CountingRanker()
+    monkeypatch.setattr(agent, "ranker", ranker)
+    response = client.post("/api/internal/check", headers={"X-Cron-Secret": "s3cret"},
+                           json={"query": "mac mini", "watches": [{"id": "w1", "watermark": 0,
+                                                                    "seen_ids": [f"old{i}" for i in range(1500)]}]})
+    assert response.status_code == 200
+    assert response.json()["results"][0]["ok"] is True
+    assert ranker.ranked == ["new"]
+
+
 def test_report_user_section_counts_bands_and_reasons():
     from evals.report import user_section
     assert "No ratings yet" in "\n".join(user_section([]))
@@ -1202,3 +1217,15 @@ def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
     response = client.post("/api/internal/audit", json=body, headers={"X-Cron-Secret": "s3cret"})
     assert response.status_code == 200
     assert response.json()["results"][0]["ok"] is False
+
+
+def test_audit_route_accepts_full_seen_history(client, monkeypatch):
+    received = []
+    monkeypatch.setattr(client.main, "audit_watch", lambda watch: received.append(watch) or
+                        {"watchId": watch["id"], "ok": True, "missCount": 0, "scored": 0})
+    ids = [f"old{i}" for i in range(3000)]
+    response = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
+                           json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good",
+                                              "seen_ids": ids, "baseline_ids": ids}]})
+    assert response.status_code == 200
+    assert received[0]["seen_ids"] == ids and received[0]["baseline_ids"] == ids
