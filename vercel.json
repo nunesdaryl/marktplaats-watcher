@@ -3,7 +3,7 @@
   "outputDirectory": "frontend/out",
   "functions": {
     "main.py": {
-      "maxDuration": 70
+      "maxDuration": 300
     }
   },
   "headers": [
