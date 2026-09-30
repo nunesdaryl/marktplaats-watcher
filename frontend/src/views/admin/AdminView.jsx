@@ -1,7 +1,7 @@
 // The owner dashboard: the overview, with a drilldown panel on top when a number, bar or row was clicked.
 // Only mounted for the owner (App.jsx); the server returns no data to anyone else (convex/admin.ts).
 import { useQuery } from "convex/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../../components/Icon.jsx";
 import { useDrill } from "./nav.js";
@@ -9,7 +9,29 @@ import Overview from "./Overview.jsx";
 import { VIEWS } from "./Views.jsx";
 
 const KIND = { users: "Accounts", user: "Account", watches: "Watches", watch: "Watch", alerts: "Alerts", alert: "Alert",
-  chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day", ratings: "Ratings" };
+  chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day", ratings: "Ratings",
+  runs: "Runs", run: "Run", errors: "Errors", error: "Error", audits: "Delivery audit", catchups: "Catch-ups" };
+
+function AdminSearch({ close, open }) {
+  const [text, setText] = useState("");
+  const results = useQuery(api.admin.search, { text });
+  const input = useRef(null);
+  useEffect(() => { input.current?.focus(); }, []);
+  const choose = (result) => {
+    close();
+    open({ view: result.view, title: result.title, params: { id: result.id } }, { fresh: true });
+  };
+  return <div className="admin-search-backdrop" onClick={close}>
+    <section className="admin-search" role="dialog" aria-modal="true" aria-label="Search dashboard" onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => { if (e.key === "Escape") close(); if (e.key === "Enter" && e.target === input.current && results?.[0]) choose(results[0]); }}>
+      <label><Icon name="search" size={18} /><input ref={input} type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Search accounts, watches, alerts, chats, errors, runs" aria-label="Search dashboard" /></label>
+      {text && <ul>{results?.map((result) => <li key={`${result.view}-${result.id}`}>
+        <button onClick={() => choose(result)}><span>{KIND[result.view]}</span>{result.title}</button>
+      </li>)}</ul>}
+      {text && results?.length === 0 && <p className="hint">No matching records.</p>}
+    </section>
+  </div>;
+}
 
 function DrillPanel({ drill }) {
   const { current, open, crumb, close } = drill;
@@ -39,7 +61,7 @@ function DrillPanel({ drill }) {
           <h2>{current.title || KIND[current.view]}</h2>
         </div>
         <div className="drill-body">
-          {View ? <View params={current.params} open={open} /> : <p className="hint">Unknown view.</p>}
+          {View ? <View params={current.params} open={open} update={drill.update} view={current.view} /> : <p className="hint">Unknown view.</p>}
         </div>
       </aside>
     </>
@@ -49,11 +71,18 @@ function DrillPanel({ drill }) {
 export default function AdminView() {
   const owner = useQuery(api.admin.amOwner);
   const drill = useDrill();
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSearchOpen(true); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   if (owner === false) return null;   // App.jsx only mounts this for the owner; the server returns no data to anyone else
   return (
     <>
-      <Overview open={drill.open} />
+      <Overview open={drill.open} onSearch={() => setSearchOpen(true)} />
       {drill.current && <DrillPanel drill={drill} />}
+      {searchOpen && <AdminSearch close={() => setSearchOpen(false)} open={drill.open} />}
     </>
   );
 }

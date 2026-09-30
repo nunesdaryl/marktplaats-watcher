@@ -4,7 +4,7 @@ import { useAction, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../../components/Icon.jsx";
-import { DAY, dayLabel, label, when } from "./nav.js";
+import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
 
 const shortDay = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
@@ -247,7 +247,7 @@ function ScoreAccuracy({ days, go }) {
 }
 
 /** The overview. `open(view)` starts a drilldown. */
-export default function Overview({ open }) {
+export default function Overview({ open, onSearch }) {
   const [days, setDays] = useState(30);
   const data = useQuery(api.admin.dashboard, { days });
   const feedback = useQuery(api.admin.feedback, { limit: 5 });
@@ -264,6 +264,7 @@ export default function Overview({ open }) {
     <section className="page admin" aria-label="Owner dashboard">
       <div className="page-head admin-head">
         <h1>Dashboard</h1>
+        <button className="button" onClick={onSearch}><Icon name="search" size={15} /> Search <kbd>⌘K</kbd></button>
         <div className="segmented" role="group" aria-label="Period">
           {[7, 30, 90].map((d) => (
             <button key={d} className={days === d ? "active" : ""} aria-pressed={days === d} onClick={() => setDays(d)}>{d} days</button>
@@ -274,8 +275,10 @@ export default function Overview({ open }) {
 
       <div className={`health ${h.issues.length ? "bad" : "ok"}`}>
         <div className="health-stats" aria-label="Last 24 hours">
-          {[["Runs", h.stats.runs], ["Checks failed", h.stats.checksFailed], ["E-mails sent", h.stats.emailsSent], ["Errors", h.stats.errors]].map(([name, value]) =>
-            <div key={name}><strong>{value}</strong><span>{name}</span></div>)}
+          {[["Runs", h.stats.runs, "runs", { since: now - DAY }], ["Checks failed", h.stats.checksFailed, "runs", { since: now - DAY, status: "failed" }],
+            ["E-mails sent", h.stats.emailsSent, "alerts", { since: now - DAY, emailStatus: "sent" }],
+            ["Errors", h.stats.errors, "errors", { since: now - DAY }]].map(([name, value, view, params]) =>
+            <button key={name} onClick={() => go(view, name, params)}><strong>{value}</strong><span>{name}</span></button>)}
         </div>
         {h.issues.length ? <div className="health-issues">{h.issues.map((issue) => <HealthIssue key={issue.kind} issue={issue} go={go} />)}</div>
           : <p className="health-good">All good</p>}
@@ -287,39 +290,47 @@ export default function Overview({ open }) {
               onOpen={() => go("users", "Active in the last 24 hours", { activeSince: now - DAY })} />
         <Stat value={t.watchesActive} name="Active watches" note={`${t.watchesPaused} paused · ${t.watchesArchived} archived`}
               onOpen={() => go("watches", "Watches", { status: "active" })} />
-        <div className="stat"><span className="stat-value">{t.watchesFallingBehind}</span><span className="stat-name">Watches falling behind</span><span className="stat-note">{data.fallingBehindLabels.join(", ") || "None"}</span></div>
+        <Stat value={t.watchesFallingBehind} name="Watches falling behind" note={data.fallingBehindLabels.join(", ") || "None"}
+          onOpen={() => go("watches", "Watches falling behind", { status: "active", behind: "yes" })} />
         <Stat value={t.alerts7d} name="Alerts this week" note={`${t.alerts} kept · ${t.emailsFailed} e-mails failed`}
               onOpen={() => go("alerts", "Alerts this week", { since: now - 7 * DAY })} />
         <Stat value={t.chats} name="Saved chats" note="kept 30 days after last use" onOpen={() => go("chats", "Saved chats")} />
-        <div className="stat"><span className="stat-value">{t.chatsToday}</span><span className="stat-name">Chats today</span><span className="stat-note">Amsterdam time</span></div>
-        <div className="stat"><span className="stat-value">{data.errors24h.chat + data.errors24h.check}</span><span className="stat-name">Errors (24 h)</span><span className="stat-note">{data.errors24h.chat} chat · {data.errors24h.check} check</span></div>
-        <div className="stat"><span className="stat-value">{data.deliveryAudit.misses}</span><span className="stat-name">Delivery audit</span><span className="stat-note">{data.deliveryAudit.checked} watches checked · {data.deliveryAudit.lastRunAt ? when(data.deliveryAudit.lastRunAt) : "No run yet"}</span></div>
+        <Stat value={t.chatsToday} name="Chats today" note="Amsterdam time" onOpen={() => go("chats", "Chats today", { when: "today" })} />
+        <Stat value={data.errors24h.chat + data.errors24h.check} name="Errors (24 h)" note={`${data.errors24h.chat} chat · ${data.errors24h.check} check`}
+          onOpen={() => go("errors", "Errors (24 h)", { since: now - DAY })} />
+        <Stat value={data.deliveryAudit.misses} name="Delivery audit" note={`${data.deliveryAudit.checked} watches checked · ${data.deliveryAudit.lastRunAt ? when(data.deliveryAudit.lastRunAt) : "No run yet"}`}
+          onOpen={() => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })} />
         <Stat value={t.feedback} name="Feedback" note="with screenshots" onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
 
+      <nav className="admin-list-nav" aria-label="Dashboard lists">
+        {[["Runs", "runs"], ["Errors", "errors"], ["Delivery audit", "audits"], ["Catch-ups", "catchups"]].map(([title, view]) =>
+          <button className="button" key={view} onClick={() => go(view, title)}>{title}</button>)}
+      </nav>
+
       {data.latestErrors.length > 0 && <section className="panel">
-        <h2>Latest errors</h2>
+        <h2><button className="link-button strong" onClick={() => go("errors", "Latest errors", { since: now - DAY })}>Latest errors</button></h2>
         <ul>{data.latestErrors.map((error) => <li key={`${error.requestId}-${error.at}`}>
-          {error.kind} · {error.requestId} · {error.message} · {when(error.at)}
+          <button className="link-button" onClick={() => go("errors", "Latest errors", { requestId: error.requestId })}>{error.kind} · {error.requestId} · {error.message} · {when(error.at)}</button>
         </li>)}</ul>
       </section>}
 
       {data.deliveryAudit.latestMisses.length > 0 && <section className="panel">
-        <h2>Latest delivery misses</h2>
+        <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses</button></h2>
         <ul>{data.deliveryAudit.latestMisses.map((miss) => <li key={`${miss.requestId}-${miss.listingId}`}>
-          {miss.watchLabel} · {miss.score}/10 · <a href={miss.url} target="_blank" rel="noopener noreferrer">{miss.title}</a> · {miss.kind} · {miss.requestId}
+          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {miss.kind} · {miss.requestId}</button>
         </li>)}</ul>
       </section>}
 
       <div className="charts">
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}
                   onTitle={() => go("users", `Active in the last ${days} days`, { activeSince: since })} />
-        <DayChart title="Chat messages" daily={data.daily} onDay={openDay}
+        <DayChart title="Chat messages" daily={data.daily} onDay={(day) => go("events", `Chat messages ${dayLabel(day)}`, { ...dayRange(day), name: "chat_sent" })}
                   keys={[{ key: "searches", name: "Search now" }, { key: "watchChats", name: "Watch it", tone: "tag" }]}
                   onTitle={() => eventsOf("Chat messages", { name: "chat_sent" })} />
-        <DayChart title="Watches created" daily={data.daily} keys={[{ key: "watches", name: "watches" }]} onDay={openDay}
+        <DayChart title="Watches created" daily={data.daily} keys={[{ key: "watches", name: "watches" }]} onDay={(day) => go("watches", `Watches ${dayLabel(day)}`, dayRange(day))}
                   onTitle={() => go("watches", `Watches created in the last ${days} days`, { createdSince: since })} />
-        <DayChart title="Alerts found" daily={data.daily} keys={[{ key: "alerts", name: "alerts", tone: "great" }]} onDay={openDay}
+        <DayChart title="Alerts found" daily={data.daily} keys={[{ key: "alerts", name: "alerts", tone: "great" }]} onDay={(day) => go("alerts", `Alerts ${dayLabel(day)}`, dayRange(day))}
                   onTitle={() => go("alerts", `Alerts in the last ${days} days`, { since })} />
       </div>
 
@@ -331,7 +342,7 @@ export default function Overview({ open }) {
       </section>
 
       <div className="breakdowns">
-        <Breakdown title="Top chat users today" rows={data.topUsage} />
+        <Breakdown title="Top chat users today" rows={data.topUsage} onRow={(r) => go("users", r.name, { q: r.name })} />
         <Breakdown title={`What people do (${days} days)`} rows={data.features} onRow={(r) => eventsOf(label(r.name), { name: r.name })} />
         <Breakdown title="Pages visited" rows={data.pages} onRow={(r) => eventsOf(`Page views: ${label(r.name)}`, { name: "page_view", section: r.name })} />
         <Breakdown title="Search now vs Watch it" rows={data.chatModes.map((r) => ({ ...r, label: r.name === "watch" ? "Watch it" : "Search now" }))}

@@ -156,12 +156,16 @@ export const dashboard = query({
 /** Feedback, newest first: message, would-pay answer, screenshot, context and what the person did just before. */
 export const feedback = query({
   args: { limit: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
-          handled: v.optional(v.boolean()) },
-  handler: async (ctx, { limit = 50, wouldPay, userId, handled }) => {
+          handled: v.optional(v.boolean()), since: v.optional(v.number()), until: v.optional(v.number()),
+          search: v.optional(v.string()) },
+  handler: async (ctx, { limit = 50, wouldPay, userId, handled, since, until, search }) => {
     if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const needle = search?.trim().toLowerCase();
     const rows = (await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT))
       .filter((f) => (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
-        && (handled === undefined || !!f.handledAt === handled))
+        && (handled === undefined || !!f.handledAt === handled) && inRange(f.createdAt, since, until)
+        && (!needle || [f.message, f.page, emails.get(f.userId)].some((x) => x?.toLowerCase().includes(needle))))
       .slice(0, Math.min(200, limit));
     return await Promise.all(rows.map(async (f) => {
       const user = await ctx.db.get(f.userId);
@@ -200,7 +204,8 @@ function alertRow(a: Doc<"alerts">, email: string | undefined, watchTitle: strin
   return {
     _id: a._id, userId: a.userId, watchId: a.watchId, email: email ?? "(deleted user)", watch: watchTitle ?? "Deleted watch",
     title: a.title, priceEur: a.priceEur, city: a.city, url: a.url, image: a.image, score: a.score, reason: a.reason,
-    emailStatus: a.emailStatus, attempts: a.attempts ?? 1, createdAt: a.createdAt,
+    emailStatus: a.emailStatus, catchUp: !!a.catchUp, listingId: a.listingId,
+    attempts: a.attempts ?? 1, createdAt: a.createdAt,
   };
 }
 
@@ -214,8 +219,9 @@ export const FUNNEL = ["signed_up", "setup", "chatted", "watch", "alert"] as con
  *  `stuck` = reached the step before it but not this one. */
 export const users = query({
   args: { search: v.optional(v.string()), stage: v.optional(v.string()), stuck: v.optional(v.string()),
-          activeSince: v.optional(v.number()) },
-  handler: async (ctx, { search, stage, stuck, activeSince }) => {
+          activeSince: v.optional(v.number()), userId: v.optional(v.id("users")),
+          since: v.optional(v.number()), until: v.optional(v.number()) },
+  handler: async (ctx, { search, stage, stuck, activeSince, userId, since, until }) => {
     if (!(await isOwner(ctx))) return null;
     const users = await ctx.db.query("users").take(LIMIT);
     const watches = await ctx.db.query("watches").take(LIMIT);
@@ -250,6 +256,8 @@ export const users = query({
         feedback: feedback.filter((f) => f.userId === u._id).length,
       };
     }).filter((u) => {
+      if (userId && u._id !== userId) return false;
+      if (!inRange(u.createdAt, since, until)) return false;
       if (q && !u.email.toLowerCase().includes(q)) return false;
       if (stage && !u.reached[FUNNEL.indexOf(stage as (typeof FUNNEL)[number])]) return false;
       if (stuck) {
@@ -294,16 +302,19 @@ export const user = query({
 
 /** Every watch with its exact search, schedule and status. */
 export const watches = query({
-  args: { status: v.optional(v.string()), userId: v.optional(v.id("users")), scheduleKey: v.optional(v.string()),
-          notify: v.optional(v.string()), createdSince: v.optional(v.number()), createdUntil: v.optional(v.number()) },
+  args: { status: v.optional(v.string()), userId: v.optional(v.id("users")), watchId: v.optional(v.id("watches")), scheduleKey: v.optional(v.string()),
+          notify: v.optional(v.string()), createdSince: v.optional(v.number()), createdUntil: v.optional(v.number()),
+          since: v.optional(v.number()), until: v.optional(v.number()), behind: v.optional(v.boolean()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
     const now = Date.now();
     const emails = await emailsOf(ctx);
     const rows = (await ctx.db.query("watches").take(LIMIT)).filter((w) =>
-      (!a.status || watchStatus(w) === a.status) && (!a.userId || w.userId === a.userId)
+      (!a.status || watchStatus(w) === a.status) && (!a.userId || w.userId === a.userId) && (!a.watchId || w._id === a.watchId)
       && (!a.scheduleKey || (scheduleKey(w.schedule) === a.scheduleKey && !w.archivedAt))
-      && (!a.notify || (w.notify === a.notify && !w.archivedAt)) && inRange(w.createdAt, a.createdSince, a.createdUntil));
+      && (!a.notify || (w.notify === a.notify && !w.archivedAt))
+      && (!a.behind || (w.active && !w.archivedAt && ((w.backlog ?? 0) >= 20 || !!w.coverageCapped)))
+      && inRange(w.createdAt, a.createdSince ?? a.since, a.createdUntil ?? a.until));
     const out = await Promise.all(rows.map(async (w) => watchRow(w, emails.get(w.userId),
       (await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).take(1000)).length, now)));
     return out.sort((x, y) => y.createdAt - x.createdAt);
@@ -330,7 +341,8 @@ export const watch = query({
 /** Alerts, newest first, filtered by time, watch, person, score or e-mail status. */
 export const alerts = query({
   args: { since: v.optional(v.number()), until: v.optional(v.number()), watchId: v.optional(v.id("watches")),
-          userId: v.optional(v.id("users")), minScore: v.optional(v.number()), emailStatus: v.optional(v.string()) },
+          userId: v.optional(v.id("users")), minScore: v.optional(v.number()), emailStatus: v.optional(v.string()),
+          catchUp: v.optional(v.boolean()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
     const emails = await emailsOf(ctx);
@@ -340,7 +352,8 @@ export const alerts = query({
       return a.until !== undefined ? lower.lt("createdAt", a.until) : lower;
     }).order("desc").take(LIMIT)).filter((x) =>
       (!a.watchId || x.watchId === a.watchId) && (!a.userId || x.userId === a.userId)
-      && (a.minScore === undefined || (x.score ?? -1) >= a.minScore) && (!a.emailStatus || x.emailStatus === a.emailStatus));
+      && (a.minScore === undefined || (x.score ?? -1) >= a.minScore) && (!a.emailStatus || x.emailStatus === a.emailStatus)
+      && (a.catchUp === undefined || !!x.catchUp === a.catchUp));
     return rows.map((x) => alertRow(x, emails.get(x.userId), titles.get(x.watchId)));
   },
 });
@@ -359,12 +372,14 @@ export const alert = query({
 
 /** Saved chats, most recently used first. */
 export const chats = query({
-  args: { userId: v.optional(v.id("users")), since: v.optional(v.number()), until: v.optional(v.number()) },
+  args: { userId: v.optional(v.id("users")), since: v.optional(v.number()), until: v.optional(v.number()),
+          status: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
     const emails = await emailsOf(ctx);
     const rows = (await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT))
-      .filter((c) => (!a.userId || c.userId === a.userId) && inRange(c.updatedAt, a.since, a.until));
+      .filter((c) => (!a.userId || c.userId === a.userId) && inRange(c.updatedAt, a.since, a.until)
+        && (!a.status || (a.status === "archived" ? !!c.archivedAt : a.status === "pinned" ? !!c.pinned : !c.archivedAt)));
     return Promise.all(rows.map(async (c) => ({
       _id: c._id, userId: c.userId, email: emails.get(c.userId) ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt,
       pinned: !!c.pinned, archived: !!c.archivedAt,
@@ -484,13 +499,16 @@ export const ratingStats = query({
 /** The ratings themselves, newest first: the listing, its score and reason, and what the user said. */
 export const ratings = query({
   args: { verdict: v.optional(v.string()), reason: v.optional(v.string()), band: v.optional(v.string()),
-          userId: v.optional(v.id("users")) },
+          userId: v.optional(v.id("users")), watchId: v.optional(v.id("watches")),
+          since: v.optional(v.number()), until: v.optional(v.number()), minScore: v.optional(v.number()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
     const emails = await emailsOf(ctx);
     const rows = (await ctx.db.query("ratings").withIndex("by_created").order("desc").take(LIMIT)).filter((r) =>
       (!a.verdict || r.verdict === a.verdict) && (!a.reason || (r.reasons ?? []).includes(a.reason as never))
-      && (!a.band || band(r.score) === a.band) && (!a.userId || r.userId === a.userId));
+      && (!a.band || band(r.score) === a.band) && (!a.userId || r.userId === a.userId)
+      && (!a.watchId || r.watchId === a.watchId) && inRange(r.updatedAt, a.since, a.until)
+      && (a.minScore === undefined || (r.score ?? -1) >= a.minScore));
     return rows.sort((x, y) => y.updatedAt - x.updatedAt).map((r) => ({
       _id: r._id, alertId: r.alertId, userId: r.userId, email: emails.get(r.userId) ?? "(deleted user)", at: r.updatedAt,
       verdict: r.verdict, reasons: (r.reasons ?? []).map((x) => REASON_LABEL[x] ?? x), note: r.note ?? "",
@@ -500,6 +518,84 @@ export const ratings = query({
 });
 
 // ---------------------------------------------------------------------------------------------------------------
+// Recent operational records, only for the owner.
+
+export const runs = query({
+  args: { since: v.optional(v.number()), until: v.optional(v.number()), requestId: v.optional(v.string()),
+          failed: v.optional(v.boolean()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    return (await ctx.db.query("runs").withIndex("by_at").order("desc").take(LIMIT))
+      .filter((r) => inRange(r.at, a.since, a.until) && (!a.requestId || r.requestId === a.requestId)
+        && (a.failed === undefined || (r.failed > 0 || r.emailFailures > 0) === a.failed));
+  },
+});
+
+export const errors = query({
+  args: { since: v.optional(v.number()), until: v.optional(v.number()), kind: v.optional(v.string()),
+          requestId: v.optional(v.string()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    return (await ctx.db.query("errors").withIndex("by_at").order("desc").take(LIMIT))
+      .filter((e) => inRange(e.at, a.since, a.until) && (!a.kind || e.kind === a.kind)
+        && (!a.requestId || e.requestId === a.requestId));
+  },
+});
+
+export const audits = query({
+  args: { since: v.optional(v.number()), until: v.optional(v.number()), userId: v.optional(v.id("users")),
+          watchId: v.optional(v.id("watches")), kind: v.optional(v.string()),
+          minScore: v.optional(v.number()), requestId: v.optional(v.string()) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    const emails = await emailsOf(ctx);
+    const watches = new Map((await ctx.db.query("watches").take(LIMIT)).map((w) => [w._id as string, w.name ?? w.label]));
+    return (await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
+      .filter((row) => inRange(row.at, a.since, a.until) && (!a.userId || row.userId === a.userId)
+        && (!a.watchId || row.watchId === a.watchId) && (!a.requestId || row.requestId === a.requestId))
+      .flatMap((row) => row.misses.filter((miss) => (!a.kind || miss.kind === a.kind)
+        && (a.minScore === undefined || miss.score >= a.minScore)).map((miss) => ({
+        ...miss, _id: `${row._id}:${miss.listingId}`, at: row.at, userId: row.userId, watchId: row.watchId,
+        email: emails.get(row.userId) ?? "(deleted user)", watch: watches.get(row.watchId) ?? "Deleted watch",
+        requestId: row.requestId,
+      })));
+  },
+});
+
+export const search = query({
+  args: { text: v.string() },
+  handler: async (ctx, { text }) => {
+    if (!(await isOwner(ctx))) return null;
+    const q = text.trim().toLowerCase();
+    if (!q) return [];
+    const users = await ctx.db.query("users").take(LIMIT);
+    const watches = await ctx.db.query("watches").take(LIMIT);
+    const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
+    const chats = await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT);
+    const errors = await ctx.db.query("errors").withIndex("by_at").order("desc").take(LIMIT);
+    const runs = await ctx.db.query("runs").withIndex("by_at").order("desc").take(LIMIT);
+    const match = (...values: (string | undefined)[]) => values.some((x) => x?.toLowerCase().includes(q));
+    return [
+      ...users.filter((x) => match(x.email)).map((x) => ({ view: "user", id: x._id as string, title: x.email })),
+      ...watches.filter((x) => match(x.name, x.label, x.query)).map((x) => ({ view: "watch", id: x._id as string, title: x.name ?? x.label })),
+      ...alerts.filter((x) => match(x.title, x.listingId)).map((x) => ({ view: "alert", id: x._id as string, title: x.title })),
+      ...chats.filter((x) => match(x.title)).map((x) => ({ view: "chat", id: x._id as string, title: x.title })),
+      ...errors.filter((x) => match(x.requestId)).map((x) => ({ view: "error", id: x._id as string, title: x.requestId })),
+      ...runs.filter((x) => match(x.requestId)).map((x) => ({ view: "run", id: x._id as string, title: x.requestId ?? "Run" })),
+    ].slice(0, 50);
+  },
+});
+
+export const operation = query({
+  args: { runId: v.optional(v.id("runs")), errorId: v.optional(v.id("errors")) },
+  handler: async (ctx, a) => {
+    if (!(await isOwner(ctx))) return null;
+    if (a.runId) return ctx.db.get(a.runId);
+    if (a.errorId) return ctx.db.get(a.errorId);
+    return null;
+  },
+});
+
 // Safe actions for the owner (each confirmed in the dashboard)
 
 /** Pause or resume anyone's watch, exactly as the app does it for its owner (watches.activePatch). */
