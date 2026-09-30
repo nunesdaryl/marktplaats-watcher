@@ -51,6 +51,12 @@ To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment 
 1. **UI or API:** Vercel dashboard → Deployments → the last good one → **Promote to Production**. This takes seconds.
    Or revert the commit on `main` and push. After any deploy, check that it really went to Production (not only
    Preview); DEPLOY-VERCEL.md §3 has the check and the fix (`npx vercel redeploy <url> --target production`).
+   **CLI (rehearsed 30 Sep 2026, 6 s each way):** `npx vercel ls --prod` to find the last good deployment, then
+   `npx vercel rollback <its url> --yes`; confirm with `npx vercel inspect marktplaats-watcher.vercel.app` (the `url`
+   line). **After a rollback Vercel stops assigning new production deploys to the domain** until you promote one:
+   when the fix is out, run `npx vercel promote <new deployment url> --yes`, or pushes to `main` won't go live.
+   Roll back only to a deployment with the same API as the live Convex functions (MW-11 made the browser's
+   `chats.append` user-only: a front end from before MW-11 can't save the agent's answers).
 2. **Convex functions or schema:**
    ```bash
    git checkout <last-good-commit> -- frontend/convex

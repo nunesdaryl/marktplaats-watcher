@@ -13,7 +13,7 @@
 | 7 | Cost stated | ✅ | evals/report.md §4; demo script 2:30 |
 | 8 | Proof ready | ✅ | evals/report.md: chat 20/20, scorer precision/recall |
 | 9 | Judge spot-check done | ✅ | Daryl, 2026-09-28 15:37:43 CEST: completed all 10 judgments; 7/10 agreed, disagreed on rows 3, 4 and 9. Report regenerated; measured cost §4 preserved. Precision/recall still use the judge’s labels. See human-checks-2026-09-27.md. |
-| 10 | Rollback path tested once | ☐ | Not performed; explicit Daryl approval pending. Round-two mixed-version risk handled 27 Sep (801eddd): roll back only to a deployment with the same API (cac3821), per the updated brief. See human-checks-2026-09-27.md. |
+| 10 | Rollback path tested once | ☑ | Rehearsed 30 Sep 2026 with Daryl's approval: `vercel rollback` from ow5k99kgu (MW-9) to lejdjcj2k in 6 s, domain confirmed with `vercel inspect`, pages 200 and chat 401 without login; restored with `vercel promote ow5k99kgu` in 6 s, same checks. Lesson in RUNBOOK §2: promote after a rollback or new pushes don't go live. |
 | 11 | CSP enforced after a clean sign-in | ☐ | Agent, 27 Sep 2026 23:08: local enforcement blocked images.marktplaats.com; fixed 27 Sep (801eddd, now allowed). Still report-only: next is Daryl's private-window sign-in, then explicit approval to enforce. See human-checks-2026-09-27.md. |
 | 12 | Rehearsed twice (engineer and business version) | ☐ | No Daryl presentations/timings recorded. Prepare Version A and Version B; see human-checks-2026-09-27.md. |
 | 13 | Three conversations with real Marktplaats hunters | ☐ | Ask about the past: "the last time you looked for something second-hand, how did you keep an eye on it?" |
