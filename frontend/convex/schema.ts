@@ -99,7 +99,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_alert", ["alertId"]).index("by_user", ["userId"]).index("by_created", ["createdAt"])
-    .index("by_watch", ["watchId"]).index("by_updated", ["updatedAt"]),
+    .index("by_watch", ["watchId"]).index("by_updated", ["updatedAt"])
+    .index("by_user_updated", ["userId", "updatedAt"]).index("by_watch_updated", ["watchId", "updatedAt"]),
 
   // One row per feature use (kept 90 days), for the owner dashboard. No message text or search words.
   events: defineTable({
@@ -208,6 +209,8 @@ export default defineSchema({
     leaseUntil: v.optional(v.number()),       // a check is running until this time; no second claim meanwhile
   })
     .index("by_user", ["userId"])
+    .index("by_createdAt", ["createdAt"])
+    .index("by_user_createdAt", ["userId", "createdAt"])
     .index("by_active_next", ["active", "nextRunAt"]),
 
   // Listings a watch has already seen, so each one is only ever alerted once.
@@ -244,5 +247,7 @@ export default defineSchema({
     .index("by_emailStatus", ["emailStatus", "createdAt"])
     .index("by_watch", ["watchId"])
     .index("by_user", ["userId"])
+    .index("by_watch_createdAt", ["watchId", "createdAt"])
+    .index("by_user_createdAt", ["userId", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
 });

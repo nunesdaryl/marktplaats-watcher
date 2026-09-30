@@ -1,7 +1,7 @@
 // The owner dashboard (/admin): usage, the funnel, feedback with screenshots, and health. Only the owner gets any data:
 // the signed-in account must match BOTH OWNER_CLERK_ID (the Clerk user id) and OWNER_EMAIL. Everyone else, signed in or
 // not, gets null, and the app treats /admin as a page that doesn't exist.
-// MVP scale: each query reads at most a few thousand rows per table (see LIMIT); fine for a beta, not for 100k users.
+// Overview aggregates still have bounded reads; drilldown lists return one small page.
 import { ConvexError, v } from "convex/values";
 import type { UserIdentity } from "convex/server";
 import { mutation, query, type QueryCtx } from "./_generated/server";
@@ -14,6 +14,17 @@ import { usageDay } from "./usage";
 
 const DAY = 86_400_000;
 const LIMIT = 5000;
+const PAGE = 200;
+
+async function listPage<T>(source: AsyncIterable<T>, matches: (row: T) => boolean | Promise<boolean>, size = PAGE) {
+  const rows: T[] = [];
+  for await (const row of source) {
+    if (!(await matches(row))) continue;
+    if (rows.length === size) return { rows, more: true };
+    rows.push(row);
+  }
+  return { rows, more: false };
+}
 
 /** The owner rule: the Clerk user id AND the e-mail must both match. Not configured = nobody is the owner. */
 export function ownerMatches(identity: UserIdentity | null) {
@@ -56,7 +67,7 @@ export const dashboard = query({
     const chats = await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
     const audits = await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT);
-    const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT * 4);
+    const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT);
     const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT);
     const todayUsage = await ctx.db.query("usage").withIndex("by_day", (q) => q.eq("day", usageDay(now))).take(LIMIT);
     const emails = new Map(users.map((u) => [u.clerkId, u.email]));
@@ -148,7 +159,7 @@ export const dashboard = query({
       errors24h: { chat: errors.filter((e) => e.kind === "chat").length,
                    check: errors.filter((e) => e.kind === "check").length },
       latestErrors: errors.slice(0, 5).map(({ kind, requestId, message, at }) => ({ kind, requestId, message, at })),
-      capped: events.length === LIMIT * 4,
+      capped: events.length === LIMIT,
     };
   },
 });
@@ -160,14 +171,21 @@ export const feedback = query({
           search: v.optional(v.string()) },
   handler: async (ctx, { limit = 50, wouldPay, userId, handled, since, until, search }) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
     const needle = search?.trim().toLowerCase();
-    const rows = (await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT))
-      .filter((f) => (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
+    const source = userId ? ctx.db.query("feedback").withIndex("by_user_created", (q) => {
+      const lower = q.eq("userId", userId);
+      const start = since !== undefined ? lower.gte("createdAt", since) : lower;
+      return until !== undefined ? start.lt("createdAt", until) : start;
+    }) : ctx.db.query("feedback").withIndex("by_created", (q) => {
+      const lower = since !== undefined ? q.gte("createdAt", since) : q;
+      return until !== undefined ? lower.lt("createdAt", until) : lower;
+    });
+    const page = await listPage(source.order("desc"), async (f) =>
+      (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
         && (handled === undefined || !!f.handledAt === handled) && inRange(f.createdAt, since, until)
-        && (!needle || [f.message, f.page, emails.get(f.userId)].some((x) => x?.toLowerCase().includes(needle))))
-      .slice(0, Math.min(200, limit));
-    return await Promise.all(rows.map(async (f) => {
+        && (!needle || [f.message, f.page, (await ctx.db.get(f.userId))?.email]
+          .some((x) => x?.toLowerCase().includes(needle))), Math.min(PAGE, limit));
+    const rows = await Promise.all(page.rows.map(async (f) => {
       const user = await ctx.db.get(f.userId);
       const before = await ctx.db.query("events")
         .withIndex("by_user_at", (q) => q.eq("userId", f.userId).lte("at", f.createdAt)).order("desc").take(10);
@@ -179,6 +197,7 @@ export const feedback = query({
         before: before.reverse().map((e) => ({ at: e.at, name: e.name, props: e.props })),
       };
     }));
+    return { rows, more: page.more };
   },
 });
 
@@ -189,6 +208,26 @@ type Ctx = QueryCtx;
 const emailsOf = async (ctx: Ctx) => new Map((await ctx.db.query("users").take(LIMIT)).map((u) => [u._id as string, u.email]));
 const inRange = (t: number, since?: number, until?: number) => (since === undefined || t >= since) && (until === undefined || t < until);
 const watchStatus = (w: Doc<"watches">) => (w.archivedAt ? "archived" : w.active ? "active" : "paused");
+const includes = (value: string | undefined, search?: string) => !search || !!value?.toLowerCase().includes(search.trim().toLowerCase());
+
+export const userOptions = query({
+  args: {},
+  handler: async (ctx) => {
+    if (!(await isOwner(ctx))) return null;
+    return (await ctx.db.query("users").take(LIMIT)).map((u) => ({ _id: u._id, email: u.email }));
+  },
+});
+
+export const watchOptions = query({
+  args: { userId: v.optional(v.id("users")) },
+  handler: async (ctx, { userId }) => {
+    if (!(await isOwner(ctx))) return null;
+    const source = userId
+      ? ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", userId))
+      : ctx.db.query("watches");
+    return (await source.take(LIMIT)).map((w) => ({ _id: w._id, userId: w.userId, title: w.name ?? w.label }));
+  },
+});
 
 function watchRow(w: Doc<"watches">, email: string | undefined, alertCount: number, now: number) {
   return {
@@ -223,7 +262,8 @@ export const users = query({
           since: v.optional(v.number()), until: v.optional(v.number()) },
   handler: async (ctx, { search, stage, stuck, activeSince, userId, since, until }) => {
     if (!(await isOwner(ctx))) return null;
-    const users = await ctx.db.query("users").take(LIMIT);
+    const users = userId ? [await ctx.db.get(userId)].filter((u): u is Doc<"users"> => !!u)
+      : await ctx.db.query("users").take(LIMIT);
     const watches = await ctx.db.query("watches").take(LIMIT);
     const chats = await ctx.db.query("chats").take(LIMIT);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
@@ -241,7 +281,7 @@ export const users = query({
     const devices = new Map<string, Set<string>>();
     events.forEach((e) => { if (!devices.has(e.userId)) devices.set(e.userId, new Set()); devices.get(e.userId)!.add(e.device); });
     const q = search?.trim().toLowerCase();
-    return users.map((u) => {
+    const rows = users.map((u) => {
       const reached = reachedSteps(u, has);
       const mine = watches.filter((w) => w.userId === u._id);
       return {
@@ -267,6 +307,7 @@ export const users = query({
       if (activeSince !== undefined && (u.lastActive ?? 0) < activeSince) return false;
       return true;
     }).sort((a, b) => (b.lastActive ?? b.createdAt) - (a.lastActive ?? a.createdAt));
+    return { rows: rows.slice(0, PAGE), more: rows.length > PAGE };
   },
 });
 
@@ -304,20 +345,32 @@ export const user = query({
 export const watches = query({
   args: { status: v.optional(v.string()), userId: v.optional(v.id("users")), watchId: v.optional(v.id("watches")), scheduleKey: v.optional(v.string()),
           notify: v.optional(v.string()), createdSince: v.optional(v.number()), createdUntil: v.optional(v.number()),
-          since: v.optional(v.number()), until: v.optional(v.number()), behind: v.optional(v.boolean()) },
+          since: v.optional(v.number()), until: v.optional(v.number()), behind: v.optional(v.boolean()),
+          search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
     const now = Date.now();
-    const emails = await emailsOf(ctx);
-    const rows = (await ctx.db.query("watches").take(LIMIT)).filter((w) =>
+    const since = a.createdSince ?? a.since;
+    const until = a.createdUntil ?? a.until;
+    const source = a.userId ? ctx.db.query("watches").withIndex("by_user_createdAt", (q) => {
+      const lower = q.eq("userId", a.userId!);
+      const start = since !== undefined ? lower.gte("createdAt", since) : lower;
+      return until !== undefined ? start.lt("createdAt", until) : start;
+    }) : ctx.db.query("watches").withIndex("by_createdAt", (q) => {
+      const lower = since !== undefined ? q.gte("createdAt", since) : q;
+      return until !== undefined ? lower.lt("createdAt", until) : lower;
+    });
+    const page = await listPage(source.order("desc"), async (w) =>
       (!a.status || watchStatus(w) === a.status) && (!a.userId || w.userId === a.userId) && (!a.watchId || w._id === a.watchId)
       && (!a.scheduleKey || (scheduleKey(w.schedule) === a.scheduleKey && !w.archivedAt))
       && (!a.notify || (w.notify === a.notify && !w.archivedAt))
       && (!a.behind || (w.active && !w.archivedAt && ((w.backlog ?? 0) >= 20 || !!w.coverageCapped)))
-      && inRange(w.createdAt, a.createdSince ?? a.since, a.createdUntil ?? a.until));
-    const out = await Promise.all(rows.map(async (w) => watchRow(w, emails.get(w.userId),
+      && inRange(w.createdAt, since, until)
+      && (!a.search || [w.name, w.label, w.query, w.mustInclude, w.postcode,
+        (await ctx.db.get(w.userId))?.email].some((x) => includes(x, a.search))));
+    const out = await Promise.all(page.rows.map(async (w) => watchRow(w, (await ctx.db.get(w.userId))?.email,
       (await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).take(1000)).length, now)));
-    return out.sort((x, y) => y.createdAt - x.createdAt);
+    return { rows: out.sort((x, y) => y.createdAt - x.createdAt), more: page.more };
   },
 });
 
@@ -342,19 +395,31 @@ export const watch = query({
 export const alerts = query({
   args: { since: v.optional(v.number()), until: v.optional(v.number()), watchId: v.optional(v.id("watches")),
           userId: v.optional(v.id("users")), minScore: v.optional(v.number()), emailStatus: v.optional(v.string()),
-          catchUp: v.optional(v.boolean()) },
+          catchUp: v.optional(v.boolean()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
-    const titles = new Map((await ctx.db.query("watches").take(LIMIT)).map((w) => [w._id as string, w.name ?? w.label]));
-    const rows = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => {
+    const source = a.watchId ? ctx.db.query("alerts").withIndex("by_watch_createdAt", (q) => {
+      const lower = q.eq("watchId", a.watchId!);
+      const start = a.since !== undefined ? lower.gte("createdAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("createdAt", a.until) : start;
+    }) : a.userId ? ctx.db.query("alerts").withIndex("by_user_createdAt", (q) => {
+      const lower = q.eq("userId", a.userId!);
+      const start = a.since !== undefined ? lower.gte("createdAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("createdAt", a.until) : start;
+    })
+      : ctx.db.query("alerts").withIndex("by_createdAt", (q) => {
       const lower = a.since !== undefined ? q.gte("createdAt", a.since) : q;
       return a.until !== undefined ? lower.lt("createdAt", a.until) : lower;
-    }).order("desc").take(LIMIT)).filter((x) =>
+    });
+    const page = await listPage(source.order("desc"), async (x) =>
       (!a.watchId || x.watchId === a.watchId) && (!a.userId || x.userId === a.userId)
       && (a.minScore === undefined || (x.score ?? -1) >= a.minScore) && (!a.emailStatus || x.emailStatus === a.emailStatus)
-      && (a.catchUp === undefined || !!x.catchUp === a.catchUp));
-    return rows.map((x) => alertRow(x, emails.get(x.userId), titles.get(x.watchId)));
+      && (a.catchUp === undefined || !!x.catchUp === a.catchUp) && inRange(x.createdAt, a.since, a.until)
+      && (!a.search || [x.title, x.listingId, x.city, (await ctx.db.get(x.userId))?.email,
+        (await ctx.db.get(x.watchId))?.name, (await ctx.db.get(x.watchId))?.label].some((v) => includes(v, a.search))));
+    return { rows: await Promise.all(page.rows.map(async (x) =>
+      alertRow(x, (await ctx.db.get(x.userId))?.email, ((w) => w?.name ?? w?.label)(await ctx.db.get(x.watchId))))),
+      more: page.more };
   },
 });
 
@@ -373,18 +438,25 @@ export const alert = query({
 /** Saved chats, most recently used first. */
 export const chats = query({
   args: { userId: v.optional(v.id("users")), since: v.optional(v.number()), until: v.optional(v.number()),
-          status: v.optional(v.string()) },
+          status: v.optional(v.string()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
-    const rows = (await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT))
-      .filter((c) => (!a.userId || c.userId === a.userId) && inRange(c.updatedAt, a.since, a.until)
-        && (!a.status || (a.status === "archived" ? !!c.archivedAt : a.status === "pinned" ? !!c.pinned : !c.archivedAt)));
-    return Promise.all(rows.map(async (c) => ({
-      _id: c._id, userId: c.userId, email: emails.get(c.userId) ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt,
+    const source = a.userId ? ctx.db.query("chats").withIndex("by_user_updated", (q) => {
+      const lower = q.eq("userId", a.userId!);
+      const start = a.since !== undefined ? lower.gte("updatedAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("updatedAt", a.until) : start;
+    }) : ctx.db.query("chats").withIndex("by_updated", (q) => {
+      const lower = a.since !== undefined ? q.gte("updatedAt", a.since) : q;
+      return a.until !== undefined ? lower.lt("updatedAt", a.until) : lower;
+    });
+    const page = await listPage(source.order("desc"), async (c) =>
+      (!a.status || (a.status === "archived" ? !!c.archivedAt : a.status === "pinned" ? !!c.pinned : !c.archivedAt))
+      && (!a.search || includes(c.title, a.search) || includes((await ctx.db.get(c.userId))?.email, a.search)));
+    return { rows: await Promise.all(page.rows.map(async (c) => ({
+      _id: c._id, userId: c.userId, email: (await ctx.db.get(c.userId))?.email ?? "(deleted user)", title: c.title, updatedAt: c.updatedAt,
       pinned: !!c.pinned, archived: !!c.archivedAt,
       messages: (await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", c._id)).take(500)).length,
-    })));
+    }))), more: page.more };
   },
 });
 
@@ -410,19 +482,26 @@ export const chat = query({
 export const events = query({
   args: { userId: v.optional(v.id("users")), name: v.optional(v.string()), section: v.optional(v.string()),
           device: v.optional(v.string()), mode: v.optional(v.string()), value: v.optional(v.string()),
-          since: v.optional(v.number()), until: v.optional(v.number()) },
+          since: v.optional(v.number()), until: v.optional(v.number()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
-    const rows = (await ctx.db.query("events").withIndex("by_at", (q) => {
+    const source = a.userId ? ctx.db.query("events").withIndex("by_user_at", (q) => {
+      const lower = q.eq("userId", a.userId!);
+      const start = a.since !== undefined ? lower.gte("at", a.since) : lower;
+      return a.until !== undefined ? start.lt("at", a.until) : start;
+    }) : ctx.db.query("events").withIndex("by_at", (q) => {
       const lower = a.since !== undefined ? q.gte("at", a.since) : q;
       return a.until !== undefined ? lower.lt("at", a.until) : lower;
-    }).order("desc").take(LIMIT)).filter((e) =>
-      (!a.userId || e.userId === a.userId) && (!a.name || e.name === a.name) && (!a.device || e.device === a.device)
+    });
+    const page = await listPage(source.order("desc"), async (e) =>
+      (!a.name || e.name === a.name) && (!a.device || e.device === a.device)
       && (!a.section || (e.props?.section || "chat") === a.section) && (!a.mode || (e.props?.mode ?? "search") === a.mode)
-      && (!a.value || e.props?.value === a.value));
-    return rows.slice(0, 2000).map((e) => ({ _id: e._id, userId: e.userId, email: emails.get(e.userId) ?? "(deleted user)",
-      at: e.at, name: e.name, props: e.props, device: e.device }));
+      && (!a.value || e.props?.value === a.value)
+      && (!a.search || [e.name, e.device, e.props?.section, e.props?.mode, e.props?.kind, e.props?.value,
+        (await ctx.db.get(e.userId))?.email].some((x) => includes(x, a.search))));
+    return { rows: await Promise.all(page.rows.map(async (e) => ({ _id: e._id, userId: e.userId,
+      email: (await ctx.db.get(e.userId))?.email ?? "(deleted user)", at: e.at, name: e.name, props: e.props, device: e.device }))),
+      more: page.more };
   },
 });
 
@@ -500,20 +579,35 @@ export const ratingStats = query({
 export const ratings = query({
   args: { verdict: v.optional(v.string()), reason: v.optional(v.string()), band: v.optional(v.string()),
           userId: v.optional(v.id("users")), watchId: v.optional(v.id("watches")),
-          since: v.optional(v.number()), until: v.optional(v.number()), minScore: v.optional(v.number()) },
+          since: v.optional(v.number()), until: v.optional(v.number()), minScore: v.optional(v.number()),
+          search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
-    const rows = (await ctx.db.query("ratings").withIndex("by_created").order("desc").take(LIMIT)).filter((r) =>
+    const source = a.watchId ? ctx.db.query("ratings").withIndex("by_watch_updated", (q) => {
+      const lower = q.eq("watchId", a.watchId!);
+      const start = a.since !== undefined ? lower.gte("updatedAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("updatedAt", a.until) : start;
+    }) : a.userId ? ctx.db.query("ratings").withIndex("by_user_updated", (q) => {
+      const lower = q.eq("userId", a.userId!);
+      const start = a.since !== undefined ? lower.gte("updatedAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("updatedAt", a.until) : start;
+    })
+      : ctx.db.query("ratings").withIndex("by_updated", (q) => {
+        const lower = a.since !== undefined ? q.gte("updatedAt", a.since) : q;
+        return a.until !== undefined ? lower.lt("updatedAt", a.until) : lower;
+      });
+    const page = await listPage(source.order("desc"), async (r) =>
       (!a.verdict || r.verdict === a.verdict) && (!a.reason || (r.reasons ?? []).includes(a.reason as never))
       && (!a.band || band(r.score) === a.band) && (!a.userId || r.userId === a.userId)
       && (!a.watchId || r.watchId === a.watchId) && inRange(r.updatedAt, a.since, a.until)
-      && (a.minScore === undefined || (r.score ?? -1) >= a.minScore));
-    return rows.sort((x, y) => y.updatedAt - x.updatedAt).map((r) => ({
-      _id: r._id, alertId: r.alertId, userId: r.userId, email: emails.get(r.userId) ?? "(deleted user)", at: r.updatedAt,
+      && (a.minScore === undefined || (r.score ?? -1) >= a.minScore)
+      && (!a.search || [r.title, r.note, r.reason, (await ctx.db.get(r.userId))?.email]
+        .some((x) => includes(x, a.search))));
+    return { rows: await Promise.all(page.rows.map(async (r) => ({
+      _id: r._id, alertId: r.alertId, userId: r.userId, email: (await ctx.db.get(r.userId))?.email ?? "(deleted user)", at: r.updatedAt,
       verdict: r.verdict, reasons: (r.reasons ?? []).map((x) => REASON_LABEL[x] ?? x), note: r.note ?? "",
       score: r.score, title: r.title ?? "", reason: r.reason ?? "", source: r.source,
-    }));
+    }))), more: page.more };
   },
 });
 
@@ -522,43 +616,60 @@ export const ratings = query({
 
 export const runs = query({
   args: { since: v.optional(v.number()), until: v.optional(v.number()), requestId: v.optional(v.string()),
-          failed: v.optional(v.boolean()) },
+          failed: v.optional(v.boolean()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    return (await ctx.db.query("runs").withIndex("by_at").order("desc").take(LIMIT))
-      .filter((r) => inRange(r.at, a.since, a.until) && (!a.requestId || r.requestId === a.requestId)
-        && (a.failed === undefined || (r.failed > 0 || r.emailFailures > 0) === a.failed));
+    return listPage(ctx.db.query("runs").withIndex("by_at", (q) => {
+      const lower = a.since !== undefined ? q.gte("at", a.since) : q;
+      return a.until !== undefined ? lower.lt("at", a.until) : lower;
+    }).order("desc"), (r) => (!a.requestId || r.requestId === a.requestId)
+      && (a.failed === undefined || (r.failed > 0 || r.emailFailures > 0) === a.failed)
+      && includes(r.requestId, a.search));
   },
 });
 
 export const errors = query({
   args: { since: v.optional(v.number()), until: v.optional(v.number()), kind: v.optional(v.string()),
-          requestId: v.optional(v.string()) },
+          requestId: v.optional(v.string()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    return (await ctx.db.query("errors").withIndex("by_at").order("desc").take(LIMIT))
-      .filter((e) => inRange(e.at, a.since, a.until) && (!a.kind || e.kind === a.kind)
-        && (!a.requestId || e.requestId === a.requestId));
+    return listPage(ctx.db.query("errors").withIndex("by_at", (q) => {
+      const lower = a.since !== undefined ? q.gte("at", a.since) : q;
+      return a.until !== undefined ? lower.lt("at", a.until) : lower;
+    }).order("desc"), (e) => (!a.kind || e.kind === a.kind) && (!a.requestId || e.requestId === a.requestId)
+      && (!a.search || [e.requestId, e.message, e.kind].some((x) => includes(x, a.search))));
   },
 });
 
 export const audits = query({
   args: { since: v.optional(v.number()), until: v.optional(v.number()), userId: v.optional(v.id("users")),
           watchId: v.optional(v.id("watches")), kind: v.optional(v.string()),
-          minScore: v.optional(v.number()), requestId: v.optional(v.string()) },
+          minScore: v.optional(v.number()), requestId: v.optional(v.string()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const emails = await emailsOf(ctx);
-    const watches = new Map((await ctx.db.query("watches").take(LIMIT)).map((w) => [w._id as string, w.name ?? w.label]));
-    return (await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
-      .filter((row) => inRange(row.at, a.since, a.until) && (!a.userId || row.userId === a.userId)
-        && (!a.watchId || row.watchId === a.watchId) && (!a.requestId || row.requestId === a.requestId))
-      .flatMap((row) => row.misses.filter((miss) => (!a.kind || miss.kind === a.kind)
-        && (a.minScore === undefined || miss.score >= a.minScore)).map((miss) => ({
-        ...miss, _id: `${row._id}:${miss.listingId}`, at: row.at, userId: row.userId, watchId: row.watchId,
-        email: emails.get(row.userId) ?? "(deleted user)", watch: watches.get(row.watchId) ?? "Deleted watch",
-        requestId: row.requestId,
-      })));
+    const source = a.watchId ? ctx.db.query("audits").withIndex("by_watch_at", (q) => {
+      const lower = q.eq("watchId", a.watchId!);
+      const start = a.since !== undefined ? lower.gte("at", a.since) : lower;
+      return a.until !== undefined ? start.lt("at", a.until) : start;
+    }) : ctx.db.query("audits").withIndex("by_at", (q) => {
+      const lower = a.since !== undefined ? q.gte("at", a.since) : q;
+      return a.until !== undefined ? lower.lt("at", a.until) : lower;
+    });
+    const rows = [];
+    for await (const row of source.order("desc")) {
+      if (a.userId && row.userId !== a.userId || a.requestId && row.requestId !== a.requestId) continue;
+      for (const miss of row.misses) {
+        if (a.kind && miss.kind !== a.kind || a.minScore !== undefined && miss.score < a.minScore) continue;
+        const user = await ctx.db.get(row.userId);
+        const watch = await ctx.db.get(row.watchId);
+        if (a.search && ![miss.title, miss.listingId, row.requestId, user?.email, watch?.name, watch?.label]
+          .some((x) => includes(x, a.search))) continue;
+        if (rows.length === PAGE) return { rows, more: true };
+        rows.push({ ...miss, _id: `${row._id}:${miss.listingId}`, at: row.at, userId: row.userId, watchId: row.watchId,
+          email: user?.email ?? "(deleted user)", watch: watch?.name ?? watch?.label ?? "Deleted watch", requestId: row.requestId });
+      }
+    }
+    return { rows, more: false };
   },
 });
 

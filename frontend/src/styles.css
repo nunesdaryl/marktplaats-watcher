@@ -927,6 +927,7 @@ button.door-row:hover { background: var(--fill); }
 .dt td.chev { color: var(--text-3); width: 24px; vertical-align: middle; }
 .dt tr.openable:hover td.chev { color: var(--accent); }
 .mono-cell { font-family: var(--font-mono); white-space: nowrap; }
+.nowrap-cell { white-space: nowrap; }
 .person { font-weight: 500; white-space: nowrap; }
 .cell-with-action { display: inline-flex; align-items: center; gap:var(--space-1); }
 .copy { width: 24px; height: 24px; }
