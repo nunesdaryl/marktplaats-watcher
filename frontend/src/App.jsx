@@ -52,7 +52,7 @@ function HistorySheet({ chats, actions, onClose }) {
   );
   return (
     <Sheet title="Chats" onClose={onClose}>
-      <button className="button tinted wide" onClick={() => open("/")}><Icon name="compose" size={16} />New chat</button>
+      <button className="button tinted wide" onClick={() => open("/")}><Icon name="compose" size={18} />New chat</button>
       <input className="field" type="search" value={search} onChange={(e) => setSearch(e.target.value)}
              placeholder="Search chats" aria-label="Search chats" />
       {chats.length === 0 ? <p className="empty-note">Your chats show up here. They're deleted after 30 days without use.</p> : found.length === 0 ? (
@@ -72,10 +72,10 @@ function HistorySheet({ chats, actions, onClose }) {
 function Toast({ message, onDone }) {
   useEffect(() => {
     if (!message) return;
-    const id = setTimeout(onDone, 3500);
+    const id = setTimeout(onDone, 4000);
     return () => clearTimeout(id);
   }, [message, onDone]);
-  return message ? <div className="toast" role="status">{message}</div> : null;
+  return message ? <div className="toast" role="status"><Icon name="check" size={18} />{message}</div> : null;
 }
 
 function Workspace() {
@@ -192,10 +192,10 @@ function Workspace() {
     <div className="shell phone">
       <header className="topbar">
         {route.section === "w" || route.section === "archived"
-          ? <button className="icon-button" onClick={() => go("/watches")} aria-label="Back to watches"><Icon name="back" /></button>
+          ? <button className="icon-button" onClick={() => go("/watches")} aria-label="Back to watches"><Icon name="back" size={24} /></button>
           : inChat
-            ? <button className="icon-button" onClick={() => { setSheet({ type: "history" }); track("history_opened"); }} aria-label="Chats"><Icon name="clock" /></button>
-            : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" /></button>}
+            ? <button className="icon-button" onClick={() => { setSheet({ type: "history" }); track("history_opened"); }} aria-label="Chats"><Icon name="clock" size={24} /></button>
+            : <button className="icon-button" onClick={() => setSheet({ type: "privacy" })} aria-label="Privacy and your data"><Icon name="shield" size={24} /></button>}
         {/* The signature logo stays visible on every phone screen, next to the title */}
         <span className="topbar-title">
           <a className="home-link" aria-label="Marktplaats Watcher, home" {...linkTo("/")}><Logo size={30} /></a>
@@ -204,7 +204,7 @@ function Workspace() {
         {currentChat && <RowMenu items={actions.chatItems(currentChat)} label="Chat options" />}
         <ThemeToggle />
         {inChat && route.section === "c"
-          ? <button className="icon-button" onClick={() => go("/")} aria-label="New chat"><Icon name="compose" /></button>
+          ? <button className="icon-button" onClick={() => go("/")} aria-label="New chat"><Icon name="compose" size={24} /></button>
           : <AccountButton />}
       </header>
       <main className="main">

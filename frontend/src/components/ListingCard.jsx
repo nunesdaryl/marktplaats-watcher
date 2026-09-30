@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "./Icon.jsx";
 import { track } from "../lib/track.js";
 
 function ScoreBadge({ score }) {
@@ -11,23 +12,25 @@ function ScoreBadge({ score }) {
 export default function ListingCard({ listing, score, reason, meta }) {
   const [broken, setBroken] = useState(false);
   const price = listing.price_eur ?? listing.priceEur;
-  const place = [listing.city ?? null, listing.distance_km != null ? `${listing.distance_km} km` : null].filter(Boolean).join(", ");
+  const city = listing.city;
+  const distance = listing.distance_km != null ? `${listing.distance_km} km` : null;
   return (
-    <a className="listing" href={listing.url} target="_blank" rel="noopener noreferrer"
+    <a className={`listing ${score === 0 ? "skipped" : ""}`} href={listing.url} target="_blank" rel="noopener noreferrer"
        onClick={() => track(reason ? "alert_opened" : "listing_opened", { value: score ?? undefined })}>
       <div className="photo">
         {listing.image && !broken
           ? <img src={listing.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
-          : <span className="no-photo">No photo</span>}
+          : <span className="no-photo"><Icon name="camera" size={24} /><span className="visually-hidden">No photo</span></span>}
         <ScoreBadge score={score} />
       </div>
       <div className="body">
         <span className="title">{listing.title}</span>
         <span className="line">
           <strong>{price ? `€${price}` : "No price listed"}</strong>
-          {place && <span>{place}</span>}
+          {(city || distance) && <span> · {city}{city && distance ? ", " : ""}{distance && <span className="distance">{distance}</span>}</span>}
         </span>
         {reason && <span className="reason">{reason}</span>}
+        {score === 0 && <span className="meta">Skipped</span>}
         {meta && <span className="meta">{meta}</span>}
       </div>
     </a>

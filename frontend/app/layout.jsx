@@ -9,6 +9,7 @@ export const metadata = {
   metadataBase: new URL("https://marktplaats-watcher.vercel.app"),
   title,
   description,
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website", url: "/", title, siteName: title,
     description: "Not another saved search: say what you want, pick when to check, and get only the new listings worth a look, each with a score and the reason.",

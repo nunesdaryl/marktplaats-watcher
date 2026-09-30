@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
+import Skeleton from "../components/Skeleton.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import { go, useNow } from "../lib/router.js";
 
@@ -16,7 +17,7 @@ export default function ArchivedView({ actions }) {
         <h1 id="archived-title">Archived</h1>
         <p className="muted">Archived watches are paused: no checks, no e-mails. Restore one to bring it back.</p>
       </header>
-      {loading ? <p className="muted">Loading…</p> : !watches.length && !chats.length ? (
+      {loading ? <Skeleton /> : !watches.length && !chats.length ? (
         <p className="empty-note">Nothing archived. Use Archive in a chat's or watch's ••• menu to tidy up without deleting.</p>
       ) : (
         <>

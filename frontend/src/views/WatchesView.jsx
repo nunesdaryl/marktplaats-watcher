@@ -13,12 +13,12 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
     return (
       <li key={w._id} className="grouped-row">
         <button onClick={() => go(`/w/${w._id}`)}>
-          {w.pinned && <Icon name="pin" size={14} />}
+          {w.pinned && <Icon name="pin" size={18} />}
           <span className="text">
             <span className="primary-text">{w.title}</span>
             <span className="secondary-text">{w.active ? w.summary : "Paused"}</span>
           </span>
-          {best?.score !== undefined && <span className="pill">{best.score}/10</span>}
+          {best?.score !== undefined && <span className={`pill score-pill ${best.score >= 8 ? "great" : best.score >= 6 ? "good" : ""}`}>{best.score}/10</span>}
         </button>
         <RowMenu items={actions.watchItems(w)} label={`Options for ${w.title}`} />
       </li>
@@ -29,7 +29,7 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
     <section className="page" aria-labelledby="watches-title">
       <header className="page-head row-head">
         <h1 id="watches-title">Watches</h1>
-        <button className="button tinted" onClick={onNew}><Icon name="plus" size={16} />New</button>
+        <button className="button tinted" onClick={onNew}><Icon name="plus" size={18} />New</button>
       </header>
       {watchesOrLoading === undefined ? <p className="muted" role="status">Loading…</p> : watches.length === 0 ? (
         <p className="empty-note">Nothing watched yet. Ask the chat to keep an eye on something, or tap New.</p>
@@ -48,8 +48,8 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
         </>
       )}
       <ul className="grouped">
-        <li><button onClick={() => go("/archived")}><Icon name="archive" size={16} />
-          <span className="text"><span className="primary-text">Archived</span></span><Icon name="chevron" size={16} /></button></li>
+        <li><button onClick={() => go("/archived")}><Icon name="archive" size={18} />
+          <span className="text"><span className="primary-text">Archived</span></span><Icon name="chevron" size={18} /></button></li>
       </ul>
     </section>
   );

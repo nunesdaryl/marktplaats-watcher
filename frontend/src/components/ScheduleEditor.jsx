@@ -1,3 +1,4 @@
+import Icon from "./Icon.jsx";
 import { DAYS, NOTIFY_HELP, NOTIFY_LABEL, describe } from "../../convex/schedule";
 
 // "Check Marktplaats [every hour ▾]" / "[every day at…] 08:00 + add a time" / "[on certain days at…] Mon Fri 18:00"
@@ -31,9 +32,9 @@ export default function ScheduleEditor({ schedule, notify, onChange }) {
       <legend className="visually-hidden">When to check</legend>
       <div className="sentence-row">
         <label htmlFor="preset">Check Marktplaats</label>
-        <select id="preset" value={presetOf(schedule)} onChange={(e) => set(fromPreset(e.target.value, schedule))}>
+        <span className="select-wrap"><select id="preset" value={presetOf(schedule)} onChange={(e) => set(fromPreset(e.target.value, schedule))}>
           {PRESETS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-        </select>
+        </select><Icon name="chevron" size={14} /></span>
       </div>
 
       {schedule.kind === "weekly" && (
@@ -72,9 +73,9 @@ export default function ScheduleEditor({ schedule, notify, onChange }) {
 
       <div className="sentence-row">
         <label htmlFor="notify">and e-mail me</label>
-        <select id="notify" value={notify} onChange={(e) => onChange({ schedule, notify: e.target.value })}>
+        <span className="select-wrap"><select id="notify" value={notify} onChange={(e) => onChange({ schedule, notify: e.target.value })}>
           {Object.entries(NOTIFY_LABEL).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-        </select>
+        </select><Icon name="chevron" size={14} /></span>
       </div>
       <p className="notify-help" aria-live="polite">{NOTIFY_HELP[notify]}</p>
 

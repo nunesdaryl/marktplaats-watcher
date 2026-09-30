@@ -34,7 +34,7 @@ export default function RateView() {
     <main className="rate-page">
       <div className="rate-card">
         <a href="/" className="rate-brand"><Logo size={36} /><span className="wordmark">Marktplaats <b>Watcher</b></span></a>
-        {alert && <p className="rate-listing">{alert.title}{alert.score !== null ? ` · scored ${alert.score}/10` : ""}</p>}
+        {alert && <p className="rate-listing">{alert.title}{alert.score !== null ? <span className="mono"> · scored {alert.score}/10</span> : ""}</p>}
         {state === "saving" && <p className="muted" role="status">Saving your answer…</p>}
         {state === "error" && <p className="error" role="alert">{error}</p>}
         {state === "saved" && verdict === "good" && (
