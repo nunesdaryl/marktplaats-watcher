@@ -19,3 +19,6 @@ docs/audit/evidence-*/
 
 # Reference screenshots of third-party sites (kept local)
 references/img/
+
+# Software factory build worktrees (factory-build)
+.factory-worktrees/
