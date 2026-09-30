@@ -79,6 +79,7 @@ No ratings yet. Every alert e-mail and the Alerts page ask "Good match? 👍 / �
 
 - Scoring: €0.0277 per 100 listings (8977 input + 1784 output tokens for 49 listings).
 - Chat: €0.0018 per question on average.
+- Chat output is capped at 1,500 tokens per model call.
 - Judge (one-off): €0.1048.
 - Prices: gpt-5.4-mini $0.75 / $4.50 per 1M input/output tokens; €1 ≈ $1.09.
 
