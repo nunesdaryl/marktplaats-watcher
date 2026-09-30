@@ -40,6 +40,44 @@ test("a stuck scheduler is a problem", async () => {
   expect(problems[0]).toMatch(/hasn't run since/);
 });
 
+test("health issues group the same problems with counts and record links", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  const userId = watch!.userId;
+  await t.mutation(internal.health.logRun, { at: now, checked: 2, failed: 1, emails: 3, emailFailures: 1, paused: true, requestId: "run-1" });
+  await t.run(async (ctx) => {
+    await ctx.db.patch(watchId, { lastError: "check failed", backlog: 100 });
+    await ctx.db.insert("alerts", { userId, watchId, listingId: "listing-1", title: "Mac mini", url: "https://example.com/listing-1",
+      score: 9, reason: "match", channel: "email", emailStatus: "failed", createdAt: now });
+    await ctx.db.insert("audits", { at: now, watchId, userId, requestId: "audit-1", ok: false, read: 1, scored: 1, missCount: 1,
+      misses: [{ listingId: "listing-2", title: "Mac Studio", url: "https://example.com/listing-2", score: 8, kind: "never_read" }], error: "audit failed" });
+  });
+  for (let i = 0; i < 5; i++) await t.mutation(internal.health.recordError, { kind: "check", requestId: `check-${i}`, message: "check failed" });
+  const report = await t.query(internal.health.report, { now });
+  expect(report.issues.map((issue) => [issue.kind, issue.count])).toEqual([
+    ["errors", 5], ["checks_paused", 1], ["emails_failed", 1], ["watches_failing", 1],
+    ["delivery_misses", 1], ["audit_failed", 1], ["watches_behind", 1],
+  ]);
+  expect(report.issues.find((issue) => issue.kind === "errors")?.items[0]).toMatchObject({ requestId: "check-4" });
+  expect(report.issues.find((issue) => issue.kind === "checks_paused")?.items).toEqual([{ label: `Paused run ${new Date(now).toISOString()}`, requestId: "run-1" }]);
+  expect(report.issues.find((issue) => issue.kind === "emails_failed")?.items[0]).toMatchObject({ watchId, userId, listingId: "listing-1", score: 9, url: "https://example.com/listing-1" });
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")).toMatchObject({ headline: "1 missed match on 1 watch",
+    items: [{ watchId, userId, requestId: "audit-1", listingId: "listing-2", score: 8, title: "Mac Studio", url: "https://example.com/listing-2" }] });
+  expect(report.issues.find((issue) => issue.kind === "audit_failed")?.items[0]).toMatchObject({ watchId, userId, requestId: "audit-1" });
+  expect(report.issues.find((issue) => issue.kind === "watches_behind")?.items[0]).toMatchObject({ watchId, userId });
+  expect(report.stats).toEqual({ runs: 1, checksFailed: 1, emailsSent: 3, errors: 5 });
+});
+
+test("a missing scheduler run has a structured issue", async () => {
+  const t = convexTest(schema, modules);
+  const report = await t.query(internal.health.report, { now: Date.now() });
+  expect(report.issues).toEqual([{ kind: "scheduler_stuck", severity: "high", headline: "Scheduler hasn't run", count: 1,
+    items: [{ label: "No runs yet", requestId: undefined }] }]);
+});
+
 test("the digest reports active watches with a large backlog or capped coverage", async () => {
   const t = convexTest(schema, modules);
   await t.mutation(internal.health.logRun, { at: Date.now(), checked: 1, failed: 0, emails: 0, emailFailures: 0 });
