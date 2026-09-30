@@ -103,6 +103,67 @@ test("A01: retries stop after 4 attempts, and never for a paused watch", async (
   void alice; void id;
 });
 
+test("AgentMail timeout marks the alert for retry and records a timeout", async () => {
+  const { t } = await seededWatch();
+  const deadlines: number[] = [];
+  vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+    deadlines.push(ms);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException("Timed out", "TimeoutError")), ms);
+    return controller.signal;
+  });
+  vi.stubGlobal("fetch", vi.fn((url: string, init: RequestInit) => {
+    const body = JSON.parse(init.body as string);
+    if (url.includes("agentmail")) return new Promise<Response>((_resolve, reject) => {
+      init.signal!.addEventListener("abort", () => reject(init.signal!.reason));
+    });
+    return Promise.resolve(new Response(JSON.stringify({ results: body.watches.map((w: any) => found(w.id, ["a1"])) })));
+  }));
+
+  const run = t.action(internal.checker.checkDue, {});
+  await vi.advanceTimersByTimeAsync(15_000);
+  await run;
+  expect(deadlines).toEqual([240_000, 15_000]);
+  expect((await alerts(t))[0].emailStatus).toBe("failed");
+  expect((await t.run((ctx) => ctx.db.query("runs").collect())).find((r) => r.checked === 1))
+    .toMatchObject({ checked: 1, failed: 0, emailFailures: 1, timeouts: 1 });
+  expect(await t.mutation(internal.checker.claimEmailRetries, { now: Date.now() + 15 * 60_000 })).toHaveLength(1);
+});
+
+test("check-API timeout fails its watches and still processes later groups", async () => {
+  const { t, alice, id } = await seededWatch();
+  const other = await alice.mutation(api.watches.create, { ...watchArgs, query: "iphone" });
+  await t.run((ctx) => ctx.db.patch(other, { seeded: true, nextRunAt: Date.now() }));
+  const deadlines: number[] = [];
+  vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+    deadlines.push(ms);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException("Timed out", "TimeoutError")), ms);
+    return controller.signal;
+  });
+  const queries: string[] = [];
+  vi.stubGlobal("fetch", vi.fn((url: string, init: RequestInit) => {
+    const body = JSON.parse(init.body as string);
+    if (url.includes("agentmail")) return Promise.resolve(new Response("{}"));
+    queries.push(body.query);
+    if (body.query === "mac mini") return new Promise<Response>((_resolve, reject) => {
+      init.signal!.addEventListener("abort", () => reject(init.signal!.reason));
+    });
+    return Promise.resolve(new Response(JSON.stringify({ results: body.watches.map((w: any) => found(w.id, [])) })));
+  }));
+
+  const run = t.action(internal.checker.checkDue, {});
+  await vi.advanceTimersByTimeAsync(240_000);
+  await run;
+  expect(deadlines).toEqual([240_000, 240_000]);
+  expect(queries).toEqual(["mac mini", "iphone"]);
+  const watches = await t.run(async (ctx) => [await ctx.db.get(id), await ctx.db.get(other)]);
+  expect(watches[0]).toMatchObject({ lastError: "Our search service didn't answer. We'll try again soon.", nextRunAt: Date.parse("2026-09-27T10:30:00Z") });
+  expect(watches[1]!.lastError).toBeUndefined();
+  expect((await t.run((ctx) => ctx.db.query("runs").collect())).find((r) => r.checked === 2))
+    .toMatchObject({ checked: 2, failed: 1, timeouts: 1 });
+});
+
 test("A06: a dry run changes nothing, so the real run afterwards still e-mails", async () => {
   const { t, id } = await seededWatch();
   const mails = fakeServices(() => ["a1"]);

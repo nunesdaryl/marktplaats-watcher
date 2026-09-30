@@ -104,6 +104,7 @@ export default defineSchema({
     failed: v.number(),
     emails: v.number(),
     emailFailures: v.number(),
+    timeouts: v.optional(v.number()),
     paused: v.optional(v.boolean()),
   }).index("by_at", ["at"]),
 

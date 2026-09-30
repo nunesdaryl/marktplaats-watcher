@@ -315,6 +315,7 @@ export async function sendEmail(to: string, email: { subject: string; text: stri
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ to: [to], ...email, labels: ["alert"] }),
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) throw new Error(`AgentMail answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
@@ -329,7 +330,7 @@ export const checkDue = internalAction({
       return { checked: 0, emails: 0, paused: true };
     }
     const appUrl = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
-    let checked = 0, emails = 0, failed = 0, emailFailures = 0;
+    let checked = 0, emails = 0, failed = 0, emailFailures = 0, timeouts = 0;
 
     /** Send one watch's alert e-mail and record the outcome; a failure is retried at the next ticks. */
     const deliver = async (mail: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string }) => {
@@ -344,6 +345,7 @@ export const checkDue = internalAction({
         console.error("alert e-mail failed:", e);
         status = "failed";
         emailFailures++;
+        if (e instanceof Error && e.name === "TimeoutError") timeouts++;
       }
       await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
     };
@@ -361,11 +363,13 @@ export const checkDue = internalAction({
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Cron-Secret": secret },
           body: JSON.stringify(group),
+          signal: AbortSignal.timeout(240_000),
         });
         if (!res.ok) throw new Error(`Search service answered ${res.status}.`);
         results = (await res.json()).results;
       } catch (e) {
         console.error(`check "${group.query}" failed:`, e);
+        if (e instanceof Error && e.name === "TimeoutError") timeouts++;
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
       checked += group.watches.length;
@@ -379,9 +383,9 @@ export const checkDue = internalAction({
       }
     }
     if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent
-    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures });
+    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts });
     if (checked || emails || emailFailures)
-      console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, ms: Date.now() - now }));
+      console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, timeouts, ms: Date.now() - now }));
     return { checked, emails };
   },
 });
