@@ -246,7 +246,7 @@ concrete fixes.
 | Decisions dated and kept current | 🟡 | `Decisions.md` and `Evaluation Results.md` still describe v1 | Refresh, or point them to the ADRs | S · 1 |
 | "Correct the agent twice → write a skill" (D3-SB p17) | ❌ | Lessons from this project (FastAPI preset, production-deploy check, CSS class clash, Clerk dark menu) aren't in `fde-skill` (CAI-98) | Add them to the skill's checklists | S · 2 |
 | Workspace housekeeping: no stale secrets, no copied course material, everything backed up (AUDIT-2026-09-26 #9–#13) | ❌ | `2 Projects/weather-agent/.env` still holds the old Azure entries; `04-researcher` has Playwright profiles and `/Volumes` paths; `05-copywriter/bronnen` may hold paid-course transcripts; about 1 GB of duplicates; the skill and vault repos have no remote | Clear the Azure entries; fix or remove the profiles and paths; check the transcripts; delete the duplicates; add private remotes | S · any time |
-| Factory: intake → build → gate → review → ship (D3-SB p19–21) | 🟡 | The global factory skills and Linear queue exist; this project was mostly built interactively; the weather-hardening branch is still open | Run Wave 1 through the factory, one issue at a time | — · 1 |
+| Factory: intake → build → gate → review → ship (D3-SB p19–21) | 🟡 | 30 Sep: MW-7, MW-1, MW-2 and MW-3 ran through the factory (GPT-6 Sol builds, Opus 5.5 reviews, operator merges; one needs-fix cycle) and are live; the other Wave 1 specs need refreshing first | Refresh and run the rest of Wave 1; add a merge-gate script | — · 1 |
 
 ## 4. What is already strong (say it on stage)
 
@@ -284,11 +284,15 @@ Filed on 29 September as factory specs **MW-1 to MW-13** in the Linear team "Mar
 `.factory.json` binds it), in the order below. Each waits for the operator's `agent-ready` label before the build loop
 picks it up.
 
-1. **(MW-1) Tools never raise.** Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
+**Done 30 Sep, before the demo (demo-risk first):** MW-7, MW-1, MW-2 and MW-3, built by GPT-6 Sol and reviewed by
+Opus 5.5, merged on Daryl's OK and live (main `4084678`). The rest wait for a spec refresh: the specs predate the 29–30 Sep
+rewrite of the checks.
+
+1. **(MW-1, ✅ live 30 Sep) Tools never raise.** Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
    then the user sees "postcode service unavailable", and the other watches in the group still run. (§3.3)
-2. **(MW-2) Ranker output check.** Given the model leaves out a listing id, when a check scores, then the missing ids are
+2. **(MW-2, ✅ live 30 Sep) Ranker output check.** Given the model leaves out a listing id, when a check scores, then the missing ids are
    re-scored once and otherwise skipped and logged; the watch still delivers the rest. (§3.3)
-3. **(MW-3) Token caps and turn deadline.** Given any chat, when it runs, then no model call exceeds `max_tokens` and the
+3. **(MW-3, ✅ live 30 Sep) Token caps and turn deadline.** Given any chat, when it runs, then no model call exceeds `max_tokens` and the
    turn ends within 60 s with a clear message. (§3.3)
 4. **(MW-4) Per-user daily budget and chat kill switch.** Given a user hits the daily allowance, when they chat, then they
    get a friendly limit message; setting `CHAT_PAUSED=1` stops chat for everyone. (§3.9)
@@ -301,7 +305,7 @@ picks it up.
     (§3.5)
 6. **(MW-6) Request ids and errors in the digest.** Given a chat or check fails, when the digest runs, then it lists the
    count and the latest request ids. (§3.6)
-7. **(MW-7) Stream timeout.** Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
+7. **(MW-7, ✅ live 30 Sep) Stream timeout.** Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
    composer. (§3.8)
 8. **(MW-8) Outbound timeouts** on the AgentMail and check-API calls. (§3.7)
 9. **(MW-9) ADRs 0001–0008 and `docs/nfr.md`.** (§3.1, §3.2)

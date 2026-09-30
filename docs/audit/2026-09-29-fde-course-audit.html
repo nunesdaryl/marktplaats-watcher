@@ -1094,8 +1094,8 @@ concrete fixes.</p>
 <tr>
 <td>Factory: intake → build → gate → review → ship (D3-SB p19–21)</td>
 <td><span class="tag partial">🟡 partly</span></td>
-<td>The global factory skills and Linear queue exist; this project was mostly built interactively; the weather-hardening branch is still open</td>
-<td>Run Wave 1 through the factory, one issue at a time</td>
+<td>30 Sep: MW-7, MW-1, MW-2 and MW-3 ran through the factory (GPT-6 Sol builds, Opus 5.5 reviews, operator merges; one needs-fix cycle) and are live; the other Wave 1 specs need refreshing first</td>
+<td>Refresh and run the rest of Wave 1; add a merge-gate script</td>
 <td>— · 1</td>
 </tr>
 </tbody>
@@ -1141,12 +1141,15 @@ concrete fixes.</p>
 <p>Filed on 29 September as factory specs <strong>MW-1 to MW-13</strong> in the Linear team "Marktplaats Watcher" (key MW; the repo's
 <code>.factory.json</code> binds it), in the order below. Each waits for the operator's <code>agent-ready</code> label before the build loop
 picks it up.</p>
+<p><strong>Done 30 Sep, before the demo (demo-risk first):</strong> MW-7, MW-1, MW-2 and MW-3, built by GPT-6 Sol and reviewed by
+Opus 5.5, merged on Daryl's OK and live (main <code>4084678</code>). The rest wait for a spec refresh: the specs predate the 29–30 Sep
+rewrite of the checks.</p>
 <ol>
-<li><strong>(MW-1) Tools never raise.</strong> Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
+<li><strong>(MW-1, ✅ live 30 Sep) Tools never raise.</strong> Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
    then the user sees "postcode service unavailable", and the other watches in the group still run. (§3.3)</li>
-<li><strong>(MW-2) Ranker output check.</strong> Given the model leaves out a listing id, when a check scores, then the missing ids are
+<li><strong>(MW-2, ✅ live 30 Sep) Ranker output check.</strong> Given the model leaves out a listing id, when a check scores, then the missing ids are
    re-scored once and otherwise skipped and logged; the watch still delivers the rest. (§3.3)</li>
-<li><strong>(MW-3) Token caps and turn deadline.</strong> Given any chat, when it runs, then no model call exceeds <code>max_tokens</code> and the
+<li><strong>(MW-3, ✅ live 30 Sep) Token caps and turn deadline.</strong> Given any chat, when it runs, then no model call exceeds <code>max_tokens</code> and the
    turn ends within 60 s with a clear message. (§3.3)</li>
 <li><strong>(MW-4) Per-user daily budget and chat kill switch.</strong> Given a user hits the daily allowance, when they chat, then they
    get a friendly limit message; setting <code>CHAT_PAUSED=1</code> stops chat for everyone. (§3.9)</li>
@@ -1161,7 +1164,7 @@ picks it up.</p>
 </li>
 <li><strong>(MW-6) Request ids and errors in the digest.</strong> Given a chat or check fails, when the digest runs, then it lists the
    count and the latest request ids. (§3.6)</li>
-<li><strong>(MW-7) Stream timeout.</strong> Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
+<li><strong>(MW-7, ✅ live 30 Sep) Stream timeout.</strong> Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
    composer. (§3.8)</li>
 <li><strong>(MW-8) Outbound timeouts</strong> on the AgentMail and check-API calls. (§3.7)</li>
 <li><strong>(MW-9) ADRs 0001–0008 and <code>docs/nfr.md</code>.</strong> (§3.1, §3.2)</li>

@@ -34,7 +34,8 @@ No ratings yet. Every alert e-mail and the Alerts page ask "Good match? ğŸ‘ / ğ
 
 ## 2. Does the chat do the right thing? (20-case golden set)
 
-**20/20 passed.**
+**20/20 passed.** Note (30 Sep 2026): case C3 ("Only tell me about great matches for my Mac mini watch") is flaky
+with the real model, passing 7 of 15 repeated runs on main; a single 20-case run can show 19/20. Fix tracked as MW-16.
 
 | Category | Passed |
 |---|---|

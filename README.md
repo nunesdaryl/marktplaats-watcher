@@ -96,8 +96,10 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
 - **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
   theme" in the account menu goes back.
 - **Software factory queue:** Linear team "Marktplaats Watcher" (MW), bound by `.factory.json`. Wave 1 of the audit
-  is filed as MW-1 to MW-13, the official Marktplaats API route as MW-14 and the design polish as MW-15; the build
-  loop only picks up issues marked `agent-ready`.
+  is filed as MW-1 to MW-13, the official Marktplaats API route as MW-14, the design polish as MW-15 and a flaky chat
+  eval as MW-16; the build loop only picks up issues marked `agent-ready`, and issues whose next step is Daryl's carry
+  `human-ready`. On 30 Sep MW-7, MW-1, MW-2 and MW-3 went through it (GPT-6 Sol builds at medium effort via
+  `/opt/homebrew/bin/codex`, Claude Opus 5.5 reviews, Daryl approves each merge) and are live.
 - **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
   with evidence, and a dated roadmap.
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from

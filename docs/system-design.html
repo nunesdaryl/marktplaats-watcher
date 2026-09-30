@@ -974,5 +974,48 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   product), not from one marketing page, and hedge what the sources contradict ("once a day, per its help pages").</div>
 </section>
 
+<!-- ============================ 18 FACTORY RUN ============================ -->
+<section>
+<h2>18. The software factory, first real run (30 September)</h2>
+<p>Four demo-risk issues from the FDE audit went through the factory before the Saturday demo. GPT-6 Sol (via the Codex
+  CLI, medium effort) built each on its own branch in a separate worktree; Claude Opus 5.5 reviewed it against the spec by running it,
+  not just reading the diff; Daryl approved every merge (the repo has no merge-gate script, and a merge to main
+  publishes). Linear holds the record: claim, dispatch, build report, verdict, merge.</p>
+<table>
+  <tr><th style="width:12%">Issue</th><th>What changed</th><th style="width:34%">How the review checked it</th></tr>
+  <tr><td>MW-7</td><td>The chat stream gives up after 70 s in total or 30 s without data, says "The answer didn't come
+    through. Please try again." and the composer comes back.</td><td>Real sockets and real timers: server killed mid-answer,
+    stalled, and a normal answer (unchanged).</td></tr>
+  <tr><td>MW-1</td><td>Postcode-service (PDOK) failures never escape the tools: the chat explains the outage; checks keep
+    going with Marktplaats' own distance filter; failures are never cached.</td><td>Live run with PDOK forced down: both watches
+    ok; the real lookup worked again afterwards.</td></tr>
+  <tr><td>MW-2</td><td>Listings the scorer leaves out are re-scored once, then skipped (marked seen, logged
+    <code>rank_skipped</code>, never e-mailed) instead of failing the watch.</td><td>A fake scorer that always omits one
+    listing, and a real scoring call (unchanged results).</td></tr>
+  <tr><td>MW-3</td><td>Output caps (1,500 tokens chat, 2,500 scorer) and a 60-second chat deadline with a clear message;
+    the function limit is stated as 300 s.</td><td>Fake clock; 20 real-model golden cases; a Vercel preview build.
+    <b>Sent back once:</b> the first build set the limit to 70 s, which would have lowered the project's 300 s default
+    and cut off the scheduled checks.</td></tr>
+</table>
+<p><b>What the run taught:</b></p>
+<ul>
+  <li><b>Specs go stale quickly.</b> They were written the day before a rewrite of the checks, so each got a
+    reviewer's addendum with current line numbers and one changed rule (MW-2 marks skipped listings seen, because of
+    the new watermark).</li>
+  <li><b>Check the tool, not the name.</b> GPT-6 Sol failed on the Codex CLI first on the PATH (0.146) and worked on the
+    newer Homebrew one (0.158); the factory now calls that binary by its full path.</li>
+  <li><b>Harness limits look like failures.</b> A symlinked <code>node_modules</code> broke the Next.js build in a worktree,
+    and Vercel blocked command-line preview deploys; both were worked around (build in the main checkout, preview via a pushed
+    branch) and noted in Linear, including one verdict the reviewer had to correct.</li>
+  <li><b>A green eval can hide a coin flip.</b> Golden case C3 passes about half the time, on main as well; filed as MW-16.</li>
+  <li><b>Two labels, two owners.</b> <code>agent-ready</code> is the factory's queue; <code>human-ready</code> (new, the
+    renamed <code>operator-gated</code>) is Daryl's. MW-14 (apply for Marktplaats API access) is <code>human-ready</code>.</li>
+</ul>
+<div class="pattern"><b>Pattern:</b> the builder and the reviewer are different models with different jobs. The builder
+  implements the spec; the reviewer runs it the way it will really run (real sockets, forced outages, the real
+  platform's settings) and sends it back when it's wrong. Here one number in a config file would have broken the
+  scheduled checks, and every test was green.</div>
+</section>
+
 </body>
 </html>
