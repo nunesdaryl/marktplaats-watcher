@@ -20,6 +20,22 @@ function Stat({ value, name, note, onOpen }) {
   );
 }
 
+function HealthIssue({ issue, go }) {
+  return <details className="health-issue">
+    <summary><span className={`health-dot ${issue.severity}`} /><span className="health-headline">{issue.headline}</span>
+      <span className="health-count">{issue.count}</span><Icon name="chevron" size={14} /></summary>
+    <ul>{issue.items.map((item, i) => <li key={`${item.requestId ?? item.watchId ?? issue.kind}-${item.listingId ?? i}`}>
+      {item.watchId ? <button className="link-button" onClick={() => go("watch", item.label, { id: item.watchId })}>{item.label}</button>
+        : <span>{item.label}</span>}
+      {item.score !== undefined && <span className="health-meta"> · {item.score}/10</span>}
+      {item.title && <span className="health-meta"> · </span>}
+      {item.title && (item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a> : <span>{item.title}</span>)}
+      {item.userId && <button className="link-button health-user" onClick={() => go("user", "Account", { id: item.userId })}>Account</button>}
+      {item.requestId && <button className="health-request" title={`Copy request ${item.requestId}`} onClick={() => navigator.clipboard?.writeText(item.requestId)}>{item.requestId} · Copy</button>}
+    </li>)}</ul>
+  </details>;
+}
+
 /** Daily bars: one column per day, the busiest day is full height. Each day opens that day's records. */
 function DayChart({ title, daily, keys, onDay, onTitle, hideSum }) {
   const total = (d) => keys.reduce((n, k) => n + d[k.key], 0);
@@ -256,10 +272,13 @@ export default function Overview({ open }) {
       </div>
       <p className="hint admin-tip">Click any number, bar or row to see the exact records behind it.</p>
 
-      <div className={`health ${h.problems.length ? "bad" : "ok"}`} role="status">
-        <strong>{h.problems.length ? `${h.problems.length} problem${h.problems.length > 1 ? "s" : ""}` : "All healthy"}</strong>
-        <span>{h.summary}{h.lastRunAt ? ` Last check run ${when(h.lastRunAt)}.` : ""}</span>
-        {h.problems.map((p) => <span key={p} className="health-problem">{p}</span>)}
+      <div className={`health ${h.issues.length ? "bad" : "ok"}`}>
+        <div className="health-stats" aria-label="Last 24 hours">
+          {[["Runs", h.stats.runs], ["Checks failed", h.stats.checksFailed], ["E-mails sent", h.stats.emailsSent], ["Errors", h.stats.errors]].map(([name, value]) =>
+            <div key={name}><strong>{value}</strong><span>{name}</span></div>)}
+        </div>
+        {h.issues.length ? <div className="health-issues">{h.issues.map((issue) => <HealthIssue key={issue.kind} issue={issue} go={go} />)}</div>
+          : <p className="health-good">All good</p>}
       </div>
 
       <div className="stats">

@@ -34,12 +34,13 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const chatErrors = errors.filter((e) => e.kind === "chat").length;
   const checkErrors = errors.length - chatErrors;
   const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
-  const failedEmails = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
-    .filter((a) => a.emailStatus === "failed").length;
+  const failedAlerts = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
+    .filter((a) => a.emailStatus === "failed");
+  const failedEmails = failedAlerts.length;
   const activeWatches = (await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
     .filter((w) => w.archivedAt === undefined);
   const failing = activeWatches
-    .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError! }));
+    .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError!, watchId: w._id, userId: w.userId }));
   const behind = activeWatches.filter((w) => (w.backlog ?? 0) >= 100 || w.coverageCapped);
   const sum = (key: "checked" | "failed" | "emails" | "emailFailures") => runs.reduce((n, r) => n + r[key], 0);
   const problems: string[] = [];
@@ -63,8 +64,44 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     problems.push(`Delivery audit failed for "${w?.name ?? w?.label ?? "Deleted watch"}": ${a.error ?? "Unknown error"}; request ${a.requestId}.`);
   }
   if (behind.length) problems.push(`${behind.length} watch(es) can't keep up: ${behind.map((w) => `"${w.name ?? w.label}" (backlog ${w.backlog ?? 0})`).join("; ")}.`);
+  type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string };
+  type Issue = { kind: string; severity: "high" | "medium" | "low"; headline: string; count: number; items: Item[] };
+  const issues: Issue[] = [];
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  if (errors.length >= 5) issues.push({ kind: "errors", severity: "high", headline: plural(errors.length, "error"), count: errors.length,
+    items: errors.map((e) => ({ label: `${e.kind} error: ${e.message}`, requestId: e.requestId })) });
+  if (!lastRun || now - lastRun.at > STUCK_AFTER) issues.push({ kind: "scheduler_stuck", severity: "high", headline: "Scheduler hasn't run", count: 1,
+    items: [{ label: lastRun ? `Last run ${new Date(lastRun.at).toISOString()}` : "No runs yet", requestId: lastRun?.requestId }] });
+  const pausedRuns = runs.filter((r) => r.paused);
+  if (pausedRuns.length) issues.push({ kind: "checks_paused", severity: "high", headline: "Checks are paused", count: pausedRuns.length,
+    items: pausedRuns.map((r) => ({ label: `Paused run ${new Date(r.at).toISOString()}`, requestId: r.requestId })) });
+  const failedAlertItems = await Promise.all(failedAlerts.map(async (a) => {
+    const w = await ctx.db.get(a.watchId);
+    return { label: w?.name ?? w?.label ?? "Deleted watch", watchId: a.watchId, userId: a.userId,
+      listingId: a.listingId, score: a.score, title: a.title, url: a.url };
+  }));
+  if (failedEmails) issues.push({ kind: "emails_failed", severity: "high", headline: `${plural(failedEmails, "alert e-mail")} failed`, count: failedEmails,
+    items: failedAlertItems });
+  if (failing.length) issues.push({ kind: "watches_failing", severity: "high", headline: `${plural(failing.length, "watch")} failing`, count: failing.length,
+    items: failing.map((w) => ({ label: `${w.label}: ${w.error}`, watchId: w.watchId, userId: w.userId })) });
+  const auditWatches = new Map(await Promise.all(audits.filter((a) => a.missCount > 0 || !a.ok).map(async (a) => {
+    const w = await ctx.db.get(a.watchId);
+    return [a.watchId, w?.name ?? w?.label ?? "Deleted watch"] as const;
+  })));
+  if (missCount) issues.push({ kind: "delivery_misses", severity: "high",
+    headline: `${plural(missCount, "missed match")} on ${plural(new Set(missed.map((a) => a.watchId)).size, "watch")}`, count: missCount,
+    items: missed.flatMap((a) => a.misses.map((m) => ({ label: auditWatches.get(a.watchId)!, watchId: a.watchId, userId: a.userId,
+      requestId: a.requestId, listingId: m.listingId, score: m.score, title: m.title, url: m.url }))) });
+  const failedAudits = audits.filter((a) => !a.ok);
+  if (failedAudits.length) issues.push({ kind: "audit_failed", severity: "high", headline: `${plural(failedAudits.length, "delivery audit")} failed`, count: failedAudits.length,
+    items: failedAudits.map((a) => ({ label: `${auditWatches.get(a.watchId)}: ${a.error ?? "Unknown error"}`, watchId: a.watchId,
+      userId: a.userId, requestId: a.requestId })) });
+  if (behind.length) issues.push({ kind: "watches_behind", severity: "medium", headline: `${plural(behind.length, "watch")} can't keep up`, count: behind.length,
+    items: behind.map((w) => ({ label: `${w.name ?? w.label} (backlog ${w.backlog ?? 0})`, watchId: w._id, userId: w.userId })) });
   return {
     problems,
+    issues,
+    stats: { runs: runs.length, checksFailed: sum("failed"), emailsSent: sum("emails"), errors: errors.length },
     summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}. Delivery audit: ${audits.length} watches checked, ${missCount} misses.`,
     lastRunAt: lastRun?.at ?? null,
   };
