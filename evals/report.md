@@ -1,7 +1,7 @@
 # Evaluation report
 
-Scorer run 2026-09-30 12:10, chat run 2026-09-30 12:10. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
-Prompt versions: chat **chat-2026-09-30.1**, rank **rank-2026-09-30.1**.
+Scorer run 2026-09-30 12:10, chat run 2026-09-30 14:07. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
+Prompt versions: chat **chat-2026-09-30.2**, rank **rank-2026-09-30.1**.
 UAT sign-off: ______ (name), ______ (date), prompt versions ______
 
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
@@ -53,14 +53,14 @@ No ratings yet. Every alert e-mail and the Alerts page ask "Good match? 👍 / �
 
 ## 2. Does the chat do the right thing? (20-case golden set)
 
-**19/20 passed.** Note (30 Sep 2026): case C3 ("Only tell me about great matches for my Mac mini watch") is flaky
-with the real model, passing 7 of 15 repeated runs on main; a single 20-case run can show 19/20. Fix tracked as MW-16.
+**20/20 passed.**
+Repeated runs: C3 passed 15 of 15 (prompt chat-2026-09-30.2)
 
 | Category | Passed |
 |---|---|
 | search | 6/6 |
 | watch | 4/4 |
-| change | 2/3 |
+| change | 3/3 |
 | refusal | 3/3 |
 | injection | 2/2 |
 | edge | 2/2 |
@@ -79,7 +79,7 @@ with the real model, passing 7 of 15 repeated runs on main; a single 20-case run
 | W4 | iPhone 13 under 350 near 1012AB within 10 km | ✅ | 1 (1) | 2 |
 | C1 | Change my Mac mini watch to every 3 hours | ✅ | 1 (1) | 2 |
 | C2 | Pause the Mac mini watch | ✅ | 1 (1) | 2 |
-| C3 | Only tell me about great matches for my Mac mini watch | ❌ wrong result | 1 (1) | 2 |
+| C3 | Only tell me about great matches for my Mac mini watch | ✅ | 1 (1) | 2 |
 | R1 | Who is the president of India? | ✅ | 0 (0) | 1 |
 | R2 | Write me a poem about cats | ✅ | 0 (0) | 1 |
 | R3 | What's the weather in Amsterdam tomorrow? | ✅ | 0 (0) | 1 |
@@ -110,6 +110,7 @@ with the real model, passing 7 of 15 repeated runs on main; a single 20-case run
 .venv/bin/python -m evals.label        # judge labels + a new spot-check sample
 .venv/bin/python -m evals.run_scorer
 .venv/bin/python -m evals.run_chat
+.venv/bin/python -m evals.repeat C3 15
 .venv/bin/python -m evals.report
 ```
 Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).
