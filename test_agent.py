@@ -588,6 +588,25 @@ def test_fetch_search_asks_for_date_order_with_filters_and_rejects_odd_answers(m
     assert params["sortBy"] == "SORT_INDEX" and params["sortOrder"] == "DECREASING"
 
 
+def test_rank_listings_chunks_in_order_and_retries_omissions_per_chunk(monkeypatch):
+    calls = []
+    class PartialRanker:
+        def invoke(self, messages):
+            ids = [item["id"] for item in json.loads(messages[-1]["content"])["listings"]]
+            calls.append(ids)
+            scored = ids[:-1] if len(ids) > 1 else ids
+            return agent.Ranking(ranks=[agent.Rank(id=ident, score=int(ident[1:]) % 11, reason="match")
+                                        for ident in reversed(scored)])
+    monkeypatch.setattr(agent, "ranker", PartialRanker())
+    listings = [{"id": f"n{i}"} for i in range(23)]
+    ranked = agent.rank_listings("mac mini", listings)
+    assert agent.RANK_BATCH == 10 and agent.MAX_RANK_PER_CHECK == 20
+    assert calls == [[f"n{i}" for i in range(10)], ["n9"],
+                     [f"n{i}" for i in range(10, 20)], ["n19"], ["n20", "n21", "n22"], ["n22"]]
+    assert [item["id"] for item in ranked] == [f"n{i}" for i in range(23)]
+    assert [item["score"] for item in ranked] == [i % 11 for i in range(23)]
+
+
 def test_ranking_failure_leaves_listings_unranked_instead_of_dropping_them(monkeypatch):
     class BrokenRanker:
         def invoke(self, messages):
@@ -1166,11 +1185,13 @@ def test_audit_watch_finds_handled_and_never_read_with_margin(monkeypatch):
     last_read = int(datetime(2026, 9, 30, 8, tzinfo=ZoneInfo("Europe/Amsterdam")).timestamp() * 1000)
     result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
                                 "seen_ids": ["handled", "low", "alerted", "paid"],
+                                "seen_scores": {"handled": 4, "low": 0},
                                 "alerted_ids": ["alerted"], "last_read_at": last_read}, now)
     assert result["ok"] and result["read"] == 5
     assert result["candidates"] == result["scored"] == 3
     assert [(m["id"], m["kind"]) for m in result["misses"]] == \
-        [("unseen", "never_read"), ("handled", "handled")]
+        [("unseen", "never_read"), ("handled", "rescored")]
+    assert result["misses"][1]["checkScore"] == 4
     assert result["missCount"] == 2
 
 
@@ -1219,6 +1240,7 @@ def test_audit_watch_excludes_baseline_and_keeps_highest_scoring_misses(monkeypa
     assert result["ok"] is True
     assert (result["candidates"], result["scored"], result["unscored"], result["missCount"]) == (3, 2, 1, 2)
     assert [m["id"] for m in result["misses"]] == ["high", "low"]
+    assert [m["kind"] for m in result["misses"]] == ["never_scored", "never_scored"]
 
 
 def test_audit_watch_uses_real_read_since_result(monkeypatch):
@@ -1234,6 +1256,7 @@ def test_audit_watch_uses_real_read_since_result(monkeypatch):
                                 "seen_ids": ["fresh"]}, now)
     assert result["ok"] is True
     assert (result["read"], result["scored"], result["missCount"]) == (1, 1, 1)
+    assert result["misses"][0]["kind"] == "never_scored"
 
 
 def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
@@ -1260,6 +1283,8 @@ def test_audit_route_accepts_full_seen_history(client, monkeypatch):
     ids = [f"old{i}" for i in range(3000)]
     response = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
                            json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good",
-                                              "seen_ids": ids, "baseline_ids": ids}]})
+                                              "seen_ids": ids, "seen_scores": {"old0": 0},
+                                              "baseline_ids": ids}]})
     assert response.status_code == 200
     assert received[0]["seen_ids"] == ids and received[0]["baseline_ids"] == ids
+    assert received[0]["seen_scores"] == {"old0": 0}

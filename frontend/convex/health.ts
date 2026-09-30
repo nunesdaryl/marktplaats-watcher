@@ -54,7 +54,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (missCount) {
     const details = await Promise.all(missed.slice(0, 5).map(async (a) => {
       const w = await ctx.db.get(a.watchId);
-      return a.misses.map((m) => `"${w?.name ?? w?.label ?? "Deleted watch"}" (${m.score}/10 "${m.title}", ${m.kind})`).join(", ");
+      return a.misses.map((m) => `"${w?.name ?? w?.label ?? "Deleted watch"}" (${m.score}/10 "${m.title}", ${m.kind}${m.checkScore !== undefined ? `, scored ${m.checkScore} at check, ${m.score} now` : ""})`).join(", ");
     }));
     problems.push(`Delivery audit: ${missCount} missed match(es) on ${new Set(missed.map((a) => a.watchId)).size} watch(es): ${details.filter(Boolean).join(", ")}; request ${missed[0].requestId}.`);
   }

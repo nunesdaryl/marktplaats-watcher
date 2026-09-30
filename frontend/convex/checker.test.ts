@@ -29,6 +29,29 @@ async function seededWatch(schedule: any = hourly) {
 }
 const found = (id: any, ids: string[]) => ({ watchId: id, ok: true, currentIds: ids, listings: ids.map(listing) });
 
+test("record stores scores and reasons for alerted and non-alerted listings", async () => {
+  const { t, id } = await seededWatch();
+  const now = Date.now();
+  const low = { ...listing("low"), score: 4, reason: "Too expensive" };
+  const high = listing("high");
+  await t.mutation(internal.checker.record, { now, dryRun: false,
+    results: [{ watchId: id, ok: true, currentIds: ["low", "high", "unscored"], listings: [low, high] }] });
+  const rows = await t.run((ctx) => ctx.db.query("seenListings").collect());
+  expect(rows.find((row) => row.listingId === "low")).toMatchObject({ score: 4, reason: "Too expensive", scoredAt: now });
+  expect(rows.find((row) => row.listingId === "high")).toMatchObject({ score: 9, reason: "match", scoredAt: now });
+  expect(rows.find((row) => row.listingId === "unscored")?.score).toBeUndefined();
+  expect(rows.find((row) => row.listingId === "unscored")?.reason).toBeUndefined();
+  expect(rows.find((row) => row.listingId === "unscored")?.scoredAt).toBeUndefined();
+  expect((await alerts(t)).map((alert: any) => alert.listingId)).toEqual(["high"]);
+  await t.mutation(internal.checker.record, { now: now + 60_000, dryRun: false,
+    results: [{ watchId: id, ok: true, currentIds: ["low"],
+      listings: [{ ...low, score: 5, reason: "x".repeat(210) }] }] });
+  const updated = await t.run((ctx) => ctx.db.query("seenListings")
+    .withIndex("by_watch_listing", (q) => q.eq("watchId", id).eq("listingId", "low")).unique());
+  expect(updated).toMatchObject({ score: 5, reason: "x".repeat(200), scoredAt: now + 60_000 });
+  expect(await alerts(t)).toHaveLength(1);
+});
+
 test("first successful look records its baseline time only once", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });

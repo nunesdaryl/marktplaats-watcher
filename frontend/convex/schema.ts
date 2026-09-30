@@ -128,7 +128,9 @@ export default defineSchema({
     missCount: v.number(),
     misses: v.array(v.object({
       listingId: v.string(), title: v.string(), url: v.string(), score: v.number(),
-      kind: v.union(v.literal("handled"), v.literal("never_read")),
+      kind: v.union(v.literal("handled"), v.literal("never_read"),
+        v.literal("rescored"), v.literal("never_scored")),
+      checkScore: v.optional(v.number()),
     })),
     error: v.optional(v.string()),
   }).index("by_at", ["at"]).index("by_watch_at", ["watchId", "at"]),
@@ -201,6 +203,9 @@ export default defineSchema({
     watchId: v.id("watches"),
     listingId: v.string(),
     lastSeenAt: v.number(),
+    score: v.optional(v.number()),
+    reason: v.optional(v.string()),
+    scoredAt: v.optional(v.number()),
   })
     .index("by_watch_listing", ["watchId", "listingId"])
     .index("by_watch_lastSeen", ["watchId", "lastSeenAt"])

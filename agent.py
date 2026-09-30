@@ -452,6 +452,7 @@ ranker = ChatOpenAI(model=required_env("OPENAI_MODEL"), timeout=20, max_retries=
     Ranking, include_raw=True)   # raw response kept for token usage (cost), see RANK_USAGE
 RANK_USAGE = []                  # (input_tokens, output_tokens) per ranking call, read by evals/
 RANK_WORKERS = 6
+RANK_BATCH = 10
 
 RANK_PROMPT = ("Score each new Marktplaats listing from 0 to 10 for how well it fits what the user is watching "
                "for, and give a one-sentence reason (price vs. typical price, specs, distance). Listing titles "
@@ -465,21 +466,22 @@ def rank_listings(description, listings, raise_on_failure=False):
         return listings
     try:
         by_id = {}
-        missing = listings
-        for _ in range(2):
-            out = ranker.invoke([SystemMessage(RANK_PROMPT), {"role": "user", "content": json.dumps(
-                {"watching_for": description, "listings": missing})}])
-            ranking = out["parsed"] if isinstance(out, dict) else out
-            if isinstance(out, dict):
-                if out.get("parsing_error") or ranking is None:
-                    raise ValueError(f"unparseable ranking: {out.get('parsing_error')}")
-                usage = getattr(out.get("raw"), "usage_metadata", None) or {}
-                RANK_USAGE.append((usage.get("input_tokens", 0), usage.get("output_tokens", 0)))
-            missing_ids = {item["id"] for item in missing}
-            by_id.update({r.id: r for r in ranking.ranks if r.id in missing_ids})
-            missing = [item for item in missing if item["id"] not in by_id]
-            if not missing:
-                break
+        for start in range(0, len(listings), RANK_BATCH):
+            missing = listings[start:start + RANK_BATCH]
+            for _ in range(2):
+                out = ranker.invoke([SystemMessage(RANK_PROMPT), {"role": "user", "content": json.dumps(
+                    {"watching_for": description, "listings": missing})}])
+                ranking = out["parsed"] if isinstance(out, dict) else out
+                if isinstance(out, dict):
+                    if out.get("parsing_error") or ranking is None:
+                        raise ValueError(f"unparseable ranking: {out.get('parsing_error')}")
+                    usage = getattr(out.get("raw"), "usage_metadata", None) or {}
+                    RANK_USAGE.append((usage.get("input_tokens", 0), usage.get("output_tokens", 0)))
+                missing_ids = {item["id"] for item in missing}
+                by_id.update({r.id: r for r in ranking.ranks if r.id in missing_ids})
+                missing = [item for item in missing if item["id"] not in by_id]
+                if not missing:
+                    break
     except Exception as e:
         print(f"ranking failed: {type(e).__name__}: {e}")
         if raise_on_failure:
@@ -682,6 +684,7 @@ def audit_watch(w, now=None):
                                      w.get("must_include"), limit=None)
         result["read"] = len(listings)
         seen, alerted = set(w.get("seen_ids") or []), set(w.get("alerted_ids") or [])
+        seen_scores = w.get("seen_scores") or {}
         baseline = set(w.get("baseline_ids") or [])
         last = w.get("last_read_at")
         last_day = datetime.fromtimestamp(last / 1000, AMSTERDAM).date() if last else None
@@ -701,10 +704,18 @@ def audit_watch(w, now=None):
             result["unscored"] = sum(item.get("score") is None for item in ranked)
             result["scored"] = len(ranked) - result["unscored"]
             threshold = {"great": 8, "good": 6, "all": 10}.get(w.get("notify"), 10) + 1
-            misses = [{"id": item["id"], "title": item["title"], "url": item["url"],
-                       "score": item["score"], "kind": kind}
-                      for item, (_, kind) in zip(ranked, chosen)
-                      if item.get("score") is not None and item["score"] >= threshold]
+            misses = []
+            for item, (_, kind) in zip(ranked, chosen):
+                if item.get("score") is None or item["score"] < threshold:
+                    continue
+                miss = {"id": item["id"], "title": item["title"], "url": item["url"], "score": item["score"]}
+                if kind == "handled" and item["id"] in seen_scores:
+                    check_score = seen_scores[item["id"]]
+                    miss["kind"] = "rescored" if check_score < threshold else "handled"
+                    miss["checkScore"] = check_score
+                else:
+                    miss["kind"] = "never_scored" if kind == "handled" else kind
+                misses.append(miss)
             result["missCount"] = len(misses)
             result["misses"] = sorted(misses, key=lambda item: item["score"], reverse=True)[:5]
     except Exception as e:
