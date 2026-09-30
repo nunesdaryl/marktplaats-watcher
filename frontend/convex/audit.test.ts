@@ -22,26 +22,29 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
   await t.run(async (ctx) => {
     await ctx.db.patch(id, { seeded: true, lastReadAt: Date.now() - 60_000 });
-    await ctx.db.insert("seenListings", { watchId: id, listingId: "m1", lastSeenAt: Date.now() });
+    await ctx.db.insert("seenListings", { watchId: id, listingId: "m1", lastSeenAt: Date.now(),
+      score: 4, reason: "Weak match", scoredAt: Date.now() });
   });
   vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
     const body = JSON.parse(init.body as string);
     expect(init.headers).toMatchObject({ "X-Request-Id": expect.stringMatching(/^audit-.*\.0$/) });
     expect(body.watches[0].seen_ids).toEqual(["m1"]);
+    expect(body.watches[0].seen_scores).toEqual({ m1: 4 });
     return new Response(JSON.stringify({ results: [{ watchId: id, ok: true, read: 2, candidates: 1,
       scored: 1, missCount: 1, misses: [{ id: "m1", title: "Mac mini", url: "https://www.marktplaats.nl/v/m1",
-        score: 9, kind: "handled" }] }] }));
+        score: 9, kind: "rescored", checkScore: 4 }] }] }));
   }));
   expect(await t.action(internal.audit.run, {})).toEqual({ checked: 1, misses: 1 });
   const rows = await t.run((ctx) => ctx.db.query("audits").collect());
   expect(rows).toHaveLength(1);
   expect(rows[0]).toMatchObject({ watchId: id, read: 2, scored: 1, missCount: 1,
-    misses: [{ listingId: "m1", score: 9, kind: "handled" }] });
+    misses: [{ listingId: "m1", score: 9, kind: "rescored", checkScore: 4 }] });
   expect(await t.run((ctx) => ctx.db.query("seenListings").collect())).toHaveLength(1);
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toHaveLength(0);
   const report = await t.query(internal.health.report, { now: Date.now() });
   expect(report.summary).toContain("Delivery audit: 1 watches checked, 1 misses");
   expect(report.problems.join(" ")).toContain('Delivery audit: 1 missed match(es) on 1 watch(es): "Mac mini" (9/10 "Mac mini"');
+  expect(report.problems.join(" ")).toContain("scored 4 at check, 9 now");
   expect(report.problems.join(" ")).toContain(rows[0].requestId);
   const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
   const dashboard = await owner.query(api.admin.dashboard, {});
@@ -60,9 +63,11 @@ test("audit groups send only listings created near the first look as baseline", 
     await ctx.db.insert("seenListings", { watchId: id, listingId: "baseline", lastSeenAt: first });
   });
   vi.setSystemTime(first + 3 * 60_000);
-  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "later", lastSeenAt: Date.now() }));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "later", lastSeenAt: Date.now(),
+    score: 0, reason: "No match", scoredAt: Date.now() }));
   const groups = await t.query(internal.audit.groups, { now: Date.now() });
-  expect(groups[0].watches[0]).toMatchObject({ seen_ids: ["later", "baseline"], baseline_ids: ["baseline"] });
+  expect(groups[0].watches[0]).toMatchObject({ seen_ids: ["later", "baseline"], baseline_ids: ["baseline"],
+    seen_scores: { later: 0 } });
   await t.run((ctx) => ctx.db.patch(id, { seededAt: undefined }));
   const withoutTime = await t.query(internal.audit.groups, { now: Date.now() });
   expect(withoutTime[0].watches[0].baseline_ids).toEqual([]);

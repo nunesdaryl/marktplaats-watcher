@@ -23,6 +23,7 @@ export const groups = internalQuery({
         must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
         seen_ids: seen.map((s) => s.listingId),
+        seen_scores: Object.fromEntries(seen.filter((s) => s.score !== undefined).map((s) => [s.listingId, s.score])),
         baseline_ids: w.seededAt === undefined ? [] : seen
           .filter((s) => Math.abs(s._creationTime - w.seededAt!) <= 2 * 60_000)
           .map((s) => s.listingId),
@@ -43,7 +44,8 @@ const result = v.object({
   watchId: v.string(), ok: v.boolean(), read: v.number(), candidates: v.number(), scored: v.number(),
   missCount: v.number(), unscored: v.optional(v.number()), error: v.optional(v.string()),
   misses: v.array(v.object({ id: v.string(), title: v.string(), url: v.string(), score: v.number(),
-    kind: v.union(v.literal("handled"), v.literal("never_read")) })),
+    kind: v.union(v.literal("handled"), v.literal("never_read"), v.literal("rescored"),
+      v.literal("never_scored")), checkScore: v.optional(v.number()) })),
 });
 
 export const record = internalMutation({
@@ -57,7 +59,8 @@ export const record = internalMutation({
         at, watchId: watch._id, userId: watch.userId, requestId, ok: r.ok, read: r.read,
         scored: r.scored, missCount: r.missCount, ...(r.unscored !== undefined ? { unscored: r.unscored } : {}),
         misses: r.misses.slice(0, 5).map((m) => ({ listingId: m.id, title: m.title,
-          url: m.url, score: m.score, kind: m.kind })),
+          url: m.url, score: m.score, kind: m.kind,
+          ...(m.checkScore !== undefined ? { checkScore: m.checkScore } : {}) })),
         ...(r.error ? { error: r.error } : {}),
       });
     }
