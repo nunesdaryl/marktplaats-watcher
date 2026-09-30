@@ -20,6 +20,7 @@ import type * as health from "../health.js";
 import type * as ratings from "../ratings.js";
 import type * as schedule from "../schedule.js";
 import type * as users from "../users.js";
+import type * as usage from "../usage.js";
 import type * as watches from "../watches.js";
 
 import type {
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   ratings: typeof ratings;
   schedule: typeof schedule;
   users: typeof users;
+  usage: typeof usage;
   watches: typeof watches;
 }>;
 

@@ -10,6 +10,7 @@ import { describe, describeWhen } from "./schedule";
 import { activePatch } from "./watches";
 import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
+import { usageDay } from "./usage";
 
 const DAY = 86_400_000;
 const LIMIT = 5000;
@@ -56,6 +57,10 @@ export const dashboard = query({
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
     const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT * 4);
     const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT);
+    const todayUsage = await ctx.db.query("usage").withIndex("by_day", (q) => q.eq("day", usageDay(now))).take(LIMIT);
+    const emails = new Map(users.map((u) => [u.clerkId, u.email]));
+    const topUsage = todayUsage.sort((a, b) => b.chats - a.chats).slice(0, 5)
+      .map((row) => ({ name: emails.get(row.userId) ?? "(unknown user)", count: row.chats }));
 
     // Active = used the app (any event) or had a chat updated in the window
     const activeSince = (t: number) => new Set([
@@ -106,6 +111,7 @@ export const dashboard = query({
         watchesPaused: watches.filter((w) => !w.active && live(w)).length,
         watchesArchived: watches.filter((w) => !live(w)).length,
         chats: chats.length,
+        chatsToday: todayUsage.reduce((sum, row) => sum + row.chats, 0),
         alerts: alerts.length, alerts7d: alerts.filter((a) => a.createdAt >= now - 7 * DAY).length,
         emailsSent: alerts.filter((a) => a.emailStatus === "sent").length,
         emailsFailed: alerts.filter((a) => a.emailStatus === "failed").length,
@@ -119,6 +125,7 @@ export const dashboard = query({
       devices: countBy(events, (e) => e.device),
       themes: countBy(pageViews, (e) => e.props?.value),
       chatModes: countBy(events.filter((e) => e.name === "chat_sent"), (e) => e.props?.mode ?? "search"),
+      topUsage,
       schedules: countBy(watches.filter(live), (w) => scheduleKey(w.schedule)),
       notify: countBy(watches.filter(live), (w) => w.notify),
       wouldPay: (Object.keys(WOULD_PAY) as (keyof typeof WOULD_PAY)[])
