@@ -103,6 +103,16 @@ def main():
             else f"pending ({answered}/{total} answered); overridden rows {disagreed or 'none'}")
     metrics = scorer_metrics(s["scored"], overrides,
                              {name: m["threshold"] for name, m in s["metrics"].items()})
+    runs = s.get("runs", [s])
+    great_precisions = [scorer_metrics(run["scored"], overrides,
+                                       {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["precision"]
+                        for run in runs]
+    scorer_eval_cost = sum(run.get("cost_usd", cost_usd(model, run["tokens"]["input"], run["tokens"]["output"]))
+                           for run in runs)
+    measured = [precision for precision in great_precisions if precision is not None]
+    run_summary = (f"median of {len(runs)} {'run' if len(runs) == 1 else 'runs'}; "
+                   f"range {min(measured) * 100:.1f}–{max(measured) * 100:.1f}%" if measured else
+                   f"median of {len(runs)} runs; range n/a")
     old = REPORT.read_text() if REPORT.exists() else ""
     sign_off = next((line for line in old.splitlines() if line.startswith("UAT sign-off:")), SIGN_OFF)
     repeated = read(REPEAT_RESULTS) if REPEAT_RESULTS.exists() else []
@@ -118,6 +128,7 @@ def main():
         f"{s['listings']} real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; "
         f"the judge marked **{s['judge_matches']}** as real matches. After human overrides, "
         f"**{sum(row['judge']['match'] ^ (row['id'] in overrides) for row in s['scored'])}** are real matches.", "",
+        f"Corrected great precision: {run_summary}.", "",
         "| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |", "|---|---|---|---|---|---|---|---|",
     ]
     if s["model"] != model or c["model"] != model:
@@ -167,6 +178,8 @@ def main():
         "inclusive. That is why a human spot-checks the judge.", "",
         "## 3. Cost", "",
         f"- Scoring: {eur(scoring_cost / max(s['listings'], 1) * 100)} per 100 listings ({s['tokens']['input']} input + {s['tokens']['output']} output tokens for {s['listings']} listings).",
+        f"- CI scorer evaluation: {len(runs)} scorer {'run' if len(runs) == 1 else 'runs'} "
+        f"at about ${scorer_eval_cost / len(runs):.3f} each; about ${scorer_eval_cost:.3f} total.",
         f"- Chat: {eur(chat_cost / c['total'])} per question on average.",
         "- Chat output is capped at 1,500 tokens per model call.",
         f"- Judge (one-off): {eur(labels['cost_usd'])}.",
@@ -174,7 +187,7 @@ def main():
         "## How to rerun", "",
         "```bash", ".venv/bin/python -m evals.collect      # only to refresh the dataset (then relabel)",
         ".venv/bin/python -m evals.label        # judge labels + a new spot-check sample",
-        ".venv/bin/python -m evals.run_scorer", ".venv/bin/python -m evals.run_chat",
+        ".venv/bin/python -m evals.run_scorer --runs 3", ".venv/bin/python -m evals.run_chat",
         ".venv/bin/python -m evals.repeat C3 15", ".venv/bin/python -m evals.report", "```",
         "Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).",
     ]

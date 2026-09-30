@@ -1,6 +1,6 @@
 import pytest
 
-from evals import common, gate, repeat, report, run_chat
+from evals import common, gate, repeat, report, run_chat, run_scorer
 
 
 @pytest.fixture
@@ -169,6 +169,86 @@ def test_gate_thresholds_use_corrected_precision(eval_files):
     assert not gate.check({"passed": 19, "total": 20}, scorer, listings, "")
 
 
+def test_median_run_uses_great_precision_then_recall():
+    runs = [
+        {"great": {"precision": 0.95, "recall": 0.5}},
+        {"great": {"precision": 0.8, "recall": 0.9}},
+        {"great": {"precision": 0.95, "recall": 0.8}},
+    ]
+    assert run_scorer.median_run(runs) is runs[2]
+    assert run_scorer.median_run([runs[0]]) is runs[0]
+
+
+def test_scorer_three_runs_keep_each_result_and_select_median(monkeypatch, tmp_path):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    listings = tmp_path / "listings.json"
+    labels = tmp_path / "labels.json"
+    result = tmp_path / "scorer_results.json"
+    common.write(listings, {"watches": [{"id": "watch", "description": "chair"}],
+                            "listings": [{"watch": "watch", "id": str(i), "title": str(i), "price_eur": 10}
+                                         for i in range(4)]})
+    common.write(labels, {"labels": {str(i): {"match": i < 2, "category": "match", "reason": "Chair"}
+                                     for i in range(4)}})
+    monkeypatch.setattr(run_scorer, "LISTINGS", listings)
+    monkeypatch.setattr(run_scorer, "LABELS", labels)
+    monkeypatch.setattr(run_scorer, "SCORER_RESULTS", result)
+    scores = [(8, 0, 8, 0), (8, 0, 8, 8), (8, 8, 8, 8)]
+
+    def fake_rank(description, items):
+        values = scores.pop(0)
+        return [item | {"score": values[i], "reason": "Chair"} for i, item in enumerate(items)]
+
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", fake_rank)
+    run_scorer.main(["--runs", "3"])
+    saved = common.read(result)
+    assert len(saved["runs"]) == 3
+    assert [run["great"]["precision"] for run in saved["runs"]] == [0.5,
+                                                                      round(1 / 3, 3),
+                                                                      0.5]
+    assert all({"precision", "recall", "tp", "fp", "fn"} <= run["good"].keys() for run in saved["runs"])
+    assert saved["scored"] == saved["runs"][2]["scored"]
+    assert saved["metrics"]["great"]["recall"] == 1
+
+
+def test_gate_uses_median_corrected_precision_and_prints_runs(eval_files, capsys):
+    scorer = common.read(eval_files["SCORER_RESULTS"])
+    listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(10)]
+    base = [{"id": str(i), "score": 8, "judge": {"match": i != 0, "category": "match"}} for i in range(10)]
+    scorer["runs"] = [
+        {"great": {"threshold": 8}, "scored": [row | {"judge": row["judge"] | {"match": False}} if row["id"] in ("1", "2") else row for row in base]},
+        {"great": {"threshold": 8}, "scored": base},
+        {"great": {"threshold": 8}, "scored": [row | {"judge": row["judge"] | {"match": False}} if row["id"] == "1" else row for row in base]},
+    ]
+    spotcheck = "| 1 | x | [One](https://example.test/0) | 1 | over_budget | x | no |\n"
+    chat = {"passed": 19, "total": 20}
+    assert gate.check(chat, scorer, listings, spotcheck)
+    common.write(eval_files["LISTINGS"], {"listings": listings})
+    eval_files["SPOTCHECK"].write_text(spotcheck)
+    common.write(eval_files["SCORER_RESULTS"], scorer)
+    gate.main()
+    assert "great precision runs 0.8, 1, 0.9 → median 0.9" in capsys.readouterr().out
+    scorer["runs"][2]["scored"][2]["judge"]["match"] = False
+    assert not gate.check(chat, scorer, listings, spotcheck)
+
+
+def test_report_shows_run_count_range_and_three_run_cost(monkeypatch, eval_files):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    scorer = common.read(eval_files["SCORER_RESULTS"])
+    scored = scorer["scored"]
+    scorer["runs"] = [
+        {"great": {"threshold": 8}, "scored": scored, "tokens": scorer["tokens"]},
+        {"great": {"threshold": 8}, "scored": [row | {"score": 4} if row["id"] == "one" else row for row in scored],
+         "tokens": scorer["tokens"]},
+        {"great": {"threshold": 8}, "scored": [row | {"score": 4} if row["id"] == "two" else row for row in scored],
+         "tokens": scorer["tokens"]},
+    ]
+    common.write(eval_files["SCORER_RESULTS"], scorer)
+    report.main()
+    text = eval_files["REPORT"].read_text()
+    assert "median of 3 runs; range 0.0–50.0%" in text
+    assert "3 scorer runs" in text
+
+
 def test_report_preserves_filled_signoff(monkeypatch, eval_files):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     signoff = "UAT sign-off: Daryl (name), 2026-10-01 (date), prompt versions chat-1/rank-1"
@@ -199,4 +279,6 @@ def test_scorer_results_record_prompt_version(monkeypatch, tmp_path):
     monkeypatch.setattr(run_scorer, "SCORER_RESULTS", result)
     monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda description, items: [items[0] | {"score": 8, "reason": "Chair"}])
     run_scorer.main()
-    assert common.read(result)["prompt_version"] == run_scorer.agent.PROMPT_VERSION["rank"]
+    saved = common.read(result)
+    assert saved["prompt_version"] == run_scorer.agent.PROMPT_VERSION["rank"]
+    assert "runs" not in saved
