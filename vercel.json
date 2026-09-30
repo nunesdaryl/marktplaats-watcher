@@ -37,6 +37,19 @@
       ]
     },
     {
+      "source": "/cache-reset.txt",
+      "headers": [
+        {
+          "key": "Clear-Site-Data",
+          "value": "\"cache\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
       "source": "/((?!_next/static/|fonts/).*)",
       "headers": [
         {

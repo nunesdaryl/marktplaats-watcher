@@ -1,6 +1,31 @@
-import { expect, test } from "vitest";
-import { dateFilters, drillUrl, parseDrill } from "./nav.js";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, expect, test, vi } from "vitest";
+import { useRouter, useSearchParams } from "next/navigation";
+import { dateFilters, drillUrl, parseDrill, useDrill } from "./nav.js";
 import { filterParams } from "./FilterBar.jsx";
+
+vi.mock("next/navigation", () => ({ useRouter: vi.fn(), useSearchParams: vi.fn() }));
+
+afterEach(() => vi.unstubAllGlobals());
+
+test("closing a drill uses the open view pathname without loading a document", () => {
+  const push = vi.fn();
+  const pushState = vi.fn();
+  vi.mocked(useRouter).mockReturnValue({ push });
+  vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams("view=users&title=Users"));
+  vi.stubGlobal("window", { history: { pushState } });
+  let drill;
+  function Capture() { drill = useDrill(); return null; }
+  renderToStaticMarkup(createElement(Capture));
+
+  drill.open({ view: "audits", title: "Audits" });
+  drill.close();
+
+  expect(new URL(push.mock.calls[0][0], "https://example.com").pathname).toBe("/admin/");
+  expect(pushState).toHaveBeenCalledWith(null, "", "/admin/");
+  expect(push).toHaveBeenCalledTimes(1);
+});
 
 test("FilterBar state and sort survive a URL round trip", () => {
   const params = { userId: "u1", watchId: "w1", when: "custom", since: "1000", until: "2000",
