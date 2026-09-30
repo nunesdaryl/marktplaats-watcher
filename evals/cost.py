@@ -2,13 +2,14 @@
 has NEW listings; most checks find none. So the cost depends on how many new listings a check finds:
 we report a typical case (1 new listing per check) and a busy worst case (10 new listings every single check)."""
 import agent
-from evals.common import CHAT_RESULTS, LISTINGS, REPORT, SCORER_RESULTS, USD_TO_EUR, cost_usd, read
+from evals.common import CHAT_RESULTS, LISTINGS, REPORT, SCORER_RESULTS, USD_TO_EUR, cost_usd, model_under_test, read
 
 CHECKS_PER_MONTH = {"every 15 minutes": 2880, "every hour": 720, "every 3 hours": 240, "every 6 hours": 120,
                     "every 12 hours": 60, "every day at one time": 30, "once a week": 4.3}
 
 
 def main():
+    model = model_under_test()
     listings = read(LISTINGS)["listings"]
     agent.RANK_USAGE.clear()
     for item in listings[:3]:                        # three real 1-listing calls: the fixed cost of one check
@@ -18,9 +19,10 @@ def main():
     one_out = sum(u[1] for u in agent.RANK_USAGE) / len(agent.RANK_USAGE)
     s = read(SCORER_RESULTS)
     ten_in, ten_out = s["tokens"]["input"] / s["tokens"]["calls"], s["tokens"]["output"] / s["tokens"]["calls"]
-    per_check_1 = cost_usd("gpt-5.4-mini", one_in, one_out) * USD_TO_EUR
-    per_check_10 = cost_usd("gpt-5.4-mini", ten_in, ten_out) * USD_TO_EUR
-    chat = read(CHAT_RESULTS)["cost_usd_per_question"] * USD_TO_EUR
+    per_check_1 = cost_usd(model, one_in, one_out) * USD_TO_EUR
+    per_check_10 = cost_usd(model, ten_in, ten_out) * USD_TO_EUR
+    chat_results = read(CHAT_RESULTS)
+    chat = cost_usd(model, chat_results["tokens"]["input"], chat_results["tokens"]["output"]) / chat_results["total"] * USD_TO_EUR
     rows = ["## 4. Running cost per watch (measured)", "",
             f"One check with 1 new listing costs €{per_check_1:.5f} ({one_in:.0f} input + {one_out:.0f} output tokens); "
             f"with 10 new listings €{per_check_10:.5f}. A check with no new listings makes no AI call and costs nothing. "

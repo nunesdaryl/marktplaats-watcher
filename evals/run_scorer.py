@@ -4,12 +4,13 @@ category, tokens, cost and time."""
 import time
 
 import agent
-from evals.common import LABELS, LISTINGS, SCORER_RESULTS, cost_usd, read, write
+from evals.common import LABELS, LISTINGS, SCORER_RESULTS, cost_usd, model_under_test, read, write
 
 THRESHOLDS = {"great": 8, "good": 6}
 
 
 def main():
+    model = model_under_test()
     data, labels = read(LISTINGS), read(LABELS)["labels"]
     agent.RANK_USAGE.clear()
     scored, started = [], time.time()
@@ -41,9 +42,9 @@ def main():
         }
     tokens_in = sum(u[0] for u in agent.RANK_USAGE)
     tokens_out = sum(u[1] for u in agent.RANK_USAGE)
-    usd = cost_usd("gpt-5.4-mini", tokens_in, tokens_out)
+    usd = cost_usd(model, tokens_in, tokens_out)
     write(SCORER_RESULTS, {
-        "run_at": time.strftime("%Y-%m-%d %H:%M"), "model": "gpt-5.4-mini", "listings": len(scored),
+        "run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "listings": len(scored),
         "judge_matches": sum(s["judge"]["match"] for s in scored), "metrics": metrics,
         "tokens": {"input": tokens_in, "output": tokens_out, "calls": len(agent.RANK_USAGE)},
         "cost_usd": round(usd, 5), "cost_usd_per_100_listings": round(usd / max(len(scored), 1) * 100, 5),

@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, read
+from evals.common import CHAT_RESULTS, LABELS, PRICES, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -50,7 +50,11 @@ def user_section(ratings):
 
 
 def main():
+    model = model_under_test()
     s, c, labels = read(SCORER_RESULTS), read(CHAT_RESULTS), read(LABELS)
+    price_in, price_out = PRICES[model]
+    scoring_cost = cost_usd(model, s["tokens"]["input"], s["tokens"]["output"])
+    chat_cost = cost_usd(model, c["tokens"]["input"], c["tokens"]["output"])
     agree = [row.split("|")[-2].strip().lower() for row in SPOTCHECK.read_text().splitlines() if re.match(r"\| \d+ \|", row)]
     marked = [a for a in agree if a in ("yes", "no")]
     disagreed = [str(i + 1) for i, a in enumerate(agree) if a == "no"]
@@ -63,13 +67,16 @@ def main():
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
         "# Evaluation report", "",
-        f"Scorer run {s['run_at']}, chat run {c['run_at']}. Model under test: **{s['model']}**. "
-        f"Judge: **{labels['judge']}** (a stronger model), human spot-check of 10 judge labels: **{spot}**.", "",
+        f"Scorer run {s['run_at']}, chat run {c['run_at']}. Model under test: **{model}**. "
+        f"Judge model: **{labels['judge']}**, human spot-check of 10 judge labels: **{spot}**.", "",
         "## 1. Does the AI e-mail the right listings? (scorer vs judge)", "",
         f"{s['listings']} real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; "
         f"the judge marked **{s['judge_matches']}** as real matches, the rest as noise (accessories, other products, other models).", "",
         "| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |", "|---|---|---|---|---|---|---|---|",
     ]
+    if s["model"] != model or c["model"] != model:
+        lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}**, chat **{c['model']}**. "
+                      "Rerun those evals to measure the configured model.", ""]
     for name, m in s["metrics"].items():
         lines.append(f"| {name} | score ≥ {m['threshold']} | **{pct(m['precision'])}** | **{pct(m['recall'])}** | {m['tp']} | {m['fp']} | {m['fn']} | {m['tn']} |")
     lines += ["", "*Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*", ""]
@@ -102,10 +109,10 @@ def main():
         "- The judge is strict: it called a €100 IKEA set 'over budget' for 'under €100', while the app's maximum is "
         "inclusive. That is why a human spot-checks the judge.", "",
         "## 3. Cost", "",
-        f"- Scoring: {eur(s['cost_usd_per_100_listings'])} per 100 listings ({s['tokens']['input']} input + {s['tokens']['output']} output tokens for {s['listings']} listings).",
-        f"- Chat: {eur(c['cost_usd_per_question'])} per question on average.",
+        f"- Scoring: {eur(scoring_cost / max(s['listings'], 1) * 100)} per 100 listings ({s['tokens']['input']} input + {s['tokens']['output']} output tokens for {s['listings']} listings).",
+        f"- Chat: {eur(chat_cost / c['total'])} per question on average.",
         f"- Judge (one-off): {eur(labels['cost_usd'])}.",
-        f"- Prices: gpt-5.4-mini $0.75 / $4.50 per 1M input/output tokens; €1 ≈ ${1 / USD_TO_EUR:.2f}.", "",
+        f"- Prices: {model} ${price_in:.2f} / ${price_out:.2f} per 1M input/output tokens; €1 ≈ ${1 / USD_TO_EUR:.2f}.", "",
         "## How to rerun", "",
         "```bash", ".venv/bin/python -m evals.collect      # only to refresh the dataset (then relabel)",
         ".venv/bin/python -m evals.label        # judge labels + a new spot-check sample",
