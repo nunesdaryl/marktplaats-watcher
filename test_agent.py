@@ -178,6 +178,15 @@ def test_usage_check_fails_open(client, monkeypatch, capsys):
     assert '"event": "usage_check_failed"' in capsys.readouterr().out
 
 
+def test_unmocked_convex_post_cannot_reach_external_host(monkeypatch):
+    import convex_api
+
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://convex.invalid")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "fake-secret")
+    with pytest.raises(RuntimeError, match="tests must not call convex.invalid; mock it"):
+        convex_api.convex_post("/api/usage/consume", {"clerkId": "fake-user"})
+
+
 def test_usage_check_sends_verified_clerk_id_with_shared_secret(client, monkeypatch):
     import convex_api
 
