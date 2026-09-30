@@ -10,7 +10,7 @@ const DAY = 86_400_000;
 const STUCK_AFTER = 60 * 60_000;             // the dispatcher runs every 15 min; an hour of silence is a problem
 
 export const logRun = internalMutation({
-  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()) },
+  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()), requestId: v.optional(v.string()) },
   handler: async (ctx, run) => {
     await ctx.db.insert("runs", run);
     for (const old of await ctx.db.query("runs").withIndex("by_at", (q) => q.lt("at", run.at - 30 * DAY)).take(200))
@@ -18,10 +18,20 @@ export const logRun = internalMutation({
   },
 });
 
+export const recordError = internalMutation({
+  args: { kind: v.union(v.literal("chat"), v.literal("check")), requestId: v.string(), message: v.string() },
+  handler: async (ctx, { kind, requestId, message }) => {
+    await ctx.db.insert("errors", { kind, requestId, message: message.trim().slice(0, 200).trim(), at: Date.now() });
+  },
+});
+
 /** The last 24 hours of scheduler runs and what went wrong; shared by the digest and the owner dashboard. */
 export async function healthReport(ctx: QueryCtx, now: number) {
   const since = now - DAY;
   const runs = await ctx.db.query("runs").withIndex("by_at", (q) => q.gte("at", since)).collect();
+  const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
+  const chatErrors = errors.filter((e) => e.kind === "chat").length;
+  const checkErrors = errors.length - chatErrors;
   const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
   const failedEmails = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
     .filter((a) => a.emailStatus === "failed").length;
@@ -29,6 +39,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError! }));
   const sum = (key: "checked" | "failed" | "emails" | "emailFailures") => runs.reduce((n, r) => n + r[key], 0);
   const problems: string[] = [];
+  if (errors.length >= 5) problems.push(`${errors.length} errors in the last 24 hours (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ")}.`);
   if (!lastRun || now - lastRun.at > STUCK_AFTER)
     problems.push(lastRun ? `The scheduler hasn't run since ${new Date(lastRun.at).toISOString()}.` : "The scheduler hasn't run yet.");
   if (runs.some((r) => r.paused)) problems.push("Checks are paused (CHECKS_PAUSED=1).");
@@ -36,7 +47,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (failing.length) problems.push(`${failing.length} watch(es) failing: ${failing.slice(0, 5).map((w) => `"${w.label}" (${w.error})`).join("; ")}.`);
   return {
     problems,
-    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent.`,
+    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}.`,
     lastRunAt: lastRun?.at ?? null,
   };
 }

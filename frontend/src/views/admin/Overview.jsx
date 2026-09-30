@@ -272,8 +272,16 @@ export default function Overview({ open }) {
               onOpen={() => go("alerts", "Alerts this week", { since: now - 7 * DAY })} />
         <Stat value={t.chats} name="Saved chats" note="kept 30 days after last use" onOpen={() => go("chats", "Saved chats")} />
         <div className="stat"><span className="stat-value">{t.chatsToday}</span><span className="stat-name">Chats today</span><span className="stat-note">Amsterdam time</span></div>
+        <div className="stat"><span className="stat-value">{data.errors24h.chat + data.errors24h.check}</span><span className="stat-name">Errors (24 h)</span><span className="stat-note">{data.errors24h.chat} chat · {data.errors24h.check} check</span></div>
         <Stat value={t.feedback} name="Feedback" note="with screenshots" onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
+
+      {data.latestErrors.length > 0 && <section className="panel">
+        <h2>Latest errors</h2>
+        <ul>{data.latestErrors.map((error) => <li key={`${error.requestId}-${error.at}`}>
+          {error.kind} · {error.requestId} · {error.message} · {when(error.at)}
+        </li>)}</ul>
+      </section>}
 
       <div className="charts">
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}

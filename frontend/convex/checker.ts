@@ -329,9 +329,10 @@ export const checkDue = internalAction({
   args: { dryRun: v.optional(v.boolean()) },
   handler: async (ctx, { dryRun = false }) => {
     const now = Date.now();
+    const runId = crypto.randomUUID();
     if (process.env.CHECKS_PAUSED === "1") {    // kill switch (see RUNBOOK.md): no fetching, no scoring, no e-mail
-      console.log(JSON.stringify({ event: "checks_paused" }));
-      if (!dryRun) await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0, paused: true });
+      console.log(JSON.stringify({ event: "checks_paused", requestId: runId }));
+      if (!dryRun) await ctx.runMutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0, paused: true, requestId: runId });
       return { checked: 0, emails: 0, paused: true };
     }
     const appUrl = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
@@ -360,13 +361,14 @@ export const checkDue = internalAction({
 
     const groups = await ctx.runMutation(internal.checker.claimDue, { now, dryRun });
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
-    for (const group of groups) {
+    for (const [index, group] of groups.entries()) {
+      const groupId = `${runId}.${index}`;
       let results;
       try {
         if (!api || !secret) throw new Error("WATCHER_API_URL / CRON_SECRET are not set in Convex.");
         const res = await fetch(`${api.replace(/\/$/, "")}/api/internal/check`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Cron-Secret": secret },
+          headers: { "Content-Type": "application/json", "X-Cron-Secret": secret, "X-Request-Id": groupId },
           body: JSON.stringify(group),
           signal: AbortSignal.timeout(240_000),
         });
@@ -374,6 +376,7 @@ export const checkDue = internalAction({
         results = (await res.json()).results;
       } catch (e) {
         console.error(`check "${group.query}" failed:`, e);
+        if (!dryRun) await ctx.runMutation(internal.health.recordError, { kind: "check", requestId: groupId, message: `${e instanceof Error ? e.name : "Error"}: ${e instanceof Error ? e.message : String(e)}` });
         if (isTimeout(e)) timeouts++;
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
@@ -388,9 +391,9 @@ export const checkDue = internalAction({
       }
     }
     if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent
-    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts });
+    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts, requestId: runId });
     if (checked || emails || emailFailures)
-      console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, timeouts, ms: Date.now() - now }));
+      console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, timeouts, ms: Date.now() - now, requestId: runId }));
     return { checked, emails };
   },
 });
@@ -422,10 +425,11 @@ export const purgeOld = internalMutation({
     const seen = await ctx.db.query("seenListings").withIndex("by_lastSeen", (q) => q.lt("lastSeenAt", cutoff)).take(500);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff)).take(500);
     const chats = await ctx.db.query("chats").withIndex("by_updated", (q) => q.lt("updatedAt", cutoff)).take(100);
+    const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.lt("at", cutoff)).take(500);
     const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.lt("updatedAt", ratingsCutoff.getTime())).take(500);
-    for (const row of [...seen, ...alerts, ...ratings]) await ctx.db.delete(row._id);
+    for (const row of [...seen, ...alerts, ...ratings, ...errors]) await ctx.db.delete(row._id);
     for (const chat of chats) await deleteChat(ctx, chat._id);
-    if (seen.length === 500 || alerts.length === 500 || chats.length === 100 || ratings.length === 500)
+    if (seen.length === 500 || alerts.length === 500 || chats.length === 100 || ratings.length === 500 || errors.length === 500)
       await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});
   },
 });

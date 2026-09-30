@@ -26,6 +26,17 @@ repo root unless they start with `cd frontend`.
 
 ---
 
+## Trace a request
+
+Find the request id in the API response header `X-Request-Id`, in the owner dashboard's latest errors,
+or in the daily health digest. Search that id in Vercel Logs (the dashboard filter or `vercel logs`)
+to see the Python JSON lines for the request. For a scheduled check, the Convex `runs` row stores
+the run id; each Python check request adds `.0`, `.1`, and so on to that id. Search the run id in
+Vercel Logs to see every group. The Convex `errors` table stores the full id for failed groups
+and chat turns; filter it by `requestId`. Convex Logs also show the `check_run` line with the run id.
+
+---
+
 ## 1. Stop all scheduled checks now (kill switch)
 Use it for runaway cost, Marktplaats complaints, bad alerts going out, or anything where "stop first, understand later" is right.
 ```bash

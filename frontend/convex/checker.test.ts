@@ -391,3 +391,18 @@ test("the Alerts tab counts alerts since the page was last open, and opening it 
   expect(await alice.query(api.watches.newAlertCount, {})).toBe(10);    // capped: the tab shows "9+"
   expect(await t.query(api.watches.newAlertCount, {})).toBe(0);         // signed out
 });
+
+test("failed check groups record ids shared with the run and API headers", async () => {
+  const { t } = await seededWatch();
+  const headers: string[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+    headers.push((init.headers as Record<string, string>)["X-Request-Id"]);
+    return new Response("unavailable", { status: 503 });
+  }));
+  await t.action(internal.checker.checkDue, {});
+  const [run] = await t.run((ctx) => ctx.db.query("runs").collect());
+  const [error] = await t.run((ctx) => ctx.db.query("errors").collect());
+  expect(run.requestId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(headers).toEqual([`${run.requestId}.0`]);
+  expect(error).toMatchObject({ kind: "check", requestId: headers[0], message: "Error: Search service answered 503." });
+});

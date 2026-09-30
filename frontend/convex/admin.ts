@@ -99,6 +99,7 @@ export const dashboard = query({
       { step: "Got an alert", count: users.filter((u) => withAlert.has(u._id)).length },
     ];
 
+    const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", now - DAY)).order("desc").collect();
     const pageViews = events.filter((e) => e.name === "page_view");
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     return {
@@ -131,6 +132,9 @@ export const dashboard = query({
       wouldPay: (Object.keys(WOULD_PAY) as (keyof typeof WOULD_PAY)[])
         .map((key) => ({ key, name: WOULD_PAY[key], count: feedback.filter((f) => f.wouldPay === key).length })),
       health: await healthReport(ctx, now),
+      errors24h: { chat: errors.filter((e) => e.kind === "chat").length,
+                   check: errors.filter((e) => e.kind === "check").length },
+      latestErrors: errors.slice(0, 5).map(({ kind, requestId, message, at }) => ({ kind, requestId, message, at })),
       capped: events.length === LIMIT * 4,
     };
   },

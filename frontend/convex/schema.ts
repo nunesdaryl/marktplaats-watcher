@@ -113,6 +113,14 @@ export default defineSchema({
     emailFailures: v.number(),
     timeouts: v.optional(v.number()),
     paused: v.optional(v.boolean()),
+    requestId: v.optional(v.string()),
+  }).index("by_at", ["at"]),
+
+  errors: defineTable({
+    kind: v.union(v.literal("chat"), v.literal("check")),
+    requestId: v.string(),
+    message: v.string(),
+    at: v.number(),
   }).index("by_at", ["at"]),
 
   // Saved conversations, like ChatGPT's history. Kept until deleted, or 30 days after the last message.

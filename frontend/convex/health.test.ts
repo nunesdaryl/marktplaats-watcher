@@ -51,3 +51,33 @@ test("the kill switch stops all checks and shows up in the digest", async () => 
   const { problems } = await t.action(internal.health.digest, { dryRun: true });
   expect(problems).toContain("Checks are paused (CHECKS_PAUSED=1).");
 });
+
+test("chat and check errors reach the digest, dashboard, and retention purge", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.health.logRun, { at: Date.now(), checked: 0, failed: 0, emails: 0, emailFailures: 0, requestId: "run-1" });
+  expect((await t.run((ctx) => ctx.db.query("runs").first()))?.requestId).toBe("run-1");
+  process.env.API_TO_CONVEX_SECRET = "secret";
+  const bad = await t.fetch("/api/errors", { method: "POST", headers: { "X-Api-Secret": "wrong" },
+    body: JSON.stringify({ kind: "chat", requestId: "chat-1", message: "failure" }) });
+  expect(bad.status).toBe(401);
+  const posted = await t.fetch("/api/errors", { method: "POST", headers: { "X-Api-Secret": "secret" },
+    body: JSON.stringify({ kind: "chat", requestId: "chat-1", message: `  ${"x".repeat(210)}  ` }) });
+  expect(posted.status).toBe(200);
+  for (let i = 0; i < 4; i++) await t.mutation(internal.health.recordError,
+    { kind: "check", requestId: `run-1.${i}`, message: "failed" });
+  const rows = await t.run((ctx) => ctx.db.query("errors").collect());
+  expect(rows.find((row) => row.kind === "chat")?.message).toHaveLength(200);
+  const digest = await t.action(internal.health.digest, { dryRun: true });
+  expect(digest.summary).toContain("5 errors (chat 1, check 4)");
+  expect(digest.problems).toContain("5 errors in the last 24 hours (chat 1, check 4); latest: run-1.3, run-1.2, run-1.1, run-1.0, chat-1.");
+  process.env.OWNER_CLERK_ID = "owner";
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  const dashboard = await owner.query(api.admin.dashboard, {});
+  expect(dashboard?.errors24h).toEqual({ chat: 1, check: 4 });
+  expect(dashboard?.latestErrors).toHaveLength(5);
+  await t.run((ctx) => ctx.db.insert("errors", { kind: "check", requestId: "old", message: "old", at: Date.now() - 31 * 86_400_000 }));
+  await t.mutation(internal.checker.purgeOld, {});
+  expect((await t.run((ctx) => ctx.db.query("errors").collect())).some((row) => row.requestId === "old")).toBe(false);
+  delete process.env.API_TO_CONVEX_SECRET;
+  delete process.env.OWNER_CLERK_ID;
+});
