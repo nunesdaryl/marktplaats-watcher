@@ -29,6 +29,17 @@ async function seededWatch(schedule: any = hourly) {
 }
 const found = (id: any, ids: string[]) => ({ watchId: id, ok: true, currentIds: ids, listings: ids.map(listing) });
 
+test("first successful look records its baseline time only once", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const id = await alice.mutation(api.watches.create, watchArgs);
+  const first = Date.now();
+  await t.mutation(internal.checker.record, { now: first, results: [found(id, ["first"])], dryRun: false });
+  expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({ seeded: true, seededAt: first });
+  await t.mutation(internal.checker.record, { now: first + 60_000, results: [found(id, ["second"])], dryRun: false });
+  expect((await t.run((ctx) => ctx.db.get(id)))?.seededAt).toBe(first);
+});
+
 /** A fake search service that always shows `page`, and a fake AgentMail that fails `failures` times first. */
 function fakeServices(page: () => string[], failures = 0) {
   const mails: any[] = [];

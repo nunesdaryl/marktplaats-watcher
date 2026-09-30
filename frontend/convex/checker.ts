@@ -144,7 +144,8 @@ export const record = internalMutation({
       const watermark = typeof r.newestId === "number"
         ? (watch.seeded && watch.watermark !== undefined ? Math.max(watch.watermark, r.newestId) : r.newestId)
         : r.newestId === null ? watch.watermark ?? 0 : watch.watermark;
-      await ctx.db.patch(watch._id, { seeded: true, watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
+      await ctx.db.patch(watch._id, { seeded: true, ...(!watch.seeded ? { seededAt: now } : {}),
+        watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
         backlog: r.waiting || undefined, coverageCapped: r.capped || undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);
@@ -417,7 +418,7 @@ export const rebaseline = internalMutation({
   },
 });
 
-/** Retention: forget seen listings, alerts and untouched chats after 30 days, and ratings after 12 months. */
+/** Retention: forget seen listings, alerts, audits and untouched chats after 30 days, and ratings after 12 months. */
 export const purgeOld = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -426,12 +427,13 @@ export const purgeOld = internalMutation({
     ratingsCutoff.setUTCMonth(ratingsCutoff.getUTCMonth() - 12);
     const seen = await ctx.db.query("seenListings").withIndex("by_lastSeen", (q) => q.lt("lastSeenAt", cutoff)).take(500);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff)).take(500);
+    const audits = await ctx.db.query("audits").withIndex("by_at", (q) => q.lt("at", cutoff)).take(500);
     const chats = await ctx.db.query("chats").withIndex("by_updated", (q) => q.lt("updatedAt", cutoff)).take(100);
     const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.lt("at", cutoff)).take(500);
     const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.lt("updatedAt", ratingsCutoff.getTime())).take(500);
-    for (const row of [...seen, ...alerts, ...ratings, ...errors]) await ctx.db.delete(row._id);
+    for (const row of [...seen, ...alerts, ...audits, ...ratings, ...errors]) await ctx.db.delete(row._id);
     for (const chat of chats) await deleteChat(ctx, chat._id);
-    if (seen.length === 500 || alerts.length === 500 || chats.length === 100 || ratings.length === 500 || errors.length === 500)
+    if (seen.length === 500 || alerts.length === 500 || audits.length === 500 || chats.length === 100 || ratings.length === 500 || errors.length === 500)
       await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});
   },
 });

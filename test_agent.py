@@ -1097,3 +1097,108 @@ def test_chat_failure_records_error_without_breaking_answer(client, monkeypatch,
     if path.endswith("stream"):
         assert next(line for line in logs if line["event"] == "chat_turn")["requestId"] == "chat-123"
     assert ("error_record_failed" in [line["event"] for line in logs]) is post_fails
+def test_audit_watch_finds_handled_and_never_read_with_margin(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": day,
+            "priceInfo": {"priceCents": 10000}, "priorityProduct": priority}
+           for ident, day, priority in [("handled", "Gisteren", "NONE"), ("low", "Gisteren", "NONE"),
+                                         ("alerted", "Gisteren", "NONE"), ("unseen", "Gisteren", "NONE"),
+                                         ("today", "Vandaag", "NONE"), ("paid", "Gisteren", "DAGTOPPER")]]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    scores = {"handled": 7, "low": 6, "unseen": 9}
+    def rank(_description, listings, raise_on_failure=False):
+        for item in listings:
+            item["score"] = scores[item["id"]]
+        return listings
+    monkeypatch.setattr(agent, "rank_listings", rank)
+    last_read = int(datetime(2026, 9, 30, 8, tzinfo=ZoneInfo("Europe/Amsterdam")).timestamp() * 1000)
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ["handled", "low", "alerted", "paid"],
+                                "alerted_ids": ["alerted"], "last_read_at": last_read}, now)
+    assert result["ok"] and result["read"] == 5
+    assert result["candidates"] == result["scored"] == 3
+    assert [(m["id"], m["kind"]) for m in result["misses"]] == \
+        [("unseen", "never_read"), ("handled", "handled")]
+    assert result["missCount"] == 2
+
+
+def test_audit_watch_caps_scoring_and_reports_empty_and_failure(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    raw = [{"itemId": str(i), "title": str(i), "vipUrl": f"/v/{i}", "date": "Gisteren"}
+           for i in range(50)]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    def rank(_description, listings, raise_on_failure=False):
+        assert len(listings) == 40
+        for item in listings:
+            item["score"] = 9
+        return listings
+    monkeypatch.setattr(agent, "rank_listings", rank)
+    w = {"id": "w", "query": "bike", "notify": "great", "seen_ids": [str(i) for i in range(50)]}
+    result = agent.audit_watch(w, now)
+    assert (result["candidates"], result["scored"], result["missCount"], len(result["misses"])) == (50, 40, 40, 5)
+    monkeypatch.setattr(agent, "read_since", lambda *args: ([], False))
+    assert agent.audit_watch(w, now) == {"watchId": "w", "ok": True, "read": 0, "candidates": 0,
+                                        "scored": 0, "unscored": 0, "misses": [], "missCount": 0}
+    monkeypatch.setattr(agent, "read_since", lambda *args: (_ for _ in ()).throw(ValueError("bad page")))
+    assert agent.audit_watch(w, now)["ok"] is False
+
+
+def test_audit_watch_excludes_baseline_and_keeps_highest_scoring_misses(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Gisteren"}
+           for ident in ["baseline", "baseline_unseen", "low", "high", "unscored"]]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    def rank(_description, listings, raise_on_failure=False):
+        for item in listings:
+            item["score"] = {"baseline": 10, "baseline_unseen": 10, "low": 7,
+                             "high": 9, "unscored": None}[item["id"]]
+        return listings
+    monkeypatch.setattr(agent, "rank_listings", rank)
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ["baseline", "low", "high", "unscored"],
+                                "baseline_ids": ["baseline", "baseline_unseen"],
+                                "last_read_at": int(now.timestamp() * 1000)}, now)
+    assert result["ok"] is True
+    assert (result["candidates"], result["scored"], result["unscored"], result["missCount"]) == (3, 2, 1, 2)
+    assert [m["id"] for m in result["misses"]] == ["high", "low"]
+
+
+def test_audit_watch_uses_real_read_since_result(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    monkeypatch.setattr(agent, "fetch_search", lambda *_: {"listings": [
+        {"itemId": "fresh", "title": "Fresh", "vipUrl": "/v/fresh", "date": "Gisteren"}]})
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
+                        [dict(item, score=9) for item in listings])
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ["fresh"]}, now)
+    assert result["ok"] is True
+    assert (result["read"], result["scored"], result["missCount"]) == (1, 1, 1)
+
+
+def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
+    from fastapi.testclient import TestClient
+    import main
+
+    monkeypatch.setenv("CRON_SECRET", "s3cret")
+    monkeypatch.setattr(main, "audit_watch", lambda w: {"watchId": w["id"], "ok": False,
+                                                        "read": 0, "candidates": 0, "scored": 0,
+                                                        "missCount": 0, "misses": [], "error": "bad page"})
+    client = TestClient(main.app)
+    body = {"watches": [{"id": "w", "query": "bike", "notify": "good", "seen_ids": [],
+                         "alerted_ids": [], "last_read_at": None}]}
+    assert client.post("/api/internal/audit", json=body).status_code == 401
+    response = client.post("/api/internal/audit", json=body, headers={"X-Cron-Secret": "s3cret"})
+    assert response.status_code == 200
+    assert response.json()["results"][0]["ok"] is False

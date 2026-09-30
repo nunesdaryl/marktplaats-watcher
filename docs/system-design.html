@@ -924,6 +924,12 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     against its full seen table. At most 40 pages; hitting that logs <code>coverage_capped</code>.</td></tr>
 </table>
 <p>If a ranker response omits listings, the check retries those listings once; any still unscored are logged, marked seen, and excluded from alerts without failing the watch.</p>
+<p>A daily delivery audit runs at 04:30 UTC before the owner's 05:00 digest. For each active, seeded watch it
+  independently reads the previous day's date-sorted search with that watch's filters, compares eligible listings
+  with seen and alerted ids, and scores up to 40 handled-but-unsent or never-read candidates. A score at least one
+  point above the watch's alert threshold is reported as a miss. Convex keeps 30 days of audit rows; misses and
+  failures appear in the owner digest and dashboard with request ids. The audit only observes delivery and never
+  changes seen listings, alerts, or e-mail delivery.</p>
 <p>What didn't work, measured before choosing: any fixed number of pages (new listings sat on page 8 for "gazelle",
   page 18 for "fiets"); and "read until the newest listing of the last check", because even Marktplaats' own
   "Datum (nieuw-oud)" is not in time order within a day.</p>

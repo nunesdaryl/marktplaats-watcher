@@ -5,6 +5,7 @@ const crons = cronJobs();
 // Each watch has its own schedule (every 15 min … weekly); this dispatcher runs whichever are due.
 crons.interval("check due watches", { minutes: 15 }, internal.checker.checkDue, {});
 crons.daily("forget data older than 30 days", { hourUTC: 3, minuteUTC: 0 }, internal.checker.purgeOld, {});
+crons.daily("delivery audit", { hourUTC: 4, minuteUTC: 30 }, internal.audit.run, {});
 // 05:00 UTC = 07:00 Amsterdam in summer, 06:00 in winter: before the owner's day starts
 crons.daily("owner health digest", { hourUTC: 5, minuteUTC: 0 }, internal.health.digest, {});
 crons.daily("forget usage events older than 90 days", { hourUTC: 3, minuteUTC: 30 }, internal.events.purge, {});
