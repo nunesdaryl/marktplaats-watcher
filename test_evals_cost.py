@@ -40,3 +40,29 @@ def test_running_cost_rejects_unknown_model_before_calling_ranker(monkeypatch):
     monkeypatch.setattr(agent, "rank_listings", lambda *_: pytest.fail("ranker was called"))
     with pytest.raises(ValueError, match="add prices for unknown-model to evals/common.py"):
         cost.main()
+
+
+@pytest.mark.parametrize(
+    ("per_check_cost", "comparison", "monthly_cost"),
+    [(0.002, "within", "€5.76"), (0.004, "above", "€11.52")],
+)
+def test_running_cost_compares_busiest_watch_with_cap(
+    monkeypatch, tmp_path, per_check_cost, comparison, monthly_cost
+):
+    report = tmp_path / "report.md"
+    report.write_text("")
+    monkeypatch.setattr(cost, "REPORT", report)
+    monkeypatch.setattr(cost, "USD_TO_EUR", 1)
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+
+    def fake_rank(description, listings):
+        agent.RANK_USAGE.append((len(listings), 0))
+        return listings
+
+    monkeypatch.setattr(agent, "rank_listings", fake_rank)
+    monkeypatch.setattr(cost, "cost_usd", lambda model, input_tokens, output_tokens: per_check_cost)
+
+    cost.main()
+
+    assert (f"costs {monthly_cost} per month, {comparison} the OpenAI project's "
+            "$10/month hard cap (about €10.00).") in report.read_text()

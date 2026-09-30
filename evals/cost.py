@@ -23,6 +23,8 @@ def main():
     chat = cost_usd(model, chat_results["tokens"]["input"], chat_results["tokens"]["output"]) / chat_results["total"] * USD_TO_EUR
     retry = 2 * per_check[20]
     budget_eur = 10 * USD_TO_EUR
+    busiest_monthly_cost = CHECKS_PER_MONTH["every 15 minutes"] * per_check[20]
+    cap_comparison = "above" if busiest_monthly_cost > budget_eur else "within"
     rows = ["## 4. Running cost per watch (measured)", "",
             "Each check reads every listing placed since the last check and scores at most 20 new listings per watch. "
             "A check with no new listings makes no model call.", "",
@@ -42,8 +44,8 @@ def main():
              "if it sends several alerts, divide that check's cost by the number sent. "
              f"A chat question costs about €{chat:.4f}.", "",
              f"The busiest case, a 15-minute watch with 20 new listings every check, costs "
-             f"€{CHECKS_PER_MONTH['every 15 minutes'] * per_check[20]:.2f} per month, "
-             f"above the OpenAI project's $10/month hard cap (about €{budget_eur:.2f}).", "",
+             f"€{busiest_monthly_cost:.2f} per month, "
+             f"{cap_comparison} the OpenAI project's $10/month hard cap (about €{budget_eur:.2f}).", "",
              "Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. "
              "When the OpenAI cap is reached, the AI stops and nothing unscored is e-mailed.", ""]
     text = REPORT.read_text()
