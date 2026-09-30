@@ -43,16 +43,26 @@ def find_listings(data):
     return None
 
 
+class PostcodeServiceUnavailable(Exception):
+    pass
+
+
 @lru_cache(maxsize=512)
 def postcode_location(postcode):
     """Dutch postcode -> (lat, lon), via PDOK, the government's free address service."""
-    r = httpx.get("https://api.pdok.nl/bzk/locatieserver/search/v3_1/free",
-                  params={"q": postcode, "fq": "type:postcode", "rows": 1}, timeout=10.0)
-    docs = r.json()["response"]["docs"]
-    if not docs:
-        return None
-    lon, lat = map(float, docs[0]["centroide_ll"][6:-1].split())  # "POINT(lon lat)"
-    return lat, lon
+    try:
+        r = httpx.get("https://api.pdok.nl/bzk/locatieserver/search/v3_1/free",
+                      params={"q": postcode, "fq": "type:postcode", "rows": 1}, timeout=10.0)
+        r.raise_for_status()
+        docs = r.json()["response"]["docs"]
+        if not isinstance(docs, list):
+            raise ValueError("PDOK docs is not a list")
+        if not docs:
+            return None
+        lon, lat = map(float, docs[0]["centroide_ll"][6:-1].split())  # "POINT(lon lat)"
+        return lat, lon
+    except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError, AttributeError) as e:
+        raise PostcodeServiceUnavailable from e
 
 
 def distance_km(a, b):
@@ -167,6 +177,8 @@ def search_marktplaats(query: str, max_price_eur: int | None = None, must_includ
             if home is None:
                 return f"Unknown Dutch postcode '{postcode}'."
         html = fetch_page(search_url(query))
+    except PostcodeServiceUnavailable:
+        return "The postcode service is unavailable right now; try again without a postcode or later."
     except httpx.HTTPError as e:
         return f"Search unavailable: {type(e).__name__}"
     if html is None:
@@ -528,11 +540,12 @@ def check_query(query, watches, now=None):
         if w.get("postcode"):
             try:
                 home = postcode_location(w["postcode"].replace(" ", "").upper())
-            except httpx.HTTPError:
+            except PostcodeServiceUnavailable:
                 home = None
-            if home is None:
-                results.append({"watchId": w["id"], "ok": False, "error": f"We couldn't find postcode {w['postcode']}. Edit the watch to use another postcode."})
-                continue
+            else:
+                if home is None:
+                    results.append({"watchId": w["id"], "ok": False, "error": f"We couldn't find postcode {w['postcode']}. Edit the watch to use another postcode."})
+                    continue
         # A first look, or a watch checked before this change, notes today's listings; after that, the days since
         # the last check (a weekly watch reads a week)
         last = w.get("last_checked_at") if w.get("seeded", True) and w.get("watermark") is not None else None

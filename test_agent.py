@@ -258,6 +258,100 @@ def test_the_watchs_price_and_distance_go_to_marktplaats_and_same_filters_share_
         {"attributeRanges[]": "PriceCents:null:50000", "postcode": "1012AB", "distanceMeters": 20000}, {}])
 
 
+@pytest.mark.parametrize("failure", ["503", "html", "timeout", "malformed_json", "missing_docs"])
+def test_postcode_service_failure_returns_a_message_and_chat_completes(monkeypatch, failure):
+    import httpx
+
+    agent.postcode_location.cache_clear()
+    def fake_get(url, **kwargs):
+        if failure == "timeout":
+            raise httpx.ConnectTimeout("PDOK unavailable")
+        body = {"503": (503, "down"), "html": (200, "<html>down</html>"),
+                "malformed_json": (200, "{"), "missing_docs": (200, '{"response": {}}')}[failure]
+        return httpx.Response(body[0], text=body[1], request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(agent.httpx, "get", fake_get)
+    message = "The postcode service is unavailable right now; try again without a postcode or later."
+    assert agent.search_marktplaats.invoke({"query": "mac mini", "postcode": "1012AB"}) == message
+
+    class Searcher:
+        def __init__(self):
+            self.turn = 0
+
+        def stream(self, messages):
+            from langchain_core.messages import AIMessageChunk
+            self.turn += 1
+            if self.turn == 1:
+                yield AIMessageChunk(content="", tool_call_chunks=[
+                    {"name": "search_marktplaats", "args": '{"query": "mac mini", "postcode": "1012AB"}',
+                     "id": "c1", "index": 0}])
+            else:
+                assert messages[-1].content == message
+                yield AIMessageChunk(content="The postcode service is unavailable right now.")
+
+    monkeypatch.setattr(agent, "model", Searcher())
+    assert agent.chat("find mac mini near 1012AB", [])["answer"] == "The postcode service is unavailable right now."
+
+
+@pytest.mark.parametrize("failure", ["503", "html", "timeout", "malformed_json", "missing_docs"])
+def test_postcode_service_failure_keeps_both_scheduled_watches_running(monkeypatch, failure):
+    import httpx
+
+    agent.postcode_location.cache_clear()
+    def fake_get(url, **kwargs):
+        if failure == "timeout":
+            raise httpx.ConnectTimeout("PDOK unavailable")
+        body = {"503": (503, "down"), "html": (200, "<html>down</html>"),
+                "malformed_json": (200, "{"), "missing_docs": (200, '{"response": {}}')}[failure]
+        return httpx.Response(body[0], text=body[1], request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(agent.httpx, "get", fake_get)
+    page = api_page([(10, "Vandaag")])
+    page["listings"][0]["location"] = {"latitude": 52.37, "longitude": 4.89, "cityName": "Amsterdam"}
+    read = serve_search(monkeypatch, [page])
+    watch = {"watermark": 1, "seen_ids": [], "last_checked_at": EARLIER_TODAY}
+    results = agent.check_query("mac mini", [
+        {**watch, "id": "postcode", "postcode": "1012AB", "max_distance_km": 20},
+        {**watch, "id": "anywhere"}], now=NOW)
+    assert {r["watchId"] for r in results} == {"postcode", "anywhere"}
+    assert all(r["ok"] and r["currentIds"] == ["m10"] for r in results)
+    assert all(r["listings"][0]["distance_km"] is None for r in results)
+    assert {filters for filters, _ in read} == {
+        json.dumps({"postcode": "1012AB", "distanceMeters": 20000}, sort_keys=True), "{}"}
+
+
+def test_unknown_postcode_is_distinct_from_a_service_failure(monkeypatch):
+    import httpx
+
+    agent.postcode_location.cache_clear()
+    monkeypatch.setattr(agent.httpx, "get", lambda url, **kwargs: httpx.Response(
+        200, json={"response": {"docs": []}}, request=httpx.Request("GET", url)))
+    assert agent.search_marktplaats.invoke({"query": "mac mini", "postcode": "0000ZZ"}) == \
+        "Unknown Dutch postcode '0000ZZ'."
+    results = agent.check_query("mac mini", [{"id": "unknown", "postcode": "0000ZZ"}], now=NOW)
+    assert results == [{"watchId": "unknown", "ok": False,
+                        "error": "We couldn't find postcode 0000ZZ. Edit the watch to use another postcode."}]
+
+
+def test_postcode_service_failure_is_not_cached(monkeypatch):
+    import httpx
+
+    agent.postcode_location.cache_clear()
+    calls = []
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        if len(calls) == 1:
+            raise httpx.ConnectTimeout("PDOK unavailable")
+        return httpx.Response(200, json={"response": {"docs": [{"centroide_ll": "POINT(4.89 52.37)"}]}},
+                              request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(agent.httpx, "get", fake_get)
+    assert agent.search_marktplaats.invoke({"query": "mac mini", "postcode": "1012AB"}) == \
+        "The postcode service is unavailable right now; try again without a postcode or later."
+    assert agent.postcode_location("1012AB") == (52.37, 4.89)
+    assert len(calls) == 2
+
+
 def test_reading_stops_at_the_last_page_and_at_the_cap(monkeypatch):
     w = [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}]
     read = serve_search(monkeypatch, [api_page(today_page(5000), max_page=2), api_page(today_page(4000), max_page=2)])
