@@ -203,6 +203,57 @@ test("owner lists filter operational records, catch-ups, and existing records by
   expect((await owner.query(api.admin.search, { text: "error-new" }))?.[0]).toMatchObject({ view: "error", title: "error-new" });
 });
 
+test("catch-up alerts use their index and combine date, user, watch, and search filters", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
+  const aliceId = await alice.mutation(api.users.store, {});
+  const bobId = await bob.mutation(api.users.store, {});
+  const bike = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const chair = await alice.mutation(api.watches.create, { query: "chair", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const car = await bob.mutation(api.watches.create, { query: "car", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
+  const now = Date.now();
+  await t.run(async (ctx) => {
+    for (const [userId, watchId, title, catchUp, createdAt] of [
+      [aliceId, bike, "old bike", true, now - 2000],
+      [aliceId, bike, "new bike", true, now - 1000],
+      [aliceId, bike, "ordinary bike", false, now],
+      [aliceId, bike, "legacy bike", undefined, now],
+      [aliceId, chair, "new chair", true, now - 1000],
+      [bobId, car, "new car", true, now - 1000],
+    ] as const) {
+      await ctx.db.insert("alerts", { userId, watchId, listingId: title, title, url: "https://example.com",
+        reason: "match", channel: "email", emailStatus: "sent", catchUp, createdAt });
+    }
+  });
+  const indexed = await t.run((ctx) => ctx.db.query("alerts").withIndex("by_catchUp_createdAt", (q) =>
+    q.eq("catchUp", true).gte("createdAt", now - 1000).lt("createdAt", now)).collect());
+  expect(indexed.map((a) => a.title).sort()).toEqual(["new bike", "new car", "new chair"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true }))!.rows.map((a) => a.title).sort())
+    .toEqual(["new bike", "new car", "new chair", "old bike"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true, since: now - 1000, until: now,
+    userId: aliceId, watchId: bike, search: "BIKE" }))!.rows.map((a) => a.title)).toEqual(["new bike"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: false }))!.rows.map((a) => a.title).sort())
+    .toEqual(["legacy bike", "ordinary bike"]);
+});
+
+test("alert search and rows reuse user and watch reads within one query", async () => {
+  const t = convexTest({ schema, modules, transactionLimits: { databaseQueries: 3 } });
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", { clerkId: "a", email: "alice@example.com", createdAt: Date.now() });
+    const watchId = await ctx.db.insert("watches", { userId, label: "Bike", query: "bike",
+      schedule: { kind: "daily", times: ["08:00"] }, timezone: "Europe/Amsterdam", notify: "good",
+      active: true, seeded: true, nextRunAt: Date.now(), createdAt: Date.now() });
+    for (const title of ["First", "Second"]) await ctx.db.insert("alerts", { userId, watchId,
+      listingId: title, title, url: "https://example.com", reason: "match", channel: "email",
+      emailStatus: "sent", catchUp: true, createdAt: Date.now() });
+  });
+  expect((await owner.query(api.admin.alerts, { catchUp: true, search: "alice@example.com" }))!.rows)
+    .toMatchObject([{ email: "alice@example.com", watch: "Bike" }, { email: "alice@example.com", watch: "Bike" }]);
+});
+
 test("admin lists filter before the 200-row cap and report more", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
