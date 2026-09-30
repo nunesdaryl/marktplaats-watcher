@@ -73,29 +73,37 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
       return;
     }
     let final = null;
-    await streamChat({
-      token: await getToken(),
-      body: { message, history, mode: sendMode,
-              watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active })) },
-      onEvent: (e) => {
-        if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
-        else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));
-        else if (e.type === "delta") setLive((l) => ({ ...l, status: null, text: l.text + e.text }));
-        else if (e.type === "reset") setLive((l) => ({ ...l, text: "" }));   // words before a tool call weren't the answer
-        else if (e.type === "done") final = e;
-        else if (e.type === "error") final = { answer: e.text };
-      },
-    });
-    final ??= { answer: "The answer was cut off. Please try again." };
-    await append({
-      chatId: id, role: "assistant", content: final.answer || "…",
-      listings: final.listings?.length ? final.listings : undefined,
-      proposals: final.proposals?.length ? final.proposals : undefined,
-      search: cleanSearch(final.searches?.at(-1)),
-    }).catch(() => {});
-    setLive(null);
-    // "Watch it": open the watch setup, pre-filled from what the agent understood, ready to check and save
-    const proposal = sendMode === "watch" && final.proposals?.find((p) => p.type === "create");
+    let proposal;
+    try {
+      try {
+        await streamChat({
+          token: await getToken(),
+          body: { message, history, mode: sendMode,
+                  watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active })) },
+          onEvent: (e) => {
+            if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
+            else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));
+            else if (e.type === "delta") setLive((l) => ({ ...l, status: null, text: l.text + e.text }));
+            else if (e.type === "reset") setLive((l) => ({ ...l, text: "" }));   // words before a tool call weren't the answer
+            else if (e.type === "done") final = e;
+            else if (e.type === "error") final = { answer: e.text };
+          },
+        });
+      } catch {
+        final = { answer: "The answer didn't come through. Please try again." };
+      }
+      final ??= { answer: "The answer was cut off. Please try again." };
+      await append({
+        chatId: id, role: "assistant", content: final.answer || "…",
+        listings: final.listings?.length ? final.listings : undefined,
+        proposals: final.proposals?.length ? final.proposals : undefined,
+        search: cleanSearch(final.searches?.at(-1)),
+      }).catch(() => {});
+      // "Watch it": open the watch setup, pre-filled from what the agent understood, ready to check and save
+      proposal = sendMode === "watch" && final.proposals?.find((p) => p.type === "create");
+    } finally {
+      setLive(null);
+    }
     if (proposal) onAdjust({ ...watchFields(proposal), schedule: proposal.schedule, notify: proposal.notify });
   }
 
