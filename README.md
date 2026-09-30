@@ -62,6 +62,8 @@ CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` an
 (`.github/workflows/ci.yml`). An uptime check runs every 30 minutes (`.github/workflows/uptime.yml`).
 
 ## Design and logo
+Architecture decisions are indexed in [docs/adr/](docs/adr/README.md); current non-functional requirements are in [docs/nfr.md](docs/nfr.md).
+
 The look follows the **Sieve** design system (`docs/design/sieve/`, made with Claude Design): warm graphite, one teal
 accent, lilac highlights for the fill-in sentence, Geist and Geist Mono (self-hosted). The logo is defined once in
 `frontend/src/brand/logo.js`. Change `LOGO` there, then run `cd frontend && npm run brand` to regenerate the favicon,
