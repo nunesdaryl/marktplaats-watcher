@@ -1,6 +1,6 @@
 # Evaluation report
 
-Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-5.4-mini**. Judge: **gpt-5.5** (a stronger model), human spot-check of 10 judge labels: **7/10 agreed (disagreed on rows 3, 4, 9; the precision and recall below are still measured against the judge's labels)**.
+Scorer run 2026-09-27 15:29, chat run 2026-09-27 15:32. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed (disagreed on rows 3, 4, 9; the precision and recall below are still measured against the judge's labels)**.
 
 ## 1. Does the AI e-mail the right listings? (scorer vs judge)
 

@@ -3,6 +3,7 @@
 The evals run the PRODUCTION code paths (agent.rank_listings, agent.chat) against a frozen dataset, so a rerun after a
 prompt or model change measures exactly what users get. They cost a few cents, so they run by hand, not in CI."""
 import json
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,8 +34,17 @@ WATCHES = [
 
 
 def cost_usd(model, input_tokens, output_tokens):
+    if model not in PRICES:
+        raise ValueError(f"add prices for {model} to evals/common.py")
     price_in, price_out = PRICES[model]
     return input_tokens / 1e6 * price_in + output_tokens / 1e6 * price_out
+
+
+def model_under_test():
+    model = os.environ["OPENAI_MODEL"]
+    if model not in PRICES:
+        raise ValueError(f"add prices for {model} to evals/common.py")
+    return model
 
 
 def read(path):

@@ -3,10 +3,11 @@ import time
 
 import agent
 from evals.chat_cases import CASES
-from evals.common import CHAT_RESULTS, cost_usd, write
+from evals.common import CHAT_RESULTS, cost_usd, model_under_test, write
 
 
 def main():
+    model = model_under_test()
     results, tokens_in, tokens_out = [], 0, 0
     for case_id, category, message, watches, mode, max_tools, check in CASES:
         t0 = time.time()
@@ -29,9 +30,9 @@ def main():
                         "answer": r["answer"][:300], "searches": r["searches"], "proposals": r["proposals"],
                         "ms": round((time.time() - t0) * 1000)})
         print(f"{case_id:3} {'PASS' if results[-1]['passed'] else 'FAIL'}  tools {usage.get('tool_calls')}/{max_tools}  {message[:60]}")
-    usd = cost_usd("gpt-5.4-mini", tokens_in, tokens_out)
+    usd = cost_usd(model, tokens_in, tokens_out)
     passed = sum(r["passed"] for r in results)
-    write(CHAT_RESULTS, {"run_at": time.strftime("%Y-%m-%d %H:%M"), "model": "gpt-5.4-mini", "passed": passed,
+    write(CHAT_RESULTS, {"run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "passed": passed,
                          "total": len(results), "tokens": {"input": tokens_in, "output": tokens_out},
                          "cost_usd": round(usd, 5), "cost_usd_per_question": round(usd / len(results), 5), "cases": results})
     print(f"{passed}/{len(results)} passed, cost ${usd:.4f}")
