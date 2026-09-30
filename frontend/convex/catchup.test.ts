@@ -25,22 +25,27 @@ async function watch() {
   return { t, id };
 }
 
-test("catch-up baseline uses the first seen listing after the re-seed when seededAt is absent", async () => {
+test("catch-up uses the original first look's highest m number without seededAt", async () => {
   vi.setSystemTime(new Date("2026-09-29T19:28:00Z"));
   const { t, id } = await watch();
-  vi.setSystemTime(new Date("2026-09-29T19:29:00Z"));
-  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "before", lastSeenAt: Date.now() }));
+  vi.setSystemTime(new Date("2026-09-29T19:28:30Z"));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "m100", lastSeenAt: Date.now() }));
+  vi.setSystemTime(new Date("2026-09-29T19:29:30Z"));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "m120", lastSeenAt: Date.now() }));
   vi.setSystemTime(new Date("2026-09-29T19:31:00Z"));
-  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "first", lastSeenAt: Date.now() }));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "m999", lastSeenAt: Date.now() }));
   vi.setSystemTime(new Date("2026-09-29T19:32:30Z"));
-  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "within", lastSeenAt: Date.now() }));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "a200", lastSeenAt: Date.now() }));
   vi.setSystemTime(new Date("2026-09-29T19:33:01Z"));
-  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "later", lastSeenAt: Date.now() }));
+  await t.run((ctx) => ctx.db.insert("seenListings", { watchId: id, listingId: "m1000", lastSeenAt: Date.now() }));
   const payload = (await t.query(internal.catchup.groups, {}))[0].watches[0];
-  expect(payload.baseline_ids).toEqual(["first", "within"]);
+  expect(payload.created_mark).toBe(120);
+  expect(payload.baseline_ids).toEqual([]);
   expect(payload.check_alive).toBe(true);
   await t.run((ctx) => ctx.db.patch(id, { seededAt: Date.parse("2026-09-29T19:32:30Z") }));
-  expect((await t.query(internal.catchup.groups, {}))[0].watches[0].baseline_ids).toEqual(["first", "within", "later"]);
+  const seededPayload = (await t.query(internal.catchup.groups, {}))[0].watches[0];
+  expect(seededPayload.baseline_ids).toEqual(["m999", "a200", "m1000"]);
+  expect(seededPayload.created_mark).toBeUndefined();
 });
 
 test("dry run writes nothing; send stores ten catch-up alerts once and uses their rating links", async () => {
@@ -55,7 +60,7 @@ test("dry run writes nothing; send stores ten catch-up alerts once and uses thei
       return new Response("{}");
     }
     expect(init.headers).toMatchObject({ "X-Cron-Secret": "s3cret", "X-Request-Id": expect.stringMatching(/^audit-.*\.0$/) });
-    expect(body.watches[0]).toMatchObject({ id, check_alive: true });
+    expect(body.watches[0]).toMatchObject({ id, check_alive: true, since_days: 1 });
     return new Response(JSON.stringify({ results: [{ watchId: id, ok: true, read: 12, candidates: 12,
       scored: 12, unscored: 0, missCount: 12, misses }] }));
   }));
@@ -81,6 +86,15 @@ test("dry run writes nothing; send stores ten catch-up alerts once and uses thei
   await t.action(internal.catchup.run, { dryRun: false });
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toHaveLength(10);
   expect(mails).toHaveLength(1);
+});
+
+test("catch-up window follows Amsterdam calendar days since 29 September, capped at seven", async () => {
+  const { t } = await watch();
+  expect((await t.query(internal.catchup.groups, {}))[0].watches[0].since_days).toBe(1);
+  vi.setSystemTime(new Date("2026-10-02T00:30:00Z"));
+  expect((await t.query(internal.catchup.groups, {}))[0].watches[0].since_days).toBe(3);
+  vi.setSystemTime(new Date("2026-10-10T00:30:00Z"));
+  expect((await t.query(internal.catchup.groups, {}))[0].watches[0].since_days).toBe(7);
 });
 
 test("catch-up excludes an existing alert and marks a failed send", async () => {

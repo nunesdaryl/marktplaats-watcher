@@ -264,6 +264,8 @@ class AuditWatch(CheckWatch):
     alerted_ids: list[str] = Field(default=[])
     seen_ids: list[str] = Field(default=[])
     baseline_ids: list[str] = Field(default=[])
+    created_mark: int | None = Field(default=None, ge=0)
+    since_days: int = Field(default=1, ge=0, le=7)
     last_read_at: int | None = Field(default=None, ge=0)
     check_alive: bool = False
 

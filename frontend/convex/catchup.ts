@@ -5,9 +5,18 @@ import type { Id } from "./_generated/dataModel";
 import { renderEmail, sendEmail } from "./checker";
 import { ratingToken } from "./ratings";
 
-const RESEED_AT = Date.parse("2026-09-29T19:30:00Z");
 const BASELINE_MS = 2 * 60_000;
 const MAX_WATCHES_PER_REQUEST = 20;
+const START_DAY = Date.UTC(2026, 8, 29);
+const DAY_MS = 86_400_000;
+
+function catchupDays(now: number) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Amsterdam", year: "numeric",
+    month: "numeric", day: "numeric" }).formatToParts(now);
+  const part = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  const today = Date.UTC(part("year"), part("month") - 1, part("day"));
+  return Math.min(7, Math.max(0, (today - START_DAY) / DAY_MS));
+}
 
 export const groups = internalQuery({
   args: {},
@@ -20,9 +29,12 @@ export const groups = internalQuery({
       if (!user) continue;
       const seen = await ctx.db.query("seenListings").withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).collect();
       const alerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).collect();
-      const first = seen.filter((s) => s._creationTime >= RESEED_AT)
-        .reduce((earliest, s) => Math.min(earliest, s._creationTime), Infinity);
-      const baseline = w.seededAt === undefined ? seen.filter((s) => s._creationTime >= first && s._creationTime <= first + BASELINE_MS)
+      const first = seen.reduce((earliest, s) => Math.min(earliest, s._creationTime), Infinity);
+      const original = seen.filter((s) => s._creationTime >= first && s._creationTime <= first + BASELINE_MS);
+      const numbers = original.map((s) => /^m\d+$/.test(s.listingId) ? Number(s.listingId.slice(1)) : null)
+        .filter((number): number is number => number !== null);
+      const createdMark = numbers.length ? Math.max(...numbers) : undefined;
+      const baseline = w.seededAt === undefined ? []
         : seen.filter((s) => Math.abs(s._creationTime - w.seededAt!) <= BASELINE_MS);
       const query = w.query.toLowerCase();
       if (!byQuery.has(query)) byQuery.set(query, { watches: [] });
@@ -31,8 +43,9 @@ export const groups = internalQuery({
         must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
         seen_ids: seen.map((s) => s.listingId), baseline_ids: baseline.map((s) => s.listingId),
+        ...(w.seededAt === undefined && createdMark !== undefined ? { created_mark: createdMark } : {}),
         alerted_ids: alerts.map((a) => a.listingId), last_read_at: w.lastReadAt ?? null,
-        check_alive: true,
+        check_alive: true, since_days: catchupDays(Date.now()),
       });
     }
     return [...byQuery.values()].flatMap((group) => {
