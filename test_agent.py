@@ -912,8 +912,10 @@ def test_csp_reports_are_logged_without_crashing(client, capsys):
     res = client.post("/api/csp-report", content=json.dumps(report), headers={"content-type": "application/csp-report"})
     assert res.status_code == 204
     line = [l for l in capsys.readouterr().out.splitlines() if "csp_violation" in l][-1]
-    assert json.loads(line) == {"event": "csp_violation", "directive": "connect-src",
-                                "blocked": "https://evil.example/collect", "page": "https://x.test/chat/"}   # no query string
+    logged = json.loads(line)
+    assert logged.pop("requestId") == res.headers["X-Request-Id"]
+    assert logged == {"event": "csp_violation", "directive": "connect-src",
+                      "blocked": "https://evil.example/collect", "page": "https://x.test/chat/"}   # no query string
     assert client.post("/api/csp-report", content=b"x" * 20_000).status_code == 413
 
 
@@ -998,3 +1000,51 @@ def test_report_user_section_counts_bands_and_reasons():
     assert "| good (6–7) | 1 | 1 | **100%** |" in text
     assert "Price isn't good (1)" in text and '"too pricey"' in text
     assert "early signals" in text
+
+
+def test_request_id_header_and_logs(client, monkeypatch, capsys):
+    import re
+    monkeypatch.setattr(client.main, "check_query", lambda q, w: [{"watchId": "w1", "ok": True}])
+    body = {"query": "mac mini", "watches": [{"id": "w1"}]}
+    headers = {"X-Cron-Secret": "s3cret", "X-Request-Id": "run-123.0"}
+    response = client.post("/api/internal/check", json=body, headers=headers)
+    assert response.headers["X-Request-Id"] == "run-123.0"
+    assert json.loads(capsys.readouterr().out.splitlines()[-1])["requestId"] == "run-123.0"
+    for incoming in ("bad id", "x" * 101):
+        response = client.post("/api/internal/check", json=body, headers={**headers, "X-Request-Id": incoming})
+        assert re.fullmatch(r"[0-9a-f]{32}", response.headers["X-Request-Id"])
+        assert json.loads(capsys.readouterr().out.splitlines()[-1])["requestId"] == response.headers["X-Request-Id"]
+    assert re.fullmatch(r"[0-9a-f]{32}", client.get("/api/health").headers["X-Request-Id"])
+
+
+@pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
+@pytest.mark.parametrize("post_fails", [False, True])
+def test_chat_failure_records_error_without_breaking_answer(client, monkeypatch, capsys, path, post_fails):
+    import convex_api
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://deployment.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "secret")
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": True})
+    def fail(*args):
+        raise RuntimeError("model unavailable")
+    monkeypatch.setattr(client.main, "chat", fail)
+    monkeypatch.setattr(client.main, "chat_events", fail)
+    posts = []
+    class Response:
+        def raise_for_status(self):
+            if post_fails:
+                raise RuntimeError("write failed")
+        def json(self):
+            return {"ok": True}
+    monkeypatch.setattr(convex_api.httpx, "post", lambda *args, **kwargs: posts.append((args, kwargs)) or Response())
+    response = client.post(path, json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}", "X-Request-Id": "chat-123"})
+    answer = json.loads(response.text)["text"] if path.endswith("stream") else response.json()["answer"]
+    assert answer == "Something went wrong on our side. Try again."
+    assert response.headers["X-Request-Id"] == "chat-123"
+    assert len(posts) == 1
+    assert posts[0][0] == ("https://deployment.convex.site/api/errors",)
+    assert posts[0][1]["json"] == {"kind": "chat", "requestId": "chat-123", "message": f"RuntimeError: {answer}"}
+    logs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert all(line["requestId"] == "chat-123" for line in logs)
+    if path.endswith("stream"):
+        assert next(line for line in logs if line["event"] == "chat_turn")["requestId"] == "chat-123"
+    assert ("error_record_failed" in [line["event"] for line in logs]) is post_fails

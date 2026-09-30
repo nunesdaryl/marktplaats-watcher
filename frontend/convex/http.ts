@@ -47,4 +47,21 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/api/errors", method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const secret = process.env.API_TO_CONVEX_SECRET;
+    if (!secret) return new Response("Error reporting is not configured.", { status: 503 });
+    if (!sameSecret(request.headers.get("X-Api-Secret") ?? "", secret)) return new Response("Wrong API secret.", { status: 401 });
+    let body: unknown;
+    try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
+    if (!body || typeof body !== "object" || !("kind" in body) || body.kind !== "chat" ||
+        !("requestId" in body) || typeof body.requestId !== "string" || !body.requestId ||
+        !("message" in body) || typeof body.message !== "string")
+      return new Response("Invalid request.", { status: 400 });
+    await ctx.runMutation(internal.health.recordError, { kind: body.kind, requestId: body.requestId, message: body.message });
+    return Response.json({ ok: true });
+  }),
+});
+
 export default http;

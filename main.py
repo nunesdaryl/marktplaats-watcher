@@ -1,14 +1,17 @@
 import hmac
 import json
 import os
+import re
+import uuid
 import time
+from contextvars import ContextVar
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Literal
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -19,6 +22,26 @@ from agent import chat, chat_events, check_query  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
+request_id = ContextVar("request_id", default=None)
+
+
+@app.middleware("http")
+async def identify_request(request: Request, call_next):
+    incoming = request.headers.get("X-Request-Id", "")
+    ident = incoming if re.fullmatch(r"[A-Za-z0-9._-]{1,100}", incoming) else uuid.uuid4().hex
+    token = request_id.set(ident)
+    try:
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            if not request.url.path.startswith("/api/"):
+                raise
+            log("request_failed", error=type(e).__name__)
+            response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
+        response.headers["X-Request-Id"] = ident
+        return response
+    finally:
+        request_id.reset(token)
 
 
 class Turn(BaseModel):
@@ -81,20 +104,28 @@ def too_many(user):
 
 def log(event, **fields):
     """One JSON line per event, for Vercel's log search. Never personal data or message text."""
-    print(json.dumps({"event": event, **fields}), flush=True)
+    print(json.dumps({"event": event, "requestId": request_id.get(), **fields}), flush=True)
 
 
-def friendly_error(e):
+def friendly_error(e, ident=None):
     """An exception from the model or a tool -> (message a user can act on, HTTP status). Details stay in the log."""
-    print(f"chat failed: {type(e).__name__}: {e}")
+    log("chat_failed", requestId=ident or request_id.get(), error=type(e).__name__, detail=str(e))
     if "model_not_found" in str(e) or "does not exist" in str(e):  # never log the key, only the model
-        print(f"openai config: model={os.getenv('OPENAI_MODEL')!r}")
+        log("openai_config", requestId=ident or request_id.get(), model=os.getenv("OPENAI_MODEL"))
     if "content_policy" in str(e) or "content management policy" in str(e):
         return "I can only help with Marktplaats searches and watches.", 200   # a refusal is a normal answer
     if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
                                        "credit_balance_exhausted")):
         return "The chat can't reach its AI right now. Try again in a few minutes.", 503
     return "Something went wrong on our side. Try again.", 500
+
+
+def record_chat_error(error, answer, ident):
+    try:
+        convex_post("/api/errors", {"kind": "chat", "requestId": ident,
+                                    "message": f"{type(error).__name__}: {answer}"})
+    except Exception as e:
+        log("error_record_failed", requestId=ident, error=type(e).__name__)
 
 
 def chat_args(request):
@@ -117,7 +148,7 @@ def limit_answer(limit):
     return f"You've reached today's limit of {limit} questions. It resets at midnight."
 
 
-def save_assistant(request, user, event):
+def save_assistant(request, user, event, ident=None):
     if not request.chatId:
         return False
     search = event.get("searches") or []
@@ -134,12 +165,12 @@ def save_assistant(request, user, event):
         convex_post("/api/chats/assistant", payload)
         return True
     except Exception as e:
-        log("assistant_save_failed", error=type(e).__name__)
+        log("assistant_save_failed", requestId=ident or request_id.get(), error=type(e).__name__)
         return False
 
 
 @app.post("/api/chat")
-def chat_route(request: ChatRequest, user: str = Depends(current_user)):
+def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: str = Depends(current_user)):
     if os.getenv("CHAT_PAUSED") == "1":
         return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
     if too_many(user):
@@ -152,12 +183,13 @@ def chat_route(request: ChatRequest, user: str = Depends(current_user)):
         return {**answer, "saved": save_assistant(request, user, answer)}
     except Exception as e:
         answer, status = friendly_error(e)
+        background_tasks.add_task(record_chat_error, e, answer, request_id.get())
         return JSONResponse({"answer": answer, "saved": save_assistant(request, user, {"answer": answer})},
                             status_code=status)
 
 
 @app.post("/api/chat/stream")
-def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
+def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, user: str = Depends(current_user)):
     """The same chat, streamed as newline-delimited JSON events: status, listings, delta, done (or error)."""
     if os.getenv("CHAT_PAUSED") == "1":
         return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
@@ -169,6 +201,8 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
                  "proposals": [], "usage": {"input_tokens": 0, "output_tokens": 0, "model_calls": 0, "tool_calls": 0}}
         event["saved"] = save_assistant(request, user, event)
         return StreamingResponse(iter([json.dumps(event) + "\n"]), media_type="application/x-ndjson")
+
+    ident = request_id.get()
 
     def events():
         started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}
@@ -182,10 +216,10 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
-                    event["saved"] = save_assistant(request, user, event)
+                    event["saved"] = save_assistant(request, user, event, ident)
                     final_sent = True
                 elif event["type"] == "error":
-                    event["saved"] = save_assistant(request, user, event)
+                    event["saved"] = save_assistant(request, user, event, ident)
                     final_sent = True
                 yield json.dumps(event) + "\n"
                 if final_sent:
@@ -193,10 +227,12 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
         except Exception as e:
             stats["error"] = type(e).__name__
             if not final_sent:
-                event = {"type": "error", "text": friendly_error(e)[0]}
-                event["saved"] = save_assistant(request, user, event)
+                answer = friendly_error(e, ident)[0]
+                background_tasks.add_task(record_chat_error, e, answer, ident)
+                event = {"type": "error", "text": answer}
+                event["saved"] = save_assistant(request, user, event, ident)
                 yield json.dumps(event) + "\n"
-        log("chat_turn", mode=request.mode, tool_calls=stats["statuses"], ms=round((time.time() - started) * 1000),
+        log("chat_turn", requestId=ident, mode=request.mode, tool_calls=stats["statuses"], ms=round((time.time() - started) * 1000),
             **{k: v for k, v in stats.items() if k != "statuses"})
 
     return StreamingResponse(events(), media_type="application/x-ndjson",
