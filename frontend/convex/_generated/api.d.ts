@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as audit from "../audit.js";
 import type * as analytics from "../analytics.js";
 import type * as chats from "../chats.js";
 import type * as checker from "../checker.js";
@@ -31,6 +32,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  audit: typeof audit;
   analytics: typeof analytics;
   chats: typeof chats;
   checker: typeof checker;
