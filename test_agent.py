@@ -534,6 +534,66 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
     assert result == {"watchId": "w1", "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
+def test_check_query_retries_only_omitted_ids_and_ignores_unknown_ids(monkeypatch):
+    serve_search(monkeypatch, [api_page([(5000, "Vandaag"), (4999, "Vandaag")])])
+    calls = []
+
+    class PartialRanker:
+        def invoke(self, messages):
+            ids = [item["id"] for item in json.loads(messages[-1]["content"])["listings"]]
+            calls.append(ids)
+            scored = "m5000" if len(calls) == 1 else "m4999"
+            return agent.Ranking(ranks=[agent.Rank(id=scored, score=8, reason="match"),
+                                        agent.Rank(id="m9999", score=10, reason="unknown")])
+
+    monkeypatch.setattr(agent, "ranker", PartialRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100,
+                                                "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert calls == [["m5000", "m4999"], ["m4999"]]
+    assert result["ok"] and result["currentIds"] == ["m5000", "m4999"]
+    assert [item["id"] for item in result["listings"]] == ["m5000", "m4999"]
+    assert result["newestId"] == 5000
+
+
+def test_check_query_skips_and_marks_seen_after_one_omitted_id_retry(monkeypatch, capsys):
+    serve_search(monkeypatch, [api_page([(5000, "Vandaag"), (4999, "Vandaag")])])
+    calls = []
+
+    class PartialRanker:
+        def invoke(self, messages):
+            calls.append([item["id"] for item in json.loads(messages[-1]["content"])["listings"]])
+            return agent.Ranking(ranks=[agent.Rank(id="m5000", score=8, reason="match")] if len(calls) == 1 else [])
+
+    monkeypatch.setattr(agent, "ranker", PartialRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100,
+                                                "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert calls == [["m5000", "m4999"], ["m4999"]]
+    assert result["ok"] and result["currentIds"] == ["m5000", "m4999"]
+    assert [item["id"] for item in result["listings"]] == ["m5000"]
+    assert result["newestId"] == 5000
+    assert [json.loads(line) for line in capsys.readouterr().out.splitlines()] == [
+        {"event": "rank_skipped", "id": "m4999"}]
+
+
+def test_check_query_fails_if_retry_raises(monkeypatch):
+    serve_search(monkeypatch, [api_page([(5000, "Vandaag"), (4999, "Vandaag")])])
+    calls = []
+
+    class FailingRetryRanker:
+        def invoke(self, messages):
+            calls.append([item["id"] for item in json.loads(messages[-1]["content"])["listings"]])
+            if len(calls) == 2:
+                raise RuntimeError("model down")
+            return agent.Ranking(ranks=[agent.Rank(id="m5000", score=8, reason="match")])
+
+    monkeypatch.setattr(agent, "ranker", FailingRetryRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100,
+                                                "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert calls == [["m5000", "m4999"], ["m4999"]]
+    assert result == {"watchId": "w1", "ok": False,
+                      "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
+
+
 def test_check_query_ranks_watches_in_parallel(monkeypatch):
     import threading
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
