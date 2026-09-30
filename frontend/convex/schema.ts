@@ -116,6 +116,22 @@ export default defineSchema({
     requestId: v.optional(v.string()),
   }).index("by_at", ["at"]),
 
+  audits: defineTable({
+    at: v.number(),
+    watchId: v.id("watches"),
+    userId: v.id("users"),
+    requestId: v.string(),
+    ok: v.boolean(),
+    read: v.number(),
+    scored: v.number(),
+    missCount: v.number(),
+    misses: v.array(v.object({
+      listingId: v.string(), title: v.string(), url: v.string(), score: v.number(),
+      kind: v.union(v.literal("handled"), v.literal("never_read")),
+    })),
+    error: v.optional(v.string()),
+  }).index("by_at", ["at"]).index("by_watch_at", ["watchId", "at"]),
+
   errors: defineTable({
     kind: v.union(v.literal("chat"), v.literal("check")),
     requestId: v.string(),

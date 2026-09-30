@@ -116,6 +116,20 @@ health line shows runs that alternately check 0 watches, that leeway is gone (`G
   3. Fix `find_listings`/`parse_listings`.
   4. Run `pytest` and resume.
 
+## The delivery audit found a miss
+
+The 04:30 UTC audit replays the previous day's search for each active, seeded watch. Its rows are in Convex
+`audits`; the owner dashboard shows the latest misses, and the 05:00 UTC digest includes the audit request id.
+`handled` means the listing was seen but no alert was recorded. `never_read` means it was absent from seen listings
+although a check should have covered its listing day. `read` counts eligible listings and `scored` counts the
+candidates sent to the ranker (at most 40 per watch). A failed audit says why and is not evidence of a miss.
+
+Open the listing and the watch, then use the request id to inspect the audit in Vercel Logs and the corresponding
+check in Convex `runs`, `seenListings`, and `alerts`. Re-run the same search and scoring replay before treating a
+borderline score as a delivery bug: model scores can vary, and the audit requires one point above the notification
+threshold. If the replay confirms the gap, record the watch, listing id, timestamps and request ids, fix the cause,
+and decide with the owner whether to contact the user. The audit never sends a missed alert itself.
+
 ## 7. Content-Security-Policy
 - The CSP is **report-only**: violations are logged as `csp_violation` in the Vercel logs, and nothing is blocked.
 - **To enforce it:** after a sign-in in a private window shows no violations, rename the header key in `vercel.json`

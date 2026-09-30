@@ -30,6 +30,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const since = now - DAY;
   const runs = await ctx.db.query("runs").withIndex("by_at", (q) => q.gte("at", since)).collect();
   const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
+  const audits = await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
   const chatErrors = errors.filter((e) => e.kind === "chat").length;
   const checkErrors = errors.length - chatErrors;
   const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
@@ -45,9 +46,22 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (runs.some((r) => r.paused)) problems.push("Checks are paused (CHECKS_PAUSED=1).");
   if (failedEmails) problems.push(`${failedEmails} alert e-mail(s) failed to send.`);
   if (failing.length) problems.push(`${failing.length} watch(es) failing: ${failing.slice(0, 5).map((w) => `"${w.label}" (${w.error})`).join("; ")}.`);
+  const missed = audits.filter((a) => a.missCount > 0);
+  const missCount = audits.reduce((n, a) => n + a.missCount, 0);
+  if (missCount) {
+    const details = await Promise.all(missed.slice(0, 5).map(async (a) => {
+      const w = await ctx.db.get(a.watchId);
+      return a.misses.map((m) => `"${w?.name ?? w?.label ?? "Deleted watch"}" (${m.score}/10 "${m.title}", ${m.kind})`).join(", ");
+    }));
+    problems.push(`Delivery audit: ${missCount} missed match(es) on ${new Set(missed.map((a) => a.watchId)).size} watch(es): ${details.filter(Boolean).join(", ")}; request ${missed[0].requestId}.`);
+  }
+  for (const a of audits.filter((a) => !a.ok)) {
+    const w = await ctx.db.get(a.watchId);
+    problems.push(`Delivery audit failed for "${w?.name ?? w?.label ?? "Deleted watch"}": ${a.error ?? "Unknown error"}; request ${a.requestId}.`);
+  }
   return {
     problems,
-    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}.`,
+    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}. Delivery audit: ${audits.length} watches checked, ${missCount} misses.`,
     lastRunAt: lastRun?.at ?? null,
   };
 }

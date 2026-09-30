@@ -55,6 +55,7 @@ export const dashboard = query({
     const watches = await ctx.db.query("watches").take(LIMIT);
     const chats = await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT);
     const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
+    const audits = await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT);
     const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT * 4);
     const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT);
     const todayUsage = await ctx.db.query("usage").withIndex("by_day", (q) => q.eq("day", usageDay(now))).take(LIMIT);
@@ -101,6 +102,13 @@ export const dashboard = query({
 
     const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", now - DAY)).order("desc").collect();
     const pageViews = events.filter((e) => e.name === "page_view");
+    const latestAuditAt = audits[0]?.at;
+    const latestAudit = audits.filter((a) => a.at === latestAuditAt);
+    const latestMisses = audits.flatMap((a) => a.misses.map((m) => ({
+      ...m, watchId: a.watchId, watchLabel: watches.find((w) => w._id === a.watchId)?.name ??
+        watches.find((w) => w._id === a.watchId)?.label ?? "Deleted watch",
+      requestId: a.requestId, at: a.at,
+    }))).slice(0, 5);
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     return {
       now, days,
@@ -132,6 +140,8 @@ export const dashboard = query({
       wouldPay: (Object.keys(WOULD_PAY) as (keyof typeof WOULD_PAY)[])
         .map((key) => ({ key, name: WOULD_PAY[key], count: feedback.filter((f) => f.wouldPay === key).length })),
       health: await healthReport(ctx, now),
+      deliveryAudit: { checked: latestAudit.length, misses: latestAudit.reduce((n, a) => n + a.missCount, 0),
+        lastRunAt: latestAuditAt ?? null, latestMisses },
       errors24h: { chat: errors.filter((e) => e.kind === "chat").length,
                    check: errors.filter((e) => e.kind === "check").length },
       latestErrors: errors.slice(0, 5).map(({ kind, requestId, message, at }) => ({ kind, requestId, message, at })),

@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import chat, chat_events, check_query  # noqa: E402
+from agent import audit_watch, chat, chat_events, check_query  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
@@ -258,6 +258,18 @@ class CheckRequest(BaseModel):
     watches: list[CheckWatch] = Field(min_length=1, max_length=100)
 
 
+class AuditWatch(CheckWatch):
+    query: str = Field(min_length=1, max_length=80)
+    notify: Literal["great", "good", "all"]
+    alerted_ids: list[str] = Field(default=[])
+    seen_ids: list[str] = Field(default=[])
+    last_read_at: int | None = Field(default=None, ge=0)
+
+
+class AuditRequest(BaseModel):
+    watches: list[AuditWatch] = Field(min_length=1, max_length=100)
+
+
 def cron_caller(x_cron_secret: str = Header(default="")):
     secret = os.getenv("CRON_SECRET", "")
     if not secret:
@@ -273,6 +285,14 @@ def check_route(request: CheckRequest):
     log("check", watches=len(results), failed=sum(not r["ok"] for r in results),
         new_listings=sum(len(r.get("listings") or []) for r in results), ms=round((time.time() - started) * 1000),
         errors=sorted({r["error"] for r in results if not r["ok"]}))
+    return {"results": results}
+
+
+@app.post("/api/internal/audit", dependencies=[Depends(cron_caller)])
+def audit_route(request: AuditRequest):
+    results = [audit_watch(w.model_dump()) for w in request.watches]
+    log("audit", watches=len(results), failed=sum(not r["ok"] for r in results),
+        misses=sum(r["missCount"] for r in results), scored=sum(r["scored"] for r in results))
     return {"results": results}
 
 
