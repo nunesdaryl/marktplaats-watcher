@@ -184,8 +184,11 @@ def admin_ask_route(request: AdminAskRequest, user: str = Depends(current_user))
     if not owner_id or user != owner_id:
         raise HTTPException(404)
     context = {"today": datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat(),
-               "users": request.users, "watches": request.watches, "ownerEmail": owner_email}
-    return admin_intent(request.question, context)
+               "users": request.users, "watches": request.watches}
+    intent = admin_intent(request.question, context)
+    if intent.pop("forOwner", False) and owner_email:
+        intent["userEmail"] = owner_email
+    return intent
 
 
 @app.post("/api/chat")

@@ -2,8 +2,7 @@
 from agent import admin_intent
 
 
-CONTEXT = {"today": "2026-09-30", "ownerEmail": "owner@example.com",
-           "users": ["vin@example.com", "anna@example.com"],
+CONTEXT = {"today": "2026-09-30", "users": ["vin@example.com", "anna@example.com"],
            "watches": ["Road bike", "Mac mini"]}
 
 CASES = [
