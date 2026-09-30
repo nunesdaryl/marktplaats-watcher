@@ -477,6 +477,87 @@ def test_chat_streams_status_then_listing_cards_then_the_answer(monkeypatch):
     assert agent.chat("mac mini", [])["answer"] == "The i5 at €230 looks best."  # non-streaming wrapper
 
 
+def test_model_output_caps_match_chat_and_ranking_workloads():
+    assert agent.base_model.max_tokens == 1500
+    assert agent.ranker.first.steps__["raw"].bound.max_tokens == 2500
+
+
+def test_chat_deadline_stops_before_a_second_model_call(monkeypatch):
+    clock = [0]
+    llm = FakeStreamingModel()
+    searches = []
+    monkeypatch.setattr(agent, "model", llm)
+
+    def fetch(url, capped=True):
+        searches.append(url)
+        clock[0] = 61
+        return PAGE
+
+    monkeypatch.setattr(agent, "fetch_page", fetch)
+    events = list(agent.chat_events("mac mini", [], clock=lambda: clock[0]))
+    assert llm.calls == 1 and len(searches) == 1
+    assert [event["type"] for event in events] == ["status", "listings", "reset", "delta", "done"]
+    assert events[-1]["answer"] == "That took too long. Please try again, maybe with a simpler question."
+
+
+def test_chat_deadline_stops_before_the_next_tool_call(monkeypatch):
+    from langchain_core.messages import AIMessageChunk
+    clock = [0]
+    calls = []
+
+    class TwoSearches:
+        def stream(self, messages):
+            yield AIMessageChunk(content="", tool_call_chunks=[
+                {"name": "search_marktplaats", "args": '{"query": "first"}', "id": "c1", "index": 0},
+                {"name": "search_marktplaats", "args": '{"query": "second"}', "id": "c2", "index": 1}])
+
+    def fetch(url, capped=True):
+        calls.append(url)
+        clock[0] = 60
+        return PAGE
+
+    monkeypatch.setattr(agent, "model", TwoSearches())
+    monkeypatch.setattr(agent, "fetch_page", fetch)
+    events = list(agent.chat_events("mac mini", [], clock=lambda: clock[0]))
+    assert len(calls) == 1 and "first" in calls[0]
+    assert events[-1]["answer"] == "That took too long. Please try again, maybe with a simpler question."
+
+
+def test_chat_deadline_stops_if_stream_consumer_pauses_after_status(monkeypatch):
+    from langchain_core.messages import AIMessageChunk
+    clock = [0]
+    calls = []
+
+    class Searcher:
+        def stream(self, messages):
+            yield AIMessageChunk(content="", tool_call_chunks=[
+                {"name": "search_marktplaats", "args": '{"query": "mac mini"}', "id": "c1", "index": 0}])
+
+    monkeypatch.setattr(agent, "model", Searcher())
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: calls.append(url) or PAGE)
+    events = agent.chat_events("mac mini", [], clock=lambda: clock[0])
+    assert next(events)["type"] == "status"
+    clock[0] = 60
+    assert list(events)[-1]["answer"] == "That took too long. Please try again, maybe with a simpler question."
+    assert calls == []
+
+
+def test_chat_deadline_replaces_partial_model_answer(monkeypatch):
+    from langchain_core.messages import AIMessageChunk
+    clock = [0]
+
+    class SlowAnswer:
+        def stream(self, messages):
+            yield AIMessageChunk(content="Partial answer")
+            clock[0] = 60
+            yield AIMessageChunk(content=" that arrived too late")
+
+    monkeypatch.setattr(agent, "model", SlowAnswer())
+    events = list(agent.chat_events("mac mini", [], clock=lambda: clock[0]))
+    assert [event["type"] for event in events] == ["delta", "reset", "delta", "done"]
+    assert events[-1]["answer"] == "That took too long. Please try again, maybe with a simpler question."
+
+
 def test_stream_endpoint_needs_login_and_turns_failures_into_an_error_event(client, monkeypatch):
     assert client.post("/api/chat/stream", json={"message": "hi"}).status_code == 401
 
@@ -532,6 +613,19 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
     monkeypatch.setattr(agent, "ranker", DownRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
     assert result == {"watchId": "w1", "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
+
+
+def test_truncated_ranker_reply_fails_watch_without_sending_unscored_listings(monkeypatch):
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+
+    class TruncatedRanker:
+        def invoke(self, messages):
+            return {"raw": None, "parsed": None, "parsing_error": ValueError("truncated reply")}
+
+    monkeypatch.setattr(agent, "ranker", TruncatedRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
+    assert result == {"watchId": "w1", "ok": False,
+                      "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
 def test_check_query_retries_only_omitted_ids_and_ignores_unknown_ids(monkeypatch):
