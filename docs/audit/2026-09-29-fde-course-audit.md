@@ -330,6 +330,9 @@ Marktplaats API application). System design §19 has the evidence for each.
 15. **(MW-16, ✅ live 30 Sep) Chat eval C3 no longer flaky:** 15/15 repeated runs, up from 7/15. (§3.5)
 
 ### Wave 2: October 2026
+- **Delivery guarantees (proposed 30 Sep, after the alert audit):** an end-to-end CI test through the real check
+  route; `seededAt` backfilled so audit misses are always real; an immediate owner e-mail per real miss with "send it
+  now"; a quiet-watch alarm; a canary watch; a scoring budget for broad watches. System design §20.
 
 - global limits in Convex
 - egress allowlist and redirect check

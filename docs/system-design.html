@@ -1117,6 +1117,16 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <p><b>The first audit, run by hand on production:</b> 9 watches, 0 failures, 31 misses. The real ones all predate MW-17
   (among them a 10/10 IKEA laminate listing for another user); a few are listings from the 29 Sep re-seed, which existing
   watches can't yet tell apart (new first looks record <code>seededAt</code>).</p>
+<p><b>Still open (proposed 30 Sep, not built):</b> no system can promise every match (Marktplaats can change, the model
+  can misjudge, mail can land in spam); the goal is that no miss goes unnoticed or unfixed for more than a day.</p>
+<ol>
+  <li>An end-to-end test through the real HTTP check route in CI (the gap that let MW-20's regression through).</li>
+  <li>Backfill <code>seededAt</code> for existing watches, so every audit miss is real.</li>
+  <li>An immediate owner e-mail for a real miss (9/10 or better), with a one-click "send it to the user now".</li>
+  <li>A quiet-watch alarm (reads listings for 3 days, sends nothing).</li>
+  <li>A canary watch on a query with hourly new listings: silence means the pipeline is down.</li>
+  <li>Broad watches that fall behind: a bounded larger scoring budget, or a narrower query required at save time.</li>
+</ol>
 <div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing
   about whether users got their matches; an independent replay of the same search did. And test through the same door
   production uses: a function called directly skips the validation that failed.</div>
