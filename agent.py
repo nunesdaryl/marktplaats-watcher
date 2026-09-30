@@ -545,7 +545,7 @@ def days_old(label, today):
 
 
 def listing_number(item_id):
-    """Marktplaats numbers listings as they're placed (m2448176040): a higher number is a newer listing."""
+    """Return the creation number for m ids; other id families such as a ids have no m watermark number."""
     item_id = item_id or ""
     return int(item_id[1:]) if item_id[:1] == "m" and item_id[1:].isdigit() else None
 
@@ -574,8 +574,8 @@ def read_since(query, filters, since_days, today):
 
 def check_query(query, watches, now=None):
     """Read each watch's search since its last check (its own price and distance applied by Marktplaats), keep
-    only new listings and rank those. New means unseen and placed after the newest listing of the last check (the
-    watermark): an older listing that was refreshed or only now matches is remembered, not sent.
+    only new listings and rank those. New means not seen by this watch, regardless of id or creation number;
+    Convex dedupes against its full seen table. The watermark remains for the silent first look.
     watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids, seeded, watermark,
     last_checked_at}]"""
     now = now or datetime.now(AMSTERDAM)
@@ -623,9 +623,8 @@ def check_query(query, watches, now=None):
                                      w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)
         newest = max((n for i in raw if (n := listing_number(i.get("itemId"))) is not None), default=None)
         seen = set(w.get("seen_ids") or [])
-        mark = w.get("watermark")
-        fresh = [item for item in listings if item["id"] and item["id"] not in seen
-                 and (not mark or (listing_number(item["id"]) or 0) > mark)]
+        # New = not seen by this watch; Convex dedupes against its full seen table.
+        fresh = [item for item in listings if item["id"] and item["id"] not in seen]
         if not w.get("seeded", True) or w.get("watermark") is None:
             # First check, or the first since checks moved to the date-sorted search (no watermark yet): only
             # remember what's there, nothing is e-mailed, so don't score

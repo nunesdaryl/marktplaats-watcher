@@ -356,20 +356,37 @@ def test_paid_listings_of_older_days_dont_end_the_reading(monkeypatch):
     assert [p for _, p in read] == [0, 1]
 
 
-def test_new_means_unseen_and_newer_than_the_watermark(monkeypatch):
-    # A refreshed old listing (number below the watermark) shows up as today's, and was never seen: not sent
+def test_new_means_unseen_even_below_the_watermark(monkeypatch):
+    # A listing first seen after it goes live or is re-dated may have a number below the watermark.
     serve_search(monkeypatch, [api_page([(5001, "Vandaag"), (4000, "Vandaag"), (4999, "Vandaag"), (3000, "Gisteren")])])
     [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["m4999"], "watermark": 4500,
                                           "last_checked_at": EARLIER_TODAY}], now=NOW)
-    assert [i["id"] for i in r["listings"]] == ["m5001"]
+    assert [i["id"] for i in r["listings"]] == ["m5001", "m4000", "m3000"]
     assert set(r["currentIds"]) == {"m5001", "m4000", "m4999", "m3000"}     # all remembered
     assert r["newestId"] == 5001
 
 
+def test_unseen_a_id_is_fresh_and_seen_a_id_is_not(monkeypatch):
+    page = api_page([(5001, "Vandaag")])
+    page["listings"].append({**page["listings"][0], "itemId": "a1531512320", "vipUrl": "/v/a1531512320"})
+    serve_search(monkeypatch, [page])
+    watches = [{"id": "unseen", "seen_ids": [], "watermark": 5000, "last_checked_at": EARLIER_TODAY},
+               {"id": "seen", "seen_ids": ["a1531512320"], "watermark": 5000,
+                "last_checked_at": EARLIER_TODAY}]
+    unseen, seen = agent.check_query("mac mini", watches, now=NOW)
+    assert [i["id"] for i in unseen["listings"]] == ["m5001", "a1531512320"]
+    assert [i["id"] for i in seen["listings"]] == ["m5001"]
+    assert unseen["newestId"] == seen["newestId"] == 5001
+    assert agent.listing_number("a1531512320") is None
+
+
 def test_first_look_reads_all_of_today_and_starts_the_watermark(monkeypatch):
-    read = serve_search(monkeypatch, [api_page(today_page(5000)), api_page(today_page(4950, 10) + [(10, "Gisteren")] * 5)])
+    first_page = api_page(today_page(5000))
+    first_page["listings"][0].update(itemId="a1531512320", vipUrl="/v/a1531512320")
+    read = serve_search(monkeypatch, [first_page, api_page(today_page(4950, 10) + [(10, "Gisteren")] * 5)])
     [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "seeded": False}], now=NOW)
-    assert [p for _, p in read] == [0, 1] and r["listings"] == [] and r["newestId"] == 5000
+    assert [p for _, p in read] == [0, 1] and r["listings"] == [] and r["newestId"] == 4997
+    assert "a1531512320" in r["currentIds"]
 
 
 def test_the_watchs_price_and_distance_go_to_marktplaats_and_same_filters_share_a_read(monkeypatch):
@@ -492,10 +509,18 @@ def test_reading_stops_at_the_last_page_and_at_the_cap(monkeypatch):
 
 
 def test_scoring_bound_keeps_the_watermark_below_listings_still_waiting(monkeypatch):
-    serve_search(monkeypatch, [api_page([(5000 - i, "Vandaag") for i in range(25)] + [(10, "Gisteren")])])
+    page = api_page([(5000 - i, "Vandaag") for i in range(25)] + [(10, "Gisteren")])
+    page["listings"].append({**page["listings"][0], "itemId": "a1531512320", "vipUrl": "/v/a1531512320"})
+    serve_search(monkeypatch, [page])
     [r] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100, "last_checked_at": EARLIER_TODAY}], now=NOW)
     assert len(r["listings"]) == agent.MAX_RANK_PER_CHECK
-    assert r["newestId"] == 5000 - 24 - 1                               # the 5 waiting ones get read again next time
+    assert "a1531512320" not in r["currentIds"] and "m10" not in r["currentIds"]
+    assert r["newestId"] == 9                                           # the m listings still waiting bound it
+    [next_check] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": r["currentIds"],
+                                                  "watermark": r["newestId"],
+                                                  "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert "a1531512320" in [item["id"] for item in next_check["listings"]]
+    assert "a1531512320" in next_check["currentIds"]
 
 
 def test_a_failing_later_page_fails_that_watch(monkeypatch):

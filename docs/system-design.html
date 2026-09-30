@@ -919,8 +919,9 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     <td>Checks read the date-sorted search with the watch's price and distance applied by Marktplaats, page after page
     through every day since the last successful check. Marktplaats sorts by day only (0 violations in 45 pages; within
     a day in no set order), so reading whole days is what makes it complete. A filtered watch needs about one request.
-    "New" = unseen and placed after the newest listing of the last check (a watermark), so refreshed old listings are
-    remembered, not sent. At most 40 pages; hitting that logs <code>coverage_capped</code>.</td></tr>
+    Since 30 Sep, "new" means unseen by that watch, regardless of id or listing number: late-published and re-dated
+    listings can appear below the watermark. The watermark remains for the silent first look, while Convex dedupes
+    against its full seen table. At most 40 pages; hitting that logs <code>coverage_capped</code>.</td></tr>
 </table>
 <p>If a ranker response omits listings, the check retries those listings once; any still unscored are logged, marked seen, and excluded from alerts without failing the watch.</p>
 <p>What didn't work, measured before choosing: any fixed number of pages (new listings sat on page 8 for "gazelle",
