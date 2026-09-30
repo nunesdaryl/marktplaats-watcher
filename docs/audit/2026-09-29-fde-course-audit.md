@@ -24,6 +24,12 @@ The gaps fall into three groups:
 For demo day on 3 October, the open items are mostly human-owned: the rehearsals, a backup recording and the
 on-device checks.
 
+**Status, 30 September (evening).** Wave 1 was pulled forward and all 15 of its factory issues (MW-1 to MW-13, MW-15, MW-16) are built, reviewed
+and live, except the parts that need Daryl (§5). That closes the harness-hardening group (tools never raise, token
+and per-user caps, request ids with errors in the digest) and most of the evaluation group (human-corrected labels,
+failure categories, prompt versions, a weekly CI run that waits for its key). The scorecard below is the 29 September
+snapshot and was not re-scored.
+
 ### Scorecard
 
 | # | Course theme | ✅ Met | 🟡 Partly | ❌ Open |
@@ -246,7 +252,7 @@ concrete fixes.
 | Decisions dated and kept current | 🟡 | `Decisions.md` and `Evaluation Results.md` still describe v1 | Refresh, or point them to the ADRs | S · 1 |
 | "Correct the agent twice → write a skill" (D3-SB p17) | ❌ | Lessons from this project (FastAPI preset, production-deploy check, CSS class clash, Clerk dark menu) aren't in `fde-skill` (CAI-98) | Add them to the skill's checklists | S · 2 |
 | Workspace housekeeping: no stale secrets, no copied course material, everything backed up (AUDIT-2026-09-26 #9–#13) | ❌ | `2 Projects/weather-agent/.env` still holds the old Azure entries; `04-researcher` has Playwright profiles and `/Volumes` paths; `05-copywriter/bronnen` may hold paid-course transcripts; about 1 GB of duplicates; the skill and vault repos have no remote | Clear the Azure entries; fix or remove the profiles and paths; check the transcripts; delete the duplicates; add private remotes | S · any time |
-| Factory: intake → build → gate → review → ship (D3-SB p19–21) | 🟡 | 30 Sep: MW-7, MW-1, MW-2 and MW-3 ran through the factory (GPT-6 Sol builds, Opus 5.5 reviews, operator merges; one needs-fix cycle) and are live; the other Wave 1 specs need refreshing first | Refresh and run the rest of Wave 1; add a merge-gate script | — · 1 |
+| Factory: intake → build → gate → review → ship (D3-SB p19–21) | 🟡 | 30 Sep: all of Wave 1 (MW-1 to MW-13, MW-15, MW-16) ran through the factory: GPT-6 Sol builds, Opus 5.5 reviews by running each change, the operator approves each merge; seven needs-fix cycles across the wave; all live (system design §18–19) | Add a merge-gate script | — · 2 |
 
 ## 4. What is already strong (say it on stage)
 
@@ -284,9 +290,10 @@ Filed on 29 September as factory specs **MW-1 to MW-13** in the Linear team "Mar
 `.factory.json` binds it), in the order below. Each waits for the operator's `agent-ready` label before the build loop
 picks it up.
 
-**Done 30 Sep, before the demo (demo-risk first):** MW-7, MW-1, MW-2 and MW-3, built by GPT-6 Sol and reviewed by
-Opus 5.5, merged on Daryl's OK and live (main `4084678`). The rest wait for a spec refresh: the specs predate the 29–30 Sep
-rewrite of the checks.
+**Done 30 Sep, before the demo:** every Wave 1 issue, built by GPT-6 Sol, reviewed by Opus 5.5 and merged on Daryl's
+OK. Each spec got a reviewer's addendum first, because the specs predate the 29–30 Sep rewrite of the checks. Three
+wait on Daryl (`human-ready`): MW-5 (the eval key and the UAT sign-off), MW-9 (reading the ADRs) and MW-14 (the
+Marktplaats API application). System design §19 has the evidence for each.
 
 1. **(MW-1, ✅ live 30 Sep) Tools never raise.** Given the postcode service returns HTML or a 5xx, when a chat or check uses a postcode,
    then the user sees "postcode service unavailable", and the other watches in the group still run. (§3.3)
@@ -294,28 +301,31 @@ rewrite of the checks.
    re-scored once and otherwise skipped and logged; the watch still delivers the rest. (§3.3)
 3. **(MW-3, ✅ live 30 Sep) Token caps and turn deadline.** Given any chat, when it runs, then no model call exceeds `max_tokens` and the
    turn ends within 60 s with a clear message. (§3.3)
-4. **(MW-4) Per-user daily budget and chat kill switch.** Given a user hits the daily allowance, when they chat, then they
+4. **(MW-4, ✅ live 30 Sep) Per-user daily budget and chat kill switch.** Given a user hits the daily allowance, when they chat, then they
    get a friendly limit message; setting `CHAT_PAUSED=1` stops chat for everyone. (§3.9)
-5. **(MW-5) Evaluation gate:**
+5. **(MW-5, ✅ live 30 Sep; key and sign-off with Daryl) Evaluation gate:**
     - human-corrected labels
     - failure categories counted
     - `PROMPT_VERSION` in results
     - a CI job on prompt changes and a weekly scheduled run
     - UAT sign-off line
     (§3.5)
-6. **(MW-6) Request ids and errors in the digest.** Given a chat or check fails, when the digest runs, then it lists the
+6. **(MW-6, ✅ live 30 Sep) Request ids and errors in the digest.** Given a chat or check fails, when the digest runs, then it lists the
    count and the latest request ids. (§3.6)
 7. **(MW-7, ✅ live 30 Sep) Stream timeout.** Given the API hangs, when a user waits 60 s, then the UI shows an error and re-enables the
    composer. (§3.8)
-8. **(MW-8) Outbound timeouts** on the AgentMail and check-API calls. (§3.7)
-9. **(MW-9) ADRs 0001–0008 and `docs/nfr.md`.** (§3.1, §3.2)
-10. **(MW-10) Remeasure cost at the 20-listing cap.** (§3.9)
-11. **(MW-11) The server writes the agent's turns.** Given a signed-in user, when the browser calls `chats.append` with
+8. **(MW-8, ✅ live 30 Sep) Outbound timeouts** on the AgentMail and check-API calls. (§3.7)
+9. **(MW-9, ✅ live 30 Sep, ADRs 0001–0013; reading with Daryl) ADRs 0001–0008 and `docs/nfr.md`.** (§3.1, §3.2)
+10. **(MW-10, ✅ 30 Sep: €14.73/month for a busy 15-minute watch, above the $10 cap) Remeasure cost at the 20-listing cap.** (§3.9)
+11. **(MW-11, ✅ live 30 Sep) The server writes the agent's turns.** Given a signed-in user, when the browser calls `chats.append` with
     `role: "assistant"`, then it is rejected; assistant turns are written by the backend only. (§3.4)
-12. **(MW-12) Evals name the real model.** Given `OPENAI_MODEL` is changed, when the evals run, then `evals/report.md` shows
+12. **(MW-12, ✅ live 30 Sep) Evals name the real model.** Given `OPENAI_MODEL` is changed, when the evals run, then `evals/report.md` shows
     that model and its price. (§3.5)
-13. **(MW-13) Ratings follow their watch.** Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
+13. **(MW-13, ✅ live 30 Sep) Ratings follow their watch.** Given a user deletes a watch, when it is gone, then its alerts' ratings are gone
     too, and the privacy text states how long ratings are kept. (§3.4)
+14. **(MW-15, ✅ live 30 Sep) Design polish:** the Sieve token sweep and the component cards. Layout-changing spacing
+    values were kept, so the sweep is partial by design. (§3.8)
+15. **(MW-16, ✅ live 30 Sep) Chat eval C3 no longer flaky:** 15/15 repeated runs, up from 7/15. (§3.5)
 
 ### Wave 2: October 2026
 

@@ -75,7 +75,9 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   schedule, or a manual dispatch reruns the evals; the gate requires at least 19/20 chat cases and 90% precision for
   "great" matches. The operator fills in the report's UAT sign-off after review. Rerun locally with
   `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
-- **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
+- **Cost:** an hourly watch is about €0.33/month with 1 new listing per check and €3.68 with 20; a busy 15-minute
+  watch (20 new listings every check) is €14.73/month, above the hard $10/month OpenAI cap; a chat question about
+  €0.002 (measured 30 Sep, `evals/report.md` §4).
 - **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the
   page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;
@@ -101,8 +103,9 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
 - **Software factory queue:** Linear team "Marktplaats Watcher" (MW), bound by `.factory.json`. Wave 1 of the audit
   is filed as MW-1 to MW-13, the official Marktplaats API route as MW-14, the design polish as MW-15 and a flaky chat
   eval as MW-16; the build loop only picks up issues marked `agent-ready`, and issues whose next step is Daryl's carry
-  `human-ready`. On 30 Sep MW-7, MW-1, MW-2 and MW-3 went through it (GPT-6 Sol builds at medium effort via
-  `/opt/homebrew/bin/codex`, Claude Opus 5.5 reviews, Daryl approves each merge) and are live.
+  `human-ready`. On 30 Sep all of Wave 1 plus MW-15 and MW-16 went through it (GPT-6 Sol builds at medium effort via
+  `/opt/homebrew/bin/codex`, Claude Opus 5.5 reviews by running each change, Daryl approves each merge) and is live;
+  MW-5, MW-9 and MW-14 wait on Daryl (`human-ready`). The run is written up in `docs/system-design.html` §18–19.
 - **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
   with evidence, and a dated roadmap.
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from

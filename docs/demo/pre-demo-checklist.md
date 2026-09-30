@@ -18,7 +18,7 @@
 | 12 | Rehearsed twice (engineer and business version) | ☐ | No Daryl presentations/timings recorded. Prepare Version A and Version B; see human-checks-2026-09-27.md. |
 | 13 | Three conversations with real Marktplaats hunters | ☐ | Ask about the past: "the last time you looked for something second-hand, how did you keep an eye on it?" |
 | 14 | Old Azure course key rotated or deleted | ☐ | If it still exists in the Azure portal |
-| 15 | Light mode looks right after the redesign (28 Sep) | ☐ | Dark mode checked on desktop and phone by the build session; light mode only on paper (contrast table). Brief §6 |
+| 15 | Light mode looks right after the redesign (28 Sep) | ☐ | Agent, 30 Sep (MW-15 review): light mode checked on desktop (Watches, a watch page, Alerts), before vs after, no problems. Still open: light mode on the phone. Brief §6 |
 | 16 | Redesigned alert e-mail seen in the inbox | ✅ | Agent, 30 Sep 00:05: the first e-mail in the Sieve template (tables, dark mode, score badges) arrived, headed "Worth a look on Marktplaats", 0 send failures. Still worth a glance on the phone in dark mode. Brief §7 |
 | 17 | Daryl's personal line in the LinkedIn launch post | ☐ | Fill in or delete the `[DARYL: …]` line. Brief §8 |
 | 18 | Phone spacing and logo re-checked on the iPhone SE (28 Sep fix) | ☐ | Reload or re-add the home-screen app; check new chat (keyboard open too), the logo on all three tabs, light mode. Steps and ChatGPT prompt: iphone-se-recheck-brief.md. Results: human-checks-2026-09-27.md §2 |
@@ -34,3 +34,7 @@
 | 28 | Tonight's UI changes seen on the phone | ☐ | New-alerts count on the Alerts tab, the logo linking home in the top bar, 44px tap targets, the paused-watch ring (29–30 Sep, desktop checked by the agent). Daryl: one pass on the iPhone |
 | 29 | "Why not the saved search?" answer ready | ✅ | Sourced 20-second answer at the end of demo-script.md; landing "Not another saved search" block live (29 Sep); positioning audit docs/marketing/positioning-audit-2026-09-29.md |
 | 30 | Demo-risk fixes live (chat never hangs, postcode outage handled, scorer skip, output caps + 60 s deadline) | ✅ | MW-7, MW-1, MW-2, MW-3 built by the factory and reviewed, merged on Daryl's OK 30 Sep, live at 4084678 (system design §18). Freeze: no merges after Thu 1 Oct 20:00 |
+| 31 | Rest of the backlog live (30 Sep) | ✅ | MW-4, 5, 6, 8, 9, 10, 11, 12, 13, 15, 16 built by the factory, reviewed by running each, merged on Daryl's OK; system design §19. Main b252d87 and later. |
+| 32 | Daily chat limit and server-saved answers seen working in production | ☐ | Tested on the Convex dev deployment only (MW-4, MW-11). Daryl: ask one question in the live chat; the station then checks the `usage` table and the saved answer. |
+| 33 | Eval CI running with its key, and the UAT sign-off filled in | ☐ | MW-5: create a restricted OpenAI eval key, `gh secret set OPENAI_API_KEY_EVALS`, `gh secret set OPENAI_MODEL` (gpt-5.4-mini), fill in the sign-off line in evals/report.md (prompt chat-2026-09-30.2 / rank-2026-09-30.1). Without the key the workflow skips cleanly (checked 30 Sep). |
+| 34 | OpenAI spend fits the $10 cap for the demo week | ☐ | MW-10: one busy 15-minute watch costs €14.73/month on its own. Daryl: check the OpenAI usage page; keep the demo watch narrow (row 27). |
