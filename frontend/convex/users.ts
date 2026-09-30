@@ -58,6 +58,8 @@ export const finishOnboarding = mutation({
 });
 
 export async function deleteWatchData(ctx: MutationCtx, watchId: Id<"watches">) {
+  for (const row of await ctx.db.query("ratings").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect())
+    await ctx.db.delete(row._id);
   for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", watchId)).collect())
     await ctx.db.delete(row._id);
   for (const row of await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect())

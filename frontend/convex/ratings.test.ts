@@ -24,7 +24,7 @@ async function withAlert(score = 9) {
       url: "https://www.marktplaats.nl/v/x", score, reason: "Right model under budget.", channel: "email", emailStatus: "sent", createdAt: Date.now() });
   });
   const rows = () => t.run((ctx) => ctx.db.query("ratings").collect());
-  return { t, alice, alertId, rows };
+  return { t, alice, watchId, alertId, rows };
 }
 
 test("in the app: rate your own alert; 'good match' needs no why, 'not right' can say why; a new rating replaces the old", async () => {
@@ -74,4 +74,47 @@ test("delete my data removes ratings; the owner's stats count bands and the 'cou
   expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({ verdict: "good", score: 7 })]);
   await alice.mutation(api.users.deleteMyData, {});
   expect(await rows()).toHaveLength(0);
+});
+
+test("removing a watch deletes only its ratings and leaves the owner's remaining rating count intact", async () => {
+  const { t, alice, watchId, alertId, rows } = await withAlert(7);
+  await alice.mutation(api.ratings.rate, { alertId, verdict: "good" });
+  const otherWatchId = await alice.mutation(api.watches.create, { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const otherAlertId = await t.run(async (ctx) => {
+    const watch = (await ctx.db.get(otherWatchId))!;
+    return ctx.db.insert("alerts", { userId: watch.userId, watchId: otherWatchId, listingId: "l2", title: "Mac mini",
+      url: "https://www.marktplaats.nl/v/y", score: 9, reason: "Good match.", channel: "email", emailStatus: "sent", createdAt: Date.now() });
+  });
+  await alice.mutation(api.ratings.rate, { alertId: otherAlertId, verdict: "good" });
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  expect((await owner.query(api.admin.ratingStats, {}))!.rated).toBe(2);
+
+  await alice.mutation(api.watches.remove, { id: watchId });
+  expect((await rows()).map((rating) => rating.alertId)).toEqual([otherAlertId]);
+  expect((await owner.query(api.admin.ratingStats, {}))!.rated).toBe(1);
+});
+
+test("the daily purge deletes ratings last updated more than 12 months ago", async () => {
+  const { t, alice, alertId, rows } = await withAlert();
+  await alice.mutation(api.ratings.rate, { alertId, verdict: "good" });
+  const rating = (await rows())[0];
+  const cutoff = Date.parse("2025-09-29T10:00:00Z");
+  await t.run(async (ctx) => {
+    await ctx.db.patch(rating._id, { createdAt: cutoff - 86_400_000, updatedAt: cutoff });
+  });
+  await t.mutation(internal.checker.purgeOld, {});
+  expect(await rows()).toHaveLength(1);
+
+  await t.run((ctx) => ctx.db.patch(rating._id, { updatedAt: cutoff - 1 }));
+  await t.mutation(internal.checker.purgeOld, {});
+  expect(await rows()).toHaveLength(0);
+});
+
+test("a rating remains after its alert reaches the 30-day retention limit", async () => {
+  const { t, alice, alertId, rows } = await withAlert();
+  await alice.mutation(api.ratings.rate, { alertId, verdict: "good" });
+  vi.setSystemTime(new Date("2026-10-30T10:00:00Z"));
+  await t.mutation(internal.checker.purgeOld, {});
+  expect(await t.run((ctx) => ctx.db.get(alertId))).toBeNull();
+  expect(await rows()).toHaveLength(1);
 });
