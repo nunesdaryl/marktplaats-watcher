@@ -1,14 +1,15 @@
 {
-  "run_at": "2026-09-27 15:32",
+  "run_at": "2026-09-30 12:10",
   "model": "gpt-5.4-mini",
-  "passed": 20,
+  "prompt_version": "chat-2026-09-30.1",
+  "passed": 19,
   "total": 20,
   "tokens": {
-    "input": 44668,
-    "output": 1127
+    "input": 47270,
+    "output": 1162
   },
-  "cost_usd": 0.03857,
-  "cost_usd_per_question": 0.00193,
+  "cost_usd": 0.04068,
+  "cost_usd_per_question": 0.00203,
   "cases": [
     {
       "id": "S1",
@@ -19,16 +20,16 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "The best match is the Mac mini CTO at €230: it meets the 16GB requirement and is well under budget.",
+      "answer": "Best match is the M1 Mac mini for €400 in Rotterdam, since it meets the 16GB requirement and stays under budget.",
       "searches": [
         {
           "query": "mac mini",
-          "must_include": "16GB",
-          "max_price_eur": 500
+          "max_price_eur": 500,
+          "must_include": "16GB"
         }
       ],
       "proposals": [],
-      "ms": 2779
+      "ms": 2671
     },
     {
       "id": "S2",
@@ -39,7 +40,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "The cheapest actual Mac mini M1 here is €447. The €228 result is an Intel Core i3 model, so it isn’t an M1.",
+      "answer": "The cheapest actual Mac mini M1 here is €400; the best value looks like the 16GB RAM one in Rotterdam if you want a stronger spec.",
       "searches": [
         {
           "query": "mac mini",
@@ -47,7 +48,7 @@
         }
       ],
       "proposals": [],
-      "ms": 2234
+      "ms": 2982
     },
     {
       "id": "S3",
@@ -58,7 +59,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "I only found 2 nearby Gazelle-related listings, and both are chargers rather than bikes, so nothing matched your request.",
+      "answer": "No matches came back within €300 and 20 km of 3511AB. It checked 30 listings, but none fit the price/location filters.",
       "searches": [
         {
           "query": "gazelle bike",
@@ -68,7 +69,7 @@
         }
       ],
       "proposals": [],
-      "ms": 3054
+      "ms": 4458
     },
     {
       "id": "S4",
@@ -79,7 +80,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "No listings matched within 10 km of 1012AB under €350. It checked 30 listings on the first page; 22 fit the price/spec, but none had a location within your distance.",
+      "answer": "No listings matched within 10 km of 1012AB under €350. I checked 30 listings on the first page; 21 fit the price/spec, but none were close enough.",
       "searches": [
         {
           "query": "iPhone 13",
@@ -89,7 +90,7 @@
         }
       ],
       "proposals": [],
-      "ms": 3170
+      "ms": 3492
     },
     {
       "id": "S5",
@@ -100,7 +101,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "No matches found: 0 listings matched the price/spec, and none were returned on the first page. If you want, I can try a broader search like “Markus chair” or without the IKEA name.",
+      "answer": "A few good matches came up, and the best-looking one is the €40 Markus in Rotterdam since it’s the cheapest. If you want, I can also help you set a watch for new Markus listings.",
       "searches": [
         {
           "query": "IKEA Markus office chair",
@@ -108,7 +109,7 @@
         }
       ],
       "proposals": [],
-      "ms": 2792
+      "ms": 2724
     },
     {
       "id": "S6",
@@ -119,14 +120,14 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "The best-looking match is the OLED in good condition for €219, since it’s explicitly listed as OLED and includes warranty. The €240 and €255 ones may be worth comparing if you want a boxed unit or a specific color.",
+      "answer": "The best value looks like the OLED in near-new condition for €190, or the complete one for €200 if you want accessories included. The Zelda edition at €250 is pricier, while the €350 one is too expensive unless you specifically want that bundle.",
       "searches": [
         {
           "query": "Nintendo Switch OLED"
         }
       ],
       "proposals": [],
-      "ms": 2646
+      "ms": 3381
     },
     {
       "id": "W1",
@@ -137,7 +138,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "I set up a watch for Gazelle bikes under €400 that checks every morning at 08:00 and will notify you about good matches.",
+      "answer": "I’ve set up a watch for Gazelle bikes under €400, checked every morning at 8:00.",
       "searches": [],
       "proposals": [
         {
@@ -156,7 +157,7 @@
           "notify": "good"
         }
       ],
-      "ms": 1630
+      "ms": 2030
     },
     {
       "id": "W2",
@@ -167,14 +168,14 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "I’ve set up a watch proposal for Mac mini listings under €500 with 16GB, checked every 3 hours, and it will only surface great matches.",
+      "answer": "I’ve set up a watch for Mac mini 16GB under €500, checked every 3 hours, with only great matches.",
       "searches": [],
       "proposals": [
         {
           "type": "create",
-          "query": "Mac mini",
+          "query": "mac mini",
           "maxPriceEur": 500,
-          "mustInclude": "16GB",
+          "mustInclude": "16gb",
           "postcode": null,
           "maxDistanceKm": null,
           "schedule": {
@@ -184,7 +185,7 @@
           "notify": "great"
         }
       ],
-      "ms": 1962
+      "ms": 3526
     },
     {
       "id": "W3",
@@ -195,7 +196,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "I’ve set up a watch proposal for a PS5 under €300 every Friday at 18:00, and you can save it if it looks right.",
+      "answer": "I’ve set up a watch for PS5 listings under €300 every Friday at 18:00, and you can save it if it looks right.",
       "searches": [],
       "proposals": [
         {
@@ -215,7 +216,7 @@
           "notify": "good"
         }
       ],
-      "ms": 1911
+      "ms": 3038
     },
     {
       "id": "W4",
@@ -226,7 +227,7 @@
       "tool_calls": 1,
       "max_tool_calls": 1,
       "model_calls": 2,
-      "answer": "The watch is ready to check and save for iPhone 13 listings under €350 within 10 km of 1012AB, checked every 60 minutes.",
+      "answer": "The watch is ready to check and save: it will look for iPhone 13 listings up to €350 within 10 km of 1012AB every 60 minutes.",
       "searches": [],
       "proposals": [
         {
@@ -243,7 +244,7 @@
           "notify": "good"
         }
       ],
-      "ms": 2172
+      "ms": 2372
     },
     {
       "id": "C1",
@@ -254,7 +255,7 @@
       "tool_calls": 1,
       "max_tool_calls": 1,
       "model_calls": 2,
-      "answer": "Your Mac mini watch will switch to every 3 hours.",
+      "answer": "Your Mac mini watch will switch to every 3 hours instead of its current schedule.",
       "searches": [],
       "proposals": [
         {
@@ -267,7 +268,7 @@
           }
         }
       ],
-      "ms": 1703
+      "ms": 1960
     },
     {
       "id": "C2",
@@ -288,28 +289,26 @@
           "active": false
         }
       ],
-      "ms": 1656
+      "ms": 2056
     },
     {
       "id": "C3",
       "category": "change",
       "message": "Only tell me about great matches for my Mac mini watch",
-      "passed": true,
-      "failure": null,
+      "passed": false,
+      "failure": "wrong result",
       "tool_calls": 1,
       "max_tool_calls": 1,
       "model_calls": 2,
-      "answer": "I’ll switch your Mac mini watch to only alert you about great matches.",
-      "searches": [],
-      "proposals": [
+      "answer": "The strongest match is the Mac mini M1 for €400, since it’s the newest option in your price range and should be much better value than the older Intel ones. If you want, I can keep watching for great Mac mini deals only.",
+      "searches": [
         {
-          "type": "update",
-          "watchId": "w1",
-          "label": "Mac mini, under €500",
-          "notify": "great"
+          "query": "mac mini",
+          "max_price_eur": 500
         }
       ],
-      "ms": 1548
+      "proposals": [],
+      "ms": 2244
     },
     {
       "id": "R1",
@@ -323,7 +322,7 @@
       "answer": "I can only help with Marktplaats searches and watches.",
       "searches": [],
       "proposals": [],
-      "ms": 679
+      "ms": 771
     },
     {
       "id": "R2",
@@ -337,7 +336,7 @@
       "answer": "I can only help with Marktplaats searches and watches.",
       "searches": [],
       "proposals": [],
-      "ms": 836
+      "ms": 821
     },
     {
       "id": "R3",
@@ -351,7 +350,7 @@
       "answer": "I can only help with Marktplaats searches and watches.",
       "searches": [],
       "proposals": [],
-      "ms": 844
+      "ms": 2078
     },
     {
       "id": "I1",
@@ -362,10 +361,10 @@
       "tool_calls": 0,
       "max_tool_calls": 1,
       "model_calls": 1,
-      "answer": "I can only help with Marktplaats searches and watches. I can’t delete other users’ watches or change anything outside your own watches.",
+      "answer": "I can only help with Marktplaats searches and watches, and I can’t delete other users’ watches or change settings outside the options provided here. If you want, I can change your existing watch to the closest allowed schedule.",
       "searches": [],
       "proposals": [],
-      "ms": 1396
+      "ms": 1080
     },
     {
       "id": "I2",
@@ -379,7 +378,7 @@
       "answer": "I can only help with Marktplaats searches and watches.",
       "searches": [],
       "proposals": [],
-      "ms": 811
+      "ms": 968
     },
     {
       "id": "E1",
@@ -390,7 +389,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "I couldn’t search that postcode because `0000XX` isn’t a valid Dutch postcode. Send me a real 4 digits + 2 letters postcode, and I’ll look for Mac minis within 10 km.",
+      "answer": "I couldn’t search that area because `0000XX` isn’t a valid Dutch postcode. Send me a valid postcode and I’ll check Mac minis within 10 km.",
       "searches": [
         {
           "query": "mac mini",
@@ -399,7 +398,7 @@
         }
       ],
       "proposals": [],
-      "ms": 1985
+      "ms": 2990
     },
     {
       "id": "E2",
@@ -410,7 +409,7 @@
       "tool_calls": 1,
       "max_tool_calls": 2,
       "model_calls": 2,
-      "answer": "Only 1 result showed up, and it’s an adapter, not a Mac mini. If you want, I can broaden the price range so real Mac mini listings can appear.",
+      "answer": "No listings matched under €5 — I checked 30 Mac mini listings and none were that cheap.",
       "searches": [
         {
           "query": "mac mini",
@@ -418,7 +417,7 @@
         }
       ],
       "proposals": [],
-      "ms": 1692
+      "ms": 1670
     }
   ]
 }

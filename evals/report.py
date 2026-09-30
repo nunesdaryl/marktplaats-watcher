@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, PRICES, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
+from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -15,6 +15,50 @@ def pct(x):
 
 REASONS = {"not_asked": "Not what I asked for", "score_too_high": "Score too high", "score_too_low": "Score too low",
            "price": "Price isn't good", "reason_wrong": "The reason is wrong"}
+
+KNOWN_ISSUES = ('Note (30 Sep 2026): case C3 ("Only tell me about great matches for my Mac mini watch") is flaky',
+                'with the real model, passing 7 of 15 repeated runs on main; a single 20-case run can show 19/20. Fix tracked as MW-16.')
+SIGN_OFF = 'UAT sign-off: ______ (name), ______ (date), prompt versions ______'
+
+
+def spotcheck_overrides(listings, spotcheck):
+    ids_by_url = {listing["url"]: listing["id"] for listing in listings}
+    overrides, answered, rows = {}, 0, 0
+    for line in spotcheck.splitlines():
+        if not re.match(r"\| \d+ \|", line):
+            continue
+        number = line.split("|", 2)[1].strip()
+        answer = line.rsplit("|", 2)[1].strip().lower()
+        url = re.search(r"\]\((https?://[^)]+)\)", line)
+        if not url or url.group(1) not in ids_by_url:
+            raise ValueError(f"spot-check row {number} has no matching listing URL")
+        rows += 1
+        if answer in ("yes", "no"):
+            answered += 1
+        if answer == "no":
+            overrides[ids_by_url[url.group(1)]] = number
+    return overrides, answered, rows
+
+
+def scorer_metrics(scored, overrides, thresholds):
+    metrics = {}
+    for name, threshold in thresholds.items():
+        tp, fp, fn, tn = [], [], [], []
+        for row in scored:
+            match = row["judge"]["match"] ^ (row["id"] in overrides)
+            notified = row["score"] is not None and row["score"] >= threshold
+            (tp if notified and match else fp if notified else fn if match else tn).append(row)
+        failures = Counter()
+        for kind, misses in (("false_positive", fp), ("false_negative", fn)):
+            failures.update((kind, "human_override" if row["id"] in overrides else row["judge"]["category"])
+                            for row in misses)
+        metrics[name] = {
+            "threshold": threshold, "tp": len(tp), "fp": len(fp), "fn": len(fn), "tn": len(tn),
+            "precision": len(tp) / (len(tp) + len(fp)) if tp or fp else None,
+            "recall": len(tp) / (len(tp) + len(fn)) if tp or fn else None,
+            "false_positives": fp, "false_negatives": fn, "failures": failures,
+        }
+    return metrics
 
 
 def user_section(ratings):
@@ -55,43 +99,55 @@ def main():
     price_in, price_out = PRICES[model]
     scoring_cost = cost_usd(model, s["tokens"]["input"], s["tokens"]["output"])
     chat_cost = cost_usd(model, c["tokens"]["input"], c["tokens"]["output"])
-    agree = [row.split("|")[-2].strip().lower() for row in SPOTCHECK.read_text().splitlines() if re.match(r"\| \d+ \|", row)]
-    marked = [a for a in agree if a in ("yes", "no")]
-    disagreed = [str(i + 1) for i, a in enumerate(agree) if a == "no"]
-    if len(marked) < len(agree) or not agree:
-        spot = f"pending ({len(marked)}/{len(agree)} answered in evals/data/spotcheck.md)"
-    else:
-        spot = f"{marked.count('yes')}/{len(marked)} agreed" + (f" (disagreed on rows {', '.join(disagreed)}; the precision and "
-               "recall below are still measured against the judge's labels)" if disagreed else "")
+    overrides, answered, total = spotcheck_overrides(read(LISTINGS)["listings"], SPOTCHECK.read_text())
+    disagreed = ", ".join(overrides.values())
+    spot = (f"{answered - len(overrides)}/{total} agreed; overridden rows {disagreed or 'none'}" if answered == total
+            else f"pending ({answered}/{total} answered); overridden rows {disagreed or 'none'}")
+    metrics = scorer_metrics(s["scored"], overrides,
+                             {name: m["threshold"] for name, m in s["metrics"].items()})
+    old = REPORT.read_text() if REPORT.exists() else ""
+    sign_off = next((line for line in old.splitlines() if line.startswith("UAT sign-off:")), SIGN_OFF)
     by_cat = Counter(r["category"] for r in c["cases"])
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
         "# Evaluation report", "",
         f"Scorer run {s['run_at']}, chat run {c['run_at']}. Model under test: **{model}**. "
-        f"Judge model: **{labels['judge']}**, human spot-check of 10 judge labels: **{spot}**.", "",
-        "## 1. Does the AI e-mail the right listings? (scorer vs judge)", "",
+        f"Judge model: **{labels['judge']}**, human spot-check of {total} judge labels: **{spot}**.",
+        f"Prompt versions: chat **{c.get('prompt_version', 'not recorded')}**, rank **{s.get('prompt_version', 'not recorded')}**.",
+        sign_off, "",
+        "## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)", "",
         f"{s['listings']} real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; "
-        f"the judge marked **{s['judge_matches']}** as real matches, the rest as noise (accessories, other products, other models).", "",
+        f"the judge marked **{s['judge_matches']}** as real matches. After human overrides, "
+        f"**{sum(row['judge']['match'] ^ (row['id'] in overrides) for row in s['scored'])}** are real matches.", "",
         "| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |", "|---|---|---|---|---|---|---|---|",
     ]
     if s["model"] != model or c["model"] != model:
         lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}**, chat **{c['model']}**. "
                       "Rerun those evals to measure the configured model.", ""]
-    for name, m in s["metrics"].items():
+    for name, m in metrics.items():
         lines.append(f"| {name} | score ≥ {m['threshold']} | **{pct(m['precision'])}** | **{pct(m['recall'])}** | {m['tp']} | {m['fp']} | {m['fn']} | {m['tn']} |")
     lines += ["", "*Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*", ""]
-    for name, m in s["metrics"].items():
+    for name, m in metrics.items():
         if m["false_positives"] or m["false_negatives"]:
             lines.append(f"**Misses at '{name}':**")
             for fp in m["false_positives"]:
-                lines.append(f"- E-mailed but not a match ({fp['judge']}): {fp['title']} — scored {fp['score']}: {fp['reason']}")
+                category = "human_override" if fp["id"] in overrides else fp["judge"]["category"]
+                lines.append(f"- E-mailed but not a match ({category}): {fp['title']} — scored {fp['score']}: {fp['reason']}")
             for fn in m["false_negatives"]:
-                lines.append(f"- Missed a match: {fn['title']} — scored {fn['score']}; judge: {fn['judge_reason']}")
+                category = "human_override" if fn["id"] in overrides else fn["judge"]["category"]
+                source = "original judge" if fn["id"] in overrides else "judge"
+                lines.append(f"- Missed a match ({category}): {fn['title']} — scored {fn['score']}; {source}: {fn['judge']['reason']}")
             lines.append("")
+        lines += [f"**Failure categories at '{name}':**", "", "| Category | False positives | False negatives |",
+                  "|---|---|---|"]
+        for category in sorted({category for _, category in m["failures"]}):
+            lines.append(f"| {category} | {m['failures']['false_positive', category]} | {m['failures']['false_negative', category]} |")
+        lines.append("")
     lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [])
     lines += [
         "## 2. Does the chat do the right thing? (20-case golden set)", "",
-        f"**{c['passed']}/{c['total']} passed.**", "", "| Category | Passed |", "|---|---|",
+        f"**{c['passed']}/{c['total']} passed.** " + KNOWN_ISSUES[0], KNOWN_ISSUES[1], "",
+        "| Category | Passed |", "|---|---|",
         *[f"| {cat} | {pass_cat[cat]}/{n} |" for cat, n in by_cat.items()], "",
         "| Case | Question | Result | Tool calls (max) | Model calls |", "|---|---|---|---|---|",
         *[f"| {r['id']} | {r['message'][:70]} | {'✅' if r['passed'] else '❌ ' + (r['failure'] or '')} | {r['tool_calls']} ({r['max_tool_calls']}) | {r['model_calls']} |"
@@ -111,6 +167,7 @@ def main():
         "## 3. Cost", "",
         f"- Scoring: {eur(scoring_cost / max(s['listings'], 1) * 100)} per 100 listings ({s['tokens']['input']} input + {s['tokens']['output']} output tokens for {s['listings']} listings).",
         f"- Chat: {eur(chat_cost / c['total'])} per question on average.",
+        "- Chat output is capped at 1,500 tokens per model call.",
         f"- Judge (one-off): {eur(labels['cost_usd'])}.",
         f"- Prices: {model} ${price_in:.2f} / ${price_out:.2f} per 1M input/output tokens; €1 ≈ ${1 / USD_TO_EUR:.2f}.", "",
         "## How to rerun", "",
@@ -121,9 +178,8 @@ def main():
     ]
     # Keep the measured running cost (§4, written by evals.cost with real model calls): regenerating must not lose it
     marker = "## 4. Running cost per watch (measured)"
-    old = REPORT.read_text() if REPORT.exists() else ""
     cost = old[old.index(marker):].rstrip() if marker in old else ""
-    REPORT.write_text("\n".join(lines) + ("\n\n" + cost if cost else "") + "\n")
+    REPORT.write_text("\n".join(lines) + ("\n\n" + cost if cost else "") + "\n\n")
     print(f"wrote {REPORT}")
 
 

@@ -1,0 +1,53 @@
+name: evals
+
+on:
+  pull_request:
+    paths:
+      - agent.py
+      - evals/**
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check eval key
+        id: key
+        env:
+          EVAL_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
+        run: |
+          if [ -z "$EVAL_KEY" ]; then
+            echo "::notice::Evals skipped: OPENAI_API_KEY_EVALS is not set"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.available == 'true'
+      - uses: astral-sh/setup-uv@v6
+        if: steps.key.outputs.available == 'true'
+      - name: Install Python dependencies
+        if: steps.key.outputs.available == 'true'
+        run: uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt
+      - name: Run evaluations and report
+        if: steps.key.outputs.available == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
+        run: |
+          .venv/bin/python -m evals.run_chat
+          .venv/bin/python -m evals.run_scorer
+          .venv/bin/python -m evals.report
+      - name: Check evaluation gate
+        if: steps.key.outputs.available == 'true'
+        run: .venv/bin/python -m evals.gate
+      - name: Upload evaluation report
+        if: always() && steps.key.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: evals-report
+          path: |
+            evals/report.md
+            evals/data/*results.json

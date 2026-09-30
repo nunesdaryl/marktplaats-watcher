@@ -301,6 +301,9 @@ model = base_model.bind_tools(make_tools(ChatContext([])))
 # (no search), so it can't search instead of setting up the watch. Found by evals/ case W4.
 watch_model = base_model.bind_tools([t for t in make_tools(ChatContext([])) if t.name != "search_marktplaats"])
 
+# Bump when a prompt changes.
+PROMPT_VERSION = {"chat": "chat-2026-09-30.1", "rank": "rank-2026-09-30.1"}
+
 SYSTEM_PROMPT = ("You help the user find second-hand items on Marktplaats.nl and keep an eye on them. Call "
                  "search_marktplaats for any search: short product query, specs like 16gb or M2 in must_include. "
                  "The app shows every listing the search returns as a card with its photo, price, city and link, "
