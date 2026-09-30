@@ -32,7 +32,7 @@ def main():
         print(f"{case_id:3} {'PASS' if results[-1]['passed'] else 'FAIL'}  tools {usage.get('tool_calls')}/{max_tools}  {message[:60]}")
     usd = cost_usd(model, tokens_in, tokens_out)
     passed = sum(r["passed"] for r in results)
-    write(CHAT_RESULTS, {"run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "passed": passed,
+    write(CHAT_RESULTS, {"run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "prompt_version": agent.PROMPT_VERSION["chat"], "passed": passed,
                          "total": len(results), "tokens": {"input": tokens_in, "output": tokens_out},
                          "cost_usd": round(usd, 5), "cost_usd_per_question": round(usd / len(results), 5), "cases": results})
     print(f"{passed}/{len(results)} passed, cost ${usd:.4f}")

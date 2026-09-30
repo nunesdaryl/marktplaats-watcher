@@ -357,6 +357,10 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
 <!-- ============================ 8 EVALUATION ============================ -->
 <section>
 <h2>8. Evaluation engineering</h2>
+<p>The evaluation gate reruns on pull requests changing <code>agent.py</code> or <code>evals/**</code>, every Monday at
+  06:00 UTC, and on manual dispatch. It requires at least 19 of 20 chat cases and 90% precision at the "great" notify
+  level, using judge labels corrected by the human spot-check; the report records prompt versions, failure categories,
+  and an operator UAT sign-off. Runs without the evaluation API key report a skip notice.</p>
 <p>"Testing, for something that is not deterministic. Start with a known answer." Two layers:</p>
 <h3>Layer 1: offline tests (<code>test_agent.py</code>, 8 of 8 pass, no model, no network)</h3>
 <table>

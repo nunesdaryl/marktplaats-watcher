@@ -68,11 +68,11 @@ accent, lilac highlights for the fill-in sentence, Geist and Geist Mono (self-ho
 app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `docs/design/logo-review.md`.
 
 ## Evaluation, cost and operations
-- **Evaluation:** `evals/report.md`. The chat golden set passes 20/20. On 49 real listings judged by a stronger model, all 13
-  "great match" e-mails agreed with the judge (100% precision, 68% recall) and "good matches" catches 90% of real
-  matches. A human check of 10 judge labels agreed with 7; on the other 3 the judge was too strict (it called real
-  matches non-matches). Rerun with `.venv/bin/python -m evals.run_scorer`,
-  `evals.run_chat`, `evals.report`, `evals.cost`.
+- **Evaluation:** `evals/report.md` measures chat and listing scores against judge labels corrected by human spot-checks,
+  with failure categories and prompt versions. A pull request changing `agent.py` or `evals/**`, a Monday 06:00 UTC
+  schedule, or a manual dispatch reruns the evals; the gate requires at least 19/20 chat cases and 90% precision for
+  "great" matches. The operator fills in the report's UAT sign-off after review. Rerun locally with
+  `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.35/month; a chat question about €0.002; hard $10/month cap (details in `evals/report.md` §4).
 - **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the

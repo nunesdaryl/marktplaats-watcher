@@ -1,7 +1,7 @@
 """Shared bits for the evaluation scripts. Run from the repo root, e.g. `.venv/bin/python -m evals.run_scorer`.
 
 The evals run the PRODUCTION code paths (agent.rank_listings, agent.chat) against a frozen dataset, so a rerun after a
-prompt or model change measures exactly what users get. They cost a few cents, so they run by hand, not in CI."""
+prompt or model change measures exactly what users get. CI runs them on relevant pull requests and weekly."""
 import json
 import os
 from pathlib import Path

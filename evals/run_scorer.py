@@ -44,7 +44,8 @@ def main():
     tokens_out = sum(u[1] for u in agent.RANK_USAGE)
     usd = cost_usd(model, tokens_in, tokens_out)
     write(SCORER_RESULTS, {
-        "run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "listings": len(scored),
+        "run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model,
+        "prompt_version": agent.PROMPT_VERSION["rank"], "listings": len(scored),
         "judge_matches": sum(s["judge"]["match"] for s in scored), "metrics": metrics,
         "tokens": {"input": tokens_in, "output": tokens_out, "calls": len(agent.RANK_USAGE)},
         "cost_usd": round(usd, 5), "cost_usd_per_100_listings": round(usd / max(len(scored), 1) * 100, 5),
