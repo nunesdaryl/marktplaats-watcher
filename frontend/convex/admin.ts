@@ -110,6 +110,7 @@ export const dashboard = query({
       requestId: a.requestId, at: a.at,
     }))).slice(0, 5);
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
+    const fallingBehind = watches.filter((w) => w.active && live(w) && ((w.backlog ?? 0) >= 20 || w.coverageCapped));
     return {
       now, days,
       totals: {
@@ -119,6 +120,7 @@ export const dashboard = query({
         watchesActive: watches.filter((w) => w.active && live(w)).length,
         watchesPaused: watches.filter((w) => !w.active && live(w)).length,
         watchesArchived: watches.filter((w) => !live(w)).length,
+        watchesFallingBehind: fallingBehind.length,
         chats: chats.length,
         chatsToday: todayUsage.reduce((sum, row) => sum + row.chats, 0),
         alerts: alerts.length, alerts7d: alerts.filter((a) => a.createdAt >= now - 7 * DAY).length,
@@ -128,6 +130,7 @@ export const dashboard = query({
         events: events.length,
       },
       daily,
+      fallingBehindLabels: fallingBehind.map((w) => w.name ?? w.label),
       funnel,
       features: countBy(events, (e) => e.name),
       pages: countBy(pageViews, (e) => e.props?.section || "chat"),

@@ -104,6 +104,12 @@ health line shows runs that alternately check 0 watches, that leeway is gone (`G
 4. **Bounces:** AgentMail shows them per message. A permanent bounce means the Clerk account's e-mail is wrong; the user
    fixes it under their account.
 
+### A watch can't keep up
+The watch page warns when 20 or more fresh listings are waiting for a later check, or when a check reaches the
+40-page read limit. The owner dashboard lists affected watches; the health digest flags a watch at 100 waiting
+or when the read limit is reached. Tell the user to narrow the search with a word or a max price. A smaller
+search gives each new listing a better chance to be read and scored in the next check.
+
 ## 6. Marktplaats changed its page (0 listings everywhere)
 - **Symptoms:** watches show "Marktplaats showed an unexpected page. We'll try again soon.", the chat says it couldn't
   read the page, and the health digest lists failing watches. (If the listings data moved but is still readable, you'd

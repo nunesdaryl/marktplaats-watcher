@@ -36,8 +36,11 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
   const failedEmails = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
     .filter((a) => a.emailStatus === "failed").length;
-  const failing = (await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
+  const activeWatches = (await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
+    .filter((w) => w.archivedAt === undefined);
+  const failing = activeWatches
     .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError! }));
+  const behind = activeWatches.filter((w) => (w.backlog ?? 0) >= 100 || w.coverageCapped);
   const sum = (key: "checked" | "failed" | "emails" | "emailFailures") => runs.reduce((n, r) => n + r[key], 0);
   const problems: string[] = [];
   if (errors.length >= 5) problems.push(`${errors.length} errors in the last 24 hours (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ")}.`);
@@ -59,6 +62,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     const w = await ctx.db.get(a.watchId);
     problems.push(`Delivery audit failed for "${w?.name ?? w?.label ?? "Deleted watch"}": ${a.error ?? "Unknown error"}; request ${a.requestId}.`);
   }
+  if (behind.length) problems.push(`${behind.length} watch(es) can't keep up: ${behind.map((w) => `"${w.name ?? w.label}" (backlog ${w.backlog ?? 0})`).join("; ")}.`);
   return {
     problems,
     summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}. Delivery audit: ${audits.length} watches checked, ${missCount} misses.`,

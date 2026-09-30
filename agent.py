@@ -566,10 +566,12 @@ def read_since(query, filters, since_days, today):
         # Paid "Dagtopper" listings are shown first whatever their day: they don't say where the reading is
         ages = [days_old(item.get("date"), today) for item in batch if item.get("priorityProduct", "NONE") == "NONE"]
         older = any(a is not None and a > since_days for a in ages)
-        if older or len(batch) < PAGE_SIZE or page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
-            return listings
+        if older or len(batch) < PAGE_SIZE:
+            return listings, False
+        if page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
+            return listings, page + 1 >= MAX_PAGES
     print(json.dumps({"event": "coverage_capped", "query": query, "pages": MAX_PAGES}))
-    return listings
+    return listings, True
 
 
 def check_query(query, watches, now=None):
@@ -617,7 +619,7 @@ def check_query(query, watches, now=None):
             # A maintenance or redesigned answer: report a failure, so the baseline stays and it's retried soon
             results.append({"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."})
             continue
-        raw = reads[key]
+        raw, capped = reads[key]
         # Every listing read counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
         listings, _ = parse_listings(raw, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)
@@ -634,7 +636,8 @@ def check_query(query, watches, now=None):
         listings = [item for item in listings if item["id"] not in waiting]
         # The watermark may only pass what was handled: it stops just below the oldest listing still waiting
         waiting_numbers = [n for i in waiting if (n := listing_number(i)) is not None]
-        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK], min(waiting_numbers) - 1 if waiting_numbers else newest))
+        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK], min(waiting_numbers) - 1 if waiting_numbers else newest,
+                        len(waiting), capped))
 
     # Rank the watches in parallel, including a retry for any ids a response omitted
     def rank(job):
@@ -645,7 +648,7 @@ def check_query(query, watches, now=None):
 
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = list(pool.map(rank, to_rank))
-    for (w, listings, _, newest), fresh in zip(to_rank, ranked):
+    for (w, listings, _, newest, waiting, capped), fresh in zip(to_rank, ranked):
         if fresh is None:
             results.append({"watchId": w["id"], "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."})
             continue
@@ -653,7 +656,8 @@ def check_query(query, watches, now=None):
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
         results.append({"watchId": w["id"], "ok": True, "currentIds": [i["id"] for i in listings if i["id"]],
-                        "listings": [item for item in fresh if item["score"] is not None], "newestId": newest})
+                        "listings": [item for item in fresh if item["score"] is not None], "newestId": newest,
+                        "waiting": waiting, "capped": capped})
     return results
 
 

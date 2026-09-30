@@ -55,6 +55,7 @@ export default function WatchView({ watch, onEdit, actions }) {
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
         <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
+        {(watch.backlog >= 20 || watch.coverageCapped) && <p className="warn">This search finds more new listings than we can read and score each check{watch.backlog > 0 ? ` (${watch.backlog} waiting)` : ""}. Narrow it with a word or a max price so nothing is missed.</p>}
         <div className="actions">
           <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={18} />Edit</button>
           {!watch.archivedAt && (

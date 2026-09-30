@@ -46,6 +46,18 @@ function fakeServices(page: () => string[], failures = 0) {
 }
 const alerts = (t: any) => t.run((ctx: any) => ctx.db.query("alerts").collect());
 
+test("record stores and clears the waiting count and page cap", async () => {
+  const { t, id } = await seededWatch();
+  const report = (extra: object) => t.mutation(internal.checker.record, { now: Date.now(), dryRun: false,
+    results: [{ ...found(id, []), ...extra }] });
+  await report({ waiting: 30, capped: true });
+  expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({ backlog: 30, coverageCapped: true });
+  await report({ waiting: 0, capped: false });
+  const cleared = await t.run((ctx) => ctx.db.get(id));
+  expect(cleared?.backlog).toBeUndefined();
+  expect(cleared?.coverageCapped).toBeUndefined();
+});
+
 test("A02: a result that arrives after the watch was archived or paused is ignored", async () => {
   const { t, alice, id } = await seededWatch();
   const now = Date.now();

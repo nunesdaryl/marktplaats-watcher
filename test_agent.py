@@ -2,6 +2,7 @@
 Marktplaats request."""
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -504,8 +505,29 @@ def test_reading_stops_at_the_last_page_and_at_the_cap(monkeypatch):
     assert [p for _, p in read] == [0, 1]                               # a short page is the last one
     monkeypatch.setattr(agent, "MAX_PAGES", 3)
     read = serve_search(monkeypatch, [api_page(today_page(9000 - 100 * i)) for i in range(5)])
-    agent.check_query("mac mini", w, now=NOW)
+    [result] = agent.check_query("mac mini", w, now=NOW)
     assert [p for _, p in read] == [0, 1, 2]                            # the safety cap
+    assert result["capped"] is True
+
+
+def test_seen_window_exceeds_one_complete_read():
+    checker = (Path(__file__).parent / "frontend" / "convex" / "checker.ts").read_text()
+    sent = int(re.search(r"const MAX_SEEN_SENT = (\d+);", checker).group(1))
+    python = (Path(__file__).parent / "agent.py").read_text()
+    pages = int(re.search(r"^MAX_PAGES = (\d+)", python, re.MULTILINE).group(1))
+    size = int(re.search(r"^PAGE_SIZE = (\d+)", python, re.MULTILINE).group(1))
+    assert sent > pages * size
+
+
+def test_full_read_reports_coverage_cap(monkeypatch):
+    pages = [api_page([(9000 - page * agent.PAGE_SIZE - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+             for page in range(agent.MAX_PAGES)]
+    read = serve_search(monkeypatch, pages)
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": [],
+                                               "last_checked_at": EARLIER_TODAY}], now=NOW)
+    assert len(read) == agent.MAX_PAGES
+    assert result["capped"] is True
+    assert result["waiting"] == agent.MAX_PAGES * agent.PAGE_SIZE - agent.MAX_RANK_PER_CHECK
 
 
 def test_scoring_bound_keeps_the_watermark_below_listings_still_waiting(monkeypatch):
@@ -979,7 +1001,8 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     # A readable page that really has no listings is still fine
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page([]))
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
-    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": [], "newestId": None}
+    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": [], "newestId": None,
+                     "waiting": 0, "capped": False}
 
 
 def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
@@ -998,6 +1021,7 @@ def test_scoring_per_check_is_bounded_and_the_rest_waits_unseen(monkeypatch):
     monkeypatch.setattr(agent, "ranker", ranker)
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
     assert len(result["listings"]) == agent.MAX_RANK_PER_CHECK
+    assert result["waiting"] == 5 and result["capped"] is False
     assert result["currentIds"] == ids[:agent.MAX_RANK_PER_CHECK]   # the 5 unscored ones stay unseen: scored next time
 
 
