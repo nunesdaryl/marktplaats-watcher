@@ -36,6 +36,7 @@ class WatchRef(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=500)
+    chatId: str | None = Field(default=None, max_length=64)
     history: list[Turn] = Field(default=[], max_length=20)
     watches: list[WatchRef] = Field(default=[], max_length=10)
     mode: Literal["search", "watch"] = "search"   # the composer's "Search now | Watch it" switch
@@ -116,20 +117,43 @@ def limit_answer(limit):
     return f"You've reached today's limit of {limit} questions. It resets at midnight."
 
 
+def save_assistant(request, user, event):
+    if not request.chatId:
+        return False
+    search = event.get("searches") or []
+    payload = {"clerkId": user, "chatId": request.chatId,
+               "content": event.get("answer", event.get("text", "")) or "…",
+               "listings": (event.get("listings") or [])[:10],
+               "proposals": event.get("proposals") or [],
+               "search": {k: v for k, v in search[-1].items()
+                          if k in ("query", "max_price_eur", "must_include", "postcode", "max_distance_km")}
+               if search else None}
+    if payload["search"] is None:
+        del payload["search"]
+    try:
+        convex_post("/api/chats/assistant", payload)
+        return True
+    except Exception as e:
+        log("assistant_save_failed", error=type(e).__name__)
+        return False
+
+
 @app.post("/api/chat")
 def chat_route(request: ChatRequest, user: str = Depends(current_user)):
     if os.getenv("CHAT_PAUSED") == "1":
         return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
+    if too_many(user):
+        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     allowance = chat_allowance(user)
     if not allowance["allowed"]:
         return JSONResponse({"answer": limit_answer(allowance["limit"])}, status_code=429)
-    if too_many(user):
-        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     try:
-        return chat(*chat_args(request))
+        answer = chat(*chat_args(request))
+        return {**answer, "saved": save_assistant(request, user, answer)}
     except Exception as e:
         answer, status = friendly_error(e)
-        return JSONResponse({"answer": answer}, status_code=status)   # same body; monitoring sees the failure
+        return JSONResponse({"answer": answer, "saved": save_assistant(request, user, {"answer": answer})},
+                            status_code=status)
 
 
 @app.post("/api/chat/stream")
@@ -137,16 +161,18 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
     """The same chat, streamed as newline-delimited JSON events: status, listings, delta, done (or error)."""
     if os.getenv("CHAT_PAUSED") == "1":
         return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
+    if too_many(user):
+        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     allowance = chat_allowance(user)
     if not allowance["allowed"]:
         event = {"type": "done", "answer": limit_answer(allowance["limit"]), "listings": [], "searches": [],
                  "proposals": [], "usage": {"input_tokens": 0, "output_tokens": 0, "model_calls": 0, "tool_calls": 0}}
+        event["saved"] = save_assistant(request, user, event)
         return StreamingResponse(iter([json.dumps(event) + "\n"]), media_type="application/x-ndjson")
-    if too_many(user):
-        return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
 
     def events():
         started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}
+        final_sent = False
         try:
             for event in chat_events(*chat_args(request)):
                 if event["type"] == "status":
@@ -156,10 +182,20 @@ def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
+                    event["saved"] = save_assistant(request, user, event)
+                    final_sent = True
+                elif event["type"] == "error":
+                    event["saved"] = save_assistant(request, user, event)
+                    final_sent = True
                 yield json.dumps(event) + "\n"
+                if final_sent:
+                    break
         except Exception as e:
             stats["error"] = type(e).__name__
-            yield json.dumps({"type": "error", "text": friendly_error(e)[0]}) + "\n"
+            if not final_sent:
+                event = {"type": "error", "text": friendly_error(e)[0]}
+                event["saved"] = save_assistant(request, user, event)
+                yield json.dumps(event) + "\n"
         log("chat_turn", mode=request.mode, tool_calls=stats["statuses"], ms=round((time.time() - started) * 1000),
             **{k: v for k, v in stats.items() if k != "statuses"})
 

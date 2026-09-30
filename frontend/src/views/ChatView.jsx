@@ -22,10 +22,7 @@ const fromSearch = (s) => ({
   query: s.query, mustInclude: s.must_include ?? undefined, maxPriceEur: s.max_price_eur ?? undefined,
   postcode: s.postcode ?? undefined, maxDistanceKm: s.max_distance_km ?? undefined,
 });
-const cleanSearch = (s) => s && Object.fromEntries(Object.entries(s).filter(([k]) =>
-  ["query", "max_price_eur", "must_include", "postcode", "max_distance_km"].includes(k)));
-
-function Assistant({ text, status, listings, proposals, savedProposals, search, onWatch, onAdjust, onProposalSaved }) {
+function Assistant({ text, status, listings, proposals, savedProposals, search, onWatch, onAdjust, onProposalSaved, unsaved }) {
   return (
     <div className="msg assistant">
       {status && <p className="status" role="status">{status}</p>}
@@ -39,6 +36,7 @@ function Assistant({ text, status, listings, proposals, savedProposals, search, 
       {search && !proposals?.length && (
         <button className="button tinted" onClick={() => onWatch(fromSearch(search))}>Watch this search</button>
       )}
+      {unsaved && <p className="status">Couldn't save this answer.</p>}
     </div>
   );
 }
@@ -50,16 +48,19 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
   const append = useMutation(api.chats.append);
   const markSaved = useMutation(api.chats.markProposalSaved);
   const [live, setLive] = useState(null);   // the exchange in progress: { user, status, listings, text }
+  const [unsaved, setUnsaved] = useState(null);
   const [mode, setMode] = useState("search");  // the composer switch: "search" (results now) or "watch" (set up a watch)
   const end = useRef(null);
   const saved = thread?.messages ?? [];
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [saved.length, live]);
   useEffect(() => { if (chatId && thread === null) go("/"); }, [chatId, thread]);   // deleted or not yours
+  useEffect(() => { setUnsaved(null); }, [chatId]);
 
   async function send(message, sendMode = "search", fromChip = false) {
     message = message.trim();
     if (!message || live) return;
+    setUnsaved(null);
     track("chat_sent", { mode: sendMode, kind: fromChip ? "suggestion" : chatId ? "follow-up" : "new chat" });
     const history = historyFor(saved);
     setLive({ user: message, status: sendMode === "watch" ? "Drafting a watch for you to check…" : "Thinking…", listings: [], text: "" });
@@ -78,7 +79,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
       try {
         await streamChat({
           token: await getToken(),
-          body: { message, history, mode: sendMode,
+          body: { message, chatId: id, history, mode: sendMode,
                   watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active })) },
           onEvent: (e) => {
             if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
@@ -86,19 +87,14 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
             else if (e.type === "delta") setLive((l) => ({ ...l, status: null, text: l.text + e.text }));
             else if (e.type === "reset") setLive((l) => ({ ...l, text: "" }));   // words before a tool call weren't the answer
             else if (e.type === "done") final = e;
-            else if (e.type === "error") final = { answer: e.text };
+            else if (e.type === "error") final = { answer: e.text, saved: e.saved };
           },
         });
       } catch {
         final = { answer: "The answer didn't come through. Please try again." };
       }
       final ??= { answer: "The answer was cut off. Please try again." };
-      await append({
-        chatId: id, role: "assistant", content: final.answer || "…",
-        listings: final.listings?.length ? final.listings : undefined,
-        proposals: final.proposals?.length ? final.proposals : undefined,
-        search: cleanSearch(final.searches?.at(-1)),
-      }).catch(() => {});
+      if (final.saved !== true) setUnsaved({ chatId: id, final });
       // "Watch it": open the watch setup, pre-filled from what the agent understood, ready to check and save
       proposal = sendMode === "watch" && final.proposals?.find((p) => p.type === "create");
     } finally {
@@ -140,6 +136,9 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
                        onProposalSaved={(i) => markSaved({ messageId: m._id, index: i })} />)}
         {showLiveUser && <div className="msg user"><p>{live.user}</p></div>}
         {live && <Assistant text={live.text} status={live.status} listings={live.listings} />}
+        {unsaved?.chatId === chatId && <Assistant text={unsaved.final.answer} listings={unsaved.final.listings}
+          proposals={unsaved.final.proposals} search={unsaved.final.searches?.at(-1)}
+          onWatch={onWatch} onAdjust={onAdjust} unsaved />}
         <div ref={end} />
       </div>
       <div className="composer-dock"><Composer onSend={send} busy={!!live} mode={mode} onModeChange={setMode} /></div>

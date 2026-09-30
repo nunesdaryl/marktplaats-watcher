@@ -19,9 +19,9 @@ function setup() {
 const card = { id: "a1", title: "Mac mini", price_eur: 230, city: null, distance_km: null, url: "https://www.marktplaats.nl/v/a1", image: null };
 
 test("a chat keeps its messages, titled by the first one, newest chat first", async () => {
-  const { alice } = setup();
+  const { t, alice } = setup();
   const first = await alice.mutation(api.chats.start, { content: "Mac mini 16GB under €500 near Utrecht, preferably an M-series with a good screen" });
-  await alice.mutation(api.chats.append, { chatId: first, role: "assistant", content: "The i5 at €230 looks best.", listings: [card] });
+  await t.mutation(internal.chats.appendAssistant, { clerkId: "user_alice", chatId: first, content: "The i5 at €230 looks best.", listings: [card] });
   vi.setSystemTime(new Date("2026-09-27T11:00:00Z"));
   const second = await alice.mutation(api.chats.start, { content: "Gazelle bike" });
   const chats = await alice.query(api.chats.list, {});
@@ -42,17 +42,39 @@ test("nobody can read or write someone else's chat", async () => {
 });
 
 test("a saved proposal stays saved when the chat is reopened", async () => {
-  const { alice } = setup();
+  const { t, alice } = setup();
   const chatId = await alice.mutation(api.chats.start, { content: "watch it" });
-  const messageId = await alice.mutation(api.chats.append, {
-    chatId, role: "assistant", content: "Here you go.",
-    proposals: [{ type: "create", query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" }],
+  const messageId = await t.mutation(internal.chats.appendAssistant, {
+    clerkId: "user_alice", chatId, content: "Here you go.",
+    proposals: [{ type: "create", query: "mac mini", maxPriceEur: null, mustInclude: null, postcode: null,
+      maxDistanceKm: null, schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" }],
   });
   await alice.mutation(api.chats.markProposalSaved, { messageId, index: 0 });
   const thread = await alice.query(api.chats.messages, { chatId });
   expect(thread!.messages[1].savedProposals).toEqual([0]);
-  await expect(alice.mutation(api.chats.append, { chatId, role: "assistant", content: "x", proposals: [{ type: "drop tables" }] }))
-    .rejects.toThrow("Unknown proposal");
+  await expect(alice.mutation(api.chats.append, { chatId, role: "assistant", content: "x" } as any)).rejects.toThrow();
+  await expect(alice.mutation(api.chats.append, { chatId, role: "user", content: "x", listings: [card] } as any)).rejects.toThrow();
+  await expect(t.mutation(internal.chats.appendAssistant, { clerkId: "user_alice", chatId,
+    content: "x", proposals: [{ type: "update", watchId: "w", label: "Watch", active: true, extra: true }] } as any))
+    .rejects.toThrow();
+  const otherChat = await t.withIdentity({ subject: "user_bob", email: "bob@example.com" }).mutation(api.chats.start, { content: "hi" });
+  await expect(t.mutation(internal.chats.appendAssistant, { clerkId: "user_alice", chatId: otherChat, content: "x" }))
+    .rejects.toThrow("Chat not found");
+});
+
+test("assistant HTTP writes require the shared secret", async () => {
+  const { t, alice } = setup();
+  const chatId = await alice.mutation(api.chats.start, { content: "hi" });
+  process.env.API_TO_CONVEX_SECRET = "secret";
+  const send = (secret: string) => t.fetch("/api/chats/assistant", {
+    method: "POST", headers: { "Content-Type": "application/json", "X-Api-Secret": secret },
+    body: JSON.stringify({ clerkId: "user_alice", chatId, content: "Hello." }),
+  });
+  try {
+    expect((await send("wrong")).status).toBe(401);
+    expect((await send("secret")).status).toBe(200);
+    expect((await alice.query(api.chats.messages, { chatId }))!.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
+  } finally { delete process.env.API_TO_CONVEX_SECRET; }
 });
 
 test("delete-my-data and the 30-day purge also remove chats", async () => {

@@ -562,6 +562,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     message cannot change anyone's watches.</li>
   <li><b>Login on the chat</b> closes the "anyone can spend the key" gap from v1; the rate limit is keyed by the verified user id,
     not a spoofable <code>X-Forwarded-For</code> address.</li>
+  <li><b>Chat transcripts:</b> the browser writes only the user's turns. The chat API writes the agent's turns through a shared-secret Convex route after verifying the Clerk session token.</li>
   <li><b>Cost control:</b> a dedicated OpenAI project with a <b>$10/month hard limit</b> and a model allow-list
     (<code>gpt-5.4-mini</code> only); a restricted, project-scoped key. AgentMail's key is scoped to one inbox.</li>
   <li><b>Secrets</b> live in <code>.env</code> (mode 600), Convex environment variables and Vercel settings; Vercel holds no Convex

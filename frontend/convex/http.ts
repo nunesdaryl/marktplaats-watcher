@@ -27,4 +27,24 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/api/chats/assistant", method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const secret = process.env.API_TO_CONVEX_SECRET;
+    if (!secret) return new Response("Chat writes are not configured.", { status: 503 });
+    if (!sameSecret(request.headers.get("X-Api-Secret") ?? "", secret)) return new Response("Wrong API secret.", { status: 401 });
+    let body;
+    try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
+    if (!body || typeof body !== "object" || typeof body.clerkId !== "string" || !body.clerkId ||
+        typeof body.chatId !== "string" || typeof body.content !== "string")
+      return new Response("Invalid request.", { status: 400 });
+    try {
+      const id = await ctx.runMutation(internal.chats.appendAssistant, body);
+      return Response.json({ id });
+    } catch {
+      return new Response("Invalid chat message.", { status: 400 });
+    }
+  }),
+});
+
 export default http;

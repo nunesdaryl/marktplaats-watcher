@@ -125,7 +125,7 @@ def test_chat_needs_a_valid_login(client, monkeypatch):
     wrong_audience = {"Authorization": f"Bearer {client.token(aud='some-other-app')}"}
     assert client.post("/api/chat", json={"message": "hi"}, headers=wrong_audience).status_code == 401
     ok = {"Authorization": f"Bearer {client.token()}"}
-    assert client.post("/api/chat", json={"message": "hi"}, headers=ok).json() == {"answer": "ok"}
+    assert client.post("/api/chat", json={"message": "hi"}, headers=ok).json() == {"answer": "ok", "saved": False}
 
 
 def test_rate_limit_is_per_user(client, monkeypatch):
@@ -173,7 +173,7 @@ def test_usage_check_fails_open(client, monkeypatch, capsys):
     monkeypatch.delenv("CONVEX_SITE_URL", raising=False)
     monkeypatch.setattr(client.main, "chat", lambda *a: {"answer": "ok"})
     response = client.post("/api/chat", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
-    assert response.json() == {"answer": "ok"}
+    assert response.json() == {"answer": "ok", "saved": False}
     assert '"event": "usage_check_failed"' in capsys.readouterr().out
 
 
@@ -198,6 +198,69 @@ def test_usage_check_sends_verified_clerk_id_with_shared_secret(client, monkeypa
     assert "2 questions" in response.json()["answer"]
     assert sent == [(("https://deployment.convex.site/api/usage/consume",),
                      {"json": {"clerkId": "alice"}, "headers": {"X-Api-Secret": "secret"}, "timeout": 5})]
+
+
+@pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
+@pytest.mark.parametrize("fails", [False, True])
+def test_chat_saves_final_answer_once_and_reports_failure(client, monkeypatch, capsys, path, fails):
+    import convex_api
+
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://deployment.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "secret")
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": True})
+    final = {"answer": "A useful answer.", "listings": [], "proposals": [], "searches": [],
+             "usage": {"input_tokens": 1, "output_tokens": 2, "model_calls": 1, "tool_calls": 0}}
+    monkeypatch.setattr(client.main, "chat", lambda *a: final)
+    monkeypatch.setattr(client.main, "chat_events", lambda *a: iter([{"type": "done", **final}]))
+    sent = []
+
+    class Response:
+        def raise_for_status(self):
+            if fails:
+                raise RuntimeError("write failed")
+
+        def json(self):
+            return {"id": "message"}
+
+    monkeypatch.setattr(convex_api.httpx, "post", lambda *a, **kw: sent.append((a, kw)) or Response())
+    response = client.post(path, json={"message": "hi", "chatId": "chat-id"},
+                           headers={"Authorization": f"Bearer {client.token('alice')}"})
+    result = json.loads(response.text.splitlines()[-1]) if path.endswith("stream") else response.json()
+    assert result["answer"] == "A useful answer."
+    assert result["saved"] is not fails
+    assert len(sent) == 1
+    assert sent[0][0] == ("https://deployment.convex.site/api/chats/assistant",)
+    assert sent[0][1]["json"] == {"clerkId": "alice", "chatId": "chat-id", "content": "A useful answer.",
+                                   "listings": [], "proposals": []}
+    assert ('"event": "assistant_save_failed"' in capsys.readouterr().out) is fails
+
+
+@pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
+def test_minute_limit_precedes_daily_allowance(client, monkeypatch, path):
+    calls = []
+    monkeypatch.setattr(client.main, "too_many", lambda user: calls.append("minute") or True)
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: calls.append("daily"))
+    response = client.post(path, json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.status_code == 429
+    assert calls == ["minute"]
+
+
+def test_stream_error_and_daily_limit_are_saved(client, monkeypatch):
+    saved = []
+    monkeypatch.setattr(client.main, "convex_post", lambda path, payload: saved.append((path, payload)))
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": False, "limit": 40})
+    headers = {"Authorization": f"Bearer {client.token()}"}
+    response = client.post("/api/chat/stream", json={"message": "hi", "chatId": "chat-id"}, headers=headers)
+    done = json.loads(response.text)
+    assert done["saved"] is True
+    assert saved[0][1]["content"] == done["answer"]
+
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": True})
+    monkeypatch.setattr(client.main, "chat_events", lambda *a: iter([{"type": "error", "text": "Try again."}]))
+    response = client.post("/api/chat/stream", json={"message": "hi", "chatId": "chat-id"}, headers=headers)
+    error = json.loads(response.text)
+    assert error == {"type": "error", "text": "Try again.", "saved": True}
+    assert len(saved) == 2 and saved[1][1]["content"] == "Try again."
 
 
 @pytest.mark.parametrize("error", ["Error code: 401 - invalid_api_key",
