@@ -10,7 +10,7 @@ const DAY = 86_400_000;
 const STUCK_AFTER = 60 * 60_000;             // the dispatcher runs every 15 min; an hour of silence is a problem
 
 export const logRun = internalMutation({
-  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), paused: v.optional(v.boolean()) },
+  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()) },
   handler: async (ctx, run) => {
     await ctx.db.insert("runs", run);
     for (const old of await ctx.db.query("runs").withIndex("by_at", (q) => q.lt("at", run.at - 30 * DAY)).take(200))
