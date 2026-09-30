@@ -1,5 +1,6 @@
 import "../src/styles.css";
 import { bootScript } from "../src/lib/boot.js";
+import { chunkRecoveryScript } from "../src/lib/chunkRecovery.js";
 import ClientRoot from "./ClientRoot.jsx";
 
 const title = "Marktplaats Watcher";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: chunkRecoveryScript }} />
         {/* Runs before first paint: returning signed-in users skip the landing page flash (see src/Boot.jsx) */}
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
