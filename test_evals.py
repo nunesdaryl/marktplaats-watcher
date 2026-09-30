@@ -1,6 +1,52 @@
 import pytest
 
-from evals import common, report, run_chat
+from evals import common, gate, report, run_chat
+
+
+@pytest.fixture
+def eval_files(monkeypatch, tmp_path):
+    paths = {name: tmp_path / filename for name, filename in {
+        "CHAT_RESULTS": "chat_results.json",
+        "SCORER_RESULTS": "scorer_results.json",
+        "LABELS": "labels.json",
+        "LISTINGS": "listings.json",
+        "SPOTCHECK": "spotcheck.md",
+        "USER_RATINGS": "user_ratings.json",
+        "REPORT": "report.md",
+    }.items()}
+    for module in (common, report, gate):
+        for name, path in paths.items():
+            if hasattr(module, name):
+                monkeypatch.setattr(module, name, path)
+
+    listings = [{"id": name, "url": f"https://example.test/{name}"}
+                for name in ("one", "two", "three", "four")]
+    scored = [
+        {"id": "one", "score": 8, "title": "One", "reason": "Reason",
+         "judge": {"match": False, "category": "over_budget", "reason": "Reason"}},
+        {"id": "two", "score": 8, "title": "Two", "reason": "Reason",
+         "judge": {"match": False, "category": "wrong_model_or_spec", "reason": "Reason"}},
+        {"id": "three", "score": 8, "title": "Three", "reason": "Reason",
+         "judge": {"match": True, "category": "match", "reason": "Reason"}},
+        {"id": "four", "score": 4, "title": "Four", "reason": "Reason",
+         "judge": {"match": False, "category": "unclear", "reason": "Reason"}},
+    ]
+    common.write(paths["LISTINGS"], {"listings": listings})
+    common.write(paths["LABELS"], {"judge": "gpt-5.5", "cost_usd": 0})
+    common.write(paths["SCORER_RESULTS"], {
+        "run_at": "2026-09-30", "model": "gpt-5.4-mini", "tokens": {"input": 0, "output": 0},
+        "listings": 4, "judge_matches": 1, "scored": scored,
+        "metrics": {"great": {"threshold": 8}, "good": {"threshold": 6}},
+    })
+    common.write(paths["CHAT_RESULTS"], {
+        "run_at": "2026-09-30", "model": "gpt-5.4-mini", "tokens": {"input": 0, "output": 0},
+        "passed": 19, "total": 20, "cases": [],
+    })
+    paths["SPOTCHECK"].write_text(
+        "| 3 | x | [One](https://example.test/one) | 1 | over_budget | x | no |\n"
+        "| 4 | x | [Three](https://example.test/three) | 1 | match | x | no |\n"
+        "| 9 | x | [Four](https://example.test/four) | 1 | unclear | x | no |\n")
+    return paths
 
 
 def test_model_under_test_uses_environment_and_requires_prices(monkeypatch):
@@ -30,9 +76,8 @@ def test_chat_results_record_configured_model(monkeypatch, tmp_path):
     assert result["cost_usd"] == 35
 
 
-def test_report_names_configured_model_and_separate_judge(monkeypatch, tmp_path):
+def test_report_names_configured_model_and_separate_judge(monkeypatch, eval_files):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.5")
-    monkeypatch.setattr(report, "REPORT", tmp_path / "report.md")
 
     report.main()
 
@@ -43,25 +88,12 @@ def test_report_names_configured_model_and_separate_judge(monkeypatch, tmp_path)
     assert "Prices: gpt-5.5 $5.00 / $30.00" in text
 
 
-def test_human_overrides_change_metrics_and_failure_categories():
-    listings = [
-        {"id": "one", "url": "https://example.test/one"},
-        {"id": "two", "url": "https://example.test/two"},
-        {"id": "three", "url": "https://example.test/three"},
-        {"id": "four", "url": "https://example.test/four"},
-    ]
-    spotcheck = ("| # | Watch | Listing | Price | Judge | Why | Agree? |\n"
-                 "| 1 | x | [One](https://example.test/one) | 1 | over_budget | x | no |\n"
-                 "| 2 | x | [Three](https://example.test/three) | 1 | match | x | no |\n"
-                 "| 3 | x | [Four](https://example.test/four) | 1 | unclear | x | no |\n")
+def test_human_overrides_change_metrics_and_failure_categories(eval_files):
+    listings = common.read(eval_files["LISTINGS"])["listings"]
+    spotcheck = eval_files["SPOTCHECK"].read_text()
     overrides, answered, total = report.spotcheck_overrides(listings, spotcheck)
-    assert (overrides, answered, total) == ({"one": "1", "three": "2", "four": "3"}, 3, 3)
-    scored = [
-        {"id": "one", "score": 8, "judge": {"match": False, "category": "over_budget"}},
-        {"id": "two", "score": 8, "judge": {"match": False, "category": "wrong_model_or_spec"}},
-        {"id": "three", "score": 8, "judge": {"match": True, "category": "match"}},
-        {"id": "four", "score": 4, "judge": {"match": False, "category": "unclear"}},
-    ]
+    assert (overrides, answered, total) == ({"one": "3", "three": "4", "four": "9"}, 3, 3)
+    scored = common.read(eval_files["SCORER_RESULTS"])["scored"]
     metric = report.scorer_metrics(scored, overrides, {"great": 8})["great"]
     assert (metric["tp"], metric["fp"], metric["fn"], metric["tn"]) == (1, 2, 1, 0)
     assert metric["precision"] == pytest.approx(1 / 3)
@@ -73,14 +105,19 @@ def test_human_overrides_change_metrics_and_failure_categories():
     assert (uncorrected["tp"], uncorrected["fp"], uncorrected["fn"], uncorrected["tn"]) == (1, 2, 0, 1)
 
 
-def test_gate_thresholds_use_corrected_precision():
-    from evals import gate
-
+def test_gate_thresholds_use_corrected_precision(eval_files):
     listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(10)]
     scored = [{"id": str(i), "score": 8, "judge": {"match": i != 0, "category": "over_budget"}} for i in range(10)]
     scorer = {"scored": scored, "metrics": {"great": {"threshold": 8}}}
     spotcheck = "| 1 | x | [One](https://example.test/0) | 1 | over_budget | x | no |\n"
-    assert gate.check({"passed": 19, "total": 20}, scorer, listings, spotcheck)
+    common.write(eval_files["LISTINGS"], {"listings": listings})
+    common.write(eval_files["SCORER_RESULTS"], scorer)
+    eval_files["SPOTCHECK"].write_text(spotcheck)
+    chat = {"passed": 19, "total": 20}
+    common.write(eval_files["CHAT_RESULTS"], chat)
+    assert gate.check(common.read(eval_files["CHAT_RESULTS"]), common.read(eval_files["SCORER_RESULTS"]),
+                      common.read(eval_files["LISTINGS"])["listings"], eval_files["SPOTCHECK"].read_text())
+    gate.main()
     assert not gate.check({"passed": 18, "total": 20}, scorer, listings, spotcheck)
     assert not gate.check({"passed": 19, "total": 21}, scorer, listings, spotcheck)
     assert gate.check({"passed": 19, "total": 20}, scorer, listings, "")
@@ -88,9 +125,8 @@ def test_gate_thresholds_use_corrected_precision():
     assert not gate.check({"passed": 19, "total": 20}, scorer, listings, "")
 
 
-def test_report_preserves_filled_signoff(monkeypatch, tmp_path):
+def test_report_preserves_filled_signoff(monkeypatch, eval_files):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
-    monkeypatch.setattr(report, "REPORT", tmp_path / "report.md")
     signoff = "UAT sign-off: Daryl (name), 2026-10-01 (date), prompt versions chat-1/rank-1"
     report.REPORT.write_text(signoff + "\n")
     report.main()
