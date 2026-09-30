@@ -1,12 +1,13 @@
 import pytest
 
-from evals import common, gate, report, run_chat
+from evals import common, gate, repeat, report, run_chat
 
 
 @pytest.fixture
 def eval_files(monkeypatch, tmp_path):
     paths = {name: tmp_path / filename for name, filename in {
         "CHAT_RESULTS": "chat_results.json",
+        "REPEAT_RESULTS": "repeat_results.json",
         "SCORER_RESULTS": "scorer_results.json",
         "LABELS": "labels.json",
         "LISTINGS": "listings.json",
@@ -76,6 +77,49 @@ def test_chat_results_record_configured_model(monkeypatch, tmp_path):
     assert result["cost_usd"] == 35
 
 
+def test_repeat_counts_golden_case_and_replaces_saved_entry(monkeypatch, eval_files, capsys):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    monkeypatch.setattr(repeat, "REPEAT_RESULTS", eval_files["REPEAT_RESULTS"])
+    common.write(eval_files["REPEAT_RESULTS"], [
+        {"case": "C3", "runs": 1, "passed": 0},
+        {"case": "C2", "runs": 2, "passed": 2},
+    ])
+    calls = []
+
+    def fake_chat(message, history, watches, mode):
+        calls.append((message, history, watches, mode))
+        proposals = [{"type": "update", "watchId": "w1", "notify": "great"}] if len(calls) < 3 else []
+        return {"answer": "Ready to save", "searches": [], "proposals": proposals,
+                "listings": [], "usage": {"tool_calls": 1}}
+
+    monkeypatch.setattr(repeat.agent, "chat", fake_chat)
+    repeat.main("C3", 3)
+
+    assert len(calls) == 3
+    assert all(call[1:] == ([], [{"id": "w1", "label": "Mac mini, under €500",
+                                      "summary": "every day at 08:00", "active": True}], "search") for call in calls)
+    assert capsys.readouterr().out == "C3: 2/3\n"
+    saved = common.read(eval_files["REPEAT_RESULTS"])
+    assert len(saved) == 2 and saved[0]["case"] == "C2"
+    assert saved[1]["case"] == "C3"
+    assert {key: saved[1][key] for key in ("runs", "passed", "prompt_version", "model")} == {
+        "runs": 3, "passed": 2, "prompt_version": "chat-2026-09-30.2", "model": "gpt-5.4-mini"}
+    assert saved[1]["at"]
+
+
+def test_report_shows_repeated_runs_in_chat_section(monkeypatch, eval_files):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    common.write(eval_files["REPEAT_RESULTS"], [
+        {"case": "C3", "runs": 15, "passed": 14, "prompt_version": "chat-2026-09-30.2"},
+    ])
+
+    report.main()
+
+    text = eval_files["REPORT"].read_text()
+    assert "Repeated runs: C3 passed 14 of 15 (prompt chat-2026-09-30.2)" in text
+    assert "Fix tracked as MW-16" not in text
+
+
 def test_report_names_configured_model_and_separate_judge(monkeypatch, eval_files):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.5")
 
@@ -135,7 +179,7 @@ def test_report_preserves_filled_signoff(monkeypatch, eval_files):
     assert "overridden rows 3, 4, 9" in text
     assert "chat **not recorded**, rank **not recorded**" in text
     assert "| human_override |" in text
-    assert "passing 7 of 15 repeated runs on main" in text
+    assert "Fix tracked as MW-16" not in text
     report.main()
     assert report.REPORT.read_text().count(signoff) == 1
 

@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
+from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -16,8 +16,6 @@ def pct(x):
 REASONS = {"not_asked": "Not what I asked for", "score_too_high": "Score too high", "score_too_low": "Score too low",
            "price": "Price isn't good", "reason_wrong": "The reason is wrong"}
 
-KNOWN_ISSUES = ('Note (30 Sep 2026): case C3 ("Only tell me about great matches for my Mac mini watch") is flaky',
-                'with the real model, passing 7 of 15 repeated runs on main; a single 20-case run can show 19/20. Fix tracked as MW-16.')
 SIGN_OFF = 'UAT sign-off: ______ (name), ______ (date), prompt versions ______'
 
 
@@ -107,6 +105,7 @@ def main():
                              {name: m["threshold"] for name, m in s["metrics"].items()})
     old = REPORT.read_text() if REPORT.exists() else ""
     sign_off = next((line for line in old.splitlines() if line.startswith("UAT sign-off:")), SIGN_OFF)
+    repeated = read(REPEAT_RESULTS) if REPEAT_RESULTS.exists() else []
     by_cat = Counter(r["category"] for r in c["cases"])
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
@@ -146,7 +145,9 @@ def main():
     lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [])
     lines += [
         "## 2. Does the chat do the right thing? (20-case golden set)", "",
-        f"**{c['passed']}/{c['total']} passed.** " + KNOWN_ISSUES[0], KNOWN_ISSUES[1], "",
+        f"**{c['passed']}/{c['total']} passed.**",
+        *[f"Repeated runs: {r['case']} passed {r['passed']} of {r['runs']} (prompt {r['prompt_version']})"
+          for r in repeated], "",
         "| Category | Passed |", "|---|---|",
         *[f"| {cat} | {pass_cat[cat]}/{n} |" for cat, n in by_cat.items()], "",
         "| Case | Question | Result | Tool calls (max) | Model calls |", "|---|---|---|---|---|",
@@ -173,7 +174,8 @@ def main():
         "## How to rerun", "",
         "```bash", ".venv/bin/python -m evals.collect      # only to refresh the dataset (then relabel)",
         ".venv/bin/python -m evals.label        # judge labels + a new spot-check sample",
-        ".venv/bin/python -m evals.run_scorer", ".venv/bin/python -m evals.run_chat", ".venv/bin/python -m evals.report", "```",
+        ".venv/bin/python -m evals.run_scorer", ".venv/bin/python -m evals.run_chat",
+        ".venv/bin/python -m evals.repeat C3 15", ".venv/bin/python -m evals.report", "```",
         "Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).",
     ]
     # Keep the measured running cost (§4, written by evals.cost with real model calls): regenerating must not lose it
