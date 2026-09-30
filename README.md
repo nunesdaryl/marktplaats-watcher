@@ -106,6 +106,9 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   `human-ready`. On 30 Sep all of Wave 1 plus MW-15 and MW-16 went through it (GPT-6 Sol builds at medium effort via
   `/opt/homebrew/bin/codex`, Claude Opus 5.5 reviews by running each change, Daryl approves each merge) and is live;
   MW-5, MW-9 and MW-14 wait on Daryl (`human-ready`). The run is written up in `docs/system-design.html` §18–19.
+  On 30 Sep evening an alert audit found late-published listings being skipped: MW-17 fixed it, MW-19 flags
+  watches too broad to keep up, MW-18 adds a nightly delivery audit to the owner digest, MW-20 fixed a regression
+  (§20).
 - **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
   with evidence, and a dated roadmap.
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from

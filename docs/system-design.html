@@ -1092,5 +1092,35 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   the builder the measured cause and the exact change, not a description of the symptom.</div>
 </section>
 
+<section>
+<h2>20. Are users getting what they signed up for? (30 September, evening)</h2>
+<p>Daryl asked to check that every user receives the alerts they asked for after the switch to the date-sorted read.
+  The scheduler looked healthy (0 failed checks, 0 failed e-mails), and the score thresholds were respected. The
+  question needed a different check: compare what each watch <i>sent</i> with what it <i>should have sent</i>.</p>
+<table>
+  <tr><th style="width:18%">Finding</th><th>Evidence</th><th style="width:30%">Outcome</th></tr>
+  <tr><td>Dealer listings gone</td><td>Before the change 38 of 76 alerts were Admarkt listings (ids <code>a…</code>); after it 0 of
+    626. The date-sorted search returns no Admarkt listings at all.</td><td>Kept out (Daryl): mostly paid placements.</td></tr>
+  <tr><td>Late-published listings skipped</td><td>Marktplaats numbers a listing when it is created, so one that goes live or is
+    re-dated after a check can sit below the watermark and was never sent. A replay with the production scorer: 3 of 4 good
+    Nintendo matches that day, and matches for two other users, were dropped.</td><td>MW-17: "new" = unseen by the watch.
+    The first run afterwards sent the dropped 10/10.</td></tr>
+  <tr><td>Watches that can't keep up</td><td>The broad "iphone" watch had 237–291 listings waiting (20 scored per check) and hit
+    the 40-page read limit.</td><td>MW-19: the user sees "narrow this search"; the digest flags it.</td></tr>
+  <tr><td>A miss nobody would notice</td><td>Nothing compared sent with should-have-sent; this bug lasted a day.</td>
+    <td>MW-18: a nightly delivery audit; misses reach the owner's digest the next morning.</td></tr>
+</table>
+<p><b>One regression, caught in production.</b> MW-19 raised the seen-id list Convex sends to 1,500, but the check API still
+  accepted at most 1,000, so the one watch with more (2,400 seen) got HTTP 422 from 19:04. The review had tested the check
+  function directly, skipping the HTTP validation. MW-20 raised the limit with a test tying both numbers together, and was
+  reviewed through the real HTTP route; the 19:49 check succeeded.</p>
+<p><b>The first audit, run by hand on production:</b> 9 watches, 0 failures, 31 misses. The real ones all predate MW-17
+  (among them a 10/10 IKEA laminate listing for another user); a few are listings from the 29 Sep re-seed, which existing
+  watches can't yet tell apart (new first looks record <code>seededAt</code>).</p>
+<div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing
+  about whether users got their matches; an independent replay of the same search did. And test through the same door
+  production uses: a function called directly skips the validation that failed.</div>
+</section>
+
 </body>
 </html>
