@@ -164,6 +164,20 @@ test("check-API timeout fails its watches and still processes later groups", asy
     .toMatchObject({ checked: 2, failed: 1, timeouts: 1 });
 });
 
+test("check-API AbortError counts as a timeout and retries the watch", async () => {
+  const { t, id } = await seededWatch();
+  vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new DOMException("aborted", "AbortError"))));
+
+  await t.action(internal.checker.checkDue, {});
+
+  expect(await t.run((ctx) => ctx.db.get(id))).toMatchObject({
+    lastError: "Our search service didn't answer. We'll try again soon.",
+    nextRunAt: Date.parse("2026-09-27T10:30:00Z"),
+  });
+  expect((await t.run((ctx) => ctx.db.query("runs").collect())).find((r) => r.checked === 1))
+    .toMatchObject({ checked: 1, failed: 1, timeouts: 1 });
+});
+
 test("A06: a dry run changes nothing, so the real run afterwards still e-mails", async () => {
   const { t, id } = await seededWatch();
   const mails = fakeServices(() => ["a1"]);

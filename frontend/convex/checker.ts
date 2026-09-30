@@ -23,6 +23,11 @@ const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_SEEN_SENT = 1000;
 const RETENTION_MS = 30 * 86_400_000;
 
+function isTimeout(e: unknown): boolean {
+  return typeof e === "object" && e !== null && "name" in e &&
+    (e.name === "TimeoutError" || e.name === "AbortError");
+}
+
 /** Take the due watches and lease them for 30 minutes, so an overlapping run can't pick them up twice, and a run
  * that dies before recording its results doesn't leave a weekly watch waiting a week. A dry run leases nothing. */
 export const claimDue = internalMutation({
@@ -345,7 +350,7 @@ export const checkDue = internalAction({
         console.error("alert e-mail failed:", e);
         status = "failed";
         emailFailures++;
-        if (e instanceof Error && e.name === "TimeoutError") timeouts++;
+        if (isTimeout(e)) timeouts++;
       }
       await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
     };
@@ -369,7 +374,7 @@ export const checkDue = internalAction({
         results = (await res.json()).results;
       } catch (e) {
         console.error(`check "${group.query}" failed:`, e);
-        if (e instanceof Error && e.name === "TimeoutError") timeouts++;
+        if (isTimeout(e)) timeouts++;
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
       checked += group.watches.length;
