@@ -144,7 +144,7 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
           <div key={f._id} className="folder">
             <div className="nav-row">
               <button className="nav-item" aria-expanded={!!open} onClick={() => setOpenFolders({ ...openFolders, [f._id]: !open })}>
-                <Icon name="folder" size={16} />
+                <Icon name="folder" size={18} />
                 <span className="text"><span>{f.name}</span></span>
                 <span className="count">{items.length}</span>
               </button>
@@ -187,10 +187,10 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
         <AccountButton />
         <span className="email" data-private>{email}</span>
         <button className="icon-button small" onClick={() => go("/archived")} aria-label="Archived" title="Archived">
-          <Icon name="archive" size={16} />
+          <Icon name="archive" size={18} />
         </button>
         <button className="icon-button small" onClick={onPrivacy} aria-label="Privacy and your data" title="Privacy and your data">
-          <Icon name="shield" size={16} />
+          <Icon name="shield" size={18} />
         </button>
       </div>
       <p className="shortcuts" aria-label="Keyboard shortcuts">⌘K search · ⌘⇧O new chat · Esc close</p>

@@ -6,7 +6,7 @@ export default function TabBar({ route, newAlerts }) {
   const tab = route.section === "w" || route.section === "watches" || route.section === "archived" ? "watches" : route.section === "alerts" ? "alerts" : "chat";
   const item = (key, label, icon, path, badge) => (
     <button className={tab === key ? "active" : ""} aria-current={tab === key ? "page" : undefined} onClick={() => go(path)}>
-      <span className="icon"><Icon name={icon} size={22} />{badge ? <span className="badge" aria-label={`${badge} new`}>{badge}</span> : null}</span>
+      <span className="icon"><Icon name={icon} size={24} />{badge ? <span className="badge" aria-label={`${badge} new`}>{badge}</span> : null}</span>
       <span>{label}</span>
     </button>
   );

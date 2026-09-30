@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
+import Skeleton from "../components/Skeleton.jsx";
 import ListingCard from "../components/ListingCard.jsx";
 import RateAlert from "../components/RateAlert.jsx";
 import { useNow } from "../lib/router.js";
@@ -21,7 +22,7 @@ export default function AlertsView() {
         <p className="muted">Every listing we e-mailed you, newest first, with its score and the reason for it. Tell us if
           it was a good match: every rating is read to check and improve the scores.</p>
       </header>
-      {alerts === undefined ? <p className="muted">Loading…</p> : alerts.length === 0 ? (
+      {alerts === undefined ? <Skeleton /> : alerts.length === 0 ? (
         <p className="empty-note">No alerts yet. When a watch finds a good new listing, it shows up here and in your inbox.</p>
       ) : (
         <div className="cards grid">

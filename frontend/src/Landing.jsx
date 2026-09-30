@@ -45,7 +45,7 @@ export default function Landing({ SignIn = Plain }) {
         <h1 className="sentence">
           Check Marktplaats for a <span className="tag" key={what}>{what}</span>{" "}
           <span className="tag" key={when}>{when}</span> and <span className="nowrap">e-mail</span> me{" "}
-          <span className="tag" key={which}>{which}</span>, with the reason.
+          <span className="tag" key={which}>{which}</span><span className="sentence-tail">, with the reason.</span>
         </h1>
         <p className="lede">
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
@@ -59,12 +59,12 @@ export default function Landing({ SignIn = Plain }) {
           <ul>
             <li className="good">
               <span className="score">9/10</span>
-              <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, €230<br />
+              <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, <span className="sample-price">€230</span><br />
                 A Mac mini with 16GB and a price well under €500. E-mailed.</span>
             </li>
             <li className="skip">
               <span className="score">0/10</span>
-              <span><strong>Mac Mini M4 Docking Station 1TB</strong>, €74<br />
+              <span><strong>Mac Mini M4 Docking Station 1TB</strong>, <span className="sample-price">€74</span><br />
                 A docking station, not a Mac mini. You never hear about it.</span>
             </li>
             <li className="skip">

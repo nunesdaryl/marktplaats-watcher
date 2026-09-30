@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
 import Icon from "../components/Icon.jsx";
+import Skeleton from "../components/Skeleton.jsx";
 import ListingCard from "../components/ListingCard.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import WatchSentence from "../components/WatchSentence.jsx";
@@ -20,7 +21,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, icon }) {
   return (
     // Sieve Button spec: the first step says it in red text, the confirm step is the red button
     <button className={`button ${asking ? "destructive" : "danger-text"}`} onClick={() => (asking ? onConfirm() : setAsking(true))}>
-      {icon && <Icon name={icon} size={16} />}{asking ? confirmLabel : label}
+      {icon && <Icon name={icon} size={18} />}{asking ? confirmLabel : label}
     </button>
   );
 }
@@ -32,7 +33,7 @@ export default function WatchView({ watch, onEdit, actions }) {
   const [error, setError] = useState("");
   const run = (fn) => fn().then(() => setError("")).catch((e) => setError(e.data ?? "That didn't work. Try again."));
 
-  if (watch === undefined) return <section className="page"><p className="muted">Loading…</p></section>;
+  if (watch === undefined) return <section className="page"><Skeleton /></section>;
   if (!watch) return (
     <section className="page"><h1>Watch not found</h1><p className="muted">It may have been deleted.</p></section>
   );
@@ -52,18 +53,18 @@ export default function WatchView({ watch, onEdit, actions }) {
         </div>
         {watch.pinned && <span className="pill">Pinned</span>}
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
-        <p className="muted">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
+        <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
         <div className="actions">
-          <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={16} />Edit</button>
+          <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={18} />Edit</button>
           {!watch.archivedAt && (
             <button className="button" onClick={() => run(() => update({ id: watch._id, active: !watch.active }).then(() => track(watch.active ? "watch_paused" : "watch_resumed")))}>
-              <Icon name={watch.active ? "pause" : "play"} size={16} />{watch.active ? "Pause" : "Resume"}
+              <Icon name={watch.active ? "pause" : "play"} size={18} />{watch.active ? "Pause" : "Resume"}
             </button>
           )}
           {watch.active && (
             <button className="button" onClick={() => run(() => checkNow({ id: watch._id }))}>
-              <Icon name="refresh" size={16} />Check now
+              <Icon name="refresh" size={18} />Check now
             </button>
           )}
         </div>
