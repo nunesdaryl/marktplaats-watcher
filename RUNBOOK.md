@@ -68,6 +68,8 @@ To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment 
    in and send one message. Rolling back to a deployment from before 29 Sep (commit f969278) makes `/api/health` public
    again and the uptime check fails its "hidden" step: promote a newer deployment as soon as possible.
 
+HTML is served no-store so a deploy never leaves a browser on stale HTML.
+
 ## 3. OpenAI: cap reached, key revoked, or model gone
 - **Symptoms:**
   - The chat says "The chat can't reach its AI right now."
