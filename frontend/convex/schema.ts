@@ -50,6 +50,12 @@ export default defineSchema({
     alertsSeenAt: v.optional(v.number()),  // last time the Alerts page was open: newer alerts count as new
   }).index("by_clerkId", ["clerkId"]),
 
+  usage: defineTable({
+    userId: v.string(),             // verified Clerk id; a user row may not exist yet
+    day: v.string(),                // Europe/Amsterdam calendar day
+    chats: v.number(),
+  }).index("by_user_day", ["userId", "day"]).index("by_day", ["day"]),
+
   // Folders group chats and watches, like ChatGPT Projects. Deleting a folder never deletes what's in it.
   folders: defineTable({
     userId: v.id("users"),

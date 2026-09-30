@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 load_dotenv()  # before importing agent: it reads the environment at import time
 
 from agent import chat, chat_events, check_query  # noqa: E402
+from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
 
@@ -100,8 +101,28 @@ def chat_args(request):
             request.mode)
 
 
+def chat_allowance(user):
+    try:
+        result = convex_post("/api/usage/consume", {"clerkId": user})
+        if not isinstance(result["allowed"], bool) or not isinstance(result["limit"], int):
+            raise ValueError("Invalid usage response")
+        return result
+    except Exception:
+        log("usage_check_failed")
+        return {"allowed": True}
+
+
+def limit_answer(limit):
+    return f"You've reached today's limit of {limit} questions. It resets at midnight."
+
+
 @app.post("/api/chat")
 def chat_route(request: ChatRequest, user: str = Depends(current_user)):
+    if os.getenv("CHAT_PAUSED") == "1":
+        return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
+    allowance = chat_allowance(user)
+    if not allowance["allowed"]:
+        return JSONResponse({"answer": limit_answer(allowance["limit"])}, status_code=429)
     if too_many(user):
         return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     try:
@@ -114,6 +135,13 @@ def chat_route(request: ChatRequest, user: str = Depends(current_user)):
 @app.post("/api/chat/stream")
 def chat_stream_route(request: ChatRequest, user: str = Depends(current_user)):
     """The same chat, streamed as newline-delimited JSON events: status, listings, delta, done (or error)."""
+    if os.getenv("CHAT_PAUSED") == "1":
+        return JSONResponse({"answer": "Chat is paused for maintenance; your watches keep running."}, status_code=503)
+    allowance = chat_allowance(user)
+    if not allowance["allowed"]:
+        event = {"type": "done", "answer": limit_answer(allowance["limit"]), "listings": [], "searches": [],
+                 "proposals": [], "usage": {"input_tokens": 0, "output_tokens": 0, "model_calls": 0, "tool_calls": 0}}
+        return StreamingResponse(iter([json.dumps(event) + "\n"]), media_type="application/x-ndjson")
     if too_many(user):
         return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
 

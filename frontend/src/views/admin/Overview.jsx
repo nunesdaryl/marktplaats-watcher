@@ -271,6 +271,7 @@ export default function Overview({ open }) {
         <Stat value={t.alerts7d} name="Alerts this week" note={`${t.alerts} kept · ${t.emailsFailed} e-mails failed`}
               onOpen={() => go("alerts", "Alerts this week", { since: now - 7 * DAY })} />
         <Stat value={t.chats} name="Saved chats" note="kept 30 days after last use" onOpen={() => go("chats", "Saved chats")} />
+        <div className="stat"><span className="stat-value">{t.chatsToday}</span><span className="stat-name">Chats today</span><span className="stat-note">Amsterdam time</span></div>
         <Stat value={t.feedback} name="Feedback" note="with screenshots" onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
 
@@ -294,6 +295,7 @@ export default function Overview({ open }) {
       </section>
 
       <div className="breakdowns">
+        <Breakdown title="Top chat users today" rows={data.topUsage} />
         <Breakdown title={`What people do (${days} days)`} rows={data.features} onRow={(r) => eventsOf(label(r.name), { name: r.name })} />
         <Breakdown title="Pages visited" rows={data.pages} onRow={(r) => eventsOf(`Page views: ${label(r.name)}`, { name: "page_view", section: r.name })} />
         <Breakdown title="Search now vs Watch it" rows={data.chatModes.map((r) => ({ ...r, label: r.name === "watch" ? "Watch it" : "Search now" }))}

@@ -132,6 +132,7 @@ most Linux/cloud servers. The container runs as a non-root user; its health chec
 uptime check).
 
 ## Limits
+- Chat allows 40 questions per person per Europe/Amsterdam day, resetting at midnight. The owner account matching both `OWNER_CLERK_ID` and `OWNER_EMAIL` is exempt but still counted. Convex `CHAT_DAILY_LIMIT` can change the allowance; Vercel `CHAT_PAUSED=1` pauses chat while watches continue. The API uses `CONVEX_SITE_URL` and matching `API_TO_CONVEX_SECRET` in Vercel and Convex to count requests server to server. If Convex cannot be reached, chat stays available and logs `usage_check_failed`.
 - The chat's search reads the first results page only (about 30 listings), from the public `/q/` page,
   which robots.txt allows. A distance filter keeps only listings that have a location, which is roughly a
   third of them; many private sellers show no location there. Postcode to coordinates uses PDOK, the Dutch

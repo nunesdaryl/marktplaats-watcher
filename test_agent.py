@@ -138,6 +138,68 @@ def test_rate_limit_is_per_user(client, monkeypatch):
     assert client.post("/api/chat", json={"message": "hi"}, headers=other).status_code == 200
 
 
+@pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
+def test_chat_paused_stops_model_and_usage(client, monkeypatch, path):
+    monkeypatch.setenv("CHAT_PAUSED", "1")
+    calls = []
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: calls.append("usage"))
+    monkeypatch.setattr(client.main, "chat", lambda *a: calls.append("model"))
+    monkeypatch.setattr(client.main, "chat_events", lambda *a: calls.append("model"))
+    response = client.post(path, json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.status_code == 503
+    assert response.json() == {"answer": "Chat is paused for maintenance; your watches keep running."}
+    assert calls == []
+
+
+@pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
+def test_daily_limit_stops_model(client, monkeypatch, path):
+    monkeypatch.delenv("CHAT_PAUSED", raising=False)
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": False, "limit": 40})
+    calls = []
+    monkeypatch.setattr(client.main, "chat", lambda *a: calls.append("model"))
+    monkeypatch.setattr(client.main, "chat_events", lambda *a: calls.append("model"))
+    response = client.post(path, json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
+    answer = "You've reached today's limit of 40 questions. It resets at midnight."
+    if path.endswith("stream"):
+        assert response.status_code == 200
+        assert [json.loads(line)["answer"] for line in response.text.splitlines()] == [answer]
+    else:
+        assert response.status_code == 429
+        assert response.json() == {"answer": answer}
+    assert calls == []
+
+
+def test_usage_check_fails_open(client, monkeypatch, capsys):
+    monkeypatch.delenv("CONVEX_SITE_URL", raising=False)
+    monkeypatch.setattr(client.main, "chat", lambda *a: {"answer": "ok"})
+    response = client.post("/api/chat", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.json() == {"answer": "ok"}
+    assert '"event": "usage_check_failed"' in capsys.readouterr().out
+
+
+def test_usage_check_sends_verified_clerk_id_with_shared_secret(client, monkeypatch):
+    import convex_api
+
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://deployment.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "secret")
+    sent = []
+
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"allowed": False, "used": 2, "limit": 2}
+
+    monkeypatch.setattr(convex_api.httpx, "post", lambda *a, **kw: sent.append((a, kw)) or Response())
+    monkeypatch.setattr(client.main, "chat", lambda *a: pytest.fail("model was called"))
+    response = client.post("/api/chat", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token('alice')}"})
+    assert response.status_code == 429
+    assert "2 questions" in response.json()["answer"]
+    assert sent == [(("https://deployment.convex.site/api/usage/consume",),
+                     {"json": {"clerkId": "alice"}, "headers": {"X-Api-Secret": "secret"}, "timeout": 5})]
+
+
 @pytest.mark.parametrize("error", ["Error code: 401 - invalid_api_key",
                                    "Error code: 429 - {'code': 'credit_balance_exhausted'}"])
 def test_offline_model_gives_a_clear_message(client, monkeypatch, error):

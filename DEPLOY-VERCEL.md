@@ -22,6 +22,9 @@ chat or the repo.
 | `OPENAI_MODEL` | model name |
 | `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
 | `CRON_SECRET` | the random string |
+| `API_TO_CONVEX_SECRET` | a separate random string, identical in Vercel and Convex |
+| `CONVEX_SITE_URL` | `https://<prod-deployment>.convex.site` for the usage HTTP route |
+| `CHAT_PAUSED` | optional: `1` returns 503 for chat while watches continue; redeploy after changing it |
 | `HEALTH_KEY` | the health key; without it `/api/health` answers 404 to everyone |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_...` (public, used at build time) |
 | `NEXT_PUBLIC_CONVEX_URL` | `https://<prod-deployment>.convex.cloud` (public, used at build time) |
@@ -33,6 +36,8 @@ chat or the repo.
 | `CLERK_JWT_ISSUER_DOMAIN` | same as `CLERK_ISSUER` |
 | `WATCHER_API_URL` | `https://marktplaats-watcher.vercel.app` |
 | `CRON_SECRET` | same as in Vercel |
+| `API_TO_CONVEX_SECRET` | same random string as in Vercel |
+| `CHAT_DAILY_LIMIT` | optional, defaults to 40 questions per Amsterdam day |
 | `AGENTMAIL_API_KEY` | your key |
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |
@@ -112,9 +117,9 @@ Production removes the "Development mode" line only; the "Secured by Clerk" badg
 needs Clerk Pro, about $25/month).
 
 ## Honest limits of this setup
-- The chat rate limit and the Marktplaats page cache live **in memory per serverless instance**, so with
-  several instances the real limits are looser. Chat now requires a login, which is the main protection
-  for the OpenAI budget; set the budget limit anyway.
+- The per-minute chat rate limit and the Marktplaats page cache live **in memory per serverless instance**, so with
+  several instances those limits are looser. The daily chat allowance is atomic in Convex, but fails open if the
+  usage service is unavailable. Set the OpenAI project budget limit anyway.
 - Scheduled checks are limited in Convex: at most 5 watches per user, 25 distinct items per 15-minute run
   (the rest wait for the next run), and one Marktplaats request per distinct item.
 - AgentMail's shared `agentmail.to` domain is fine for a demo. For better deliverability, buy a domain

@@ -78,6 +78,8 @@ export const deleteMyData = mutation({
       await deleteWatchData(ctx, watch._id);
     for (const chat of await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect())
       await deleteChat(ctx, chat._id);
+    for (const row of await ctx.db.query("usage").withIndex("by_user_day", (q) => q.eq("userId", user.clerkId)).collect())
+      await ctx.db.delete(row._id);
     for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect()) {
       if (row.screenshotId) await ctx.storage.delete(row.screenshotId);
       await ctx.db.delete(row._id);
