@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { renderEmail, sendEmail } from "./checker";
 import { ratingToken } from "./ratings";
+import { catchupItem } from "./schema";
 
 const BASELINE_MS = 2 * 60_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -62,10 +63,12 @@ const miss = v.object({ id: v.string(), title: v.string(), url: v.string(), scor
 const result = v.object({ watchId: v.string(), ok: v.boolean(), misses: v.array(miss) });
 
 export const record = internalMutation({
-  args: { results: v.array(result), dryRun: v.boolean(), now: v.number() },
-  handler: async (ctx, { results, dryRun, now }) => {
-    const mails: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; userEmail: string;
-      watchLabel: string; listings: { score: number; title: string; price: number | null; url: string }[] }[] = [];
+  args: { results: v.array(result) },
+  handler: async (ctx, { results }) => {
+    const mails: { userEmail: string; watchLabel: string;
+      listings: { score: number; title: string; price: number | null; url: string }[];
+      items: { watchId: Id<"watches">; userId: Id<"users">; listingId: string; title: string;
+        url: string; priceEur?: number; score: number }[] }[] = [];
     for (const r of results) {
       const watchId = ctx.db.normalizeId("watches", r.watchId);
       const watch = watchId && await ctx.db.get(watchId);
@@ -73,35 +76,99 @@ export const record = internalMutation({
       const user = await ctx.db.get(watch.userId);
       if (!user) continue;
       const existing = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watch._id)).collect();
-      if (existing.some((a) => a.catchUp)) continue;
       const alerted = new Set(existing.map((a) => a.listingId));
       const selected = [...r.misses].sort((a, b) => b.score - a.score)
         .filter((m) => { if (alerted.has(m.id)) return false; alerted.add(m.id); return true; }).slice(0, 10);
       if (!selected.length) continue;
-      const alertIds: Id<"alerts">[] = [];
-      if (!dryRun) for (const item of selected) alertIds.push(await ctx.db.insert("alerts", {
-        userId: watch.userId, watchId: watch._id, listingId: item.id, title: item.title,
-        priceEur: item.price_eur ?? undefined, url: item.url, score: item.score,
-        reason: "Match we missed.", channel: "email", catchUp: true,
-        emailStatus: "pending", createdAt: now,
-      }));
-      mails.push({ watchId: watch._id, alertIds, userEmail: user.email, watchLabel: watch.name ?? watch.label,
-        listings: selected.map((m) => ({ score: m.score, title: m.title, price: m.price_eur ?? null, url: m.url })) });
+      mails.push({ userEmail: user.email, watchLabel: watch.name ?? watch.label,
+        listings: selected.map((m) => ({ score: m.score, title: m.title, price: m.price_eur ?? null, url: m.url })),
+        items: selected.map((m) => ({ watchId: watch._id, userId: watch.userId, listingId: m.id,
+          title: m.title, url: m.url, priceEur: m.price_eur ?? undefined, score: m.score })) });
     }
     return mails;
   },
 });
 
+export const planFromItems = internalMutation({
+  args: { items: v.array(catchupItem) },
+  handler: async (ctx, { items }) => ctx.db.insert("catchupPlans", { at: Date.now(), status: "draft", items }),
+});
+
+export const claimPlan = internalMutation({
+  args: { planId: v.id("catchupPlans") },
+  handler: async (ctx, { planId }) => {
+    const plan = await ctx.db.get(planId);
+    if (!plan) throw new Error("Catch-up plan not found.");
+    if (plan.status === "sent") return [];
+    const byWatch = new Map<Id<"watches">, Id<"alerts">[]>();
+    const alerted = new Map<Id<"watches">, Set<string>>();
+    for (const item of plan.items) {
+      if (!alerted.has(item.watchId)) {
+        const existing = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", item.watchId)).collect();
+        alerted.set(item.watchId, new Set(existing.map((a) => a.listingId)));
+      }
+      const ids = alerted.get(item.watchId)!;
+      if (ids.has(item.listingId)) continue;
+      ids.add(item.listingId);
+      const alertId = await ctx.db.insert("alerts", {
+        userId: item.userId, watchId: item.watchId, listingId: item.listingId,
+        title: item.title, url: item.url, priceEur: item.priceEur, score: item.score,
+        city: item.city, image: item.image, reason: "Match we missed.", channel: "email",
+        catchUp: true, emailStatus: "pending", createdAt: Date.now(),
+      });
+      byWatch.set(item.watchId, [...(byWatch.get(item.watchId) ?? []), alertId]);
+    }
+    await ctx.db.patch(planId, { status: "sent" });
+    return [...byWatch].map(([watchId, alertIds]) => ({ watchId, alertIds }));
+  },
+});
+
+export const send = internalAction({
+  args: { planId: v.id("catchupPlans") },
+  handler: async (ctx, { planId }) => {
+    const mails = await ctx.runMutation(internal.catchup.claimPlan, { planId });
+    for (const mail of mails) {
+      const content = await ctx.runQuery(internal.checker.emailContent, mail);
+      if (!content) continue;
+      for (const alert of content.alerts) (alert as { rateToken?: string | null }).rateToken = await ratingToken(alert._id);
+      let status: "sent" | "failed" = "sent";
+      try {
+        const user = await ctx.runQuery(internal.catchup.emailRecipient, { watchId: mail.watchId });
+        if (!user) continue;
+        await sendEmail(user, renderEmail({ ...content, catchUp: true },
+          process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app"));
+      } catch (e) {
+        console.error("catch-up e-mail failed:", e);
+        status = "failed";
+      }
+      await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
+    }
+  },
+});
+
+export const emailRecipient = internalQuery({
+  args: { watchId: v.id("watches") },
+  handler: async (ctx, { watchId }) => {
+    const watch = await ctx.db.get(watchId);
+    const user = watch && await ctx.db.get(watch.userId);
+    return user?.email ?? null;
+  },
+});
+
 export const run = internalAction({
   args: { dryRun: v.optional(v.boolean()) },
-  handler: async (ctx, { dryRun = true }) => {
+  handler: async (ctx, { dryRun = true }): Promise<{ planId: Id<"catchupPlans">;
+    preview: { userEmail: string; watchLabel: string;
+      listings: { score: number; title: string; price: number | null; url: string }[] }[] }> => {
+    if (!dryRun) throw new Error("Send a saved catch-up plan with catchup:send.");
     const groups = await ctx.runQuery(internal.catchup.groups, {});
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
     if (groups.length && (!api || !secret)) throw new Error("WATCHER_API_URL / CRON_SECRET are not set in Convex.");
-    if (!dryRun && groups.length && !process.env.RATING_SECRET) throw new Error("RATING_SECRET is not set in Convex.");
     const runId = crypto.randomUUID();
     const preview: { userEmail: string; watchLabel: string;
       listings: { score: number; title: string; price: number | null; url: string }[] }[] = [];
+    const items: { watchId: Id<"watches">; userId: Id<"users">; listingId: string; title: string;
+      url: string; priceEur?: number; score: number }[] = [];
     for (const [index, group] of groups.entries()) {
       const requestId = `audit-${runId}.${index}`;
       const res = await fetch(`${api!.replace(/\/$/, "")}/api/internal/audit`, {
@@ -115,24 +182,13 @@ export const run = internalAction({
         throw new Error(`Search service returned an incomplete catch-up audit (${requestId}).`);
       const mails = await ctx.runMutation(internal.catchup.record, { results: results.map((r) => ({
         watchId: r.watchId, ok: r.ok, misses: r.misses,
-      })), dryRun, now: Date.now() });
+      })) });
       for (const mail of mails) {
         preview.push({ userEmail: mail.userEmail, watchLabel: mail.watchLabel, listings: mail.listings });
-        if (dryRun) continue;
-        const content = await ctx.runQuery(internal.checker.emailContent, { watchId: mail.watchId, alertIds: mail.alertIds });
-        if (!content) continue;
-        for (const alert of content.alerts) (alert as { rateToken?: string | null }).rateToken = await ratingToken(alert._id);
-        let status: "sent" | "failed" = "sent";
-        try {
-          await sendEmail(mail.userEmail, renderEmail({ ...content, catchUp: true },
-            process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app"));
-        } catch (e) {
-          console.error("catch-up e-mail failed:", e);
-          status = "failed";
-        }
-        await ctx.runMutation(internal.checker.markEmailed, { alertIds: mail.alertIds, status });
+        items.push(...mail.items);
       }
     }
-    return preview;
+    const planId = await ctx.runMutation(internal.catchup.planFromItems, { items });
+    return { planId, preview };
   },
 });

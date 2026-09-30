@@ -40,6 +40,12 @@ export const eventProps = v.object({
   value: v.optional(v.string()),
 });
 
+export const catchupItem = v.object({
+  watchId: v.id("watches"), userId: v.id("users"), listingId: v.string(),
+  title: v.string(), url: v.string(), priceEur: v.optional(v.number()),
+  score: v.number(), city: v.optional(v.string()), image: v.optional(v.string()),
+});
+
 export default defineSchema({
   // Only what alerts need: the Clerk id and the e-mail address to send them to.
   users: defineTable({
@@ -134,6 +140,12 @@ export default defineSchema({
     })),
     error: v.optional(v.string()),
   }).index("by_at", ["at"]).index("by_watch_at", ["watchId", "at"]),
+
+  catchupPlans: defineTable({
+    at: v.number(),
+    status: v.union(v.literal("draft"), v.literal("sent")),
+    items: v.array(catchupItem),
+  }),
 
   errors: defineTable({
     kind: v.union(v.literal("chat"), v.literal("check")),

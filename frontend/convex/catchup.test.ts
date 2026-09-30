@@ -48,7 +48,7 @@ test("catch-up uses the original first look's highest m number without seededAt"
   expect(seededPayload.created_mark).toBeUndefined();
 });
 
-test("dry run writes nothing; send stores ten catch-up alerts once and uses their rating links", async () => {
+test("preview stores ten exact items; send uses the plan once without another audit", async () => {
   const { t, id } = await watch();
   const mails: any[] = [];
   const misses = Array.from({ length: 12 }, (_, i) => ({ id: `m${i}`, title: `Mac mini ${i}`,
@@ -64,7 +64,7 @@ test("dry run writes nothing; send stores ten catch-up alerts once and uses thei
     return new Response(JSON.stringify({ results: [{ watchId: id, ok: true, read: 12, candidates: 12,
       scored: 12, unscored: 0, missCount: 12, misses }] }));
   }));
-  const preview = await t.action(internal.catchup.run, {});
+  const { planId, preview } = await t.action(internal.catchup.run, {});
   expect(preview).toHaveLength(1);
   expect(preview[0]).toMatchObject({ userEmail: "alice@example.com", watchLabel: "Mac mini" });
   expect(preview[0].listings).toHaveLength(10);
@@ -72,10 +72,15 @@ test("dry run writes nothing; send stores ten catch-up alerts once and uses thei
     url: "https://www.marktplaats.nl/v/m0" });
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toEqual([]);
   expect(mails).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.get(planId))).toMatchObject({ status: "draft", items: [
+    { watchId: id, listingId: "m0", score: 20, title: "Mac mini 0", priceEur: 100 },
+    ...Array.from({ length: 9 }, () => expect.any(Object)),
+  ] });
 
-  await t.action(internal.catchup.run, { dryRun: false });
+  await t.action(internal.catchup.send, { planId });
   const alerts = await t.run((ctx) => ctx.db.query("alerts").collect());
   expect(alerts).toHaveLength(10);
+  expect(alerts.map((a) => a.listingId).sort()).toEqual(Array.from({ length: 10 }, (_, i) => `m${i}`).sort());
   expect(alerts.every((a) => a.catchUp && a.emailStatus === "sent")).toBe(true);
   expect(mails).toHaveLength(1);
   expect(mails[0].subject).toBe("Matches we missed for Mac mini");
@@ -83,9 +88,11 @@ test("dry run writes nothing; send stores ten catch-up alerts once and uses thei
   expect(mails[0].text).toContain("A bug on 29–30 September kept these from you. It's fixed now; these are still online.");
   expect(mails[0].text).toContain(`/rate/?a=${encodeURIComponent(alerts[0]._id)}`);
 
-  await t.action(internal.catchup.run, { dryRun: false });
+  expect((await t.run((ctx) => ctx.db.get(planId)))?.status).toBe("sent");
+  await t.action(internal.catchup.send, { planId });
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toHaveLength(10);
   expect(mails).toHaveLength(1);
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes("/api/internal/audit"))).toHaveLength(1);
 });
 
 test("catch-up window follows Amsterdam calendar days since 29 September, capped at seven", async () => {
@@ -97,24 +104,44 @@ test("catch-up window follows Amsterdam calendar days since 29 September, capped
   expect((await t.query(internal.catchup.groups, {}))[0].watches[0].since_days).toBe(7);
 });
 
-test("catch-up excludes an existing alert and marks a failed send", async () => {
+test("top-up plan preserves explicit items and skips an already alerted listing on the same watch", async () => {
   const { t, id } = await watch();
   await t.run(async (ctx) => {
     const w = await ctx.db.get(id);
     await ctx.db.insert("alerts", { userId: w!.userId, watchId: id, listingId: "already",
       title: "Already sent", url: "https://www.marktplaats.nl/v/already", reason: "match",
-      channel: "email", emailStatus: "sent", createdAt: Date.now() });
+      channel: "email", emailStatus: "sent", catchUp: true, createdAt: Date.now() });
   });
-  vi.stubGlobal("fetch", vi.fn(async (url: string) => url.includes("agentmail")
-    ? new Response("unavailable", { status: 503 })
-    : new Response(JSON.stringify({ results: [{ watchId: id, ok: true, read: 2, candidates: 2,
-      scored: 2, missCount: 2, misses: ["already", "new"].map((name) => ({ id: name, title: name,
-        url: `https://www.marktplaats.nl/v/${name}`, score: 9, kind: "handled", price_eur: 40 })) }] }))));
-  const preview = await t.action(internal.catchup.run, { dryRun: true });
-  expect(preview[0].listings.map((item) => item.title)).toEqual(["new"]);
-  await t.action(internal.catchup.run, { dryRun: false });
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("unavailable", { status: 503 })));
+  const userId = (await t.run((ctx) => ctx.db.get(id)))!.userId;
+  const items = ["already", "new"].map((listingId) => ({ watchId: id, userId, listingId,
+    title: listingId, url: `https://www.marktplaats.nl/v/${listingId}`, score: 9,
+    priceEur: 40, city: "Amsterdam", image: "https://images.test/photo.jpg" }));
+  const planId = await t.mutation(internal.catchup.planFromItems, { items });
+  expect(await t.run((ctx) => ctx.db.get(planId))).toMatchObject({ status: "draft", items });
+  await t.action(internal.catchup.send, { planId });
   const alerts = await t.run((ctx) => ctx.db.query("alerts").collect());
   expect(alerts).toHaveLength(2);
-  expect(alerts.find((a) => a.listingId === "new")).toMatchObject({ catchUp: true, emailStatus: "failed" });
+  expect(alerts.find((a) => a.listingId === "new")).toMatchObject({ catchUp: true, emailStatus: "failed",
+    city: "Amsterdam", image: "https://images.test/photo.jpg" });
   expect(alerts.find((a) => a.listingId === "already")?.emailStatus).toBe("sent");
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+  await t.action(internal.catchup.send, { planId });
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+});
+
+test("preview keeps new listings when the watch already received a catch-up", async () => {
+  const { t, id } = await watch();
+  await t.run(async (ctx) => {
+    const watch = (await ctx.db.get(id))!;
+    await ctx.db.insert("alerts", { userId: watch.userId, watchId: id, listingId: "old",
+      title: "Old", url: "https://www.marktplaats.nl/v/old", reason: "Match we missed.",
+      channel: "email", catchUp: true, emailStatus: "sent", createdAt: Date.now() });
+  });
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{ watchId: id,
+    ok: true, misses: ["old", "new"].map((listingId) => ({ id: listingId, title: listingId,
+      url: `https://www.marktplaats.nl/v/${listingId}`, score: 9, kind: "handled" })) }] }))));
+  const { planId, preview } = await t.action(internal.catchup.run, { dryRun: true });
+  expect(preview[0].listings.map((item) => item.title)).toEqual(["new"]);
+  expect((await t.run((ctx) => ctx.db.get(planId)))?.items.map((item) => item.listingId)).toEqual(["new"]);
 });
