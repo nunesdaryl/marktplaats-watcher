@@ -398,7 +398,23 @@ export const alerts = query({
           catchUp: v.optional(v.boolean()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
-    const source = a.watchId ? ctx.db.query("alerts").withIndex("by_watch_createdAt", (q) => {
+    const userCache = new Map<string, Promise<Doc<"users"> | null>>();
+    const watchCache = new Map<string, Promise<Doc<"watches"> | null>>();
+    const getUser = (id: Doc<"alerts">["userId"]) => {
+      let user = userCache.get(id);
+      if (!user) userCache.set(id, user = ctx.db.get(id));
+      return user;
+    };
+    const getWatch = (id: Doc<"alerts">["watchId"]) => {
+      let watch = watchCache.get(id);
+      if (!watch) watchCache.set(id, watch = ctx.db.get(id));
+      return watch;
+    };
+    const source = a.catchUp === true ? ctx.db.query("alerts").withIndex("by_catchUp_createdAt", (q) => {
+      const lower = q.eq("catchUp", true);
+      const start = a.since !== undefined ? lower.gte("createdAt", a.since) : lower;
+      return a.until !== undefined ? start.lt("createdAt", a.until) : start;
+    }) : a.watchId ? ctx.db.query("alerts").withIndex("by_watch_createdAt", (q) => {
       const lower = q.eq("watchId", a.watchId!);
       const start = a.since !== undefined ? lower.gte("createdAt", a.since) : lower;
       return a.until !== undefined ? start.lt("createdAt", a.until) : start;
@@ -411,14 +427,18 @@ export const alerts = query({
       const lower = a.since !== undefined ? q.gte("createdAt", a.since) : q;
       return a.until !== undefined ? lower.lt("createdAt", a.until) : lower;
     });
-    const page = await listPage(source.order("desc"), async (x) =>
-      (!a.watchId || x.watchId === a.watchId) && (!a.userId || x.userId === a.userId)
-      && (a.minScore === undefined || (x.score ?? -1) >= a.minScore) && (!a.emailStatus || x.emailStatus === a.emailStatus)
-      && (a.catchUp === undefined || !!x.catchUp === a.catchUp) && inRange(x.createdAt, a.since, a.until)
-      && (!a.search || [x.title, x.listingId, x.city, (await ctx.db.get(x.userId))?.email,
-        (await ctx.db.get(x.watchId))?.name, (await ctx.db.get(x.watchId))?.label].some((v) => includes(v, a.search))));
+    const page = await listPage(source.order("desc"), async (x) => {
+      if ((a.watchId && x.watchId !== a.watchId) || (a.userId && x.userId !== a.userId)
+        || (a.minScore !== undefined && !((x.score ?? -1) >= a.minScore))
+        || (a.emailStatus && x.emailStatus !== a.emailStatus)
+        || (a.catchUp !== undefined && !!x.catchUp !== a.catchUp) || !inRange(x.createdAt, a.since, a.until)) return false;
+      if (!a.search) return true;
+      const [user, watch] = await Promise.all([getUser(x.userId), getWatch(x.watchId)]);
+      return [x.title, x.listingId, x.city, user?.email, watch?.name, watch?.label]
+        .some((v) => includes(v, a.search));
+    });
     return { rows: await Promise.all(page.rows.map(async (x) =>
-      alertRow(x, (await ctx.db.get(x.userId))?.email, ((w) => w?.name ?? w?.label)(await ctx.db.get(x.watchId))))),
+      alertRow(x, (await getUser(x.userId))?.email, ((w) => w?.name ?? w?.label)(await getWatch(x.watchId))))),
       more: page.more };
   },
 });

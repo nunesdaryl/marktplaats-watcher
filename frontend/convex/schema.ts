@@ -249,5 +249,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_watch_createdAt", ["watchId", "createdAt"])
     .index("by_user_createdAt", ["userId", "createdAt"])
+    .index("by_catchUp_createdAt", ["catchUp", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
 });
