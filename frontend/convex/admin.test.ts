@@ -35,6 +35,17 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("the dashboard counts and labels active watches falling behind", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const id = await alice.mutation(api.watches.create, { query: "iphone", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(id, { backlog: 20 }));
+  const dashboard = (await owner.query(api.admin.dashboard, {}))!;
+  expect(dashboard.totals.watchesFallingBehind).toBe(1);
+  expect(dashboard.fallingBehindLabels).toEqual(["Iphone"]);
+});
+
 test("the dashboard counts usage, the funnel and feedback with what happened before it", async () => {
   const t = convexTest(schema, modules);
   vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));

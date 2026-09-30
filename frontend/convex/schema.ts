@@ -163,6 +163,8 @@ export default defineSchema({
     nextRunAt: v.number(),
     lastCheckedAt: v.optional(v.number()),
     lastError: v.optional(v.string()),
+    backlog: v.optional(v.number()),
+    coverageCapped: v.optional(v.boolean()),
     lastManualAt: v.optional(v.number()),
     createdAt: v.number(),
     name: v.optional(v.string()),              // the user's own name; `label` (from the filters) is the fallback

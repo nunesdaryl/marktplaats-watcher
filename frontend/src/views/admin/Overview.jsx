@@ -268,6 +268,7 @@ export default function Overview({ open }) {
               onOpen={() => go("users", "Active in the last 24 hours", { activeSince: now - DAY })} />
         <Stat value={t.watchesActive} name="Active watches" note={`${t.watchesPaused} paused · ${t.watchesArchived} archived`}
               onOpen={() => go("watches", "Watches", { status: "active" })} />
+        <div className="stat"><span className="stat-value">{t.watchesFallingBehind}</span><span className="stat-name">Watches falling behind</span><span className="stat-note">{data.fallingBehindLabels.join(", ") || "None"}</span></div>
         <Stat value={t.alerts7d} name="Alerts this week" note={`${t.alerts} kept · ${t.emailsFailed} e-mails failed`}
               onOpen={() => go("alerts", "Alerts this week", { since: now - 7 * DAY })} />
         <Stat value={t.chats} name="Saved chats" note="kept 30 days after last use" onOpen={() => go("chats", "Saved chats")} />
