@@ -1,50 +1,49 @@
 # Evaluation report
 
-Scorer run 2026-09-30 12:10, chat run 2026-09-30 14:07. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
-Prompt versions: chat **chat-2026-09-30.2**, rank **rank-2026-09-30.1**.
+Scorer run 2026-09-30 21:38, chat run 2026-09-30 21:39. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
+Prompt versions: chat **chat-2026-09-30.2**, rank **rank-2026-10-01.1**.
 UAT sign-off: ______ (name), ______ (date), prompt versions ______
 
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
 
-49 real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; the judge marked **19** as real matches. After human overrides, **22** are real matches.
+53 real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **23** are real matches.
 
 | Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |
 |---|---|---|---|---|---|---|---|
-| great | score ≥ 8 | **100%** | **68%** | 15 | 0 | 7 | 27 |
-| good | score ≥ 6 | **90%** | **82%** | 18 | 2 | 4 | 25 |
+| great | score ≥ 8 | **95%** | **83%** | 19 | 1 | 4 | 29 |
+| good | score ≥ 6 | **90%** | **83%** | 19 | 2 | 4 | 28 |
 
 *Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*
 
 **Misses at 'great':**
-- Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 5; judge: Apple Mac Mini itself and under €500.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (match): IKEA-bureaustoel — scored 6; judge: IKEA office chair and well under budget.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 0; original judge: This is a sled-base chair and not listed as an IKEA office chair.
-- Missed a match (human_override): IKEA Bureau en Bureaustoel Set — scored 7; original judge: Set includes an IKEA office chair, but the listed price is €100, not under €100.
-- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 1; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
-- Missed a match (match): Apple iPhone 13 Wit 256GB C Grade — scored 7; judge: Regular Apple iPhone 13 256GB phone, priced under €350.
+- E-mailed but not a match (wrong_model_or_spec): Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade — scored 9: iPhone 13 mini matches the watched model family and €275 is comfortably under budget, though it's the mini variant and distance is unknown.
+- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 0; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
+- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
+- Missed a match (human_override): IKEA Bureau en Bureaustoel Set — scored 5; original judge: Set includes an IKEA office chair, but the listed price is €100, not under €100.
+- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 2; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
 **Failure categories at 'great':**
 
 | Category | False positives | False negatives |
 |---|---|---|
 | human_override | 0 | 3 |
-| match | 0 | 4 |
+| match | 0 | 1 |
+| wrong_model_or_spec | 1 | 0 |
 
 **Misses at 'good':**
-- E-mailed but not a match (wrong_model_or_spec): Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade — scored 7: iPhone 13 mini is a close match and €275 is good for a refurbished 128GB model, though it’s the smaller Mini version.
-- E-mailed but not a match (wrong_model_or_spec): iPhone 13 Mini 128GB - Blauw - 12mnd garantie — scored 7: iPhone 13 Mini 128GB at €219 is cheap and includes warranty, but it is the Mini version rather than the standard iPhone 13.
-- Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 5; judge: Apple Mac Mini itself and under €500.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 0; original judge: This is a sled-base chair and not listed as an IKEA office chair.
-- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 1; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
+- E-mailed but not a match (wrong_model_or_spec): Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade — scored 9: iPhone 13 mini matches the watched model family and €275 is comfortably under budget, though it's the mini variant and distance is unknown.
+- E-mailed but not a match (wrong_model_or_spec): iPhone 13 Mini 128GB - Blauw - 12mnd garantie — scored 6: This is an iPhone 13 mini rather than the standard iPhone 13, but the €219 price is good if the smaller size is acceptable.
+- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 0; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
+- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
+- Missed a match (human_override): IKEA Bureau en Bureaustoel Set — scored 5; original judge: Set includes an IKEA office chair, but the listed price is €100, not under €100.
+- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 2; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
 **Failure categories at 'good':**
 
 | Category | False positives | False negatives |
 |---|---|---|
-| human_override | 0 | 2 |
-| match | 0 | 2 |
+| human_override | 0 | 3 |
+| match | 0 | 1 |
 | wrong_model_or_spec | 2 | 0 |
 
 ## 1b. What users said about their alerts
@@ -97,7 +96,7 @@ Repeated runs: C3 passed 15 of 15 (prompt chat-2026-09-30.2)
 
 ## 3. Cost
 
-- Scoring: €0.0280 per 100 listings (8977 input + 1823 output tokens for 49 listings).
+- Scoring: €0.0279 per 100 listings (9708 input + 1957 output tokens for 53 listings).
 - Chat: €0.0019 per question on average.
 - Chat output is capped at 1,500 tokens per model call.
 - Judge (one-off): €0.1048.
