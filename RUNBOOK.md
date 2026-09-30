@@ -192,3 +192,12 @@ can't be read-only, so it's kept only in Convex's server settings, used by one o
 Pause checks (§1) the same day. Chat search can be switched off by setting `MAX_FETCHES_PER_HOUR=0` in Vercel.
 Reply, and record the decision in `docs/system-design.html` §11/§13. The risk (ToS art. 7.3) was accepted knowingly for
 the portfolio version.
+
+## Send a catch-up (missed matches)
+1. Dry run: `cd frontend && npx convex run --prod catchup:run '{"dryRun": true}'` returns a `planId` and the exact list
+   per user and watch (real misses, still online, not reserved, never already alerted).
+2. The operator approves that exact list. To send a hand-picked list instead, create a plan with
+   `catchup:planFromItems` (items: watchId, userId, listingId, title, url, score, priceEur).
+3. Send: `npx convex run --prod catchup:send '{"planId": "<id>"}'`. It sends only the plan's items, skips any listing
+   already alerted, and a plan can't be sent twice.
+4. Check: the Catch-ups list on /admin (filter by user) and each alert's e-mail status.

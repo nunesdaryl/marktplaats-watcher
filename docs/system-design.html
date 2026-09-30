@@ -1117,7 +1117,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <p><b>The first audit, run by hand on production:</b> 9 watches, 0 failures, 31 misses. The real ones all predate MW-17
   (among them a 10/10 IKEA laminate listing for another user); a few are listings from the 29 Sep re-seed, which existing
   watches can't yet tell apart (new first looks record <code>seededAt</code>).</p>
-<p><b>Still open (proposed 30 Sep, not built):</b> no system can promise every match (Marktplaats can change, the model
+<p><b>Still open (proposed 30 Sep; none built by 1 Oct, see §21 for what was):</b> no system can promise every match (Marktplaats can change, the model
   can misjudge, mail can land in spam); the goal is that no miss goes unnoticed or unfixed for more than a day.</p>
 <ol>
   <li>An end-to-end test through the real HTTP check route in CI (the gap that let MW-20's regression through).</li>
@@ -1130,6 +1130,60 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing
   about whether users got their matches; an independent replay of the same search did. And test through the same door
   production uses: a function called directly skips the validation that failed.</div>
+</section>
+
+<section>
+<h2>21. Owing users their matches, and a dashboard you can ask (30 Sep night – 1 Oct)</h2>
+<p>Daryl's follow-up to §20: fix the remaining scoring gaps, send users the matches the 29–30 Sep bug had cost them,
+  and turn the owner dashboard into something that finds any datapoint "from intent". Fourteen more issues went through
+  the factory (MW-21 to MW-34); every merge had Daryl's OK, and production e-mails to users went out only on his approval
+  of the exact list.</p>
+<table>
+  <tr><th style="width:12%">Issue</th><th>What changed</th><th style="width:40%">How it was checked</th></tr>
+  <tr><td>MW-21</td><td>Every score a check gives is stored on the seen listing; the ranker scores 10 listings per call.</td>
+    <td>Real run: 20 iPhone listings → 2 calls, order kept, none unscored. The audit can now say "scored 4 at check, 9 now".</td></tr>
+  <tr><td>MW-22</td><td>Accessories aren't the item: a listing that is only an accessory, part or kit scores 0–4.</td>
+    <td>Real evals: chat 20/20, "great" precision 95%. Raspberry Pi display frames 6–7 → 1/10; real Pis 9–10.</td></tr>
+  <tr><td>MW-23, MW-27</td><td>Catch-up e-mail: a dry run saves an exact plan; the send delivers only that plan (by listing
+    id), with per-listing dedupe.</td><td>Sent back twice: a word search called a listing "sold" because its description said
+    "apart verkocht" (now the page's <code>isReserved</code> flag), and the baseline hid real misses. The first send
+    re-scored and differed from the approved list (21 of 24 matched), which became MW-27. Result: <b>33 matches to 3
+    accounts, 0 duplicates</b>; 3 of 4 users reached "Got an alert".</td></tr>
+  <tr><td>MW-24</td><td>The health box: one line per problem, expandable, every item linking to its record.</td>
+    <td>Checked on production after merge.</td></tr>
+  <tr><td>MW-25</td><td>One filter bar on every list (user, watch, date, score, status, search), filters in the URL; Runs,
+    Errors, Delivery audit and Catch-ups lists; ⌘K search.</td><td>Production review found the lists taking 20–25 s → MW-31.</td></tr>
+  <tr><td>MW-26</td><td>Ask box: a question becomes the exact filtered list (the model only picks filters from a fixed schema;
+    it never reads data). Owner-only API route.</td><td>Golden set 13/15 → fixed → <b>15/15 twice</b>. On production,
+    "catch-up e-mails for hikari" opened their 3 listings.</td></tr>
+  <tr><td>MW-31, MW-32</td><td>Lists filter on the server with indexes, 200 rows per page; a catch-up index.</td>
+    <td>Measured on production: Alerts this week <b>0.7 s</b> (was 20–25 s), Catch-ups <b>0.2 s</b> (was 10–15 s), no long tasks.</td></tr>
+  <tr><td>MW-28</td><td>After a deploy, a tab that can't load a chunk reloads once instead of hanging on the boot screen.</td>
+    <td>Local build with the chunk removed: one reload, then a "new version" notice.</td></tr>
+  <tr><td>MW-29</td><td>The eval gate uses the median of 3 scorer runs.</td><td>Same code, three runs: great precision
+    1.0 / 0.857 / 0.944. A one-run gate had failed at 0.895.</td></tr>
+  <tr><td>MW-30</td><td>Tests clear every secret and block real network calls.</td><td>Re-created the leak below with real
+    values present: 118 passed, production unchanged.</td></tr>
+  <tr><td>MW-33, MW-34</td><td>HTML is served no-store; closing a dashboard panel stays client-side; a one-time
+    <code>Clear-Site-Data: "cache"</code> purge per browser.</td><td>Daryl hit a white page after closing a panel. Cause:
+    Vercel answers 304 to <code>If-Modified-Since</code> (every file carries 20 Oct 2018), so Chrome kept old HTML
+    pointing at deleted chunks. Verified on production: four levels deep, then the panel's X → dashboard, no reload.</td></tr>
+</table>
+<p><b>Incidents, recorded plainly.</b> (1) A symlink command meant for a worktree ran in the main checkout and destroyed the
+  local <code>.env</code>; the Vercel-held secrets came back only as placeholders. <code>HEALTH_KEY</code> was rotated
+  everywhere by the station, <code>CRON_SECRET</code>/<code>API_TO_CONVEX_SECRET</code> restored from Convex, and a new
+  restricted OpenAI key made for local runs and the eval workflow. (2) Restoring Convex values into that file let merge-time
+  tests write 11 junk rows into production (fake usage, fake chat errors); deleted with Daryl's OK, and MW-30 makes it
+  impossible. (3) The white page above, which the reviewer first put down to automation tabs until Daryl reproduced it.</p>
+<p><b>What this run taught:</b></p>
+<ul>
+  <li><b>Approve the artifact, then send the artifact.</b> Re-computing at send time made the approved list and the sent
+    list differ; the plan table fixes it by construction.</li>
+  <li><b>Test at the same door, at the same depth.</b> The panel bug only showed after a real close; a positional click
+    wasn't proof, clicking the element was.</li>
+  <li><b>Local config is production-adjacent.</b> A value in a developer's <code>.env</code> is reachable by every test
+    unless the tests forbid it.</li>
+</ul>
 </section>
 
 </body>

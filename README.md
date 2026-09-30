@@ -108,7 +108,9 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   MW-5, MW-9 and MW-14 wait on Daryl (`human-ready`). The run is written up in `docs/system-design.html` §18–19.
   On 30 Sep evening an alert audit found late-published listings being skipped: MW-17 fixed it, MW-19 flags
   watches too broad to keep up, MW-18 adds a nightly delivery audit to the owner digest, MW-20 fixed a regression
-  (§20).
+  (§20). Later that night MW-21 to MW-34 stored check scores, stopped accessory matches, sent users a catch-up
+  of 33 missed matches, rebuilt the owner dashboard (filters on every list, ⌘K, an Ask box) and fixed a stale-HTML
+  white page after deploys (§21).
 - **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
   with evidence, and a dated roadmap.
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from

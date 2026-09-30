@@ -29,7 +29,8 @@ and live, except the parts that need Daryl (§5). That closes the harness-harden
 and per-user caps, request ids with errors in the digest) and most of the evaluation group (human-corrected labels,
 failure categories, prompt versions, a weekly CI run that waits for its key). Seen working in production the same evening
 (a live chat counted and saved by the server; scheduled checks with 0 failures). An alert audit that evening found good
-listings being skipped; fixed and now audited nightly (MW-17 to MW-20, system design §20). The scorecard below is the
+listings being skipped; fixed and now audited nightly (MW-17 to MW-20, system design §20);
+missed matches were then sent to users as a catch-up, and the owner dashboard rebuilt (MW-21 to MW-34, §21). The scorecard below is the
 29 September snapshot and was not re-scored.
 
 ### Scorecard
