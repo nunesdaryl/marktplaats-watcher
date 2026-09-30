@@ -129,6 +129,129 @@ def test_chat_needs_a_valid_login(client, monkeypatch):
     assert client.post("/api/chat", json={"message": "hi"}, headers=ok).json() == {"answer": "ok", "saved": False}
 
 
+def test_admin_ask_requires_owner_and_uses_structured_model(client, monkeypatch):
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner_1")
+    monkeypatch.setenv("OWNER_EMAIL", "owner@example.com")
+    calls = []
+
+    class FakeStructured:
+        def invoke(self, messages):
+            calls.append(messages)
+            return agent.AdminIntent(view="alerts", title="High score alerts", userEmail="vin@example.com",
+                                     since="2026-09-28", minScore=8)
+
+    class FakeModel:
+        def bind(self, **kwargs):
+            assert kwargs == {"max_tokens": 500}
+            return self
+
+        def with_structured_output(self, schema):
+            assert schema is agent.AdminIntent
+            return FakeStructured()
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    body = {"question": "alerts for Vin this week above 8", "users": ["vin@example.com"], "watches": ["Bike"]}
+    assert client.post("/api/admin/ask", json=body).status_code == 401
+    assert client.post("/api/admin/ask", json=body,
+                       headers={"Authorization": f"Bearer {client.token('other')}"}).status_code == 404
+    assert calls == []
+    response = client.post("/api/admin/ask", json=body,
+                           headers={"Authorization": f"Bearer {client.token('owner_1')}"})
+    assert response.status_code == 200
+    assert response.json() == {"view": "alerts", "title": "High score alerts", "userEmail": "vin@example.com",
+                               "since": "2026-09-28", "minScore": 8}
+    assert "vin@example.com" in str(calls[0])
+    assert "Bike" in str(calls[0])
+    assert "owner@example.com" not in str(calls[0])
+
+
+def test_admin_ask_validates_question_and_hides_unconfigured_owner(client, monkeypatch):
+    monkeypatch.delenv("OWNER_CLERK_ID", raising=False)
+    headers = {"Authorization": f"Bearer {client.token('owner_1')}"}
+    assert client.post("/api/admin/ask", json={"question": "alerts"}, headers=headers).status_code == 404
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner_1")
+    assert client.post("/api/admin/ask", json={"question": "a" * 301}, headers=headers).status_code == 422
+
+
+def test_admin_intent_schema_matches_list_views():
+    view = agent.AdminIntent.model_fields["view"].annotation
+    assert set(view.__args__) == {"overview", "users", "watches", "alerts", "chats", "events", "feedback",
+                                  "ratings", "runs", "errors", "audits", "catchups"}
+    assert set(agent.AdminIntent.model_fields) == {"view", "userEmail", "forOwner", "watchLabel", "since", "until",
+                                                   "minScore", "status", "kind", "text", "title"}
+    with pytest.raises(ValueError):
+        agent.AdminIntent(view="watch", title="One watch")
+
+
+def test_admin_intent_prompt_limits_text_to_explicit_search_terms(monkeypatch):
+    class FakeModel:
+        def bind(self, **kwargs):
+            return self
+
+        def with_structured_output(self, schema):
+            return self
+
+        def invoke(self, messages):
+            prompt = messages[0].content
+            assert "specific words or a name" in prompt
+            assert "not a user or watch" in prompt
+            assert "Never restate the question as text" in prompt
+            question = json.loads(messages[1]["content"])["question"]
+            return agent.AdminIntent(view="alerts", title="Alerts",
+                                     text="M4" if question == "alerts mentioning M4" else None)
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    assert agent.admin_intent("alerts for Vin this week above 8", {"today": "2026-09-30"}) == {
+        "view": "alerts", "title": "Alerts"}
+    assert agent.admin_intent("alerts mentioning M4", {"today": "2026-09-30"}) == {
+        "view": "alerts", "title": "Alerts", "text": "M4"}
+
+
+def test_admin_ask_fills_owner_email_only_for_owner_intent(client, monkeypatch):
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner_1")
+    monkeypatch.setenv("OWNER_EMAIL", "owner@example.com")
+
+    class FakeModel:
+        def bind(self, **kwargs):
+            return self
+
+        def with_structured_output(self, schema):
+            assert schema is agent.AdminIntent
+            return self
+
+        def invoke(self, messages):
+            payload = json.loads(messages[1]["content"])
+            assert "ownerEmail" not in payload["context"]
+            assert "owner@example.com" not in str(messages)
+            assert "forOwner" in messages[0].content
+            return agent.AdminIntent(view="alerts", title="Alerts", forOwner=payload["question"] == "my alerts")
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    headers = {"Authorization": f"Bearer {client.token('owner_1')}"}
+    mine = client.post("/api/admin/ask", json={"question": "my alerts"}, headers=headers)
+    assert mine.status_code == 200
+    assert mine.json() == {"view": "alerts", "title": "Alerts", "userEmail": "owner@example.com"}
+    other = client.post("/api/admin/ask", json={"question": "recent alerts"}, headers=headers)
+    assert other.status_code == 200
+    assert other.json() == {"view": "alerts", "title": "Alerts"}
+
+
+def test_admin_intent_unknown_has_only_overview_and_title(monkeypatch):
+    class FakeModel:
+        def bind(self, **kwargs):
+            return self
+
+        def with_structured_output(self, schema):
+            return self
+
+        def invoke(self, messages):
+            return agent.AdminIntent(view="overview", title="I couldn't tell what to show")
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    assert agent.admin_intent("unclear", {"today": "2026-09-30"}) == {
+        "view": "overview", "title": "I couldn't tell what to show"}
+
+
 def test_rate_limit_is_per_user(client, monkeypatch):
     monkeypatch.setattr(client.main, "chat", lambda *a: {"answer": "ok"})
     monkeypatch.setattr(client.main, "RATE_PER_MINUTE", 2)
