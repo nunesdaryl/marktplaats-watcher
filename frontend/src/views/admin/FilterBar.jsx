@@ -1,15 +1,15 @@
-import { useQuery } from "convex/react";
-import { useRef } from "react";
-import { api } from "../../../convex/_generated/api";
+import { createContext, useContext, useRef } from "react";
 import Icon from "../../components/Icon.jsx";
 
+export const AdminOptionsContext = createContext(null);
 export const filterParams = ["userId", "watchId", "when", "since", "until", "minScore", "status", "emailStatus", "kind", "verdict", "handled", "stage", "stuck", "name", "scheduleKey", "notify", "wouldPay", "band", "reason", "requestId", "behind", "activeSince", "createdSince", "createdUntil", "section", "mode", "device", "value", "q"];
 const dateValue = (value) => value && Number.isFinite(Number(value)) ? new Date(Number(value)).toISOString().slice(0, 10) : "";
 const dateNumber = (value, end = false) => value ? Date.parse(`${value}T00:00:00Z`) + (end ? 86_400_000 : 0) : undefined;
 
 export default function FilterBar({ params, update, user = true, watch = false, score = false, status, search = true }) {
-  const users = useQuery(api.admin.users, user ? {} : "skip");
-  const watches = useQuery(api.admin.watches, watch ? { userId: params.userId || undefined } : "skip");
+  const options = useContext(AdminOptionsContext);
+  const users = user ? options?.users : undefined;
+  const watches = watch ? options?.watches?.filter((w) => !params.userId || w.userId === params.userId) : undefined;
   const sheet = useRef(null);
   const set = (key, value) => update({ [key]: value || undefined, ...(key === "userId" ? { watchId: undefined } : {}) });
   const chipValue = (key) => {

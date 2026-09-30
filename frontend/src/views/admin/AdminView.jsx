@@ -9,6 +9,7 @@ import { useDrill } from "./nav.js";
 import Overview from "./Overview.jsx";
 import { VIEWS } from "./Views.jsx";
 import { intentToDrill } from "./ask.js";
+import { AdminOptionsContext } from "./FilterBar.jsx";
 
 const KIND = { users: "Accounts", user: "Account", watches: "Watches", watch: "Watch", alerts: "Alerts", alert: "Alert",
   chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day", ratings: "Ratings",
@@ -70,10 +71,8 @@ function DrillPanel({ drill }) {
   );
 }
 
-function AdminAsk({ open }) {
+function AdminAsk({ open, users, watches }) {
   const { getToken } = useAuth();
-  const users = useQuery(api.admin.users, {});
-  const watches = useQuery(api.admin.watches, {});
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -118,6 +117,8 @@ function AdminAsk({ open }) {
 
 export default function AdminView() {
   const owner = useQuery(api.admin.amOwner);
+  const users = useQuery(api.admin.userOptions, owner ? {} : "skip");
+  const watches = useQuery(api.admin.watchOptions, owner ? {} : "skip");
   const drill = useDrill();
   const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
@@ -127,10 +128,10 @@ export default function AdminView() {
   }, []);
   if (owner === false) return null;   // App.jsx only mounts this for the owner; the server returns no data to anyone else
   return (
-    <>
-      <Overview open={drill.open} onSearch={() => setSearchOpen(true)} ask={<AdminAsk open={drill.open} />} />
+    <AdminOptionsContext.Provider value={{ users, watches }}>
+      <Overview open={drill.open} onSearch={() => setSearchOpen(true)} ask={<AdminAsk open={drill.open} users={users} watches={watches} />} />
       {drill.current && <DrillPanel drill={drill} />}
       {searchOpen && <AdminSearch close={() => setSearchOpen(false)} open={drill.open} />}
-    </>
+    </AdminOptionsContext.Provider>
   );
 }

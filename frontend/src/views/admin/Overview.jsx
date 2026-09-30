@@ -250,7 +250,8 @@ function ScoreAccuracy({ days, go }) {
 export default function Overview({ open, onSearch, ask }) {
   const [days, setDays] = useState(30);
   const data = useQuery(api.admin.dashboard, { days });
-  const feedback = useQuery(api.admin.feedback, { limit: 5 });
+  const feedbackPage = useQuery(api.admin.feedback, { limit: 5 });
+  const feedback = feedbackPage?.rows;
   if (!data) return <section className="page"><p className="hint" role="status">Loading the dashboard…</p></section>;
 
   const t = data.totals;

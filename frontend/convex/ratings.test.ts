@@ -70,7 +70,7 @@ test("delete my data removes ratings; the owner's stats count bands and the 'cou
   const stats = (await owner.query(api.admin.ratingStats, {}))!;
   expect(stats).toMatchObject({ rated: 1, good: 1, alertsSent: 1, goodCouldBeGreat: 1 });
   expect(stats.bands.find((b) => b.key === "good")).toMatchObject({ rated: 1, good: 1 });
-  expect((await owner.query(api.admin.ratings, { band: "good" }))![0]).toMatchObject({ verdict: "good", score: 7, email: "alice@example.com" });
+  expect((await owner.query(api.admin.ratings, { band: "good" }))!.rows[0]).toMatchObject({ verdict: "good", score: 7, email: "alice@example.com" });
   expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({ verdict: "good", score: 7 })]);
   await alice.mutation(api.users.deleteMyData, {});
   expect(await rows()).toHaveLength(0);

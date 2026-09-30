@@ -68,7 +68,7 @@ test("the dashboard counts usage, the funnel and feedback with what happened bef
   expect(d.daily.at(-1)).toMatchObject({ active: 1, watchChats: 1, signups: 1 });
   expect(d.wouldPay.find((w) => w.name === "Maybe")?.count).toBe(1);
 
-  const [f] = (await owner.query(api.admin.feedback, {}))!;
+  const [f] = (await owner.query(api.admin.feedback, {}))!.rows;
   expect(f).toMatchObject({ email: "a@example.com", message: "The banner is great", wouldPay: "Maybe", screenshotUrl: null });
   expect(f.before.map((e) => e.name)).toEqual(["page_view", "chat_sent"]);
 });
@@ -110,12 +110,12 @@ test("drilldown: accounts, their watches and chats, filters, and the funnel's 's
   await alice.mutation(api.events.track, { events: [{ name: "chat_sent", props: { mode: "search" }, device: "phone", at: Date.now() }] });
 
   const users = (await owner.query(api.admin.users, {}))!;
-  expect(users.map((u) => u.email).sort()).toEqual(["alice@example.com", "bob@example.com"]);
-  const a = users.find((u) => u.email === "alice@example.com")!;
+  expect(users.rows.map((u) => u.email).sort()).toEqual(["alice@example.com", "bob@example.com"]);
+  const a = users.rows.find((u) => u.email === "alice@example.com")!;
   expect(a).toMatchObject({ watchesActive: 1, chats: 1, alerts: 1, furthest: "alert", devices: ["phone"] });
-  expect((await owner.query(api.admin.users, { stage: "watch" }))!.map((u) => u.email)).toEqual(["alice@example.com"]);
-  expect((await owner.query(api.admin.users, { stuck: "chatted" }))!.map((u) => u.email)).toEqual([]);   // bob never finished setup
-  expect((await owner.query(api.admin.users, { search: "BOB" }))!.map((u) => u.email)).toEqual(["bob@example.com"]);
+  expect((await owner.query(api.admin.users, { stage: "watch" }))!.rows.map((u) => u.email)).toEqual(["alice@example.com"]);
+  expect((await owner.query(api.admin.users, { stuck: "chatted" }))!.rows.map((u) => u.email)).toEqual([]);   // bob never finished setup
+  expect((await owner.query(api.admin.users, { search: "BOB" }))!.rows.map((u) => u.email)).toEqual(["bob@example.com"]);
 
   const one = (await owner.query(api.admin.user, { userId: aliceId }))!;
   expect(one.watches[0]).toMatchObject({ query: "gazelle fiets", maxPriceEur: 400, schedule: "every 15 minutes",
@@ -123,14 +123,14 @@ test("drilldown: accounts, their watches and chats, filters, and the funnel's 's
   expect(one.chats[0]).toMatchObject({ title: "Mac mini 16GB under €500", messages: 2 });
   expect(one.alerts[0]).toMatchObject({ title: "Gazelle Orange", score: 9, watch: "Gazelle fiets, under €400" });
 
-  expect((await owner.query(api.admin.watches, { scheduleKey: "every 15 min" }))!).toHaveLength(1);
-  expect((await owner.query(api.admin.watches, { notify: "good" }))!).toHaveLength(0);
-  expect((await owner.query(api.admin.alerts, { minScore: 9 }))![0].email).toBe("alice@example.com");
-  expect((await owner.query(api.admin.alerts, { minScore: 10 }))!).toHaveLength(0);
+  expect((await owner.query(api.admin.watches, { scheduleKey: "every 15 min" }))!.rows).toHaveLength(1);
+  expect((await owner.query(api.admin.watches, { notify: "good" }))!.rows).toHaveLength(0);
+  expect((await owner.query(api.admin.alerts, { minScore: 9 }))!.rows[0].email).toBe("alice@example.com");
+  expect((await owner.query(api.admin.alerts, { minScore: 10 }))!.rows).toHaveLength(0);
   const convo = (await owner.query(api.admin.chat, { chatId }))!;
   expect(convo.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
   expect(convo.messages[1].listings[0].title).toBe("Mac mini");
-  expect((await owner.query(api.admin.events, { name: "chat_sent", mode: "search" }))!).toHaveLength(1);
+  expect((await owner.query(api.admin.events, { name: "chat_sent", mode: "search" }))!.rows).toHaveLength(1);
   const today = (await owner.query(api.admin.day, { day: "2026-09-29" }))!;
   expect(today.signups).toHaveLength(2);
   expect(today.alerts[0].title).toBe("Gazelle Orange");
@@ -157,8 +157,8 @@ test("owner actions: pausing from the dashboard works like pausing in the app; f
 
   const fb = await alice.mutation(api.feedback.submit, { message: "Love it" });
   await owner.mutation(api.admin.setFeedbackHandled, { id: fb, handled: true });
-  expect((await owner.query(api.admin.feedback, { handled: false }))!).toHaveLength(0);
-  expect((await owner.query(api.admin.feedback, { handled: true }))![0].handledAt).toBe(Date.now());
+  expect((await owner.query(api.admin.feedback, { handled: false }))!.rows).toHaveLength(0);
+  expect((await owner.query(api.admin.feedback, { handled: true }))!.rows[0].handledAt).toBe(Date.now());
 });
 
 test("owner lists filter operational records, catch-ups, and existing records by user and date", async () => {
@@ -191,14 +191,39 @@ test("owner lists filter operational records, catch-ups, and existing records by
     expect(await other.query(fn as any, {})).toBeNull();
   expect(await other.query(api.admin.search, { text: "bike" })).toBeNull();
   expect(await other.query(api.admin.operation, {})).toBeNull();
-  expect((await owner.query(api.admin.runs, { since: now }))?.map((r) => r.requestId)).toEqual(["run-new"]);
-  expect((await owner.query(api.admin.errors, { since: now, kind: "chat" }))?.map((r) => r.requestId)).toEqual(["error-new"]);
-  expect((await owner.query(api.admin.audits, { since: now, userId: aliceId }))?.map((r) => r.title)).toEqual(["Alice bike"]);
-  expect((await owner.query(api.admin.audits, { userId: bobId }))?.map((r) => r.title)).toEqual(["Bob car"]);
-  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: aliceId, since: now }))?.map((r) => r.title)).toEqual(["Alice bike"]);
-  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: bobId }))?.length).toBe(0);
-  expect((await owner.query(api.admin.users, { userId: aliceId, since: now }))?.map((r) => r.email)).toEqual(["alice@example.com"]);
-  expect((await owner.query(api.admin.watches, { userId: bobId, since: now }))?.map((r) => r.query)).toEqual(["car"]);
-  expect((await owner.query(api.admin.feedback, { userId: aliceId, since: now, search: "bike" }))?.map((r) => r.message)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.runs, { since: now }))?.rows.map((r) => r.requestId)).toEqual(["run-new"]);
+  expect((await owner.query(api.admin.errors, { since: now, kind: "chat" }))?.rows.map((r) => r.requestId)).toEqual(["error-new"]);
+  expect((await owner.query(api.admin.audits, { since: now, userId: aliceId }))?.rows.map((r) => r.title)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.audits, { userId: bobId }))?.rows.map((r) => r.title)).toEqual(["Bob car"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: aliceId, since: now }))?.rows.map((r) => r.title)).toEqual(["Alice bike"]);
+  expect((await owner.query(api.admin.alerts, { catchUp: true, userId: bobId }))?.rows.length).toBe(0);
+  expect((await owner.query(api.admin.users, { userId: aliceId, since: now }))?.rows.map((r) => r.email)).toEqual(["alice@example.com"]);
+  expect((await owner.query(api.admin.watches, { userId: bobId, since: now }))?.rows.map((r) => r.query)).toEqual(["car"]);
+  expect((await owner.query(api.admin.feedback, { userId: aliceId, since: now, search: "bike" }))?.rows.map((r) => r.message)).toEqual(["Alice bike"]);
   expect((await owner.query(api.admin.search, { text: "error-new" }))?.[0]).toMatchObject({ view: "error", title: "error-new" });
+});
+
+test("admin lists filter before the 200-row cap and report more", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const other = t.withIdentity({ subject: "x", email: "x@example.com" });
+  const now = Date.now();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("runs", { at: now - 1000, checked: 1, failed: 1, emails: 0, emailFailures: 0,
+      requestId: "older-match" });
+    for (let i = 0; i < 205; i++) await ctx.db.insert("runs", {
+      at: now + i, checked: 1, failed: 0, emails: 0, emailFailures: 0, requestId: `new-${i}`,
+    });
+  });
+  const page = (await owner.query(api.admin.runs, {}))!;
+  expect(page.rows).toHaveLength(200);
+  expect(page.more).toBe(true);
+  expect((await owner.query(api.admin.runs, { failed: true }))!).toMatchObject({
+    rows: [{ requestId: "older-match" }], more: false,
+  });
+  expect((await owner.query(api.admin.runs, { search: "older" }))!.rows.map((r) => r.requestId))
+    .toEqual(["older-match"]);
+  expect(await other.query(api.admin.runs, {})).toBeNull();
+  expect(await other.query(api.admin.userOptions, {})).toBeNull();
+  expect(await other.query(api.admin.watchOptions, {})).toBeNull();
 });

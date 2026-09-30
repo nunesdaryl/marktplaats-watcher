@@ -20,7 +20,7 @@ function downloadCsv(name, columns, rows) {
  * columns: [{ key, label, render?(row), sort?(row), csv?(row), mono?, align? }]
  */
 export default function Table({ name, columns, rows, onOpen, searchKeys = [], empty = "Nothing here yet.", initialSort, chips,
-  params, update }) {
+  params, update, more = false }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState(initialSort ?? null);   // { key, dir: 1 | -1 }
   const search = params ? params.q ?? "" : q;
@@ -28,7 +28,7 @@ export default function Table({ name, columns, rows, onOpen, searchKeys = [], em
   const shown = useMemo(() => {
     const needle = search.trim().toLowerCase();
     let out = rows ?? [];
-    if (needle) out = out.filter((r) => searchKeys.some((k) => String(typeof k === "function" ? k(r) : r[k] ?? "").toLowerCase().includes(needle)));
+    if (needle && !params) out = out.filter((r) => searchKeys.some((k) => String(typeof k === "function" ? k(r) : r[k] ?? "").toLowerCase().includes(needle)));
     if (ordering) {
       const col = columns.find((c) => c.key === ordering.key);
       const val = (r) => (col?.sort ? col.sort(r) : r[ordering.key]) ?? "";
@@ -48,7 +48,8 @@ export default function Table({ name, columns, rows, onOpen, searchKeys = [], em
           </label>
         )}
         {chips}
-        <span className="dt-count">{shown.length}{shown.length !== rows.length ? ` of ${rows.length}` : ""}</span>
+        <span className="dt-count">{more ? `Showing ${shown.length} of ${shown.length}+ — narrow the filters`
+          : `Showing ${shown.length}`}</span>
         <button className="button small-button" onClick={() => downloadCsv(name, columns, shown)} disabled={!shown.length}
                 title="Download these rows as CSV">CSV</button>
       </div>
@@ -78,7 +79,7 @@ export default function Table({ name, columns, rows, onOpen, searchKeys = [], em
                     onClick={onOpen ? () => onOpen(r) : undefined}
                     onKeyDown={onOpen ? (e) => { if (e.key === "Enter") onOpen(r); } : undefined}>
                   {columns.map((c) => (
-                    <td key={c.key} className={`${c.mono ? "mono-cell" : ""} ${c.align === "right" ? "right" : ""}`}>
+                    <td key={c.key} className={`${c.mono ? "mono-cell" : ""} ${c.align === "right" ? "right" : ""} ${c.nowrap ? "nowrap-cell" : ""}`}>
                       {c.render ? c.render(r) : r[c.key] ?? "–"}
                     </td>
                   ))}
