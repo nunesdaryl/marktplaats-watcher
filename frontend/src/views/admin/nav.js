@@ -40,7 +40,7 @@ export function useDrill() {
     router.push(drillUrl(target, current.trail.slice(0, i)));
   }, [current, router]);
 
-  const close = useCallback(() => router.push("/admin/"), [router]);
+  const close = useCallback(() => window.history.pushState(null, "", "/admin/"), []);
   const update = useCallback((patch) => {
     if (!current) return;
     const params = { ...current.params, ...patch };

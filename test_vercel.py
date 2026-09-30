@@ -31,3 +31,19 @@ def test_security_headers_rule_is_unchanged():
             {"key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains"},
         ],
     }
+
+
+def test_cache_reset_header_is_limited_to_the_purge_file():
+    config = json.loads((Path(__file__).parent / "vercel.json").read_text())
+    reset_rules = [rule for rule in config["headers"] if any(
+        header["key"] == "Clear-Site-Data" for header in rule["headers"]
+    )]
+    assert reset_rules == [{
+        "source": "/cache-reset.txt",
+        "headers": [
+            {"key": "Clear-Site-Data", "value": '"cache"'},
+            {"key": "Cache-Control", "value": "no-store"},
+        ],
+    }]
+    for path in ("/", "/admin/", "/alerts/", "/other-cache-reset.txt"):
+        assert not re.fullmatch(reset_rules[0]["source"], path)

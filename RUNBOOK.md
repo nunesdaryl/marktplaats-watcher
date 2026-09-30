@@ -69,6 +69,7 @@ To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment 
    again and the uptime check fails its "hidden" step: promote a newer deployment as soon as possible.
 
 HTML is served no-store so a deploy never leaves a browser on stale HTML.
+After a caching incident, bump both the cache reset fetch's `?v=` and the `mw-cache-reset` flag value for a new one-time browser cache purge.
 
 ## 3. OpenAI: cap reached, key revoked, or model gone
 - **Symptoms:**
