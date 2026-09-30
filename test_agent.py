@@ -657,6 +657,40 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
     assert agent.ranker.first.steps__["raw"].bound.max_tokens == 2500
 
 
+def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-01.1"
+    assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
+    assert "0–4" in agent.RANK_PROMPT
+    assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
+
+
+def test_scorer_loads_and_counts_accessory_cases(monkeypatch):
+    from evals import run_scorer
+    from evals.common import LABELS, LISTINGS, read
+
+    expected = {
+        "mw22-display-frames": False,
+        "mw22-maker-kit": False,
+        "mw22-epaper-display": False,
+        "mw22-pi-4": True,
+    }
+    data, labels = read(LISTINGS), read(LABELS)["labels"]
+    assert {listing["id"]: labels[listing["id"]]["match"] for listing in data["listings"]
+            if listing["id"] in expected} == expected
+    assert any(w["id"] == "raspberry-pi" and w["description"] == "Raspberry Pi, under €150"
+               for w in data["watches"])
+
+    results = {}
+    monkeypatch.setattr(run_scorer, "model_under_test", lambda: "gpt-5.5")
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda _description, listings:
+                        [dict(item, score=8 if expected.get(item["id"], False) else 2, reason="test")
+                         for item in listings])
+    monkeypatch.setattr(run_scorer, "write", lambda _path, data: results.update(data))
+    run_scorer.main()
+    assert {row["id"] for row in results["scored"] if row["id"] in expected} == set(expected)
+    assert results["listings"] == len(data["listings"])
+
+
 def test_chat_deadline_stops_before_a_second_model_call(monkeypatch):
     clock = [0]
     llm = FakeStreamingModel()

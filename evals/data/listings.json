@@ -30,6 +30,12 @@
       "query": "iphone 13",
       "description": "iPhone 13 phone, under €350",
       "max_price_eur": 350
+    },
+    {
+      "id": "raspberry-pi",
+      "query": "raspberry pi",
+      "description": "Raspberry Pi, under €150",
+      "max_price_eur": 150
     }
   ],
   "listings": [
@@ -571,6 +577,50 @@
       "date": "Vandaag",
       "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/a1531265418-iphone-vanaf-109-apple-24-maanden-garantie",
       "image": "https://admarkt-cdn.marktplaats.com/api/v1/icas-mp-pro-admarkt/images/82/826d4de6-0848-42b5-91a6-db5142fc77a0?rule=eps_82.JPG"
+    },
+    {
+      "watch": "raspberry-pi",
+      "id": "mw22-display-frames",
+      "title": "Raspberry Pi Display - 2x Pimoroni Acryl Display Frames",
+      "price_eur": 25,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://example.invalid/mw22/mw22-display-frames",
+      "image": null
+    },
+    {
+      "watch": "raspberry-pi",
+      "id": "mw22-maker-kit",
+      "title": "Raspberry Pi - Maker & IoT Hardware Lot",
+      "price_eur": 65,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://example.invalid/mw22/mw22-maker-kit",
+      "image": null
+    },
+    {
+      "watch": "raspberry-pi",
+      "id": "mw22-epaper-display",
+      "title": "Pi Supply PaPiRus ePaper Display",
+      "price_eur": 40,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://example.invalid/mw22/mw22-epaper-display",
+      "image": null
+    },
+    {
+      "watch": "raspberry-pi",
+      "id": "mw22-pi-4",
+      "title": "Raspberry Pi 4 Model B 4GB RAM - Nieuw in doos",
+      "price_eur": 90,
+      "city": null,
+      "distance_km": null,
+      "date": "Vandaag",
+      "url": "https://example.invalid/mw22/mw22-pi-4",
+      "image": null
     }
   ]
 }
