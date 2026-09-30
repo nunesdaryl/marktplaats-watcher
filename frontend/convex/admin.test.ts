@@ -1,6 +1,6 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -89,7 +89,7 @@ test("drilldown: accounts, their watches and chats, filters, and the funnel's 's
   const watchId = await alice.mutation(api.watches.create,
     { query: "gazelle fiets", maxPriceEur: 400, schedule: { kind: "interval", everyMinutes: 15 }, notify: "great" });
   const chatId = await alice.mutation(api.chats.start, { content: "Mac mini 16GB under €500" });
-  await alice.mutation(api.chats.append, { chatId, role: "assistant", content: "Here is one.",
+  await t.mutation(internal.chats.appendAssistant, { clerkId: "a", chatId, content: "Here is one.",
     listings: [{ id: "m1", title: "Mac mini", price_eur: 230, city: "Utrecht", distance_km: null, url: "https://www.marktplaats.nl/v/x" }] });
   await t.run(async (ctx) => {
     await ctx.db.insert("alerts", { userId: aliceId, watchId, listingId: "l1", title: "Gazelle Orange", priceEur: 350,
