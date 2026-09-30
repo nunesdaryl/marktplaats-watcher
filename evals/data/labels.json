@@ -294,6 +294,30 @@
       "match": false,
       "category": "unclear",
       "reason": "Generic 'iPhone from €109' listing does not specify that an iPhone 13 is available within budget."
+    },
+    "mw22-display-frames": {
+      "id": "mw22-display-frames",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "Only display frames for the watched item."
+    },
+    "mw22-maker-kit": {
+      "id": "mw22-maker-kit",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "Maker and IoT hardware kit, not a Raspberry Pi computer."
+    },
+    "mw22-epaper-display": {
+      "id": "mw22-epaper-display",
+      "match": false,
+      "category": "accessory_or_part",
+      "reason": "ePaper display add-on, not a Raspberry Pi computer."
+    },
+    "mw22-pi-4": {
+      "id": "mw22-pi-4",
+      "match": true,
+      "category": "match",
+      "reason": "Raspberry Pi computer itself and under €150."
     }
   },
   "missing": [],
