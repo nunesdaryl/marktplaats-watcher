@@ -26,7 +26,7 @@ export default function ListingCard({ listing, score, reason, meta }) {
       <div className="body">
         <span className="title">{listing.title}</span>
         <span className="line">
-          <strong>{price ? `€${price}` : "No price listed"}</strong>
+          <strong className={price ? "price-number" : undefined}>{price ? `€${price}` : "No price listed"}</strong>
           {(city || distance) && <span> · {city}{city && distance ? ", " : ""}{distance && <span className="distance">{distance}</span>}</span>}
         </span>
         {reason && <span className="reason">{reason}</span>}
