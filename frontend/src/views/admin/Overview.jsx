@@ -247,7 +247,7 @@ function ScoreAccuracy({ days, go }) {
 }
 
 /** The overview. `open(view)` starts a drilldown. */
-export default function Overview({ open, onSearch }) {
+export default function Overview({ open, onSearch, ask }) {
   const [days, setDays] = useState(30);
   const data = useQuery(api.admin.dashboard, { days });
   const feedback = useQuery(api.admin.feedback, { limit: 5 });
@@ -271,6 +271,7 @@ export default function Overview({ open, onSearch }) {
           ))}
         </div>
       </div>
+      {ask}
       <p className="hint admin-tip">Click any number, bar or row to see the exact records behind it.</p>
 
       <div className={`health ${h.issues.length ? "bad" : "ok"}`}>

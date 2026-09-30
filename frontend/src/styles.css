@@ -726,6 +726,9 @@ textarea.field { resize: vertical; min-height: 110px; line-height: 1.45; }
 /* ---------- Owner dashboard (/admin) ---------- */
 .admin { width: min(1120px, 100%); gap:var(--space-4); }
 .admin-head { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap:var(--space-3); }
+.admin-ask form { display:flex; gap:var(--space-2); }
+.admin-ask input { flex:1; min-width:0; padding:var(--space-2) var(--space-3); border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--elevated); color:var(--text); font:inherit; }
+.admin-ask .hint { margin-top:var(--space-2); }
 .segmented { display: inline-flex; padding:2px; /* off-scale: layout */ border-radius:var(--radius); background: var(--fill); }
 .segmented button {
   border: 0; background: none; padding:5px 12px; /* off-scale: layout */ border-radius:var(--radius); font-size:var(--text-sm); font-weight: 500; color: var(--text-2);

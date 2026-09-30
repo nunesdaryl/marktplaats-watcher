@@ -4,10 +4,12 @@ import os
 import re
 import uuid
 import time
+from datetime import datetime
 from contextvars import ContextVar
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 import jwt
 from dotenv import load_dotenv
@@ -18,7 +20,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import audit_watch, chat, chat_events, check_query  # noqa: E402
+from agent import admin_intent, audit_watch, chat, chat_events, check_query  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
@@ -63,6 +65,12 @@ class ChatRequest(BaseModel):
     history: list[Turn] = Field(default=[], max_length=20)
     watches: list[WatchRef] = Field(default=[], max_length=10)
     mode: Literal["search", "watch"] = "search"   # the composer's "Search now | Watch it" switch
+
+
+class AdminAskRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=300)
+    users: list[str] = Field(default=[], max_length=2000)
+    watches: list[str] = Field(default=[], max_length=2000)
 
 
 # Login: the browser sends its Clerk session token; we check its signature against Clerk's public keys.
@@ -167,6 +175,17 @@ def save_assistant(request, user, event, ident=None):
     except Exception as e:
         log("assistant_save_failed", requestId=ident or request_id.get(), error=type(e).__name__)
         return False
+
+
+@app.post("/api/admin/ask")
+def admin_ask_route(request: AdminAskRequest, user: str = Depends(current_user)):
+    owner_id = os.getenv("OWNER_CLERK_ID")
+    owner_email = os.getenv("OWNER_EMAIL")
+    if not owner_id or user != owner_id:
+        raise HTTPException(404)
+    context = {"today": datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat(),
+               "users": request.users, "watches": request.watches, "ownerEmail": owner_email}
+    return admin_intent(request.question, context)
 
 
 @app.post("/api/chat")
