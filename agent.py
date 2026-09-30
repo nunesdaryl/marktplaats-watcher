@@ -1,4 +1,5 @@
 import json
+import html
 import math
 import os
 import re
@@ -665,7 +666,7 @@ def check_query(query, watches, now=None):
 
 
 def audit_watch(w, now=None):
-    """Compare the last day's eligible listings with what this watch handled and alerted."""
+    """Compare eligible listings with what this watch handled and alerted."""
     result = {"watchId": w.get("id", ""), "ok": True, "read": 0, "candidates": 0,
               "scored": 0, "unscored": 0, "misses": [], "missCount": 0}
     try:
@@ -676,9 +677,10 @@ def audit_watch(w, now=None):
             home = postcode_location(w["postcode"].replace(" ", "").upper())
             if home is None:
                 raise ValueError("The watch's postcode could not be found.")
-        raw, _ = read_since(w["query"], search_filters(w), 1, today)
+        since_days = w.get("since_days", 1)
+        raw, _ = read_since(w["query"], search_filters(w), since_days, today)
         eligible = [item for item in raw if item.get("priorityProduct", "NONE") == "NONE"
-                    and (age := days_old(item.get("date"), today)) is not None and 0 <= age <= 1]
+                    and (age := days_old(item.get("date"), today)) is not None and 0 <= age <= since_days]
         listings, _ = parse_listings(eligible, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None,
                                      w.get("must_include"), limit=None)
@@ -686,12 +688,18 @@ def audit_watch(w, now=None):
         seen, alerted = set(w.get("seen_ids") or []), set(w.get("alerted_ids") or [])
         seen_scores = w.get("seen_scores") or {}
         baseline = set(w.get("baseline_ids") or [])
+        created_mark = w.get("created_mark")
+        def in_baseline(item):
+            if created_mark is not None:
+                number = listing_number(item["id"])
+                return number is None or number <= created_mark
+            return item["id"] in baseline
         last = w.get("last_read_at")
         last_day = datetime.fromtimestamp(last / 1000, AMSTERDAM).date() if last else None
         handled = [item for item in listings if item["id"] and item["id"] in seen
-                   and item["id"] not in alerted and item["id"] not in baseline]
+                   and item["id"] not in alerted and not in_baseline(item)]
         never_read = [item for item in listings if item["id"] and item["id"] not in seen
-                      and item["id"] not in baseline and last_day
+                      and not in_baseline(item) and last_day
                       and days_old(item.get("date"), today) > (today - last_day).days]
         candidates = [(item, "handled") for item in handled] + [(item, "never_read") for item in never_read]
         result["candidates"] = len(candidates)
@@ -708,7 +716,8 @@ def audit_watch(w, now=None):
             for item, (_, kind) in zip(ranked, chosen):
                 if item.get("score") is None or item["score"] < threshold:
                     continue
-                miss = {"id": item["id"], "title": item["title"], "url": item["url"], "score": item["score"]}
+                miss = {"id": item["id"], "title": item["title"], "url": item["url"], "score": item["score"],
+                        **({"price_eur": item.get("price_eur")} if w.get("check_alive") else {})}
                 if kind == "handled" and item["id"] in seen_scores:
                     check_score = seen_scores[item["id"]]
                     miss["kind"] = "rescored" if check_score < threshold else "handled"
@@ -716,8 +725,27 @@ def audit_watch(w, now=None):
                 else:
                     miss["kind"] = "never_scored" if kind == "handled" else kind
                 misses.append(miss)
+            misses.sort(key=lambda item: item["score"], reverse=True)
+            if w.get("check_alive"):
+                alive = []
+                for miss in misses:
+                    try:
+                        page = httpx.get(miss["url"], timeout=10.0, follow_redirects=True,
+                                         headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
+                        if page.status_code != 200:
+                            continue
+                        final_url, original_url = urlsplit(str(page.url)), urlsplit(miss["url"])
+                        same_listing = (final_url.hostname == original_url.hostname
+                                        and (final_url.path.rstrip("/") == original_url.path.rstrip("/")
+                                             or miss["id"] in final_url.path))
+                        body = html.unescape(page.text)
+                        if same_listing and not re.search(r'"isReserved"\s*:\s*true', body):
+                            alive.append(miss)
+                    except (httpx.HTTPError, ValueError):
+                        pass
+                misses = alive
             result["missCount"] = len(misses)
-            result["misses"] = sorted(misses, key=lambda item: item["score"], reverse=True)[:5]
+            result["misses"] = misses[:10 if w.get("check_alive") else 5]
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"

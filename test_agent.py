@@ -1243,6 +1243,39 @@ def test_audit_watch_excludes_baseline_and_keeps_highest_scoring_misses(monkeypa
     assert [m["kind"] for m in result["misses"]] == ["never_scored", "never_scored"]
 
 
+def test_audit_watch_excludes_original_creation_mark_including_non_m_ids(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    ids = ["m99", "m100", "m101", "a101"]
+    monkeypatch.setattr(agent, "read_since", lambda *args: ([
+        {"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Gisteren"}
+        for ident in ids], False))
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
+                        [dict(item, score=9) for item in listings])
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ids, "created_mark": 100}, now)
+    assert result["candidates"] == result["missCount"] == 1
+    assert [m["id"] for m in result["misses"]] == ["m101"]
+
+
+def test_audit_watch_uses_requested_window(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 10, 2, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    calls = []
+    monkeypatch.setattr(agent, "read_since", lambda *args: calls.append(args[2]) or ([
+        {"itemId": "m101", "title": "m101", "vipUrl": "/v/m101", "date": "29 sep 26"}], False))
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
+                        [dict(item, score=9) for item in listings])
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ["m101"], "since_days": 3}, now)
+    assert calls == [3]
+    assert [m["id"] for m in result["misses"]] == ["m101"]
+
+
 def test_audit_watch_uses_real_read_since_result(monkeypatch):
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -1257,6 +1290,37 @@ def test_audit_watch_uses_real_read_since_result(monkeypatch):
     assert result["ok"] is True
     assert (result["read"], result["scored"], result["missCount"]) == (1, 1, 1)
     assert result["misses"][0]["kind"] == "never_scored"
+
+
+def test_audit_watch_check_alive_keeps_only_current_listings(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    ids = ["live", "gone", "reserved", "error", "redirect", "description"]
+    raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Gisteren",
+            "priceInfo": {"priceCents": 2500}} for ident in ids]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
+                        [dict(item, score=9) for item in listings])
+
+    def fetch(url, **kwargs):
+        ident = url.rsplit("/", 1)[-1]
+        assert kwargs["timeout"] == 10.0
+        if ident == "error":
+            raise agent.httpx.ConnectError("offline")
+        status = 404 if ident == "gone" else 200
+        target = "https://www.marktplaats.nl/" if ident == "redirect" else url
+        body = {"reserved": '<script>{"isReserved":true}</script>',
+                "description": "<p>apart verkocht, listing still available</p>"}.get(ident, ident)
+        return agent.httpx.Response(status, text=body, request=agent.httpx.Request("GET", target))
+
+    monkeypatch.setattr(agent.httpx, "get", fetch)
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good",
+                                "seen_ids": ids, "check_alive": True}, now)
+    assert result["ok"] is True
+    assert result["missCount"] == 2
+    assert [m["id"] for m in result["misses"]] == ["live", "description"]
 
 
 def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
@@ -1283,8 +1347,13 @@ def test_audit_route_accepts_full_seen_history(client, monkeypatch):
     ids = [f"old{i}" for i in range(3000)]
     response = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
                            json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good",
-                                              "seen_ids": ids, "seen_scores": {"old0": 0},
-                                              "baseline_ids": ids}]})
+                                              "seen_ids": ids, "seen_scores": {"old0": 0}, "baseline_ids": ids,
+                                              "check_alive": True, "created_mark": 123, "since_days": 7}]})
     assert response.status_code == 200
     assert received[0]["seen_ids"] == ids and received[0]["baseline_ids"] == ids
     assert received[0]["seen_scores"] == {"old0": 0}
+    assert received[0]["check_alive"] is True
+    assert received[0]["created_mark"] == 123 and received[0]["since_days"] == 7
+    invalid = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
+                          json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good", "since_days": 8}]})
+    assert invalid.status_code == 422

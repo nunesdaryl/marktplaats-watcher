@@ -216,21 +216,21 @@ const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 type EmailContent = {
-  watchId?: string; label: string; summary: string; notify: string;
+  watchId?: string; label: string; summary: string; notify: string; catchUp?: boolean;
   alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string;
             _id?: string; rateToken?: string | null }[];
 };
 
 /** The alert e-mail, as plain text and HTML. Listing titles are escaped: they come from strangers. */
 export function renderEmail(c: EmailContent, appUrl: string) {
-  const top = c.alerts.slice(0, MAX_ALERTS_PER_EMAIL);
+  const top = c.alerts.slice(0, c.catchUp ? 10 : MAX_ALERTS_PER_EMAIL);
   const more = c.alerts.length - top.length;
   const n = c.alerts.length;
   const best = top[0];  // alerts arrive sorted by score, best first
   const bestText = best && [best.score !== undefined ? `best ${best.score}/10` : "", best.priceEur ? `at €${best.priceEur}` : ""]
     .filter(Boolean).join(" ");
   // The watch name first: with several watches, that's what the eye looks for in an inbox
-  const subject = `${c.label}: ${n} new match${n === 1 ? "" : "es"}${bestText ? `, ${bestText}` : ""}`;
+  const subject = c.catchUp ? `Matches we missed for ${c.label}` : `${c.label}: ${n} new match${n === 1 ? "" : "es"}${bestText ? `, ${bestText}` : ""}`;
   const preheader = best ? `Best: ${best.title}. ${best.reason}` : "";
   const facts = (a: (typeof top)[number]) =>
     [a.score !== undefined ? `Scored ${a.score}/10` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
@@ -239,13 +239,14 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
     "We read each new listing and only e-mail the ones that fit what you asked for. " +
     "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
-  const heading = `Worth a look on Marktplaats: "${c.label}"`;
+  const heading = c.catchUp ? "Matches we missed, sorry" : `Worth a look on Marktplaats: "${c.label}"`;
+  const apology = "A bug on 29–30 September kept these from you. It's fixed now; these are still online.";
   // "Good match?" links (ratings.ts): they open a page in the app that records the answer, so mail scanners that
   // follow links without running the page can't rate anything
   const rateUrl = (a: (typeof top)[number], verdict: "good" | "not_right") => a._id && a.rateToken
     ? `${appUrl.replace(/\/$/, "")}/rate/?a=${encodeURIComponent(a._id)}&v=${verdict}&t=${encodeURIComponent(a.rateToken)}` : null;
   const text = [
-    heading, "",
+    heading, ...(c.catchUp ? [apology] : []), "",
     ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
       ...(rateUrl(a, "good") ? [`Good match? Yes: ${rateUrl(a, "good")}  ·  Not right: ${rateUrl(a, "not_right")}`] : []), ""]),
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
@@ -306,6 +307,7 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 <tr><td class="mw-card" style="background:#ffffff;border:1px solid #e4e0da;border-radius:12px;padding:24px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 <tr><td style="padding:0 0 16px 0;"><h1 class="mw-text" style="margin:0;font-family:${sans};font-size:20px;line-height:26px;font-weight:600;color:#1b1a18;letter-spacing:-0.2px;">${escape(heading)}</h1></td></tr>
+${c.catchUp ? `<tr><td class="mw-text" style="padding:0 0 16px 0;font-family:${sans};font-size:15px;line-height:22px;color:#1b1a18;">${escape(apology)}</td></tr>` : ""}
 ${top.map(card).join("\n")}
 ${more > 0 ? `<tr><td class="mw-text2" style="font-family:${sans};font-size:15px;line-height:22px;color:#5b5751;">…and ${more} more in the app, under Alerts.</td></tr>` : ""}
 </table></td></tr>

@@ -224,6 +224,7 @@ export default defineSchema({
     reason: v.string(),
     channel: v.literal("email"),     // Telegram / Discord / WhatsApp come later
     emailStatus: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed"), v.literal("dry-run")),
+    catchUp: v.optional(v.boolean()),
     attempts: v.optional(v.number()),   // e-mail send attempts; missing = 1
     attemptAt: v.optional(v.number()),  // when the latest attempt started; missing = createdAt
     createdAt: v.number(),
