@@ -231,7 +231,8 @@ def test_gate_uses_median_corrected_precision_and_prints_runs(eval_files, capsys
     assert not gate.check(chat, scorer, listings, spotcheck)
 
 
-def test_report_shows_run_count_range_and_three_run_cost(eval_files):
+def test_report_shows_run_count_range_and_three_run_cost(monkeypatch, eval_files):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     scorer = common.read(eval_files["SCORER_RESULTS"])
     scored = scorer["scored"]
     scorer["runs"] = [
