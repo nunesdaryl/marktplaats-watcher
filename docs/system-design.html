@@ -1232,8 +1232,12 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   visit (one settle, no loop); each alert can be archived from its rating row; "Archive all" asks once more; archived
   alerts can be restored from the Archived page. Review sent it back once ("Archive all" showed the page's 50 while
   archiving all 1,000+, an armed confirm never reset, "1 alerts"). Its backend went to production first on Daryl's OK
-  (one new index, live site unchanged). Status at writing: in review; the glow is waiting for a real new alert (Daryl
-  chose not to rewind his last-visit time), then a recorded check of the motion and Daryl's merge OK, by Fri 12:00.</p>
+  (one new index, live site unchanged). Review passed on the preview with a real alert (18:34, Daryl chose not to
+  rewind his last-visit time): on the first load exactly that card glowed and the badge cleared; sampled on every frame
+  of the real load, the halo grew from 0 to 16 px in about 100 ms and then held one value (settles once, no loop);
+  reload showed nothing new; archive and restore worked; "Archive all" was checked on its first tap only, not run on real
+  data. Two gaps: macOS screen recording wasn't permitted, so the motion evidence is per-frame measurement rather than
+  a video, and phone width wasn't seen. Status at writing: review PASS, awaiting Daryl's merge OK (cut-off Fri 12:00).</p>
 </section>
 
 </body>

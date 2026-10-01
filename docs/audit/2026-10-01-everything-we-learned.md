@@ -285,7 +285,7 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 
 Also filed 1 Oct, for **before** the freeze at Daryl's request: **MW-45**, a Refresh icon with "Updated HH:MM" on the dashboard and a Dashboard tab on phones (owner only). Merged 1 Oct (main `d4aa99d`) and checked on production: Refresh 0.57 s, no reload. The phone tab is still to be seen on a real phone.
 
-Also 1 Oct evening: **one authoritative design system** (`docs/design/DESIGN-SYSTEM.md`, 131 token values checked, contrast computed, 10 drifts audited; older design docs marked superseded) and **MW-46** (new-alert glow for that visit; archive one or all; restore from Archived). MW-46 is in review with its backend live; it merges only on Daryl's OK by Fri 12:00, otherwise after the demo.
+Also 1 Oct evening: **one authoritative design system** (`docs/design/DESIGN-SYSTEM.md`, 131 token values checked, contrast computed, 10 drifts audited; older design docs marked superseded) and **MW-46** (new-alert glow for that visit; archive one or all; restore from Archived). MW-46 passed review on the preview with a real new alert (glow measured per frame: settles once, no loop; archive and restore work); backend live; it merges only on Daryl's OK by Fri 12:00, otherwise after the demo.
 
 ### After the demo: from this audit
 - **Business side first** (the course's weakest theme here): 20 interviews, Sean Ellis question, a pricing hypothesis
