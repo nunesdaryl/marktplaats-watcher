@@ -1,3 +1,5 @@
+> **Superseded (1 Oct 2026):** the current rules are in [docs/design/DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md). Kept as history.
+
 Marktplaats Watcher is the calm, explained layer on top of Marktplaats: only the new listings worth a look, each with a score and the reason. This system (direction "Sieve") restyles the live app one-to-one. Every feature, layout and string stays; only the visual layer changes.
 
 The whole system in one line: **warm graphite surfaces, one teal accent, one lilac highlight, Geist for words and Geist Mono for numbers.**

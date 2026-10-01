@@ -1,3 +1,5 @@
+> **Superseded (1 Oct 2026):** the current rules are in [docs/design/DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Kept as history.
+
 # Design brief: Marktplaats Watcher
 
 **For:** Claude Design (design language, visual style and a prototype logo), and then GPT Images (the final logo).

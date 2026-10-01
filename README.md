@@ -62,6 +62,9 @@ CI runs the same on every push to every branch, plus `pip-audit`, `npm audit` an
 (`.github/workflows/ci.yml`). An uptime check runs every 30 minutes (`.github/workflows/uptime.yml`).
 
 ## Design and logo
+The design system (colours, type, spacing, motion, components, states, voice, with a 1 Oct audit) is in
+[`docs/design/DESIGN-SYSTEM.md`](docs/design/DESIGN-SYSTEM.md): the one source of truth for the app's look.
+
 Architecture decisions are indexed in [docs/adr/](docs/adr/README.md); current non-functional requirements are in [docs/nfr.md](docs/nfr.md).
 
 The look follows the **Sieve** design system (`docs/design/sieve/`, made with Claude Design): warm graphite, one teal

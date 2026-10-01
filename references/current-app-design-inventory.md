@@ -1,3 +1,5 @@
+> **Superseded (1 Oct 2026):** the current rules are in [docs/design/DESIGN-SYSTEM.md](../docs/design/DESIGN-SYSTEM.md). Kept as history.
+
 # Marktplaats Watcher: current design system (28 Sep 2026)
 
 Source of truth: `frontend/src/styles.css` (one file, no framework, no web fonts). The header comment states the intent:
