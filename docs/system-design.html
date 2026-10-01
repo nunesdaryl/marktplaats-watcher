@@ -1184,6 +1184,22 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <li><b>Local config is production-adjacent.</b> A value in a developer's <code>.env</code> is reachable by every test
     unless the tests forbid it.</li>
 </ul>
+<p><b>First morning on the new code (1 Oct), checked against production:</b></p>
+<ul>
+  <li><b>Delivery audit, 04:30 UTC:</b> all 8 active watches checked, none failed, 3 near-misses on 2 watches, all
+    <code>never_scored</code> (listings recorded before MW-21 stored scores). No miss on any watch checked after the fix:
+    the iPhone watch, which missed 1–3 per check the evening before, missed 0 out of 460 listings.</li>
+  <li><b>Digest, 05:00 UTC:</b> delivered to the owner's inbox. Its "34 missed matches" counted the 24-hour window, which
+    still held the 30 Sep manual audit run (31 pre-fix misses already covered by the catch-up); the dashboard's audit tile
+    showed the nightly run's 3. The two agree once the manual run ages out of the window.</li>
+  <li><b>Users' 08:00 daily checks:</b> Mac mini (vin…) 12 alerts, 6–9/10; Raspberry Pi (hik…) 1 alert, a real Pi 4 for
+    €85 at 9/10, with the 7 accessory listings that check read scored 1–3 (MW-22); iMac G4 (int…) nothing qualified.
+    All e-mailed, none below threshold, no failed checks. The overnight dry run had predicted 4 Pi alerts; the other 3 were
+    placed on 27–28 Sep, around when the watch was created, outside a real check's window, and all are now reserved. The
+    prediction was off, not the check.</li>
+  <li>The owner paused the iPhone watch (the one that couldn't keep up) before the demo; the demo uses the Nintendo
+    Switch watch.</li>
+</ul>
 </section>
 
 </body>

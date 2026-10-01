@@ -110,7 +110,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   watches too broad to keep up, MW-18 adds a nightly delivery audit to the owner digest, MW-20 fixed a regression
   (§20). Later that night MW-21 to MW-34 stored check scores, stopped accessory matches, sent users a catch-up
   of 33 missed matches, rebuilt the owner dashboard (filters on every list, ⌘K, an Ask box) and fixed a stale-HTML
-  white page after deploys (§21).
+  white page after deploys (§21). The first nightly audit, digest and users' daily checks on 1 Oct ran clean.
 - **FDE course audit (29 Sep 2026):** `docs/audit/2026-09-29-fde-course-audit.md`: every course rule, its status
   with evidence, and a dated roadmap.
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from
