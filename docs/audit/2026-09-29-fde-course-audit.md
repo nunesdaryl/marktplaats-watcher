@@ -31,7 +31,8 @@ failure categories, prompt versions, a weekly CI run that waits for its key). Se
 (a live chat counted and saved by the server; scheduled checks with 0 failures). An alert audit that evening found good
 listings being skipped; fixed and now audited nightly (MW-17 to MW-20, system design §20);
 missed matches were then sent to users as a catch-up, and the owner dashboard rebuilt (MW-21 to MW-34, §21).
-On 1 Oct the first nightly audit, digest and users' 08:00 checks ran correctly on the new code (§21). The scorecard below is the
+On 1 Oct the first nightly audit, digest and users' 08:00 checks ran correctly on the new code (§21).
+Re-scored on 1 Oct: 43 met, 25 partly, 31 open; see `2026-10-01-everything-we-learned.md`. The scorecard below is the
 29 September snapshot and was not re-scored.
 
 ### Scorecard
