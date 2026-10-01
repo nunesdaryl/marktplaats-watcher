@@ -2,8 +2,8 @@ import { go } from "../lib/router.js";
 import Icon from "./Icon.jsx";
 
 /** Phone navigation, Apple-style: a frosted tab bar at the bottom. */
-export default function TabBar({ route, newAlerts }) {
-  const tab = route.section === "w" || route.section === "watches" || route.section === "archived" ? "watches" : route.section === "alerts" ? "alerts" : "chat";
+export default function TabBar({ route, newAlerts, isOwner }) {
+  const tab = route.section === "w" || route.section === "watches" || route.section === "archived" ? "watches" : route.section === "alerts" ? "alerts" : route.section === "admin" && isOwner ? "admin" : "chat";
   const item = (key, label, icon, path, badge) => (
     <button className={tab === key ? "active" : ""} aria-current={tab === key ? "page" : undefined} onClick={() => go(path)}>
       <span className="icon"><Icon name={icon} size={24} />{badge ? <span className="badge" aria-label={`${badge} new`}>{badge}</span> : null}</span>
@@ -15,6 +15,7 @@ export default function TabBar({ route, newAlerts }) {
       {item("chat", "Chat", "chat", route.section === "c" ? `/c/${route.id}` : "/")}
       {item("watches", "Watches", "eye", "/watches")}
       {item("alerts", "Alerts", "bell", "/alerts", newAlerts)}
+      {isOwner && item("admin", "Dashboard", "chart", "/admin")}
     </nav>
   );
 }

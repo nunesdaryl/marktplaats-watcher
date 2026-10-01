@@ -35,6 +35,23 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("refresh arguments keep server time, result shape and owner checks", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const other = t.withIdentity({ subject: "x", email: "x@example.com" });
+  const baseline = (await owner.query(api.admin.dashboard, { days: 7 }))!;
+  const refreshed = (await owner.query(api.admin.dashboard, { days: 7, at: 0 }))!;
+  expect(refreshed).toEqual(baseline);
+  expect(refreshed.now).toBe(Date.now());
+  expect(await owner.query(api.admin.ratingStats, { days: 7, at: 0 }))
+    .toEqual(await owner.query(api.admin.ratingStats, { days: 7 }));
+  expect(await owner.query(api.admin.feedback, { limit: 5, at: 0 }))
+    .toEqual(await owner.query(api.admin.feedback, { limit: 5 }));
+  expect(await other.query(api.admin.dashboard, { at: 0 })).toBeNull();
+  expect(await other.query(api.admin.ratingStats, { at: 0 })).toBeNull();
+  expect(await other.query(api.admin.feedback, { at: 0 })).toBeNull();
+});
+
 test("the dashboard counts and labels active watches falling behind", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });

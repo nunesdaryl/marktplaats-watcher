@@ -164,6 +164,7 @@ page-view counts (including signed-out visitors) are in Vercel → project → A
 there once.
 
 ## 10. Using the dashboard to find a problem
+Use the refresh icon at the top right to recalculate the dashboard; the time under the icon shows when the figures were computed in Amsterdam time.
 Every number on `/admin` opens its records: click an account to see its watches (the exact search), chats (the full
 conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
 app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.

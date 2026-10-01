@@ -1,7 +1,7 @@
 // The dashboard overview. Every number, bar, funnel step and breakdown row is a door: it opens the exact records
 // behind it in the drilldown panel (Views.jsx).
 import { useAction, useQuery } from "convex/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../../components/Icon.jsx";
 import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
@@ -199,8 +199,7 @@ function Visitors({ days }) {
 }
 
 /** Are the scores right? What users said when they rated their alerts (convex/ratings.ts). */
-function ScoreAccuracy({ days, go }) {
-  const s = useQuery(api.admin.ratingStats, { days });
+function ScoreAccuracy({ s, go }) {
   if (!s) return null;
   const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "–");
   return (
@@ -249,8 +248,20 @@ function ScoreAccuracy({ days, go }) {
 /** The overview. `open(view)` starts a drilldown. */
 export default function Overview({ open, onSearch, ask }) {
   const [days, setDays] = useState(30);
-  const data = useQuery(api.admin.dashboard, { days });
-  const feedbackPage = useQuery(api.admin.feedback, { limit: 5 });
+  const [at, setAt] = useState();
+  const dashboardResult = useQuery(api.admin.dashboard, { days, at });
+  const ratingResult = useQuery(api.admin.ratingStats, { days, at });
+  const feedbackResult = useQuery(api.admin.feedback, { limit: 5, at });
+  const previous = useRef(null);
+  const refreshing = at !== undefined && (dashboardResult === undefined || ratingResult === undefined || feedbackResult === undefined);
+  if (!refreshing) {
+    previous.current = {
+      data: dashboardResult === undefined ? previous.current?.data : dashboardResult,
+      ratings: ratingResult === undefined ? previous.current?.ratings : ratingResult,
+      feedbackPage: feedbackResult === undefined ? previous.current?.feedbackPage : feedbackResult,
+    };
+  }
+  const { data, ratings, feedbackPage } = previous.current ?? {};
   const feedback = feedbackPage?.rows;
   if (!data) return <section className="page"><p className="hint" role="status">Loading the dashboard…</p></section>;
 
@@ -258,6 +269,8 @@ export default function Overview({ open, onSearch, ask }) {
   const h = data.health;
   const now = data.now;
   const since = now - days * DAY;
+  const updatedTime = new Date(now).toLocaleTimeString("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" });
+  const refreshLabel = refreshing ? "Refreshing…" : `Refresh (updated ${updatedTime})`;
   const go = (view, title, params = {}) => open({ view, title, params }, { fresh: true });
   const openDay = (day) => go("day", dayLabel(day), { day });
   const eventsOf = (title, params) => go("events", title, { since, ...params });
@@ -270,6 +283,12 @@ export default function Overview({ open, onSearch, ask }) {
           {[7, 30, 90].map((d) => (
             <button key={d} className={days === d ? "active" : ""} aria-pressed={days === d} onClick={() => setDays(d)}>{d} days</button>
           ))}
+        </div>
+        <div className="admin-refresh">
+          <button className="icon-button" disabled={refreshing} aria-busy={refreshing ? "true" : undefined}
+                  aria-label={refreshLabel} title={refreshLabel}
+                  onClick={() => setAt(Date.now())}><Icon name="refresh" size={18} /></button>
+          <span className="hint" aria-live="polite">{refreshing ? "Refreshing…" : `Updated ${updatedTime}`}</span>
         </div>
       </div>
       {ask}
@@ -358,7 +377,7 @@ export default function Overview({ open, onSearch, ask }) {
                    onRow={(r) => go("feedback", `Would pay: ${r.name}`, { wouldPay: r.key })} />
       </div>
 
-      <ScoreAccuracy days={days} go={go} />
+      <ScoreAccuracy s={ratings} go={go} />
 
       <Visitors days={days} />
 

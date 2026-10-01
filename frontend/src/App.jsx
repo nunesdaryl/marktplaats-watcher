@@ -214,7 +214,7 @@ function Workspace() {
         <BetaBanner onFeedback={openFeedback} busy={capturing} />
         {userError && <p className="banner" role="alert">{userError}</p>}{content}
       </main>
-      <TabBar route={route} newAlerts={newAlerts} />
+      <TabBar route={route} newAlerts={newAlerts} isOwner={isOwner} />
       {sheets}
     </div>
   );
