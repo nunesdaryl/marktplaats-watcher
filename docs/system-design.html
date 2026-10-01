@@ -1237,7 +1237,10 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   of the real load, the halo grew from 0 to 16 px in about 100 ms and then held one value (settles once, no loop);
   reload showed nothing new; archive and restore worked; "Archive all" was checked on its first tap only, not run on real
   data. Two gaps: macOS screen recording wasn't permitted, so the motion evidence is per-frame measurement rather than
-  a video, and phone width wasn't seen. Status at writing: review PASS, awaiting Daryl's merge OK (cut-off Fri 12:00).</p>
+  a video, and phone width wasn't seen. Merged on Daryl's OK (main <code>a63284d</code>, 1 Oct evening), the 35th factory
+  issue merged this week, checks green (pytest 131, vitest 166). On production the glow animation is in the live
+  stylesheet and the pages load; the signed-in view was checked on the preview with the same code, not on the live
+  address (the station doesn't sign in for Daryl).</p>
 </section>
 
 </body>
