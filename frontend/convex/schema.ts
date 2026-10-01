@@ -243,10 +243,12 @@ export default defineSchema({
     attempts: v.optional(v.number()),   // e-mail send attempts; missing = 1
     attemptAt: v.optional(v.number()),  // when the latest attempt started; missing = createdAt
     createdAt: v.number(),
+    archivedAt: v.optional(v.number()),
   })
     .index("by_emailStatus", ["emailStatus", "createdAt"])
     .index("by_watch", ["watchId"])
     .index("by_user", ["userId"])
+    .index("by_user_archivedAt", ["userId", "archivedAt"])
     .index("by_watch_createdAt", ["watchId", "createdAt"])
     .index("by_user_createdAt", ["userId", "createdAt"])
     .index("by_catchUp_createdAt", ["catchUp", "createdAt"])

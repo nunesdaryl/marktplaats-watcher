@@ -101,6 +101,11 @@ test("the Alerts feed shows your alerts across watches with the watch name", asy
   const feed = await alice.query(api.watches.alerts, {});
   expect(feed.map((a) => [a.watchLabel, a.score, a.image])).toEqual([["Mac mini", 9, "https://admarkt-cdn.marktplaats.com/x.jpg"]]);
   expect(await bob.query(api.watches.alerts, {})).toEqual([]);
+  await alice.mutation(api.alerts.setArchived, { id: feed[0]._id, archived: true });
+  expect(await alice.query(api.watches.alerts, {})).toEqual([]);
+  expect((await alice.query(api.alerts.archived, {}))[0].watchLabel).toBe("Mac mini");
+  await alice.mutation(api.alerts.setArchived, { id: feed[0]._id, archived: false });
+  expect((await alice.query(api.watches.alerts, {}))[0]._id).toBe(feed[0]._id);
 });
 
 test("onboarding is shown until finished", async () => {

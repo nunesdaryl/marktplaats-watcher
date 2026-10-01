@@ -982,7 +982,20 @@ button.door-row:hover { background: var(--fill); }
 /* ---------- Rating an alert ("Good match?") ---------- */
 .alert-item { display: flex; flex-direction: column; gap:var(--space-2); min-width: 0; }
 .alert-item .listing { flex: 1; }
+.alert-item.is-new .listing, .alert-item.is-new .listing:hover {
+  box-shadow: var(--shadow), 0 0 0 1px var(--accent), 0 0 16px 4px var(--accent-soft);
+  animation: alert-new-in var(--dur) var(--ease) both;
+}
+@keyframes alert-new-in { from { box-shadow: var(--shadow), 0 0 0 1px var(--accent), 0 0 0 0 var(--accent-soft); } }
+.alert-new-pill {
+  align-self:flex-end; padding:var(--space-1) var(--space-2);
+  border-radius:var(--radius-pill); background:var(--accent-soft); color:var(--accent);
+  font-size:var(--text-xs); line-height:var(--text-xs-lh); font-weight:600;
+}
+.alerts-head-row { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); }
+.alerts-head-row .link-button { font-size:var(--text-sm); white-space:nowrap; }
 .rate { display: flex; flex-wrap: wrap; align-items: center; gap:6px 8px; /* off-scale: layout */ font-size:var(--text-sm); color: var(--text-2); }
+.rate-archive { margin-left:auto; }
 .rate .button.small-button { min-height: 36px; }
 .rate-yes:hover:not(:disabled) { background: color-mix(in srgb, var(--great) 14%, transparent); color: var(--great); }
 .rate-no:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }

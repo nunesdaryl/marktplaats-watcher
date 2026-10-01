@@ -153,7 +153,7 @@ function Workspace() {
 
   let content;
   if (route.section === "w") content = <WatchView watch={watch} actions={actions} onEdit={(w) => setSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id })} />;
-  else if (route.section === "alerts") content = <AlertsView />;
+  else if (route.section === "alerts") content = <AlertsView actions={actions} />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
   else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
   else if (route.section === "watches") content = <WatchesView watches={watchesOrLoading} actions={actions} onNew={() => newWatch()} />;

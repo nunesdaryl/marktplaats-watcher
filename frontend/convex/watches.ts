@@ -248,7 +248,7 @@ export const newAlertCount = query({
     const user = await currentUser(ctx);
     if (!user) return 0;
     const since = user.alertsSeenAt ?? user.createdAt;
-    const latest = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", user._id)).order("desc").take(NEW_ALERTS_CAP);
+    const latest = await ctx.db.query("alerts").withIndex("by_user_archivedAt", (q) => q.eq("userId", user._id).eq("archivedAt", undefined)).order("desc").take(NEW_ALERTS_CAP);
     return latest.filter((a) => a.createdAt > since).length;
   },
 });
@@ -259,7 +259,7 @@ export const alerts = query({
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     if (!user) return [];
-    const rows = await ctx.db.query("alerts").withIndex("by_user", (q) => q.eq("userId", user._id)).order("desc").take(50);
+    const rows = await ctx.db.query("alerts").withIndex("by_user_archivedAt", (q) => q.eq("userId", user._id).eq("archivedAt", undefined)).order("desc").take(50);
     const labels = new Map<string, string>();
     return Promise.all(rows.map(async (a) => {
       if (!labels.has(a.watchId)) {

@@ -9,7 +9,7 @@ function ScoreBadge({ score }) {
 }
 
 /** One listing as a card: photo, title, price, place, and (for alerts) the score and its reason. */
-export default function ListingCard({ listing, score, reason, meta }) {
+export default function ListingCard({ listing, score, reason, meta, isNew = false }) {
   const [broken, setBroken] = useState(false);
   const price = listing.price_eur ?? listing.priceEur;
   const city = listing.city;
@@ -24,6 +24,7 @@ export default function ListingCard({ listing, score, reason, meta }) {
         <ScoreBadge score={score} />
       </div>
       <div className="body">
+        {isNew && <span className="alert-new-pill" aria-hidden="true">New</span>}
         <span className="title">{listing.title}</span>
         <span className="line">
           <strong className={price ? "price-number" : undefined}>{price ? `€${price}` : "No price listed"}</strong>
@@ -33,6 +34,7 @@ export default function ListingCard({ listing, score, reason, meta }) {
         {score === 0 && <span className="meta">Skipped</span>}
         {meta && <span className="meta">{meta}</span>}
       </div>
+      {isNew && <span className="visually-hidden">, new</span>}
     </a>
   );
 }
