@@ -47,29 +47,31 @@ beforeEach(() => {
   vi.mocked(useQuery).mockImplementation(() => responses[(queryCount++) % 3]);
 });
 
-test("Refresh reruns all three queries and keeps old figures until all return", () => {
+test("the refresh icon reruns all three queries and keeps old figures until all return", () => {
   const first = render();
-  expect(first.html).toContain("Updated 10:15");
+  expect(first.html).toContain('class="icon-button"');
+  expect(first.html).toContain('aria-label="Refresh (updated 10:15)" title="Refresh (updated 10:15)"');
   expect(first.html).toContain('class="stat-value">3</span>');
   const refresh = first.tree.props.children[0].props.children[3];
+  expect(refresh.props.children.props).toMatchObject({ name: "refresh", size: 18 });
   vi.spyOn(Date, "now").mockReturnValue(newNow);
-  refresh.props.children[0].props.onClick();
+  refresh.props.onClick();
   expect(states[1]).toBe(newNow);
 
   responses = [undefined, undefined, undefined];
   const waiting = render();
-  expect(waiting.html).toContain("Refreshing…");
-  expect(waiting.html).toContain("Updated 10:15");
+  expect(waiting.html).toContain('aria-label="Refreshing…" title="Refreshing…"');
+  expect(waiting.html).toContain('aria-busy="true"');
   expect(waiting.html).toContain('class="stat-value">3</span>');
-  expect(waiting.tree.props.children[0].props.children[3].props.children[0].props.disabled).toBe(true);
+  expect(waiting.tree.props.children[0].props.children[3].props.disabled).toBe(true);
   expect(vi.mocked(useQuery).mock.calls.slice(-3).map(([, args]) => args.at)).toEqual([newNow, newNow, newNow]);
 
   responses = [dashboard(newNow, 4), undefined, { rows: [] }];
   expect(render().html).toContain('class="stat-value">3</span>');
   responses = [dashboard(newNow, 4), ratings, { rows: [] }];
   const done = render();
-  expect(done.html).toContain("Updated 10:47");
+  expect(done.html).toContain('aria-label="Refresh (updated 10:47)" title="Refresh (updated 10:47)"');
   expect(done.html).toContain('class="stat-value">4</span>');
-  expect(done.html).toContain(">Refresh</button>");
+  expect(done.tree.props.children[0].props.children[3].props.disabled).toBe(false);
   vi.restoreAllMocks();
 });

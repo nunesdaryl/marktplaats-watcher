@@ -269,6 +269,7 @@ export default function Overview({ open, onSearch, ask }) {
   const h = data.health;
   const now = data.now;
   const since = now - days * DAY;
+  const refreshLabel = refreshing ? "Refreshing…" : `Refresh (updated ${new Date(now).toLocaleTimeString("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" })})`;
   const go = (view, title, params = {}) => open({ view, title, params }, { fresh: true });
   const openDay = (day) => go("day", dayLabel(day), { day });
   const eventsOf = (title, params) => go("events", title, { since, ...params });
@@ -282,10 +283,9 @@ export default function Overview({ open, onSearch, ask }) {
             <button key={d} className={days === d ? "active" : ""} aria-pressed={days === d} onClick={() => setDays(d)}>{d} days</button>
           ))}
         </div>
-        <div className="admin-refresh">
-          <button className="button" disabled={refreshing} onClick={() => setAt(Date.now())}>{refreshing ? "Refreshing…" : "Refresh"}</button>
-          <span className="hint">Updated {new Date(data.now).toLocaleTimeString("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" })}</span>
-        </div>
+        <button className="icon-button" disabled={refreshing} aria-busy={refreshing ? "true" : undefined}
+                aria-label={refreshLabel} title={refreshLabel}
+                onClick={() => setAt(Date.now())}><Icon name="refresh" size={18} /></button>
       </div>
       {ask}
       <p className="hint admin-tip">Click any number, bar or row to see the exact records behind it.</p>
