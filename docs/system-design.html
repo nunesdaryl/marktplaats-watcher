@@ -1222,6 +1222,18 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   (<code>MAX_WATCHES = 5</code>, counting paused and archived watches), and the owner had exactly 5, so the live "Watch it"
   step would have failed on stage. A search with the wrong words found nothing, and nothing was read to confirm it.
   Found while reading the landing page's "up to 5 watches"; the script now frees a slot before the demo.</p>
+<p><b>One design system, then new-alert glow and archive (1 Oct evening).</b> Asked whether one document described the
+  design language, the answer was no: four partial documents, one stale (the old blue/amber palette). There is now one
+  source of truth, <code>docs/design/DESIGN-SYSTEM.md</code>, written from what <code>styles.css</code> ships: 131 token
+  values checked per theme, contrast computed in both themes (every text pair passes; one known exception, the light
+  Watch-mode border at 1.44:1, which isn't the only signal), and an audit of 10 drifts, such as a toast hidden behind
+  sheets (<code>--z-toast</code> 55 vs 70). The older documents are kept and marked superseded. On top of it,
+  <b>MW-46</b>: alerts that arrived since your last visit get a teal ring, a soft halo and a "New" label for that
+  visit (one settle, no loop); each alert can be archived from its rating row; "Archive all" asks once more; archived
+  alerts can be restored from the Archived page. Review sent it back once ("Archive all" showed the page's 50 while
+  archiving all 1,000+, an armed confirm never reset, "1 alerts"). Its backend went to production first on Daryl's OK
+  (one new index, live site unchanged). Status at writing: in review; the glow is waiting for a real new alert (Daryl
+  chose not to rewind his last-visit time), then a recorded check of the motion and Daryl's merge OK, by Fri 12:00.</p>
 </section>
 
 </body>
