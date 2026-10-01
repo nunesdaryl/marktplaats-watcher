@@ -201,8 +201,8 @@ a set.
 | Selected / active | `--fill-strong` (nav), `--accent-soft` (grouped rows), `--accent` text (tab bar), `aria-current="page"` | sidebar, lists, tab bar |
 | Error | `--danger` text in `--text-md` (`.error`); invalid field border `--danger`; error pages say what happened and offer Reload / Back | forms, `chunkRecovery` |
 | Skipped | see `.listing.skipped` | watch page matches |
-| Archived | watches and chats: `archivedAt`, listed on the Archived page with Restore (`restore` icon); toast "… archived. Find it under Archived." (`lib/actions.js`) | `ArchivedView.jsx` |
-| New (planned, MW-46) | a card the user hasn't seen yet: a 1px `--accent` ring plus a soft `--accent-soft` halo inside the card's `--shadow`, one settle on `--dur`/`--ease`, and a text pill "New" (`--accent-soft` background, `--accent` text, `--text-xs`). Never colour alone: the pill and a visually hidden ", new" carry the meaning. Lasts for that visit. | Alerts page |
+| Archived (shipped) | watches, chats and alerts: `archivedAt`, listed in `.grouped-row` on the Archived page with Restore (`restore` icon); toast "… archived. Find it under Archived." (`lib/actions.js`) | `ArchivedView.jsx` |
+| New (shipped, MW-46) | `.alert-item.is-new` gives the card a 1px `--accent` ring and a soft `--accent-soft` halo alongside its `--shadow`, one settle on `--dur`/`--ease`, and a text pill "New" (`--accent-soft` background, `--accent` text, `--text-xs`). Visually hidden ", new" ends the card's accessible name. Lasts for that visit. | Alerts page |
 
 ## 9. Layout and breakpoints
 

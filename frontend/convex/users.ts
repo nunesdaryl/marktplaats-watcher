@@ -35,7 +35,8 @@ export const me = query({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
-    return user && { email: user.email, onboarded: user.onboardedAt !== undefined };
+    return user && { email: user.email, onboarded: user.onboardedAt !== undefined,
+      alertsSeenAt: user.alertsSeenAt, createdAt: user.createdAt };
   },
 });
 

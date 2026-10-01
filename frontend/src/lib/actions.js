@@ -13,6 +13,9 @@ export function useItemActions(ui) {
     pin: useMutation(api.watches.setPinned), archive: useMutation(api.watches.setArchived), remove: useMutation(api.watches.remove),
     update: useMutation(api.watches.update), checkNow: useMutation(api.watches.checkNow),
   };
+  const alert = {
+    archive: useMutation(api.alerts.setArchived), archiveAll: useMutation(api.alerts.archiveAll),
+  };
   const run = (fn, done) => fn().then(done).catch((e) => ui.toast(e.data ?? "That didn't work. Try again."));
   const leaveIfOpen = (section, id) => { if (ui.route.section === section && ui.route.id === id) go(section === "c" ? "/" : "/watches"); };
 
@@ -46,5 +49,23 @@ export function useItemActions(ui) {
     { label: "Delete", icon: "trash", danger: true, confirm: "Delete this watch?", onSelect: () => run(() => watch.remove({ id: w._id }), () => { track("watch_deleted"); leaveIfOpen("w", w._id); }) },
   ];
 
-  return { chatItems, watchItems };
+  const archiveAlert = (id) => run(() => alert.archive({ id, archived: true }),
+    () => ui.toast("Alert archived. Find it under Archived."));
+  const archiveAllAlerts = async () => {
+    let total = 0;
+    try {
+      let archived;
+      do {
+        ({ archived } = await alert.archiveAll({}));
+        total += archived;
+      } while (archived === 500);
+      ui.toast(`${total} alerts archived. Find them under Archived.`);
+    } catch (e) { ui.toast(e.data ?? "That didn't work. Try again."); }
+  };
+  const alertItems = (a) => [
+    { label: "Restore", icon: "restore", onSelect: () => run(() => alert.archive({ id: a._id, archived: false }),
+      () => ui.toast("Alert restored.")) },
+  ];
+
+  return { chatItems, watchItems, alertItems, archiveAlert, archiveAllAlerts };
 }

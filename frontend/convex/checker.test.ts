@@ -435,6 +435,9 @@ test("the Alerts tab counts alerts since the page was last open, and opening it 
   vi.setSystemTime(Date.now() + 1000);
   await insert(12);
   expect(await alice.query(api.watches.newAlertCount, {})).toBe(10);    // capped: the tab shows "9+"
+  const newest = (await alice.query(api.watches.alerts, {})).slice(0, 3);
+  for (const alert of newest) await alice.mutation(api.alerts.setArchived, { id: alert._id, archived: true });
+  expect(await alice.query(api.watches.newAlertCount, {})).toBe(9);
   expect(await t.query(api.watches.newAlertCount, {})).toBe(0);         // signed out
 });
 
