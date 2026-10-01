@@ -283,7 +283,7 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 | I (MW-43) | Narrow broad watches at save |
 | J (MW-44) | Neutral Ask box placeholder |
 
-Also filed 1 Oct, for **before** the freeze at Daryl's request: **MW-45**, a Refresh icon with "Updated HH:MM" on the dashboard and a Dashboard tab on phones (owner only). Review PASS; backend live; awaiting the merge OK.
+Also filed 1 Oct, for **before** the freeze at Daryl's request: **MW-45**, a Refresh icon with "Updated HH:MM" on the dashboard and a Dashboard tab on phones (owner only). Merged 1 Oct (main `d4aa99d`) and checked on production: Refresh 0.57 s, no reload. The phone tab is still to be seen on a real phone.
 
 ### After the demo: from this audit
 - **Business side first** (the course's weakest theme here): 20 interviews, Sean Ellis question, a pricing hypothesis

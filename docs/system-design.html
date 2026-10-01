@@ -1212,7 +1212,9 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   15-minute scheduler run moves the time windows at least that often. Two operator design rounds (an icon, not a text
   button; the time visible under it). The backend part went to production first, on Daryl's OK, so Refresh could be
   tested on a preview before merging: clicking it showed "Refreshing…" for 0.6 s, then fresh figures, no reload.
-  Status at writing: review PASS, awaiting Daryl's merge OK; the phone tab still to be seen on a real phone.</p>
+  Merged on Daryl's OK (main <code>d4aa99d</code>, 1 Oct 13:58), the 34th factory issue merged this week, checks green (pytest 131, vitest 154).
+  On production the real icon disabled, read "Refreshing…", and came back with fresh figures after 0.57 s. The phone tab
+  is covered by unit tests and still to be seen on a real phone.</p>
 <p><b>A near-miss in the demo script:</b> the 1 Oct script said "a 5-watch cap" doesn't exist. It does
   (<code>MAX_WATCHES = 5</code>, counting paused and archived watches), and the owner had exactly 5, so the live "Watch it"
   step would have failed on stage. A search with the wrong words found nothing, and nothing was read to confirm it.
