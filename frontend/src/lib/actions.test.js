@@ -34,6 +34,12 @@ test("archive all repeats 500-row batches and reports the total", async () => {
   expect(toast).toHaveBeenCalledWith("501 alerts archived. Find them under Archived.");
 });
 
+test("archive all uses singular copy for one alert", async () => {
+  archiveAll.mockResolvedValueOnce({ archived: 1 });
+  await actions.archiveAllAlerts();
+  expect(toast).toHaveBeenCalledWith("1 alert archived. Find it under Archived.");
+});
+
 test("restore puts an alert back through the same mutation", async () => {
   actions.alertItems({ _id: "a1" })[0].onSelect();
   await vi.waitFor(() => expect(toast).toHaveBeenCalledWith("Alert restored."));

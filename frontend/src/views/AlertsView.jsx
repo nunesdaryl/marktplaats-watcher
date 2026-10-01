@@ -23,6 +23,12 @@ export default function AlertsView({ actions }) {
     if (seenAt.current !== null && alerts !== undefined) markSeen().catch(() => {});
   }, [newest, alerts === undefined, seenAt.current === null]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!confirmAll) return;
+    const id = setTimeout(() => setConfirmAll(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmAll]);
+
   const archiveAll = async () => {
     if (!confirmAll) { setConfirmAll(true); return; }
     setArchiving(true);
@@ -35,9 +41,10 @@ export default function AlertsView({ actions }) {
       <header className="page-head">
         <div className="alerts-head-row">
           <h1 id="alerts-title">Alerts</h1>
-          {alerts?.length > 0 && <button type="button" className="link-button" onClick={archiveAll} disabled={archiving}
+          {alerts?.length > 0 && <button type="button" className="link-button" onClick={archiveAll}
+                                        onBlur={() => setConfirmAll(false)} disabled={archiving}
                                         aria-busy={archiving}>
-            {archiving ? "Archiving…" : confirmAll ? `Archive ${alerts.length} alerts?` : "Archive all"}
+            {archiving ? "Archiving…" : confirmAll ? "Archive all alerts?" : "Archive all"}
           </button>}
         </div>
         <p className="muted">Every listing we e-mailed you, newest first, with its score and the reason for it. Tell us if

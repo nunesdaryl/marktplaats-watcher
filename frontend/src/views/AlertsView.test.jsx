@@ -1,6 +1,6 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
 import { useRef, useState } from "react";
 import AlertsView from "./AlertsView.jsx";
@@ -26,6 +26,8 @@ beforeEach(() => {
   vi.mocked(useState).mockImplementation((initial) => [initial, vi.fn()]);
 });
 
+afterEach(() => vi.useRealTimers());
+
 test("the visit snapshot marks only later alerts new before clearing the tab count", () => {
   let readSeenAt = false;
   responses[2] = { get alertsSeenAt() { readSeenAt = true; return 200; }, createdAt: 50 };
@@ -46,6 +48,7 @@ test("creation time is the first-visit fallback", () => {
 });
 
 test("archive all asks on the first tap and runs only on the second", async () => {
+  vi.useFakeTimers();
   const archiveAllAlerts = vi.fn(() => Promise.resolve());
   let confirm = false;
   let stateCall = 0;
@@ -63,7 +66,32 @@ test("archive all asks on the first tap and runs only on the second", async () =
   await first.props.onClick();
   expect(archiveAllAlerts).not.toHaveBeenCalled();
   const second = button();
-  expect(second.props.children).toBe("Archive 2 alerts?");
+  expect(second.props.children).toBe("Archive all alerts?");
   await second.props.onClick();
   expect(archiveAllAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("archive all confirmation resets after four seconds and on blur", async () => {
+  vi.useFakeTimers();
+  const archiveAllAlerts = vi.fn();
+  let confirm = false;
+  let stateCall = 0;
+  vi.mocked(useState).mockImplementation((initial) => {
+    const isConfirm = stateCall++ % 3 === 1;
+    return isConfirm ? [confirm, (value) => { confirm = value; }] : [initial, vi.fn()];
+  });
+  const button = () => {
+    calls = 0;
+    return AlertsView({ actions: { archiveAlert: vi.fn(), archiveAllAlerts } }).props.children[0].props.children[0].props.children[1];
+  };
+  await button().props.onClick();
+  expect(button().props.children).toBe("Archive all alerts?");
+  vi.advanceTimersByTime(4000);
+  expect(button().props.children).toBe("Archive all");
+  await button().props.onClick();
+  const armed = button();
+  expect(armed.props.children).toBe("Archive all alerts?");
+  armed.props.onBlur();
+  expect(button().props.children).toBe("Archive all");
+  expect(archiveAllAlerts).not.toHaveBeenCalled();
 });

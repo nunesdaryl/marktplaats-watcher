@@ -59,7 +59,8 @@ export function useItemActions(ui) {
         ({ archived } = await alert.archiveAll({}));
         total += archived;
       } while (archived === 500);
-      ui.toast(`${total} alerts archived. Find them under Archived.`);
+      ui.toast(total === 1 ? "1 alert archived. Find it under Archived." :
+        `${total} alerts archived. Find them under Archived.`);
     } catch (e) { ui.toast(e.data ?? "That didn't work. Try again."); }
   };
   const alertItems = (a) => [
