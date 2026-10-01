@@ -219,6 +219,7 @@ Each pattern from `docs/system-design.html`, grouped, with the event that taught
 | White page after closing a panel | Stale cached HTML (304 on a fixed `Last-Modified`) pointing at deleted chunks; full page load on close | Operator, in a real browser | HTML `no-store` (MW-33); client-side close + one-time `Clear-Site-Data` (MW-34) | Reviewer first blamed automation tabs: verify in the user's setup |
 | Dashboard lists took 20–25 s | Client-side filtering of whole tables | Reviewer timing on production | Server filters, 200-row pages, indexes (MW-31, MW-32): 0.7 s and 0.2 s | — |
 | Deploys silently stayed on the old version | Vercel production-only deploy trap | Live check after a deploy | Documented in DEPLOY-VERCEL and RUNBOOK | Smoke test after every deploy |
+| Demo script claimed no 5-watch limit (1 Oct) | A keyword search missed `MAX_WATCHES = 5`; nothing confirmed the claim | Reading the landing page ("up to 5 watches") during the MW-45 review | Script frees a slot before the demo; fallback line if the limit appears | Confirm a "doesn't exist" claim by reading the code path, not by a search that finds nothing |
 
 ## 6. Factory retrospective
 
@@ -255,6 +256,7 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 ## 7. Open items, ranked
 
 ### Demo week (before Sat 3 Oct; freeze Fri 2 Oct 22:00)
+0. **Free a watch slot** before rehearsing: you have 5 of 5 watches, so the live **Save watch** would fail (see the script's setup).
 1. **Two timed rehearsals, engineer and business versions** (checklist 12) with the 1 Oct 5-minute script.
 2. **Record a backup run** and keep one real alert e-mail ready (§3.10 of the 29 Sep audit).
 3. **UAT sign-off line** in `evals/report.md:5`: name, date, `chat-2026-09-30.2` / `rank-2026-10-01.1` (MW-5, checklist 33).
@@ -280,6 +282,8 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 | H (MW-42) | Canary watch on "iphone" |
 | I (MW-43) | Narrow broad watches at save |
 | J (MW-44) | Neutral Ask box placeholder |
+
+Also filed 1 Oct, for **before** the freeze at Daryl's request: **MW-45**, a Refresh icon with "Updated HH:MM" on the dashboard and a Dashboard tab on phones (owner only). Review PASS; backend live; awaiting the merge OK.
 
 ### After the demo: from this audit
 - **Business side first** (the course's weakest theme here): 20 interviews, Sean Ellis question, a pricing hypothesis

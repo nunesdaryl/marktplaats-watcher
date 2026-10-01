@@ -1204,6 +1204,19 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   factory retrospective (22 of 33 issues passed review first time) and the ranked open items are in
   <code>docs/audit/2026-10-01-everything-we-learned.md</code>. The parked items are filed as factory specs MW-35 to MW-44,
   to build after the demo.</p>
+<p><b>MW-45, one more before the freeze (1 Oct):</b> Daryl asked for a refresh button on the dashboard and a way to
+  reach it on his phone. The phone's tab bar now shows a fourth tab, Dashboard, to the owner only; the dashboard header
+  has a refresh icon at the far right with "Updated HH:MM" under it. Refresh passes a throwaway <code>at</code> value to the
+  three dashboard queries so Convex computes them fresh; the server still uses its own clock, and the old figures stay on
+  screen while it runs. There is no timer: the dashboard is a live query, so new data appears by itself, and the
+  15-minute scheduler run moves the time windows at least that often. Two operator design rounds (an icon, not a text
+  button; the time visible under it). The backend part went to production first, on Daryl's OK, so Refresh could be
+  tested on a preview before merging: clicking it showed "Refreshing…" for 0.6 s, then fresh figures, no reload.
+  Status at writing: review PASS, awaiting Daryl's merge OK; the phone tab still to be seen on a real phone.</p>
+<p><b>A near-miss in the demo script:</b> the 1 Oct script said "a 5-watch cap" doesn't exist. It does
+  (<code>MAX_WATCHES = 5</code>, counting paused and archived watches), and the owner had exactly 5, so the live "Watch it"
+  step would have failed on stage. A search with the wrong words found nothing, and nothing was read to confirm it.
+  Found while reading the landing page's "up to 5 watches"; the script now frees a slot before the demo.</p>
 </section>
 
 </body>

@@ -14,6 +14,9 @@ Signed in, dark mode, zoom 125%, notifications off, phone hotspot ready.
 - **Tab 3, Marktplaats:** a search for "mac mini" (not signed in).
 - **Tab 4, the dashboard:** https://marktplaats-watcher.vercel.app/admin/ (shown as is; your choice, 1 Oct).
 - **Tab 5:** `evals/report.md` on GitHub.
+- **Free a watch slot.** Each person can have up to 5 watches, paused and archived ones included (`MAX_WATCHES`,
+  `frontend/convex/watches.ts`). You have 5, so the live **Save watch** would fail. Delete one you don't need
+  (e.g. the paused iPhone watch) before the demo, and delete the Gazelle watch after each rehearsal.
 - Warm-up: one search in a throwaway chat, so the model is warm. Check the Nintendo watch is active (green dot).
 - Backup video (recorded during rehearsal) on the desktop.
 
@@ -47,6 +50,7 @@ The proposal card appears. Click **Save watch**.
 > it only notes what's listed now, so you aren't flooded with old ads. After that, only new ones that fit."
 
 *If it doesn't propose:* click **Adjust**, fill Item and Max price, **Save watch**: "the form is the same contract."
+*If it says "You can have up to 5 watches":* "and that's the free-beta limit doing its job"; open the Nintendo watch instead.
 
 **2:30, the alert and the feedback loop (30 s).** *Tab 1.* Scroll the Switch alert: score, price, reason,
 **Open on Marktplaats**, and **Good match? Yes · Not right**. Click **Yes** → the page says **Thanks.**
@@ -122,5 +126,5 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - Lists open in under a second: §21 (Alerts 0.7 s, Catch-ups 0.2 s, measured on production).
 - Labels: `ChatView.jsx` (chips), `Proposal.jsx` (**Save watch**, **Adjust**), `RateView.jsx` (**Thanks.**),
   `AdminView.jsx` (**Ask**), `renderEmail` in `frontend/convex/checker.ts` (subject, **Open on Marktplaats**).
-- Removed from the old script: "13 of 13 / 100% precision / 49 listings" (superseded) and "a 5-watch cap" (no such cap
-  exists in the code).
+- Removed from the old script: "13 of 13 / 100% precision / 49 listings" (superseded).
+- 5 watches per person: `MAX_WATCHES = 5` in `frontend/convex/watches.ts` (counts paused and archived watches too).
