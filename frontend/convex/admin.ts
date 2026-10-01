@@ -55,7 +55,7 @@ const countBy = <T,>(rows: T[], key: (r: T) => string | undefined) => {
 };
 
 export const dashboard = query({
-  args: { days: v.optional(v.number()) },
+  args: { days: v.optional(v.number()), at: v.optional(v.number()) },
   handler: async (ctx, { days = 30 }) => {
     if (!(await isOwner(ctx))) return null;
     days = Math.min(90, Math.max(7, Math.round(days)));
@@ -166,7 +166,7 @@ export const dashboard = query({
 
 /** Feedback, newest first: message, would-pay answer, screenshot, context and what the person did just before. */
 export const feedback = query({
-  args: { limit: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
+  args: { limit: v.optional(v.number()), at: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
           handled: v.optional(v.boolean()), since: v.optional(v.number()), until: v.optional(v.number()),
           search: v.optional(v.string()) },
   handler: async (ctx, { limit = 50, wouldPay, userId, handled, since, until, search }) => {
@@ -568,7 +568,7 @@ const REASON_LABEL: Record<string, string> = {
 
 /** How often users agree with the scorer, per score band, and why they don't. */
 export const ratingStats = query({
-  args: { days: v.optional(v.number()) },
+  args: { days: v.optional(v.number()), at: v.optional(v.number()) },
   handler: async (ctx, { days = 30 }) => {
     if (!(await isOwner(ctx))) return null;
     const since = Date.now() - Math.min(90, Math.max(7, days)) * DAY;
