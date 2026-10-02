@@ -121,12 +121,13 @@ export const record = internalMutation({
         const seen = await ctx.db.query("seenListings")
           .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
         const item = scored.get(id);
-        const scoreFields = item ? { score: item.score!, reason: item.reason.slice(0, 200), scoredAt: now } : {};
+        const scoreFields = item ? { score: item.score!, reason: item.reason.slice(0, 200), scoredAt: now,
+          title: item.title, url: item.url } : {};
         if (seen) {
           await ctx.db.patch(seen._id, { lastSeenAt: now, ...scoreFields });
           continue;
         }
-        await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now, ...scoreFields });
+        await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now, firstSeenAt: now, ...scoreFields });
         // First check: only remember what is already there. (Unscored listings never arrive here: the API
         // reports the whole watch as failed instead, so they stay unseen and are scored on the retry.)
         if (!watch.seeded || !item || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
