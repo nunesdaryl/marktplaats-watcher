@@ -1128,7 +1128,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <li>An immediate owner e-mail for a real miss (9/10 or better), with a one-click "send it to the user now".</li>
   <li>A quiet-watch alarm (reads listings for 3 days, sends nothing).</li>
   <li>A canary watch on a query with hourly new listings: silence means the pipeline is down.</li>
-  <li>Broad watches that fall behind: a bounded larger scoring budget, or a narrower query required at save time.</li>
+  <li>Done (MW-43): chat proposals and the watch editor warn when estimated new listings per check exceed 20; users can still save the watch.</li>
 </ol>
 <div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing
   about whether users got their matches; an independent replay of the same search did. And test through the same door

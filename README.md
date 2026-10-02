@@ -103,6 +103,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   `evals/report.md`. Ratings are kept for 12 months after their last update, and deleted with the watch or with
   "Delete my data".
 - **Alert archive:** new alerts show a New pill and glow for that visit; archive one or all and restore them under Archived.
+- **Watch size warning:** chat proposals and the watch editor estimate new listings per check and suggest narrowing searches that exceed the 20-listing check budget.
 - **Light and dark:** follow the device; the sun/moon button (top right) overrides it on that device, and "Match device
   theme" in the account menu goes back.
 - **Software factory queue:** Linear team "Marktplaats Watcher" (MW), bound by `.factory.json`. Wave 1 of the audit

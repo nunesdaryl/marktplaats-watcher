@@ -4,6 +4,7 @@ import math
 import os
 import re
 import time
+import threading
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor
@@ -250,10 +251,12 @@ def make_tools(ctx):
             schedule = make_schedule(schedule_kind, every_minutes, times, days)
         except ValueError as e:
             return f"Invalid schedule: {e}"
-        ctx.proposals.append({"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
+        proposal = {"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
                               "mustInclude": must_include, "postcode": postcode,
                               "maxDistanceKm": max_distance_km if postcode else None,
-                              "schedule": schedule, "notify": notify})
+                              "schedule": schedule, "notify": notify}
+        proposal["volumeNote"] = estimate_volume_note(proposal)
+        ctx.proposals.append(proposal)
         return "Proposal shown to the user with a Save button. Tell them in one sentence what it will do."
 
     @tool
@@ -279,6 +282,13 @@ def make_tools(ctx):
                 change[key] = value
         if len(change) == 3:
             return "Nothing to change."
+        watch = ctx.watches[watch_id]
+        if watch.get("query"):
+            change["volumeNote"] = estimate_volume_note({
+                "query": watch["query"], "maxPriceEur": change.get("maxPriceEur", watch.get("maxPriceEur")),
+                "mustInclude": watch.get("mustInclude"), "postcode": watch.get("postcode"),
+                "maxDistanceKm": watch.get("maxDistanceKm"), "schedule": change.get("schedule", watch.get("schedule")),
+            })
         ctx.proposals.append(change)
         return "Change shown to the user with a Save button. Tell them in one sentence what will change."
 
@@ -541,6 +551,7 @@ def rank_listings(description, listings, raise_on_failure=False):
 
 
 MAX_RANK_PER_CHECK = 20
+ESTIMATE_BUDGET_SECONDS = 3
 PAGE_SIZE = 30
 MAX_PAGES = 40        # 1,200 listings since the last check; beyond that a check logs "coverage_capped"
 SEARCH_API = "https://www.marktplaats.nl/lrp/api/search"
@@ -549,17 +560,17 @@ MONTHS = {"jan": 1, "feb": 2, "mrt": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, 
           "nov": 11, "dec": 12}
 
 
-def fetch_search(query, filters, offset):
+def fetch_search(query, filters, offset, timeout=15.0, retry=True):
     """One page of a search, sorted by date, with the watch's price and distance applied by Marktplaats itself.
     Only this endpoint takes a sort and filters: the /q/ page ignores both and shows 30 listings in its own order,
     so most matches were never read (29 Sep 2026). Robots.txt disallows it; using it is the owner's decision.
     Raises httpx.HTTPError, or ValueError when the answer has no listings."""
     params = {"query": query.strip().lower(), "searchInTitleAndDescription": "true", "sortBy": "SORT_INDEX",
               "sortOrder": "DECREASING", "limit": PAGE_SIZE, "offset": offset, "viewOptions": "list-view", **filters}
-    for attempt in (1, 2):
-        res = httpx.get(SEARCH_API, params=params, timeout=15.0,
+    for attempt in (1, 2) if retry else (1,):
+        res = httpx.get(SEARCH_API, params=params, timeout=timeout,
                         headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
-        if res.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+        if res.status_code not in (429, 500, 502, 503, 504) or attempt == 2 or not retry:
             break
         time.sleep(1)
     res.raise_for_status()
@@ -622,6 +633,67 @@ def read_since(query, filters, since_days, today):
             return listings, page + 1 >= MAX_PAGES
     print(json.dumps({"event": "coverage_capped", "query": query, "pages": MAX_PAGES}))
     return listings, True
+
+
+def estimate_volume_note(w):
+    """Estimate arrivals per check from today's and yesterday's dated search results."""
+    schedule = w.get("schedule") or {}
+    kind = schedule.get("kind")
+    if kind == "interval":
+        minutes = schedule.get("everyMinutes")
+        checks_per_day = 1440 / minutes if isinstance(minutes, int) and minutes > 0 else 0
+    elif kind == "daily":
+        checks_per_day = len(schedule.get("times") or [])
+    elif kind == "weekly":
+        checks_per_day = len(schedule.get("days") or []) / 7
+    else:
+        return None
+    if not checks_per_day:
+        return None
+    today = datetime.now(AMSTERDAM).date()
+    filters = search_filters({"max_price_eur": w.get("maxPriceEur"), "postcode": w.get("postcode"),
+                              "max_distance_km": w.get("maxDistanceKm")})
+    result = []
+
+    def read_estimate():
+        deadline = time.monotonic() + ESTIMATE_BUDGET_SECONDS
+        must_include = re.sub(r"\s+", "", (w.get("mustInclude") or "").lower())
+        counts, seen = [0, 0], set()
+        capped = False
+        try:
+            for page in range(2):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return
+                data = fetch_search(w["query"], filters, page * PAGE_SIZE, timeout=remaining, retry=False)
+                batch = data["listings"]
+                for item in batch:
+                    item_id = item.get("itemId")
+                    age = days_old(item.get("date"), today)
+                    title = re.sub(r"\s+", "", (item.get("title") or "").lower())
+                    if item_id not in seen and age in (0, 1) and (not must_include or must_include in title):
+                        counts[age] += 1
+                    seen.add(item_id)
+                ages = [days_old(item.get("date"), today) for item in batch
+                        if item.get("priorityProduct", "NONE") == "NONE"]
+                if any(age is not None and age > 1 for age in ages) or len(batch) < PAGE_SIZE:
+                    break
+                capped = page == 1
+                if page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
+                    break
+            if time.monotonic() < deadline:
+                per_check = math.ceil(max(counts) / checks_per_day)
+                if per_check > MAX_RANK_PER_CHECK:
+                    qualifier = "at least" if capped else "about"
+                    result.append(f"This search gets {qualifier} {per_check} new listings per check; one check can read "
+                                  f"{MAX_RANK_PER_CHECK}. Add a word or a max price so nothing is missed.")
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            return
+
+    worker = threading.Thread(target=read_estimate, daemon=True)
+    worker.start()
+    worker.join(ESTIMATE_BUDGET_SECONDS)
+    return result[0] if not worker.is_alive() and result else None
 
 
 def check_query(query, watches, now=None):
