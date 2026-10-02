@@ -1265,8 +1265,15 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   (MW-54). Review sent back MW-37, 42, 43, 47 and 48 (three rounds) before they shipped. First real use: the tracker's
   item #1 is the instructor's WhatsApp feedback, and one reply was sent to the owner's own test item; on production
   <code>loop-status.sh</code> shows 1 new, 1 open, an empty factory queue, and <code>feedback_drafts.py</code> produced
-  draft specs from the latest audit read-only (nothing filed). Open: Convex warned the team is above the free-plan
-  limits; eval case E2 drifted with the live market; draft titles use watch ids instead of names.</p>
+  draft specs from the latest audit read-only (nothing filed). Open: eval case E2 drifted with the live market; draft titles use watch ids instead of names.</p>
+<p><b>Convex usage (2 October 13:05).</b> October's Database I/O passed the free plan's 1 GB in two days (3.24 GB, 99.9%
+  reads). Convex's per-function breakdown put it on the owner dashboard, not the product: <code>admin.dashboard</code>
+  2.11 GB and <code>admin.ratingStats</code> 1.11 GB, against about 15 MB for everything users touch. Both are live
+  queries that re-read whole tables (up to 5,000 rows of eight tables, plus the health report) whenever anything changes,
+  multiplied by every open /admin tab. Daryl moved the team to the Starter (usage-based) plan, with a $10 warning and a
+  $20 monthly disable threshold. The fix, keeping the dashboard live and as detailed, is <b>MW-56</b> (running totals
+  updated in the same writes, a nightly recount with a drift alarm, the quiet-watch scan moved to the nightly job,
+  ratings-only reads for the score panel), filed for after the demo. Until then: close /admin tabs when idle.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>

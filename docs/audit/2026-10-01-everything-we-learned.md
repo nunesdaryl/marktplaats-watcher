@@ -289,6 +289,8 @@ Also 1 Oct evening: **one authoritative design system** (`docs/design/DESIGN-SYS
 
 **2 Oct: the whole backlog shipped.** MW-35 to MW-55 (19 issues, MW-45 and MW-46 having shipped on 1 Oct; including the parked MW-35 to MW-44 and the feedback-loop work MW-47 to MW-53) were reviewed by running them and merged on Daryl's per-issue OK by 12:40, the last eleven through the new merge gate (`docs/factory/merges.md`). Details in system design §22.
 
+**Convex usage (2 Oct):** the owner dashboard's live whole-table reads (`admin.dashboard` 2.11 GB, `admin.ratingStats` 1.11 GB) pushed October past the free plan's 1 GB of database reads in two days; the team moved to the Starter plan ($20 monthly disable threshold). Lesson: a live query that scans tables costs in proportion to how often its data changes times how many screens watch it. Fix filed as MW-56 (after the demo).
+
 ### After the demo: from this audit
 - **Business side first** (the course's weakest theme here): 20 interviews, Sean Ellis question, a pricing hypothesis
   with a decision rule, trademark search, the lawful data route.
