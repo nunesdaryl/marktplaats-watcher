@@ -72,3 +72,20 @@ test("a screenshot and context are kept with feedback, oversized files are dropp
   await dana.mutation(api.users.deleteMyData, {});
   expect(await t.run((ctx) => ctx.storage.getUrl(jpeg))).toBeNull();
 });
+
+test("factory draft intake reads new feedback and links a filed issue once", async () => {
+  const t = convexTest(schema, modules);
+  const id = await t.run((ctx) => ctx.db.insert("feedback", { message: "Search missed a bike", source: "email",
+    status: "new", createdAt: Date.now() }));
+  expect(await t.query(internal.feedback.draftItems, {})).toMatchObject([
+    { id, message: "Search missed a bike", issues: [] },
+  ]);
+  await t.mutation(internal.feedback.planDraft, { id, issue: "MW-60" });
+  expect(await t.query(internal.feedback.draftItems, {})).toEqual([]);
+  const row = await t.run((ctx) => ctx.db.get(id));
+  expect(row).toMatchObject({ status: "planned", issues: ["MW-60"] });
+  expect(await t.run((ctx) => ctx.db.query("feedbackEvents").collect())).toMatchObject([
+    { feedbackId: id, status: "planned", note: "Draft MW-60 filed in Linear." },
+  ]);
+  await expect(t.mutation(internal.feedback.planDraft, { id, issue: "MW-61" })).rejects.toThrow(/no longer new/);
+});

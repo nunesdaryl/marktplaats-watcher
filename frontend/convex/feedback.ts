@@ -85,6 +85,30 @@ export const get = internalQuery({
   },
 });
 
+/** Factory draft intake reads new tracker items without exposing them to the app. */
+export const draftItems = internalQuery({
+  args: {},
+  handler: async (ctx) => (await ctx.db.query("feedback")
+    .withIndex("by_status_created", (q) => q.eq("status", "new")).order("desc").collect())
+    .map((row) => ({ id: row._id, message: row.message, createdAt: row.createdAt,
+      source: row.source, personName: row.personName, issues: row.issues ?? [], page: row.page })),
+});
+
+/** The CLI may link a draft only while the tracker item is still new. */
+export const planDraft = internalMutation({
+  args: { id: v.id("feedback"), issue: v.string() },
+  handler: async (ctx, { id, issue }) => {
+    if (!/^MW-\d+$/.test(issue)) throw new ConvexError("Use an MW issue ID.");
+    const row = await ctx.db.get(id);
+    if (!row || row.status !== "new") throw new ConvexError("Feedback is no longer new.");
+    const now = Date.now();
+    await ctx.db.patch(id, { status: "planned", issues: [...new Set([...(row.issues ?? []), issue])],
+      handledAt: row.handledAt ?? now });
+    await ctx.db.insert("feedbackEvents", { feedbackId: id, status: "planned", at: now,
+      by: "factory feedback_drafts", note: `Draft ${issue} filed in Linear.` });
+  },
+});
+
 export const claimReply = internalMutation({
   args: { id: v.id("feedback"), by: v.string() },
   handler: async (ctx, { id, by }) => {

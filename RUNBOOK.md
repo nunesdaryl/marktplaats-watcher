@@ -28,7 +28,9 @@ repo root unless they start with `cd frontend`.
 
 ## Weekly listening loop
 
-The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) maps the current path; the full Monday routine arrives with MW-51.
+Run `.venv/bin/python scripts/factory/feedback_drafts.py` from the repo root each week. It reads new tracker items, the last 30 days of Not right ratings, and the latest delivery-audit misses from Convex Production, checks open MW issues in Linear, and prints evidence-cited draft specs. Review each draft and its cited records before filing. Use `.venv/bin/python scripts/factory/feedback_drafts.py --file <draft-id> [<draft-id> ...]` to file selected drafts. Filing adds `draft` and one `engine:gpt-6-sol` label, then links each selected feedback item as planned. The operator alone applies `agent-ready` after reviewing the spec; a draft is never a build authorization. A failed tracker update after issue creation needs manual reconciliation using the printed Linear issue ID.
+
+The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) maps the full path; the Monday routine continues in MW-51.
 
 ## Trace a request
 

@@ -47,6 +47,9 @@ test("daily audit stores misses without changing seen listings or alerts; digest
   expect(rows).toHaveLength(1);
   expect(rows[0]).toMatchObject({ watchId: id, read: 2, scored: 1, missCount: 1,
     misses: [{ listingId: "m1", score: 9, kind: "rescored", checkScore: 4 }] });
+  expect(await t.query(internal.audit.latestMissesForDrafts, {})).toMatchObject([
+    { id: rows[0]._id, watchId: id, missCount: 1, misses: [{ listingId: "m1", kind: "rescored" }] },
+  ]);
   expect(await t.run((ctx) => ctx.db.query("seenListings").collect())).toHaveLength(1);
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toHaveLength(0);
   const plans = await t.run((ctx) => ctx.db.query("catchupPlans").collect());

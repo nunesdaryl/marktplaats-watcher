@@ -19,5 +19,5 @@
       "screenshots"
     ]
   },
-  "feedback_source": "MW-50 placeholder"
+  "feedback_source": "scripts/factory/feedback_drafts.py"
 }

@@ -98,7 +98,8 @@ export default defineSchema({
     context: v.optional(feedbackContext),
     handledAt: v.optional(v.number()),          // the owner marked it handled on the dashboard
     createdAt: v.number(),
-  }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
+  }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"])
+    .index("by_status_created", ["status", "createdAt"]),
 
   feedbackEvents: defineTable({
     feedbackId: v.id("feedback"), status: feedbackStatus, at: v.number(), by: v.string(),
