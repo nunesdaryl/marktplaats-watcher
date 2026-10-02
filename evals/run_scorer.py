@@ -6,7 +6,7 @@ import sys
 import time
 
 import agent
-from evals.common import LABELS, LISTINGS, SCORER_RESULTS, cost_usd, model_under_test, read, write
+from evals.common import LABELS, LISTINGS, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
 
 THRESHOLDS = {"great": 8, "good": 6}
 
@@ -66,6 +66,15 @@ def score_once(data, labels, model):
     return result
 
 
+def score_user_cases(cases):
+    scored = []
+    for case in cases:
+        listing = dict(case["listing"])
+        ranked = agent.rank_listings(case["watch_description"], [listing], raise_on_failure=True)
+        scored.append({"id": case["id"], "score": ranked[0]["score"], "label": case["label"]})
+    return scored
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=1)
@@ -75,14 +84,16 @@ def main(argv=None):
     model = model_under_test()
     data, labels = read(LISTINGS), read(LABELS)["labels"]
     results = [score_once(data, labels, model) for _ in range(args.runs)]
+    cases = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
+    user_scored = score_user_cases(cases)
     if args.runs == 1:
-        write(SCORER_RESULTS, results[0])
+        write(SCORER_RESULTS, results[0] | {"user_scored": user_scored})
         return
     runs = [{"great": result["metrics"]["great"], "good": result["metrics"]["good"],
              "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"]}
             for result in results]
     selected = median_run(runs)
-    write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs})
+    write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored})
 
 
 if __name__ == "__main__":

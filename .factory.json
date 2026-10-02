@@ -1,4 +1,23 @@
 {
   "team": "MW",
-  "codex_effort": "medium"
+  "codex_effort": "medium",
+  "allow_branch_push": true,
+  "auto_push_main": true,
+  "merge_gate": "scripts/factory-merge.sh",
+  "evidence_profile": {
+    "checks": [
+      "pytest",
+      "vitest",
+      "typecheck",
+      "build",
+      "Convex deploy when changed",
+      "Vercel Production",
+      "live smoke"
+    ],
+    "ui": [
+      "preview walk",
+      "screenshots"
+    ]
+  },
+  "feedback_source": "MW-50 placeholder"
 }

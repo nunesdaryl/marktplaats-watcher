@@ -55,7 +55,9 @@ Corrected great precision: median of 3 runs; range 85.7–100.0%.
 
 ## 1b. What users said about their alerts
 
-No ratings yet. Every alert e-mail and the Alerts page ask "Good match? 👍 / 👎"; run `.venv/bin/python -m evals.pull_ratings` to fetch them, then rerun this report.
+Review queue: **0 pending**, **0 confirmed** scorer cases.
+
+No ratings yet. Every alert e-mail and the Alerts page ask "Good match? Yes / Not right"; run `.venv/bin/python -m evals.feedback_cases` to fetch them, then rerun this report.
 
 ## 2. Does the chat do the right thing? (20-case golden set)
 

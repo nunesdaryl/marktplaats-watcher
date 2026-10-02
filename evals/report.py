@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_RATINGS, cost_usd, model_under_test, read
+from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -13,8 +13,7 @@ def pct(x):
     return "n/a" if x is None else f"{x * 100:.0f}%"
 
 
-REASONS = {"not_asked": "Not what I asked for", "score_too_high": "Score too high", "score_too_low": "Score too low",
-           "price": "Price isn't good", "reason_wrong": "The reason is wrong"}
+REASONS = read(RATING_REASONS)
 
 SIGN_OFF = 'UAT sign-off: ______ (name), ______ (date), prompt versions ______'
 
@@ -59,12 +58,21 @@ def scorer_metrics(scored, overrides, thresholds):
     return metrics
 
 
-def user_section(ratings):
+def user_precision(scored, threshold=8):
+    emailed = [case for case in scored if case["score"] is not None and case["score"] >= threshold]
+    return sum(case["label"] for case in emailed) / len(emailed) if emailed else None
+
+
+def user_section(ratings, pending=0, confirmed=0, scored=None):
     """What people said about the alerts they got: a second, real-world check next to the judge (§1)."""
-    head = ["## 1b. What users said about their alerts", ""]
+    head = ["## 1b. What users said about their alerts", "",
+            f"Review queue: **{pending} pending**, **{confirmed} confirmed** scorer cases.", ""]
+    if confirmed >= 20:
+        precision = user_precision(scored or []) if scored is not None and len(scored) == confirmed else None
+        head += [f"Confirmed user-case precision at score ≥ 8: **{pct(precision)}** ({confirmed} cases).", ""]
     if not ratings:
-        return head + ["No ratings yet. Every alert e-mail and the Alerts page ask \"Good match? 👍 / 👎\"; run "
-                       "`.venv/bin/python -m evals.pull_ratings` to fetch them, then rerun this report.", ""]
+        return head + ["No ratings yet. Every alert e-mail and the Alerts page ask \"Good match? Yes / Not right\"; run "
+                       "`.venv/bin/python -m evals.feedback_cases` to fetch them, then rerun this report.", ""]
     def band(s):
         return "unscored" if s is None else "great (8–10)" if s >= 8 else "good (6–7)" if s >= 6 else "below 6"
     rows, reasons = {}, Counter()
@@ -153,7 +161,10 @@ def main():
         for category in sorted({category for _, category in m["failures"]}):
             lines.append(f"| {category} | {m['failures']['false_positive', category]} | {m['failures']['false_negative', category]} |")
         lines.append("")
-    lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [])
+    pending = read(USER_CASES_PENDING) if USER_CASES_PENDING.exists() else []
+    confirmed = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
+    lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [], len(pending), len(confirmed),
+                          s.get("user_scored"))
     lines += [
         "## 2. Does the chat do the right thing? (20-case golden set)", "",
         f"**{c['passed']}/{c['total']} passed.**",

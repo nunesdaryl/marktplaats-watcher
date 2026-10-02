@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import { internalMutation, mutation, query, type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { currentUser, deleteWatchData, requireUser } from "./users";
@@ -7,6 +7,23 @@ import { checkTargetFolder, cleanName } from "./folders";
 import { TIMEZONE, checkSchedule, describe, nextRun, notifyValidator, scheduleValidator } from "./schedule";
 
 export const MAX_WATCHES = 5;
+
+export const backfillSeededAt = internalMutation({
+  args: { dryRun: v.boolean() },
+  handler: async (ctx, { dryRun }) => {
+    const proposed = [];
+    for (const watch of await ctx.db.query("watches").collect()) {
+      if (!watch.seeded || watch.seededAt !== undefined) continue;
+      const seen = await ctx.db.query("seenListings")
+        .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id)).collect();
+      if (seen.length === 0) continue;
+      const seededAt = seen.reduce((earliest, row) => Math.min(earliest, row._creationTime), Infinity);
+      proposed.push({ watchId: watch._id, label: watch.label, seededAt });
+      if (!dryRun) await ctx.db.patch(watch._id, { seededAt });
+    }
+    return proposed;
+  },
+});
 
 function label(w: { query: string; maxPriceEur?: number; mustInclude?: string; postcode?: string; maxDistanceKm?: number }) {
   const parts = [w.query];

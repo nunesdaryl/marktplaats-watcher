@@ -9,11 +9,16 @@ from evals.common import USER_RATINGS, write
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
 
 
-def main():
+def fetch_ratings():
     out = subprocess.run(["npx", "convex", "run", "--prod", "ratings:exportAll"], cwd=FRONTEND,
                          capture_output=True, text=True, check=True).stdout
     ratings = json.loads(out[out.index("["):])
     write(USER_RATINGS, ratings)
+    return ratings
+
+
+def main():
+    ratings = fetch_ratings()
     print(f"wrote {len(ratings)} ratings to {USER_RATINGS}")
 
 

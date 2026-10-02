@@ -179,6 +179,20 @@ def test_median_run_uses_great_precision_then_recall():
     assert run_scorer.median_run([runs[0]]) is runs[0]
 
 
+def test_confirmed_user_case_uses_saved_scorer_inputs(monkeypatch):
+    calls = []
+
+    def fake_rank(description, listings, raise_on_failure=False):
+        calls.append((description, listings[0].copy(), raise_on_failure))
+        return [listings[0] | {"score": 8}]
+
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", fake_rank)
+    cases = [{"id": "rating-1", "watch_description": "Gazelle bike, under €400",
+              "listing": {"id": "listing-1", "title": "Gazelle", "price_eur": 350}, "label": False}]
+    assert run_scorer.score_user_cases(cases) == [{"id": "rating-1", "score": 8, "label": False}]
+    assert calls == [("Gazelle bike, under €400", cases[0]["listing"], True)]
+
+
 def test_scorer_three_runs_keep_each_result_and_select_median(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     listings = tmp_path / "listings.json"

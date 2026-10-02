@@ -2,9 +2,14 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import { ratingToken } from "./ratings";
+import { REASONS } from "../src/lib/ratings.js";
+import { RATING_REASONS } from "./schema";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
+test("rating reason validator stays in sync with the user labels", () => {
+  expect(RATING_REASONS).toEqual(REASONS.map(([key]) => key));
+});
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-29T10:00:00Z"));
@@ -71,7 +76,10 @@ test("delete my data removes ratings; the owner's stats count bands and the 'cou
   expect(stats).toMatchObject({ rated: 1, good: 1, alertsSent: 1, goodCouldBeGreat: 1 });
   expect(stats.bands.find((b) => b.key === "good")).toMatchObject({ rated: 1, good: 1 });
   expect((await owner.query(api.admin.ratings, { band: "good" }))!.rows[0]).toMatchObject({ verdict: "good", score: 7, email: "alice@example.com" });
-  expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({ verdict: "good", score: 7 })]);
+  expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({
+    verdict: "good", score: 7, watchDescription: "Gazelle fiets",
+    listing: expect.objectContaining({ id: "l1", title: "Gazelle Orange C7", price_eur: 350 }),
+  })]);
   await alice.mutation(api.users.deleteMyData, {});
   expect(await rows()).toHaveLength(0);
 });
@@ -117,4 +125,18 @@ test("a rating remains after its alert reaches the 30-day retention limit", asyn
   await t.mutation(internal.checker.purgeOld, {});
   expect(await t.run((ctx) => ctx.db.get(alertId))).toBeNull();
   expect(await rows()).toHaveLength(1);
+  expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({
+    listing: expect.objectContaining({ id: "l1", price_eur: 350 }), watchDescription: "Gazelle fiets",
+  })]);
+});
+
+test("export uses a live alert for ratings made before scorer snapshots existed", async () => {
+  const { t, alice, alertId, rows } = await withAlert();
+  await alice.mutation(api.ratings.rate, { alertId, verdict: "not_right" });
+  const rating = (await rows())[0];
+  await t.run((ctx) => ctx.db.patch(rating._id, { listing: undefined, watchDescription: undefined }));
+  expect(await t.query(internal.ratings.exportAll, {})).toEqual([expect.objectContaining({
+    id: rating._id, watchDescription: "Gazelle fiets",
+    listing: expect.objectContaining({ id: "l1", price_eur: 350 }),
+  })]);
 });
