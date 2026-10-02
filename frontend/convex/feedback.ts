@@ -10,6 +10,7 @@ import { sendEmail } from "./checker";
 import { feedbackContext, wouldPayValidator } from "./schema";
 import { ownerMatches } from "./admin";
 import { requireUser } from "./users";
+import { insertTracked, patchTracked } from "./totals";
 
 export const WOULD_PAY = {
   no: "No, only if it's free",
@@ -67,7 +68,7 @@ export const submit = mutation({
       theme: context.theme.slice(0, 10), version: cut(context.version, 12), browser: cut(context.browser, 60),
       errors: context.errors?.slice(0, 5).map((e) => e.slice(0, 200)),
     };
-    const id = await ctx.db.insert("feedback", {
+    const id = await insertTracked(ctx, "feedback", {
       userId: user._id, source: "app", status: "new", message: text, wouldPay, page: page?.slice(0, 40), screenshotId: shot, context: ctxRow, createdAt: now,
     });
     await ctx.scheduler.runAfter(0, internal.feedback.notifyOwner, { id });
@@ -102,7 +103,7 @@ export const planDraft = internalMutation({
     const row = await ctx.db.get(id);
     if (!row || row.status !== "new") throw new ConvexError("Feedback is no longer new.");
     const now = Date.now();
-    await ctx.db.patch(id, { status: "planned", issues: [...new Set([...(row.issues ?? []), issue])],
+    await patchTracked(ctx, "feedback", id, { status: "planned", issues: [...new Set([...(row.issues ?? []), issue])],
       handledAt: row.handledAt ?? now });
     await ctx.db.insert("feedbackEvents", { feedbackId: id, status: "planned", at: now,
       by: "factory feedback_drafts", note: `Draft ${issue} filed in Linear.` });
@@ -118,7 +119,7 @@ export const claimReply = internalMutation({
     const user = row.userId ? await ctx.db.get(row.userId) : null;
     const to = row.personEmail ?? user?.email;
     if (!to) throw new ConvexError("Add an e-mail address before sending.");
-    await ctx.db.patch(id, { sending: true });
+    await patchTracked(ctx, "feedback", id, { sending: true });
     return { to, text: row.replyDraft.trim(), by };
   },
 });
@@ -128,7 +129,7 @@ export const finishReply = internalMutation({
   handler: async (ctx, { id, text, by, sent }) => {
     const row = await ctx.db.get(id);
     if (!row?.sending) return;
-    await ctx.db.patch(id, sent ? { sending: false, replyText: text, repliedAt: Date.now(), replyChannel: "email", repliedBy: by }
+    await patchTracked(ctx, "feedback", id, sent ? { sending: false, replyText: text, repliedAt: Date.now(), replyChannel: "email", repliedBy: by }
       : { sending: false });
   },
 });

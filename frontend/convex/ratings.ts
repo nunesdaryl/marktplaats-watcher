@@ -7,6 +7,7 @@ import { internalQuery, mutation, query, type MutationCtx } from "./_generated/s
 import type { Doc, Id } from "./_generated/dataModel";
 import { ratingReason } from "./schema";
 import { currentUser, requireUser } from "./users";
+import { insertTracked, patchTracked } from "./totals";
 
 const verdict = v.union(v.literal("good"), v.literal("not_right"));
 const MAX_NOTE = 500;
@@ -46,11 +47,11 @@ async function save(ctx: MutationCtx, alert: Doc<"alerts">, change:
                note: existing?.verdict === "not_right" ? existing.note : undefined };
   }
   if (existing) {
-    await ctx.db.patch(existing._id, { ...fields, source: change.source, updatedAt: now });
+    await patchTracked(ctx, "ratings", existing._id, { ...fields, source: change.source, updatedAt: now });
     return existing._id;
   }
   const watch = await ctx.db.get(alert.watchId);
-  return await ctx.db.insert("ratings", {
+  return await insertTracked(ctx, "ratings", {
     alertId: alert._id, userId: alert.userId, watchId: alert.watchId, ...fields,
     score: alert.score, notify: watch?.notify, title: alert.title.slice(0, 200), reason: alert.reason.slice(0, 200),
     watchDescription: watch?.label,

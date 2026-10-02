@@ -5,6 +5,7 @@ import { internal } from "./_generated/api";
 import { internalMutation, mutation } from "./_generated/server";
 import { eventProps } from "./schema";
 import { currentUser } from "./users";
+import { insertTracked, deleteTracked } from "./totals";
 
 const DAY = 86_400_000;
 export const KEEP_DAYS = 90;
@@ -43,7 +44,7 @@ export const track = mutation({
         .filter(([, value]) => typeof value === "string").map(([k, value]) => [k, (value as string).slice(0, 40)]));
       // Clock skew or an old queue: keep events inside the last hour and never in the future
       const at = Math.min(now, Math.max(now - 3_600_000, e.at));
-      await ctx.db.insert("events", { userId: user._id, name: e.name, props, device: e.device, at });
+      await insertTracked(ctx, "events", { userId: user._id, name: e.name, props, device: e.device, at });
       room--; stored++;
     }
     return stored;
@@ -55,7 +56,7 @@ export const purge = internalMutation({
   args: {},
   handler: async (ctx) => {
     const old = await ctx.db.query("events").withIndex("by_at", (q) => q.lt("at", Date.now() - KEEP_DAYS * DAY)).take(500);
-    for (const row of old) await ctx.db.delete(row._id);
+    for (const row of old) await deleteTracked(ctx, "events", row._id);
     if (old.length === 500) await ctx.scheduler.runAfter(0, internal.events.purge, {});
     return old.length;
   },

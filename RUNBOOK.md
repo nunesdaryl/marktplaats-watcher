@@ -201,6 +201,18 @@ there once.
 
 ## 10. Using the dashboard to find a problem
 Use the refresh icon at the top right to recalculate the dashboard; the time under the icon shows when the figures were computed in Amsterdam time.
+The live overview reads compact `dashboardTotals` summaries for events and alerts, plus projections for the smaller
+tables. Source mutations update the matching bucket and summary in the same transaction. Events, alerts, runs,
+errors, audits and ratings use UTC-day buckets; account, watch, chat and feedback projections are kept separately.
+`admin.ratingStats` reads ratings through `by_updated` and the small
+sent-alert counts. At 04:40 UTC, after the delivery audit, `totals.recount` compares these buckets with the source
+tables, repairs differences, and puts a drift issue in the health box and 05:00 digest. It also stores the quiet-watch
+check so opening the dashboard does not re-read seen listings. A later clean recount clears the drift issue.
+
+For the first deployment, run `cd frontend && npx convex run --prod totals:backfill '{"dryRun":true}'` and inspect the
+reported bucket differences. Then run the same command with `dryRun:false` to write the initial buckets. Run the dry
+run again; it should report `"drift":[]`. If drift appears later, check recent writes and the affected source table,
+then run `npx convex run --prod totals:recount '{}'` and confirm a subsequent dry run reports no differences.
 Every number on `/admin` opens its records: click an account to see its watches (the exact search), chats (the full
 conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
 app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.

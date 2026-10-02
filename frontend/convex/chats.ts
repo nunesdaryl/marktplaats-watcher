@@ -5,6 +5,7 @@ import { listingCard } from "./schema";
 import { notifyValidator, scheduleValidator } from "./schedule";
 import { currentUser, requireUser } from "./users";
 import { checkTargetFolder, cleanName } from "./folders";
+import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
 const MAX_CONTENT = 8000;
 const MAX_CHATS_LISTED = 50;
@@ -54,7 +55,7 @@ async function insertMessage(ctx: MutationCtx, chatId: Id<"chats">, role: "user"
     chatId, role, content: content.slice(0, MAX_CONTENT),
     listings: listings?.slice(0, 10), proposals, search,
   });
-  await ctx.db.patch(chatId, { updatedAt: Date.now() });
+  await patchTracked(ctx, "chats", chatId, { updatedAt: Date.now() });
   return id;
 }
 
@@ -69,7 +70,7 @@ export const start = mutation({
     if (count >= MAX_CHATS) throw new ConvexError(`You have ${MAX_CHATS} chats. Delete a few old ones to start a new one.`);
     const title = text.length > 48 ? `${text.slice(0, 47).trimEnd()}…` : text;
     const now = Date.now();
-    const chatId = await ctx.db.insert("chats", { userId: user._id, title, updatedAt: now });
+    const chatId = await insertTracked(ctx, "chats", { userId: user._id, title, updatedAt: now });
     await ctx.db.insert("messages", { chatId, role: "user", content: text });
     return chatId;
   },
@@ -127,7 +128,7 @@ export const remove = mutation({
 export async function deleteChat(ctx: MutationCtx, chatId: Id<"chats">) {
   for (const m of await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", chatId)).collect())
     await ctx.db.delete(m._id);
-  await ctx.db.delete(chatId);
+  await deleteTracked(ctx, "chats", chatId);
 }
 
 /** The signed-in user's chats (not archived): pinned first, then newest first. */
@@ -157,7 +158,7 @@ export const rename = mutation({
   args: { chatId: v.id("chats"), title: v.string() },
   handler: async (ctx, { chatId, title }) => {
     await ownChat(ctx, chatId);
-    await ctx.db.patch(chatId, { title: cleanName(title, 60, "chat") });
+    await patchTracked(ctx, "chats", chatId, { title: cleanName(title, 60, "chat") });
   },
 });
 
@@ -165,7 +166,7 @@ export const setPinned = mutation({
   args: { chatId: v.id("chats"), pinned: v.boolean() },
   handler: async (ctx, { chatId, pinned }) => {
     await ownChat(ctx, chatId);
-    await ctx.db.patch(chatId, { pinned });
+    await patchTracked(ctx, "chats", chatId, { pinned });
   },
 });
 
@@ -173,7 +174,7 @@ export const setArchived = mutation({
   args: { chatId: v.id("chats"), archived: v.boolean() },
   handler: async (ctx, { chatId, archived }) => {
     await ownChat(ctx, chatId);
-    await ctx.db.patch(chatId, archived ? { archivedAt: Date.now(), pinned: false } : { archivedAt: undefined });
+    await patchTracked(ctx, "chats", chatId, archived ? { archivedAt: Date.now(), pinned: false } : { archivedAt: undefined });
   },
 });
 
@@ -181,7 +182,7 @@ export const move = mutation({
   args: { chatId: v.id("chats"), folderId: v.union(v.id("folders"), v.null()) },
   handler: async (ctx, { chatId, folderId }) => {
     await ownChat(ctx, chatId);
-    await ctx.db.patch(chatId, { folderId: await checkTargetFolder(ctx, folderId) });
+    await patchTracked(ctx, "chats", chatId, { folderId: await checkTargetFolder(ctx, folderId) });
   },
 });
 

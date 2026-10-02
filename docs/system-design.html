@@ -1273,7 +1273,11 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   multiplied by every open /admin tab. Daryl moved the team to the Starter (usage-based) plan, with a $10 warning and a
   $20 monthly disable threshold. The fix, keeping the dashboard live and as detailed, is <b>MW-56</b> (running totals
   updated in the same writes, a nightly recount with a drift alarm, the quiet-watch scan moved to the nightly job,
-  ratings-only reads for the score panel), filed for after the demo. Until then: close /admin tabs when idle.</p>
+  ratings-only reads for the score panel). The 2 October operator addendum moved the build before the demo, subject to
+  review and the merge cut-off. The implementation stores compact event and alert summaries plus source projections in
+  UTC-day buckets, updated by the source mutations. The 04:40 UTC recount repairs differences and records a drift problem; it also
+  stores the quiet-watch result. The score panel reads ratings by <code>updatedAt</code> and daily sent-alert counts.
+  Production Database I/O reduction still requires the specified 30-minute measurement after merge.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>

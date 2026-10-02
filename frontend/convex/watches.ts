@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { currentUser, deleteWatchData, requireUser } from "./users";
 import { checkTargetFolder, cleanName } from "./folders";
+import { insertTracked, patchTracked } from "./totals";
 import { TIMEZONE, checkSchedule, describe, nextRun, notifyValidator, scheduleValidator } from "./schedule";
 
 export const MAX_WATCHES = 5;
@@ -19,7 +20,7 @@ export const backfillSeededAt = internalMutation({
       if (seen.length === 0) continue;
       const seededAt = seen.reduce((earliest, row) => Math.min(earliest, row._creationTime), Infinity);
       proposed.push({ watchId: watch._id, label: watch.label, seededAt });
-      if (!dryRun) await ctx.db.patch(watch._id, { seededAt });
+      if (!dryRun) await patchTracked(ctx, "watches", watch._id, { seededAt });
     }
     return proposed;
   },
@@ -88,7 +89,7 @@ export const create = mutation({
     const fields = clean(args);
     rejectDuplicate(mine, fields);
     const now = Date.now();
-    const id = await ctx.db.insert("watches", {
+    const id = await insertTracked(ctx, "watches", {
       userId: user._id, label: label(fields), ...fields, schedule: args.schedule, timezone: TIMEZONE,
       notify: args.notify, active: true, seeded: false, nextRunAt: now, createdAt: now,
     });
@@ -163,7 +164,7 @@ export const update = mutation({
       patch.lastError = undefined;
     }
     if (patch.seeded === false) { patch.nextRunAt = now; }
-    await ctx.db.patch(id, patch);
+    await patchTracked(ctx, "watches", id, patch);
     if (patch.seeded === false) await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});   // first look now
   },
 });
@@ -173,7 +174,7 @@ export const rename = mutation({
   args: { id: v.id("watches"), name: v.union(v.string(), v.null()) },
   handler: async (ctx, { id, name }) => {
     await ownWatch(ctx, id);
-    await ctx.db.patch(id, { name: name === null || !name.trim() ? undefined : cleanName(name, 60, "watch") });
+    await patchTracked(ctx, "watches", id, { name: name === null || !name.trim() ? undefined : cleanName(name, 60, "watch") });
   },
 });
 
@@ -181,7 +182,7 @@ export const setPinned = mutation({
   args: { id: v.id("watches"), pinned: v.boolean() },
   handler: async (ctx, { id, pinned }) => {
     await ownWatch(ctx, id);
-    await ctx.db.patch(id, { pinned });
+    await patchTracked(ctx, "watches", id, { pinned });
   },
 });
 
@@ -190,7 +191,7 @@ export const setArchived = mutation({
   args: { id: v.id("watches"), archived: v.boolean() },
   handler: async (ctx, { id, archived }) => {
     await ownWatch(ctx, id);
-    await ctx.db.patch(id, archived ? { archivedAt: Date.now(), active: false, pinned: false } : { archivedAt: undefined });
+    await patchTracked(ctx, "watches", id, archived ? { archivedAt: Date.now(), active: false, pinned: false } : { archivedAt: undefined });
   },
 });
 
@@ -198,7 +199,7 @@ export const move = mutation({
   args: { id: v.id("watches"), folderId: v.union(v.id("folders"), v.null()) },
   handler: async (ctx, { id, folderId }) => {
     await ownWatch(ctx, id);
-    await ctx.db.patch(id, { folderId: await checkTargetFolder(ctx, folderId) });
+    await patchTracked(ctx, "watches", id, { folderId: await checkTargetFolder(ctx, folderId) });
   },
 });
 
@@ -218,7 +219,7 @@ export const checkNow = mutation({
     const now = Date.now();
     if (!watch.active) throw new ConvexError("This watch is paused. Resume it first, then check.");
     if (watch.lastManualAt && now - watch.lastManualAt < 60_000) throw new ConvexError("Checked a moment ago. Try again in a minute.");
-    await ctx.db.patch(id, { nextRunAt: now, lastManualAt: now, scheduleEditedAt: now });   // runs after any check under way
+    await patchTracked(ctx, "watches", id, { nextRunAt: now, lastManualAt: now, scheduleEditedAt: now });   // runs after any check under way
     await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});
   },
 });

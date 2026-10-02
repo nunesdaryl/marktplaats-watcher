@@ -2,6 +2,7 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { ConvexError } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { deleteChat } from "./chats";
+import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
 /** The signed-in user's row, or null. */
 export async function currentUser(ctx: QueryCtx) {
@@ -18,10 +19,10 @@ export async function requireUser(ctx: MutationCtx) {
   const email = identity.email;
   if (!email) throw new ConvexError("Your account has no e-mail address, so we can't send alerts. Add one under your account (top right).");
   if (existing) {
-    if (existing.email !== email) await ctx.db.patch(existing._id, { email });
+    if (existing.email !== email) await patchTracked(ctx, "users", existing._id, { email });
     return { ...existing, email };
   }
-  const id = await ctx.db.insert("users", { clerkId: identity.subject, email, createdAt: Date.now() });
+  const id = await insertTracked(ctx, "users", { clerkId: identity.subject, email, createdAt: Date.now() });
   return (await ctx.db.get(id))!;
 }
 
@@ -54,20 +55,20 @@ export const finishOnboarding = mutation({
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
-    if (user.onboardedAt === undefined) await ctx.db.patch(user._id, { onboardedAt: Date.now() });
+    if (user.onboardedAt === undefined) await patchTracked(ctx, "users", user._id, { onboardedAt: Date.now() });
   },
 });
 
 export async function deleteWatchData(ctx: MutationCtx, watchId: Id<"watches">) {
   for (const row of await ctx.db.query("audits").withIndex("by_watch_at", (q) => q.eq("watchId", watchId)).collect())
-    await ctx.db.delete(row._id);
+    await deleteTracked(ctx, "audits", row._id);
   for (const row of await ctx.db.query("ratings").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect())
-    await ctx.db.delete(row._id);
+    await deleteTracked(ctx, "ratings", row._id);
   for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", watchId)).collect())
     await ctx.db.delete(row._id);
   for (const row of await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect())
-    await ctx.db.delete(row._id);
-  await ctx.db.delete(watchId);
+    await deleteTracked(ctx, "alerts", row._id);
+  await deleteTracked(ctx, "watches", watchId);
 }
 
 /** GDPR: remove everything we store about the signed-in user (watches, seen listings, alerts, chats, feedback and its
@@ -87,14 +88,14 @@ export const deleteMyData = mutation({
       if (row.screenshotId) await ctx.storage.delete(row.screenshotId);
       for (const event of await ctx.db.query("feedbackEvents").withIndex("by_feedback", (q) => q.eq("feedbackId", row._id)).collect())
         await ctx.db.delete(event._id);
-      await ctx.db.delete(row._id);
+      await deleteTracked(ctx, "feedback", row._id);
     }
     for (const row of await ctx.db.query("events").withIndex("by_user_at", (q) => q.eq("userId", user._id)).collect())
-      await ctx.db.delete(row._id);
+      await deleteTracked(ctx, "events", row._id);
     for (const row of await ctx.db.query("ratings").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
-      await ctx.db.delete(row._id);
+      await deleteTracked(ctx, "ratings", row._id);
     for (const folder of await ctx.db.query("folders").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(folder._id);
-    await ctx.db.delete(user._id);
+    await deleteTracked(ctx, "users", user._id);
   },
 });

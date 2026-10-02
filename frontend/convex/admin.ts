@@ -12,6 +12,8 @@ import { activePatch } from "./watches";
 import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
 import { usageDay } from "./usage";
+import { readRows, readSummaries, windowSummaries, summarizeEvents, summarizeAlerts,
+  sentAlertsSince, insertTracked, patchTracked } from "./totals";
 
 const DAY = 86_400_000;
 const LIMIT = 5000;
@@ -54,6 +56,20 @@ const countBy = <T,>(rows: T[], key: (r: T) => string | undefined) => {
   for (const r of rows) { const k = key(r); if (k) out[k] = (out[k] ?? 0) + 1; }
   return Object.entries(out).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 };
+const newest = <T extends { _id: string }>(at: (row: T) => number) => (a: T, b: T) =>
+  at(b) - at(a) || b._id.localeCompare(a._id);
+const groupDays = <T,>(rows: T[], at: (row: T) => number) => {
+  const groups: Record<string, T[]> = {};
+  for (const row of rows) (groups[dayKey(at(row))] ??= []).push(row);
+  return Object.entries(groups);
+};
+const summed = (rows: { summary: { count: number } }[]) => rows.reduce((n, row) => n + row.summary.count, 0);
+const ranked = (rows: { summary: Record<string, any> }[], field: string) => {
+  const out: Record<string, number> = {};
+  for (const { summary } of [...rows].reverse())
+    for (const [name, count] of Object.entries(summary[field] as Record<string, number>)) out[name] = (out[name] ?? 0) + count;
+  return Object.entries(out).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+};
 
 export const dashboard = query({
   args: { days: v.optional(v.number()), at: v.optional(v.number()) },
@@ -63,21 +79,42 @@ export const dashboard = query({
     const now = Date.now();
     const since = now - days * DAY;
 
-    const users = await ctx.db.query("users").take(LIMIT);
-    const watches = await ctx.db.query("watches").take(LIMIT);
-    const chats = await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT);
-    const alerts = await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT);
-    const audits = await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT);
-    const events = await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT);
-    const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT);
+    const users = (await readRows(ctx, "users") ?? await ctx.db.query("users").take(LIMIT)).slice(0, LIMIT);
+    const watches = (await readRows(ctx, "watches") ?? await ctx.db.query("watches").take(LIMIT)).slice(0, LIMIT);
+    const chats = (await readRows(ctx, "chats") ?? await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT))
+      .sort(newest((c) => c.updatedAt)).slice(0, LIMIT);
+    const loadedAlerts = await readSummaries(ctx, "alerts");
+    const alertRows = loadedAlerts === null
+      ? await ctx.db.query("alerts").withIndex("by_createdAt").order("desc").take(LIMIT) : null;
+    const alertSummaries = loadedAlerts ??
+      groupDays(alertRows!, (a) => a.createdAt)
+        .map(([day, rows]) => ({ day, summary: summarizeAlerts(rows) })).sort((a, b) => a.day.localeCompare(b.day));
+    const audits = (await readRows(ctx, "audits") ?? await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
+      .sort(newest((a) => a.at)).slice(0, LIMIT);
+    const loadedEvents = await readSummaries(ctx, "events", since);
+    const eventRows = loadedEvents === null
+      ? await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT) : null;
+    const selectedEvents = loadedEvents === null ? null : await windowSummaries(ctx, "events", since);
+    const selected = selectedEvents ??
+      groupDays(eventRows!, (e) => e.at)
+        .map(([day, rows]) => ({ day, summary: summarizeEvents(rows) })).sort((a, b) => a.day.localeCompare(b.day));
+    const eventWindow = async (at: number) => at <= since ? selected :
+      await windowSummaries(ctx, "events", at) ??
+        groupDays(eventRows!.filter((e) => e.at >= at), (e) => e.at)
+          .map(([day, rows]) => ({ day, summary: summarizeEvents(rows) }));
+    const alertsInWindow = async (at: number) => await windowSummaries(ctx, "alerts", at) ??
+      groupDays(alertRows!.filter((a) => a.createdAt >= at), (a) => a.createdAt)
+        .map(([day, rows]) => ({ day, summary: summarizeAlerts(rows) }));
+    const feedback = (await readRows(ctx, "feedback") ?? await ctx.db.query("feedback").withIndex("by_created").order("desc").take(LIMIT))
+      .sort(newest((f) => f.createdAt)).slice(0, LIMIT);
     const todayUsage = await ctx.db.query("usage").withIndex("by_day", (q) => q.eq("day", usageDay(now))).take(LIMIT);
     const emails = new Map(users.map((u) => [u.clerkId, u.email]));
     const topUsage = todayUsage.sort((a, b) => b.chats - a.chats).slice(0, 5)
       .map((row) => ({ name: emails.get(row.userId) ?? "(unknown user)", count: row.chats }));
 
     // Active = used the app (any event) or had a chat updated in the window
-    const activeSince = (t: number) => new Set([
-      ...events.filter((e) => e.at >= t).map((e) => e.userId),
+    const activeSince = async (t: number) => new Set([
+      ...(await eventWindow(t)).flatMap((e) => e.summary.users),
       ...chats.filter((c) => c.updatedAt >= t).map((c) => c.userId),
     ]).size;
 
@@ -88,22 +125,21 @@ export const dashboard = query({
       for (const r of rows) if (at(r) >= since && filter(r)) m[dayKey(at(r))] = (m[dayKey(at(r))] ?? 0) + 1;
       return m;
     };
-    const activePerDay: Record<string, Set<string>> = {};
-    for (const e of events) (activePerDay[dayKey(e.at)] ??= new Set()).add(e.userId);
-    const searches = perDay(events, (e) => e.at, (e) => e.name === "chat_sent" && e.props?.mode !== "watch");
-    const watchChats = perDay(events, (e) => e.at, (e) => e.name === "chat_sent" && e.props?.mode === "watch");
+    const activePerDay = Object.fromEntries(selected.map((e) => [e.day, e.summary.users.length]));
+    const searches = Object.fromEntries(selected.map((e) => [e.day, e.summary.searches]));
+    const watchChats = Object.fromEntries(selected.map((e) => [e.day, e.summary.watchChats]));
     const newWatches = perDay(watches, (w) => w.createdAt);
-    const newAlerts = perDay(alerts, (a) => a.createdAt);
+    const newAlerts = Object.fromEntries((await alertsInWindow(since)).map((a) => [a.day, a.summary.count]));
     const signups = perDay(users, (u) => u.createdAt);
     const daily = series.map((day) => ({
-      day, active: activePerDay[day]?.size ?? 0, searches: searches[day] ?? 0, watchChats: watchChats[day] ?? 0,
+      day, active: activePerDay[day] ?? 0, searches: searches[day] ?? 0, watchChats: watchChats[day] ?? 0,
       watches: newWatches[day] ?? 0, alerts: newAlerts[day] ?? 0, signups: signups[day] ?? 0,
     }));
 
     // Funnel: every account ever, then how far each got
-    const withChat = new Set([...chats.map((c) => c.userId), ...events.filter((e) => e.name === "chat_sent").map((e) => e.userId)]);
+    const withChat = new Set([...chats.map((c) => c.userId), ...selected.flatMap((e) => e.summary.chatUsers)]);
     const withWatch = new Set(watches.map((w) => w.userId));
-    const withAlert = new Set(alerts.map((a) => a.userId));
+    const withAlert = new Set(alertSummaries.flatMap((a) => a.summary.users));
     const funnel = [
       { step: "Signed up", count: users.length },
       { step: "Finished setup", count: users.filter((u) => u.onboardedAt !== undefined).length },
@@ -112,8 +148,8 @@ export const dashboard = query({
       { step: "Got an alert", count: users.filter((u) => withAlert.has(u._id)).length },
     ];
 
-    const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", now - DAY)).order("desc").collect();
-    const pageViews = events.filter((e) => e.name === "page_view");
+    const errors = (await readRows(ctx, "errors", now - DAY) ?? await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", now - DAY)).order("desc").collect())
+      .filter((e) => e.at >= now - DAY).sort(newest((e) => e.at));
     const latestAuditAt = audits[0]?.at;
     const latestAudit = audits.filter((a) => a.at === latestAuditAt);
     const latestMisses = audits.flatMap((a) => a.misses.map((m) => ({
@@ -128,30 +164,30 @@ export const dashboard = query({
       totals: {
         users: users.length,
         newUsers7d: users.filter((u) => u.createdAt >= now - 7 * DAY).length,
-        active1d: activeSince(now - DAY), active7d: activeSince(now - 7 * DAY), active30d: activeSince(now - 30 * DAY),
+        active1d: await activeSince(now - DAY), active7d: await activeSince(now - 7 * DAY), active30d: await activeSince(now - 30 * DAY),
         watchesActive: watches.filter((w) => w.active && live(w)).length,
         watchesPaused: watches.filter((w) => !w.active && live(w)).length,
         watchesArchived: watches.filter((w) => !live(w)).length,
         watchesFallingBehind: fallingBehind.length,
         chats: chats.length,
         chatsToday: todayUsage.reduce((sum, row) => sum + row.chats, 0),
-        alerts: alerts.length, alerts7d: alerts.filter((a) => a.createdAt >= now - 7 * DAY).length,
-        emailsSent: alerts.filter((a) => a.emailStatus === "sent").length,
-        emailsFailed: alerts.filter((a) => a.emailStatus === "failed").length,
+        alerts: summed(alertSummaries), alerts7d: summed(await alertsInWindow(now - 7 * DAY)),
+        emailsSent: alertSummaries.reduce((n, a) => n + a.summary.sent, 0),
+        emailsFailed: alertSummaries.reduce((n, a) => n + a.summary.failed, 0),
         feedback: feedback.length,
         feedbackOpen: feedback.filter((f) => !["shipped", "declined"].includes(f.status ?? (f.handledAt ? "planned" : "new"))).length,
         feedbackShipped: feedback.filter((f) => f.status === "shipped").length,
         feedbackReplied: feedback.filter((f) => !!f.repliedAt).length,
-        events: events.length,
+        events: summed(selected),
       },
       daily,
       fallingBehindLabels: fallingBehind.map((w) => w.name ?? w.label),
       funnel,
-      features: countBy(events, (e) => e.name),
-      pages: countBy(pageViews, (e) => e.props?.section || "chat"),
-      devices: countBy(events, (e) => e.device),
-      themes: countBy(pageViews, (e) => e.props?.value),
-      chatModes: countBy(events.filter((e) => e.name === "chat_sent"), (e) => e.props?.mode ?? "search"),
+      features: ranked(selected, "names"),
+      pages: ranked(selected, "pages"),
+      devices: ranked(selected, "devices"),
+      themes: ranked(selected, "themes"),
+      chatModes: ranked(selected, "chatModes"),
       topUsage,
       schedules: countBy(watches.filter(live), (w) => scheduleKey(w.schedule)),
       notify: countBy(watches.filter(live), (w) => w.notify),
@@ -163,7 +199,7 @@ export const dashboard = query({
       errors24h: { chat: errors.filter((e) => e.kind === "chat").length,
                    check: errors.filter((e) => e.kind === "check").length },
       latestErrors: errors.slice(0, 5).map(({ kind, requestId, message, at }) => ({ kind, requestId, message, at })),
-      capped: events.length === LIMIT,
+      capped: summed(selected) === LIMIT,
     };
   },
 });
@@ -584,14 +620,15 @@ export const ratingStats = query({
   handler: async (ctx, { days = 30 }) => {
     if (!(await isOwner(ctx))) return null;
     const since = Date.now() - Math.min(90, Math.max(7, days)) * DAY;
-    const ratings = (await ctx.db.query("ratings").withIndex("by_created").order("desc").take(LIMIT)).filter((r) => r.updatedAt >= since);
-    const alerts = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).take(LIMIT))
-      .filter((a) => a.emailStatus === "sent");
+    const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.gte("updatedAt", since)).order("desc").take(LIMIT);
+    const alertsSent = await sentAlertsSince(ctx, since) ??
+      (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).take(LIMIT))
+        .filter((a) => a.emailStatus === "sent").length;
     const good = ratings.filter((r) => r.verdict === "good").length;
     const reasons: Record<string, number> = {};
     ratings.forEach((r) => r.reasons?.forEach((x) => { reasons[x] = (reasons[x] ?? 0) + 1; }));
     return {
-      rated: ratings.length, alertsSent: alerts.length, good, notRight: ratings.length - good,
+      rated: ratings.length, alertsSent, good, notRight: ratings.length - good,
       fromEmail: ratings.filter((r) => r.source === "email").length,
       bands: BANDS.map(([key, label]) => {
         const rows = ratings.filter((r) => band(r.score) === key);
@@ -749,7 +786,7 @@ export const setWatchActive = mutation({
     const w = await ctx.db.get(watchId);
     if (!w) throw new ConvexError("That watch no longer exists.");
     if (active && w.archivedAt) throw new ConvexError("This watch is archived; its owner has to restore it first.");
-    await ctx.db.patch(watchId, activePatch(w, active, Date.now()));
+    await patchTracked(ctx, "watches", watchId, activePatch(w, active, Date.now()));
   },
 });
 
@@ -762,7 +799,7 @@ export const setFeedbackHandled = mutation({
     if (!row) throw new ConvexError("That feedback no longer exists.");
     const now = Date.now();
     const status = handled ? "planned" : "new";
-    await ctx.db.patch(id, { status, handledAt: handled ? now : undefined });
+    await patchTracked(ctx, "feedback", id, { status, handledAt: handled ? now : undefined });
     const identity = await ctx.auth.getUserIdentity();
     await ctx.db.insert("feedbackEvents", { feedbackId: id, status, at: now, by: identity!.email! });
   },
@@ -789,7 +826,7 @@ export const addFeedback = mutation({
       if (!meta || meta.size > 1_500_000 || (meta.contentType && !/^image\/(jpeg|png|webp)$/.test(meta.contentType)))
         throw new ConvexError("Choose a JPEG, PNG or WebP under 1.5 MB.");
     }
-    const id = await ctx.db.insert("feedback", { userId: args.userId, personName: args.personName?.trim() || undefined,
+    const id = await insertTracked(ctx, "feedback", { userId: args.userId, personName: args.personName?.trim() || undefined,
       personEmail: args.personEmail?.trim() || undefined, createdAt: args.receivedAt, source: args.source,
       message, paraphrase: args.paraphrase, screenshotId: args.screenshotId, status: "new" });
     const identity = await ctx.auth.getUserIdentity();
@@ -838,7 +875,7 @@ export const updateFeedback = mutation({
     const draft = args.status === "shipped" ? (args.replyDraft?.trim() || row.replyDraft ||
       draftFeedbackReply({ personName: row.personName, email: row.personEmail ?? user?.email,
         receivedAt: row.createdAt, note: args.note! })) : args.replyDraft?.trim();
-    await ctx.db.patch(args.id, { status: args.status, note: args.note?.trim() || undefined,
+    await patchTracked(ctx, "feedback", args.id, { status: args.status, note: args.note?.trim() || undefined,
       declinedReason: args.status === "declined" ? args.declinedReason?.trim() : undefined, issues,
       releaseSha: args.releaseSha?.trim() || undefined, releaseAt: args.releaseAt,
       replyDraft: draft, handledAt: args.status === "new" ? undefined : row.handledAt ?? now });
@@ -856,7 +893,7 @@ export const markFeedbackReplied = mutation({
       throw new ConvexError("This reply cannot be marked as sent.");
     if (!text.trim()) throw new ConvexError("Write the reply that was sent.");
     const identity = await ctx.auth.getUserIdentity();
-    await ctx.db.patch(id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel, repliedBy: identity!.email! });
+    await patchTracked(ctx, "feedback", id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel, repliedBy: identity!.email! });
   },
 });
 

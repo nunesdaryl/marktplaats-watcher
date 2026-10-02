@@ -5,33 +5,38 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
-import { MIN_SCORE } from "./schedule";
+import { readRows, storedQuiet, liveQuiet, driftAlarm, insertTracked, deleteTracked } from "./totals";
 
 const DAY = 86_400_000;
 const STUCK_AFTER = 60 * 60_000;             // the dispatcher runs every 15 min; an hour of silence is a problem
+const newest = <T extends { _id: string }>(at: (row: T) => number) => (a: T, b: T) =>
+  at(b) - at(a) || b._id.localeCompare(a._id);
 
 export const logRun = internalMutation({
   args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()), requestId: v.optional(v.string()) },
   handler: async (ctx, run) => {
-    await ctx.db.insert("runs", run);
+    await insertTracked(ctx, "runs", run);
     for (const old of await ctx.db.query("runs").withIndex("by_at", (q) => q.lt("at", run.at - 30 * DAY)).take(200))
-      await ctx.db.delete(old._id);
+      await deleteTracked(ctx, "runs", old._id);
   },
 });
 
 export const recordError = internalMutation({
   args: { kind: v.union(v.literal("chat"), v.literal("check")), requestId: v.string(), message: v.string() },
   handler: async (ctx, { kind, requestId, message }) => {
-    await ctx.db.insert("errors", { kind, requestId, message: message.trim().slice(0, 200).trim(), at: Date.now() });
+    await insertTracked(ctx, "errors", { kind, requestId, message: message.trim().slice(0, 200).trim(), at: Date.now() });
   },
 });
 
 /** The last 24 hours of scheduler runs and what went wrong; shared by the digest and the owner dashboard. */
 export async function healthReport(ctx: QueryCtx, now: number) {
   const since = now - DAY;
-  const runs = await ctx.db.query("runs").withIndex("by_at", (q) => q.gte("at", since)).collect();
-  const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
-  const recentAudits = await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
+  const runs = (await readRows(ctx, "runs", since) ?? await ctx.db.query("runs").withIndex("by_at", (q) => q.gte("at", since)).collect())
+    .filter((r) => r.at >= since);
+  const errors = (await readRows(ctx, "errors", since) ?? await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect())
+    .filter((e) => e.at >= since).sort(newest((e) => e.at));
+  const recentAudits = (await readRows(ctx, "audits", since) ?? await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect())
+    .filter((a) => a.at >= since).sort(newest((a) => a.at));
   const seenWatches = new Set<string>();
   const audits = recentAudits.filter((a) => {
     if (seenWatches.has(a.watchId)) return false;
@@ -40,15 +45,17 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   });
   const chatErrors = errors.filter((e) => e.kind === "chat").length;
   const checkErrors = errors.length - chatErrors;
-  const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
-  const failedAlerts = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
-    .filter((a) => a.emailStatus === "failed");
+  const lastRun = (await readRows(ctx, "runs"))?.sort(newest((r) => r.at))[0]
+    ?? await ctx.db.query("runs").withIndex("by_at").order("desc").first();
+  const failedAlerts = (await readRows(ctx, "alerts", since) ?? await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
+    .filter((a) => a.createdAt >= since && a.emailStatus === "failed");
   const failedEmails = failedAlerts.length;
-  const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(5000);
+  const feedback = (await readRows(ctx, "feedback") ?? await ctx.db.query("feedback").withIndex("by_created").order("desc").take(5000))
+    .sort(newest((f) => f.createdAt)).slice(0, 5000);
   const newFeedback = feedback.filter((f) => (f.status ?? (f.handledAt ? "planned" : "new")) === "new").length;
   const openFeedback = feedback.filter((f) => !["shipped", "declined"].includes(f.status ?? (f.handledAt ? "planned" : "new"))).length;
-  const activeWatches = (await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
-    .filter((w) => w.archivedAt === undefined);
+  const activeWatches = (await readRows(ctx, "watches") ?? await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
+    .filter((w) => w.active && w.archivedAt === undefined);
   const canary = process.env.CANARY_DISABLED === "1" ? null : await ctx.db.query("canary").first();
   const canaryFailed = canary?.lastError;
   const canarySilent = !!canary && !canaryFailed && now - canary.startedAt >= 3 * 60 * 60_000 &&
@@ -56,25 +63,11 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const failing = activeWatches
     .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError!, watchId: w._id, userId: w.userId }));
   const behind = activeWatches.filter((w) => (w.backlog ?? 0) >= 100 || w.coverageCapped);
-  const today = Math.floor(now / DAY) * DAY;
-  const quietSince = today - 2 * DAY;
-  const quiet = (await Promise.all(activeWatches.map(async (w) => {
-    const seen = await ctx.db.query("seenListings")
-      .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id).gte("lastSeenAt", quietSince)).collect();
-    const newListings = seen.filter((s) => (s.firstSeenAt ?? s._creationTime) >= quietSince
-      && (s.firstSeenAt ?? s._creationTime) <= now
-      && (w.seededAt === undefined || (s.firstSeenAt ?? s._creationTime) > w.seededAt));
-    if (new Set(newListings.map((s) => Math.floor((s.firstSeenAt ?? s._creationTime) / DAY))).size < 3) return null;
-    const alerts = await ctx.db.query("alerts")
-      .withIndex("by_watch_createdAt", (q) => q.eq("watchId", w._id).gte("createdAt", quietSince)).collect();
-    if (alerts.some((a) => a.createdAt <= now && a.emailStatus === "sent")) return null;
-    const best = newListings.filter((s) => s.scoredAt !== undefined && s.scoredAt >= quietSince && s.scoredAt <= now
-      && s.score !== undefined && s.score >= MIN_SCORE[w.notify] && s.title !== undefined && s.url !== undefined)
-      .sort((a, b) => b.score! - a.score!)[0];
-    return best ? { watch: w, listing: best } : null;
-  }))).filter((item) => item !== null);
+  const quiet = await storedQuiet(ctx) ?? await liveQuiet(ctx, now, activeWatches);
   const sum = (key: "checked" | "failed" | "emails" | "emailFailures") => runs.reduce((n, r) => n + r[key], 0);
   const problems: string[] = [];
+  const drift = await driftAlarm(ctx);
+  if (drift.length) problems.push(`Dashboard totals differed at the last recount: ${drift.join(", ")}.`);
   if (errors.length >= 5) problems.push(`${errors.length} errors in the last 24 hours (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ")}.`);
   if (!lastRun || now - lastRun.at > STUCK_AFTER)
     problems.push(lastRun ? `The scheduler hasn't run since ${new Date(lastRun.at).toISOString()}.` : "The scheduler hasn't run yet.");
@@ -102,6 +95,8 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string };
   type Issue = { kind: string; severity: "high" | "medium" | "low"; headline: string; count: number; items: Item[] };
   const issues: Issue[] = [];
+  if (drift.length) issues.push({ kind: "dashboard_drift", severity: "high", headline: "Dashboard totals differed at recount",
+    count: drift.length, items: drift.map((key) => ({ label: key })) });
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : word === "missed match" || word === "watch" ? "es" : "s"}`;
   if (errors.length >= 5) issues.push({ kind: "errors", severity: "high", headline: plural(errors.length, "error"), count: errors.length,
     items: errors.map((e) => ({ label: `${e.kind} error: ${e.message}`, requestId: e.requestId })) });

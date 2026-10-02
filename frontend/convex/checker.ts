@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import { MIN_SCORE, NOTIFY_LABEL, describe, nextRun } from "./schedule";
 import { deleteChat } from "./chats";
 import { ratingToken } from "./ratings";
+import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
@@ -79,7 +80,7 @@ export const claimDue = internalMutation({
     for (const [query, watches] of byQuery) {
       const payload = [];
       for (const w of watches) {
-        if (!dryRun) await ctx.db.patch(w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS), leaseUntil: now + LEASE_MS });
+        if (!dryRun) await patchTracked(ctx, "watches", w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS), leaseUntil: now + LEASE_MS });
         const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
           .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
         payload.push({
@@ -121,7 +122,7 @@ export const record = internalMutation({
       if (!watch) continue;                                   // deleted while it was being checked
       const ids = [...new Set(r.currentIds ?? [])];
       // This run's lease ends now, whatever the result (a newer claim's lease is left alone)
-      if (!dryRun && watch.leaseUntil === now + LEASE_MS) await ctx.db.patch(watch._id, { leaseUntil: undefined });
+      if (!dryRun && watch.leaseUntil === now + LEASE_MS) await patchTracked(ctx, "watches", watch._id, { leaseUntil: undefined });
       // Paused, archived or given a different search while it was being checked: this result is stale
       if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
       if (dryRun) {
@@ -144,7 +145,7 @@ export const record = internalMutation({
       if (!r.ok) {
         // Retry soon instead of waiting for the next scheduled time (a weekly watch would wait a week)
         const retryAt = Math.min(watch.nextRunAt, now + RETRY_MS);
-        await ctx.db.patch(watch._id, { lastCheckedAt: now, lastError: r.error ?? "The last check didn't work. We'll try again soon.", nextRunAt: retryAt });
+        await patchTracked(ctx, "watches", watch._id, { lastCheckedAt: now, lastError: r.error ?? "The last check didn't work. We'll try again soon.", nextRunAt: retryAt });
         continue;
       }
       const newAlerts: Id<"alerts">[] = [];
@@ -163,7 +164,7 @@ export const record = internalMutation({
         // First check: only remember what is already there. (Unscored listings never arrive here: the API
         // reports the whole watch as failed instead, so they stay unseen and are scored on the retry.)
         if (!watch.seeded || !item || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
-        newAlerts.push(await ctx.db.insert("alerts", {
+        newAlerts.push(await insertTracked(ctx, "alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,
           image: item.image ?? undefined,
@@ -179,7 +180,7 @@ export const record = internalMutation({
       const watermark = typeof r.newestId === "number"
         ? (watch.seeded && watch.watermark !== undefined ? Math.max(watch.watermark, r.newestId) : r.newestId)
         : r.newestId === null ? watch.watermark ?? 0 : watch.watermark;
-      await ctx.db.patch(watch._id, { seeded: true, ...(!watch.seeded ? { seededAt: now } : {}),
+      await patchTracked(ctx, "watches", watch._id, { seeded: true, ...(!watch.seeded ? { seededAt: now } : {}),
         watermark, lastReadAt: now, lastCheckedAt: now, lastError: undefined,
         backlog: r.waiting || undefined, coverageCapped: r.capped || undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
@@ -221,11 +222,11 @@ export const claimEmailRetries = internalMutation({
       const outOfTries = (a.attempts ?? 1) >= MAX_EMAIL_ATTEMPTS;
       const oldSearch = watch !== null && (watch.searchEditedAt ?? -1) > a.createdAt;
       if (outOfTries || oldSearch) {             // give up for good: visible as "failed", never retried
-        if (a.emailStatus !== "failed" || !outOfTries) await ctx.db.patch(a._id, { emailStatus: "failed", attempts: MAX_EMAIL_ATTEMPTS });
+        if (a.emailStatus !== "failed" || !outOfTries) await patchTracked(ctx, "alerts", a._id, { emailStatus: "failed", attempts: MAX_EMAIL_ATTEMPTS });
         continue;
       }
       if (!watch || !watch.active || watch.archivedAt !== undefined) continue;
-      await ctx.db.patch(a._id, { emailStatus: "pending", attempts: (a.attempts ?? 1) + 1, attemptAt: now });
+      await patchTracked(ctx, "alerts", a._id, { emailStatus: "pending", attempts: (a.attempts ?? 1) + 1, attemptAt: now });
       byWatch.set(a.watchId, [...(byWatch.get(a.watchId) ?? []), a._id]);
     }
     const mails = [];
@@ -241,7 +242,7 @@ export const claimEmailRetries = internalMutation({
 export const markEmailed = internalMutation({
   args: { alertIds: v.array(v.id("alerts")), status: v.union(v.literal("sent"), v.literal("failed"), v.literal("dry-run")) },
   handler: async (ctx, { alertIds, status }) => {
-    for (const id of alertIds) if (await ctx.db.get(id)) await ctx.db.patch(id, { emailStatus: status });
+    for (const id of alertIds) if (await ctx.db.get(id)) await patchTracked(ctx, "alerts", id, { emailStatus: status });
   },
 });
 
@@ -471,7 +472,7 @@ export const rebaseline = internalMutation({
     let count = 0;
     for (const w of await ctx.db.query("watches").collect()) {
       if (!w.seeded || w.archivedAt !== undefined) continue;
-      await ctx.db.patch(w._id, { seeded: false, watermark: undefined, ...(w.active ? { nextRunAt: now } : {}) });
+      await patchTracked(ctx, "watches", w._id, { seeded: false, watermark: undefined, ...(w.active ? { nextRunAt: now } : {}) });
       count++;
     }
     return { rebaselined: count };
@@ -491,7 +492,11 @@ export const purgeOld = internalMutation({
     const chats = await ctx.db.query("chats").withIndex("by_updated", (q) => q.lt("updatedAt", cutoff)).take(100);
     const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.lt("at", cutoff)).take(500);
     const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.lt("updatedAt", ratingsCutoff.getTime())).take(500);
-    for (const row of [...seen, ...alerts, ...audits, ...ratings, ...errors]) await ctx.db.delete(row._id);
+    for (const row of seen) await ctx.db.delete(row._id);
+    for (const row of alerts) await deleteTracked(ctx, "alerts", row._id);
+    for (const row of audits) await deleteTracked(ctx, "audits", row._id);
+    for (const row of ratings) await deleteTracked(ctx, "ratings", row._id);
+    for (const row of errors) await deleteTracked(ctx, "errors", row._id);
     for (const chat of chats) await deleteChat(ctx, chat._id);
     if (seen.length === 500 || alerts.length === 500 || audits.length === 500 || chats.length === 100 || ratings.length === 500 || errors.length === 500)
       await ctx.scheduler.runAfter(0, internal.checker.purgeOld, {});

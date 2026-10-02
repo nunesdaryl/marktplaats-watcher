@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
+import { insertTracked } from "./totals";
 
 const DAY = 86_400_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -69,7 +70,7 @@ export const record = internalMutation({
       const id = ctx.db.normalizeId("watches", r.watchId);
       const watch = id && await ctx.db.get(id);
       if (!watch) continue;
-      await ctx.db.insert("audits", {
+      await insertTracked(ctx, "audits", {
         at, watchId: watch._id, userId: watch.userId, requestId, ok: r.ok, read: r.read,
         scored: r.scored, missCount: r.missCount, ...(r.unscored !== undefined ? { unscored: r.unscored } : {}),
         misses: r.misses.slice(0, 5).map((m) => ({ listingId: m.id, title: m.title,
