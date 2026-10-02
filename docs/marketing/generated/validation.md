@@ -115,3 +115,9 @@ copy and `06-content-creator /social-post linkedin` for the first posts.
 ## Metadata
 - **Created:** 2026-09-27
 - **Inputs:** references/onboarding.md, research.md, testimonials.md; generated/buyer-avatar.md, linkedin-audience.md
+
+## 2 Oct 2026: first beta use
+
+One beta user with a Mac mini watch shared a real alert on 1 October and gave unprompted praise: it saves him time and effort, and he is now first to bid on Mac minis. The ladder now has evidence of real use from one user, still no payment. This is one user's feedback, not evidence that the broader market is validated.
+
+The next step remains 8–10 beta users with one real watch each for 14 days.

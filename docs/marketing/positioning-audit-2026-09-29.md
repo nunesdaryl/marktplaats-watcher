@@ -129,3 +129,11 @@ find, spam and trash included.
   reason given. Search 'mac mini' and a third of the first page isn't a Mac mini."
 - **If asked "why not the saved search?" (20 s):** see the end of `docs/demo/demo-script.md`.
 - **Say out loud:** it's unofficial, the terms risk is accepted, and there's a plan (MW-14).
+
+## 2 Oct 2026: first beta evidence
+
+On 1 October, a beta user with a Mac mini watch shared his 08:05 alert for a Mac mini M4 at €675, scored 9/10. He said the watch runs smoothly, does its one job well, saves him time and effort, and lets him bid first on Mac minis. This is a paraphrase of unprompted feedback, not an approved quote.
+
+**Sharpened line:** Be first to the good ones: every new ad read and scored the moment it's listed, only the ones worth it in your inbox, with the reason.
+
+Schedule speed and precision are the product. Resist features that don't serve those two things.

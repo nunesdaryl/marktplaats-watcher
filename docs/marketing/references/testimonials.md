@@ -6,7 +6,7 @@
 ## Our Reviews & Testimonials
 
 ### Customer Testimonials
-[NO OWN REVIEWS YET] The product is a new MVP with no beta users on record. No quotes exist and none are invented here.
+**2026-10-01, WhatsApp, FDE cohort group.** The course instructor, a beta user with a Mac mini watch, shared an 08:05 alert for a Mac mini M4 at €675, scored 9/10. Paraphrase: the watch runs smoothly, does its one job well, saves him time and effort, and lets him bid first on Mac minis. Permission to quote: not yet asked. Next step: ask him.
 
 ### Success Stories
 [TO BE ADDED] None yet. See the collection plan below.
@@ -101,5 +101,5 @@ Viva forum, Vinted alerts (https://forum.viva.nl/mode-beauty/emailnotificaties-o
 ## Metadata
 
 - **Created:** 2026-09-27
-- **Last updated:** 2026-09-27
-- **Status:** Partial (missing: own testimonials, marketplace reviews, Reddit/X voice)
+- **Last updated:** 2026-10-02
+- **Status:** Partial (first beta feedback recorded as a paraphrase; permission to quote and marketplace reviews, Reddit/X voice still missing)
