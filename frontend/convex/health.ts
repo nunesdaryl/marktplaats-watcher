@@ -107,8 +107,9 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     items: pausedRuns.map((r) => ({ label: `Paused run ${new Date(r.at).toISOString()}`, requestId: r.requestId })) });
   const failedAlertItems = await Promise.all(failedAlerts.map(async (a) => {
     const w = await ctx.db.get(a.watchId);
+    const source = await ctx.db.get(a._id);
     return { label: w?.name ?? w?.label ?? "Deleted watch", watchId: a.watchId, userId: a.userId,
-      listingId: a.listingId, score: a.score, title: a.title, url: a.url };
+      listingId: source?.listingId, score: a.score, title: source?.title, url: source?.url };
   }));
   if (failedEmails) issues.push({ kind: "emails_failed", severity: "high", headline: `${plural(failedEmails, "alert e-mail")} failed`, count: failedEmails,
     items: failedAlertItems });

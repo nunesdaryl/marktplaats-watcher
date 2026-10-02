@@ -14,7 +14,9 @@ const timed: Partial<Record<Tracked, keyof Doc<"events"> | string>> = {
 };
 export const bucketKey = (table: Tracked, row: Record<string, unknown>) => {
   const field = timed[table];
-  return field ? `${table}:${day(row[field] as number)}` : table;
+  const date = row[field!] as number;
+  return field ? `${table}:${table === "alerts" || table === "events"
+    ? new Date(date).toISOString().slice(0, 13) : day(date)}` : table;
 };
 
 // Keep only values used by the overview or health box; source documents can include large text and listing payloads.
@@ -23,7 +25,7 @@ export function projection(table: Tracked, row: Record<string, any>): Row {
     users: ["clerkId", "email", "createdAt", "onboardedAt"],
     watches: ["userId", "name", "label", "createdAt", "active", "archivedAt", "backlog", "coverageCapped", "lastError", "schedule", "notify", "seededAt"],
     chats: ["userId", "updatedAt"],
-    alerts: ["userId", "watchId", "listingId", "title", "url", "score", "emailStatus", "createdAt"],
+    alerts: ["userId", "watchId", "score", "emailStatus", "createdAt"],
     audits: ["at", "watchId", "userId", "requestId", "ok", "missCount", "misses", "error"],
     events: ["at", "userId", "name", "props", "device"],
     feedback: ["status", "handledAt", "repliedAt", "wouldPay", "createdAt"],
@@ -78,7 +80,9 @@ export async function readSummaries(ctx: QueryCtx, table: "events" | "alerts", s
 }
 
 export async function readDayRows<K extends "events" | "alerts">(ctx: QueryCtx, table: K, date: string): Promise<Doc<K>[]> {
-  return ((await bucket(ctx, `${table}:${date}`))?.rows ?? []) as Doc<K>[];
+  return (await ctx.db.query("dashboardTotals").withIndex("by_key", (q) =>
+    q.gte("key", `${table}:${date}`).lt("key", `${table}:${date}\uffff`)).collect())
+    .flatMap((d) => d.rows) as Doc<K>[];
 }
 
 export async function windowSummaries(ctx: QueryCtx, table: "events", since: number): Promise<{ day: string; summary: ReturnType<typeof summarizeEvents> }[] | null>;
@@ -98,11 +102,34 @@ async function bucket(ctx: QueryCtx, key: string) {
   return ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", key)).unique();
 }
 
+const rowSize = (rows: Row[]) => new TextEncoder().encode(JSON.stringify(rows)).length;
+const MAX_BUCKET_SIZE = 512 * 1024;
+
+async function markDrift(ctx: MutationCtx, key: string) {
+  try {
+    const meta = await bucket(ctx, "meta");
+    if (meta && !(meta.drift ?? []).includes(key))
+      await ctx.db.patch(meta._id, { drift: [...(meta.drift ?? []), key] });
+  } catch (error) {
+    console.error("Dashboard totals drift could not be recorded", key, error);
+  }
+}
+
+async function safelyChange(ctx: MutationCtx, table: Tracked, before: Record<string, any> | null, after: Record<string, any> | null) {
+  try {
+    await change(ctx, table, before, after);
+  } catch (error) {
+    await markDrift(ctx, bucketKey(table, after ?? before!));
+    console.error("Dashboard totals update failed", table, error);
+  }
+}
+
 export async function readRows<K extends Tracked>(ctx: QueryCtx, table: K, since?: number): Promise<Doc<K>[] | null> {
   if (!(await bucket(ctx, "meta"))) return null;
-  const docs = table in timed
-    ? await ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.gte("key", `${table}:${since === undefined ? "" : day(since)}`).lt("key", `${table}:\uffff`)).collect()
-    : [await bucket(ctx, table)];
+  const docs = await ctx.db.query("dashboardTotals").withIndex("by_key", (q) =>
+    table in timed
+      ? q.gte("key", `${table}:${since === undefined ? "" : day(since)}`).lt("key", `${table}:\uffff`)
+      : q.gte("key", table).lt("key", `${table}:\uffff`)).collect();
   return docs.flatMap((d) => d?.rows ?? []) as Doc<K>[];
 }
 
@@ -113,14 +140,27 @@ async function change(ctx: MutationCtx, table: Tracked, before: Record<string, a
   if (before && after && JSON.stringify(projection(table, before)) === JSON.stringify(projection(table, after))) return;
   const keys = new Set([before && bucketKey(table, before), after && bucketKey(table, after)].filter(Boolean) as string[]);
   for (const key of keys) {
-    const existing = await bucket(ctx, key);
+    const parts = await ctx.db.query("dashboardTotals").withIndex("by_key", (q) =>
+      q.gte("key", key).lt("key", `${key}:\uffff`)).collect();
+    const existing = parts.find((part) => part.rows.some((r: Row) => r._id === before?._id))
+      ?? parts.at(-1);
     const rows = (existing?.rows ?? []).filter((r: Row) => r._id !== (before?._id ?? after?._id));
     if (after && bucketKey(table, after) === key) rows.push(projection(table, after));
+    if (rowSize(rows) > MAX_BUCKET_SIZE) {
+      await markDrift(ctx, key);
+      continue;
+    }
     if (existing) await ctx.db.patch(existing._id, { rows });
     else await ctx.db.insert("dashboardTotals", { key, rows });
     if (table === "events" || table === "alerts") {
-      const summaryKey = `summary:${key}`;
-      const summary = table === "events" ? summarizeEvents(rows) : summarizeAlerts(rows);
+      const date = key.slice(table.length + 1, table.length + 11);
+      const summaryKey = `summary:${table}:${date}`;
+      const dayRows = await readDayRows(ctx, table, date);
+      const summary = table === "events" ? summarizeEvents(dayRows) : summarizeAlerts(dayRows);
+      if (new TextEncoder().encode(JSON.stringify(summary)).length > MAX_BUCKET_SIZE) {
+        await markDrift(ctx, summaryKey);
+        continue;
+      }
       const current = await bucket(ctx, summaryKey);
       if (current) await ctx.db.patch(current._id, { summary });
       else await ctx.db.insert("dashboardTotals", { key: summaryKey, rows: [], summary });
@@ -129,7 +169,7 @@ async function change(ctx: MutationCtx, table: Tracked, before: Record<string, a
   if (table === "alerts") {
     const sentKeys = new Set([before && bucketKey(table, before), after && bucketKey(table, after)].filter(Boolean) as string[]);
     for (const key of sentKeys) {
-      const countKey = `sent:${key.slice("alerts:".length)}`;
+      const countKey = `sent:${key.slice("alerts:".length, "alerts:".length + 10)}`;
       const existing = await bucket(ctx, countKey);
       const delta = Number(after?.emailStatus === "sent" && bucketKey(table, after) === key)
         - Number(before?.emailStatus === "sent" && bucketKey(table, before) === key);
@@ -146,26 +186,26 @@ export async function sentAlertsSince(ctx: QueryCtx, since: number): Promise<num
   const counts = await ctx.db.query("dashboardTotals")
     .withIndex("by_key", (q) => q.gte("key", `sent:${date}`).lt("key", "sent:\uffff")).collect();
   const whole = counts.filter((d) => d.key > `sent:${date}`).reduce((n, d) => n + (d.sent ?? 0), 0);
-  const boundary = (await bucket(ctx, `alerts:${date}`))?.rows.filter((r: any) => r.createdAt >= since && r.emailStatus === "sent").length ?? 0;
+  const boundary = (await readDayRows(ctx, "alerts", date)).filter((r) => r.createdAt >= since && r.emailStatus === "sent").length;
   return whole + boundary;
 }
 
 export async function insertTracked<K extends Tracked>(ctx: MutationCtx, table: K, value: any): Promise<Id<K>> {
   const id = await ctx.db.insert(table, value);
-  await change(ctx, table, null, (await ctx.db.get(id))!);
+  await safelyChange(ctx, table, null, (await ctx.db.get(id))!);
   return id;
 }
 
 export async function patchTracked<K extends Tracked>(ctx: MutationCtx, table: K, id: Id<K>, value: any) {
   const before = await ctx.db.get(id);
   await ctx.db.patch(id, value);
-  if (before) await change(ctx, table, before, (await ctx.db.get(id))!);
+  if (before) await safelyChange(ctx, table, before, (await ctx.db.get(id))!);
 }
 
 export async function deleteTracked<K extends Tracked>(ctx: MutationCtx, table: K, id: Id<K>) {
   const before = await ctx.db.get(id);
   await ctx.db.delete(id);
-  if (before) await change(ctx, table, before, null);
+  if (before) await safelyChange(ctx, table, before, null);
 }
 
 async function quietWatches(ctx: QueryCtx, now: number, watches: Doc<"watches">[]) {
@@ -204,8 +244,15 @@ async function recountRows(ctx: MutationCtx) {
   for (const table of TRACKED) {
     for await (const row of ctx.db.query(table)) {
       const key = bucketKey(table, row);
-      if (!result.has(key)) result.set(key, []);
-      result.get(key)!.push(projection(table, row));
+      const projected = projection(table, row);
+      let part = 1;
+      let partKey = key;
+      while (result.has(partKey) && rowSize([...result.get(partKey)!, projected]) > MAX_BUCKET_SIZE) {
+        part++;
+        partKey = `${key}:part${part}`;
+      }
+      if (!result.has(partKey)) result.set(partKey, []);
+      result.get(partKey)!.push(projected);
     }
   }
   return result;
@@ -214,10 +261,13 @@ async function recountRows(ctx: MutationCtx) {
 async function rebuild(ctx: MutationCtx, dryRun: boolean) {
   const now = Date.now();
   const expected = await recountRows(ctx);
-  for (const [key, rows] of [...expected]) if (key.startsWith("alerts:"))
-    expected.set(`sent:${key.slice("alerts:".length)}`, []);
-  for (const [key] of [...expected]) if (key.startsWith("events:") || key.startsWith("alerts:"))
-    expected.set(`summary:${key}`, []);
+  for (const [key] of [...expected]) {
+    if (key.startsWith("alerts:")) expected.set(`sent:${key.slice(7, 17)}`, []);
+    if (key.startsWith("events:") || key.startsWith("alerts:")) {
+      const table = key.startsWith("events:") ? "events" : "alerts";
+      expected.set(`summary:${table}:${key.slice(table.length + 1, table.length + 11)}`, []);
+    }
+  }
   const existing = await ctx.db.query("dashboardTotals").collect();
   const byKey = new Map(existing.map((d) => [d.key, d]));
   const drift: string[] = [];
@@ -228,11 +278,13 @@ async function rebuild(ctx: MutationCtx, dryRun: boolean) {
       : value && typeof value === "object"
         ? Object.fromEntries(Object.keys(value).sort().map((k) => [k, normalize(value[k])])) : value;
     const stable = (rows: Row[]) => JSON.stringify(normalize([...rows].sort((a, b) => a._id.localeCompare(b._id))));
+    const dayRows = (table: "events" | "alerts", date: string) => [...expected.entries()]
+      .filter(([name]) => name.startsWith(`${table}:${date}`)).flatMap(([, rows]) => rows);
     const expectedSent = key.startsWith("sent:")
-      ? expected.get(`alerts:${key.slice("sent:".length)}`)?.filter((r) => r.emailStatus === "sent").length ?? 0 : undefined;
+      ? dayRows("alerts", key.slice(5)).filter((r) => r.emailStatus === "sent").length : undefined;
     const expectedSummary = key.startsWith("summary:events:")
-      ? summarizeEvents(expected.get(key.slice("summary:".length)) ?? [])
-      : key.startsWith("summary:alerts:") ? summarizeAlerts(expected.get(key.slice("summary:".length)) ?? []) : undefined;
+      ? summarizeEvents(dayRows("events", key.slice("summary:events:".length)))
+      : key.startsWith("summary:alerts:") ? summarizeAlerts(dayRows("alerts", key.slice("summary:alerts:".length))) : undefined;
     const sameSummary = expectedSummary === undefined || JSON.stringify(normalize(byKey.get(key)?.summary)) === JSON.stringify(normalize(expectedSummary));
     const differed = stable(actual) !== stable(wanted) || expectedSent !== undefined && byKey.get(key)?.sent !== expectedSent || !sameSummary;
     if (differed) drift.push(key);

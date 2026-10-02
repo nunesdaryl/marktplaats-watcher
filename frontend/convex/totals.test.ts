@@ -2,7 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
-import { insertTracked } from "./totals";
+import { insertTracked, patchTracked } from "./totals";
 
 const modules = import.meta.glob("./**/*.ts");
 const DAY = 86_400_000;
@@ -177,4 +177,65 @@ test("quiet-watch findings are stored until the next recount", async () => {
   expect(await issue()).toMatchObject({ count: 1 });
   await t.mutation(internal.totals.recount, {});
   expect(await issue()).toBeUndefined();
+});
+
+test("oversized projection never blocks an alert and recount repairs drift", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  const key = `alerts:${new Date().toISOString().slice(0, 13)}`;
+  await t.run(async (ctx) => {
+    await ctx.db.insert("dashboardTotals", { key, rows: [{ _id: "oversized", padding: "x".repeat(512 * 1024) }] });
+  });
+  const id = await t.run((ctx) => insertTracked(ctx, "alerts", { userId: watch!.userId, watchId,
+    listingId: "l1", title: "Bike", url: "https://example.com/bike", reason: "match", channel: "email",
+    emailStatus: "pending", createdAt: Date.now() }));
+  expect(await t.run((ctx) => ctx.db.get(id))).not.toBeNull();
+  expect((await t.run((ctx) => ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", "meta")).unique()))?.drift).toContain(key);
+  await t.mutation(internal.totals.recount, {});
+  expect((await t.mutation(internal.totals.backfill, { dryRun: true })).drift).toEqual([]);
+});
+
+test("823 alerts on one day stay under 100 KB in each hourly bucket", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 823; i++) await ctx.db.insert("alerts", { userId: watch!.userId, watchId,
+      listingId: `l${i}`, title: "Bike", url: "https://example.com/bike", reason: "match", channel: "email",
+      emailStatus: "sent", createdAt: Date.parse("2026-09-30T00:00:00Z") + i * 100_000 });
+  });
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  const buckets = await t.run((ctx) => ctx.db.query("dashboardTotals").collect());
+  const alerts = buckets.filter((b) => b.key.startsWith("alerts:"));
+  expect(alerts.length).toBeGreaterThan(1);
+  expect(Math.max(...alerts.map((b) => new TextEncoder().encode(JSON.stringify(b.rows)).length))).toBeLessThan(100 * 1024);
+});
+
+test("an alert in a recount split part updates without a duplicate", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  const id = await t.run((ctx) => insertTracked(ctx, "alerts", { userId: watch!.userId, watchId,
+    listingId: "l1", title: "Bike", url: "https://example.com/bike", reason: "match", channel: "email",
+    emailStatus: "pending", createdAt: Date.now() }));
+  const key = `alerts:${new Date().toISOString().slice(0, 13)}`;
+  await t.run(async (ctx) => {
+    const base = await ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", key)).unique();
+    await ctx.db.patch(base!._id, { rows: [] });
+    await ctx.db.insert("dashboardTotals", { key: `${key}:part2`, rows: base!.rows });
+  });
+  await t.run((ctx) => patchTracked(ctx, "alerts", id, { emailStatus: "sent" }));
+  const rows = await t.run(async (ctx) => (await ctx.db.query("dashboardTotals").collect())
+    .filter((b) => b.key.startsWith(key)).flatMap((b) => b.rows));
+  expect(rows).toHaveLength(1);
+  expect(rows[0].emailStatus).toBe("sent");
 });

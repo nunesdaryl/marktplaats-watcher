@@ -1275,7 +1275,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   updated in the same writes, a nightly recount with a drift alarm, the quiet-watch scan moved to the nightly job,
   ratings-only reads for the score panel). The 2 October operator addendum moved the build before the demo, subject to
   review and the merge cut-off. The implementation stores compact event and alert summaries plus source projections in
-  UTC-day buckets, updated by the source mutations. The 04:40 UTC recount repairs differences and records a drift problem; it also
+  UTC-hour buckets for events and alerts (with UTC-day summaries), and UTC-day buckets for other timed rows, updated by the source mutations. A 512 KB bucket guard lets source writes succeed and flags drift if a projection cannot be updated. The 04:40 UTC recount repairs differences and records a drift problem; it also
   stores the quiet-watch result. The score panel reads ratings by <code>updatedAt</code> and daily sent-alert counts.
   Production Database I/O reduction still requires the specified 30-minute measurement after merge.</p>
 <table>

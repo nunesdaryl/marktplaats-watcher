@@ -202,8 +202,10 @@ there once.
 ## 10. Using the dashboard to find a problem
 Use the refresh icon at the top right to recalculate the dashboard; the time under the icon shows when the figures were computed in Amsterdam time.
 The live overview reads compact `dashboardTotals` summaries for events and alerts, plus projections for the smaller
-tables. Source mutations update the matching bucket and summary in the same transaction. Events, alerts, runs,
-errors, audits and ratings use UTC-day buckets; account, watch, chat and feedback projections are kept separately.
+tables. Source mutations update the matching bucket and summary in the same transaction. Events and alerts use
+UTC-hour buckets with UTC-day summaries; runs, errors, audits and ratings use UTC-day buckets. Account, watch, chat
+and feedback projections are kept separately. If a bucket would exceed 512 KB or a projection update fails, the
+source write succeeds and a drift issue is recorded for the nightly recount to repair.
 `admin.ratingStats` reads ratings through `by_updated` and the small
 sent-alert counts. At 04:40 UTC, after the delivery audit, `totals.recount` compares these buckets with the source
 tables, repairs differences, and puts a drift issue in the health box and 05:00 digest. It also stores the quiet-watch
