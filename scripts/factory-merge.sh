@@ -29,9 +29,13 @@ python=.venv/bin/python
     npm run typecheck
     npm run build
 )
+git checkout -- frontend/convex/_generated
+git clean -fd -- frontend/convex/_generated
 [[ -z $(git status --porcelain) ]] || fail "checks changed the checkout; inspect before proceeding"
 if git diff --name-only "$before" "$merge_sha" -- frontend/convex | grep -q .; then
     (cd frontend && npx convex deploy -y)
+    git checkout -- frontend/convex/_generated
+    git clean -fd -- frontend/convex/_generated
     [[ -z $(git status --porcelain) ]] || fail "Convex deploy changed tracked or untracked files; inspect before proceeding"
     convex=deployed
 else
