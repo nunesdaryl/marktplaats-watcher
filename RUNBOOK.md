@@ -26,6 +26,10 @@ repo root unless they start with `cd frontend`.
 
 ---
 
+## Weekly listening loop
+
+The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) maps the current path; the full Monday routine arrives with MW-51.
+
 ## Trace a request
 
 Find the request id in the API response header `X-Request-Id`, in the owner dashboard's latest errors,
