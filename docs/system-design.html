@@ -1278,6 +1278,16 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   UTC-hour buckets for events and alerts (with UTC-day summaries), and UTC-day buckets for other timed rows, updated by the source mutations. A 512 KB bucket guard lets source writes succeed and flags drift if a projection cannot be updated. The 04:40 UTC recount repairs differences and records a drift problem; it also
   stores the quiet-watch result. The score panel reads ratings by <code>updatedAt</code> and daily sent-alert counts.
   Production Database I/O reduction still requires the specified 30-minute measurement after merge.</p>
+<p><b>MW-56 shipped the same afternoon</b> on Daryl's call ("Pick up MW-56"). Review sent it back once: per-day buckets
+  would have put 30 September's 823 alerts in one 332 KB document, a third of Convex's 1 MB limit, and an oversized bucket
+  would have failed the alert write itself. The fix buckets alerts and events per hour with slim rows, guards every
+  bucket at 512 KB, and wraps every totals update so any error is recorded as drift for the nightly recount; the source
+  write always succeeds. Merged as <code>3b73ce3</code>, inert until a one-off backfill; the dry run listed 129 total
+  documents, and on Daryl's OK the backfill wrote them. Proof of equality: the dashboard's 7, 30 and 90-day views and the
+  score panel were captured as the owner before and after the backfill and compared field by field: identical, apart
+  from the order of three tied feature rows (each used once). The read reduction is being measured with one live /admin
+  tab open from 14:01; at 14:04 <code>admin.dashboard</code> and <code>admin.ratingStats</code> had not moved
+  (563.8 MB and 379.87 MB) while the checker's reads did. The final figure follows after the 30-minute window.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
