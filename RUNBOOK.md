@@ -37,6 +37,8 @@ Every Monday, allow about 20 minutes to close the loop. Run `scripts/factory/loo
 5. Pull pending user evaluation cases with `.venv/bin/python -m evals.feedback_cases`. Inspect each candidate and confirm only sound labels as in §11a. Check the latest Monday evaluation run; rerun the scorer and report after confirmed cases or model changes.
 6. Note three numbers for the past week: people who started (new signups), finished (new users who completed setup), and came back (users active again after their first day). Use `/admin` account dates and activity for the same seven-day window; record the window and numbers together so the next Monday is comparable.
 
+About step 2: run `.venv/bin/python scripts/factory/feedback_drafts.py` from the repo root each week. It reads new tracker items, the last 30 days of Not right ratings, and the latest delivery-audit misses from Convex Production, checks open MW issues in Linear, and prints evidence-cited draft specs. Review each draft and its cited records before filing. Use `.venv/bin/python scripts/factory/feedback_drafts.py --file <draft-id> [<draft-id> ...]` to file selected drafts. Filing adds `draft` and one `engine:gpt-6-sol` label, then links each selected feedback item as planned. The operator alone applies `agent-ready` after reviewing the spec; a draft is never a build authorization. A failed tracker update after issue creation needs manual reconciliation using the printed Linear issue ID.
+
 The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) explains why each handoff exists.
 
 ## Trace a request

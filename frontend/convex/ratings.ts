@@ -129,7 +129,7 @@ export const exportAll = internalQuery({
     const alert = r.listing ? null : await ctx.db.get(r.alertId);
     const watch = r.watchDescription ? null : await ctx.db.get(r.watchId);
     return {
-      id: r._id, at: new Date(r.updatedAt).toISOString(), verdict: r.verdict, reasons: r.reasons ?? [], note: r.note ?? "",
+      id: r._id, watchId: r.watchId, at: new Date(r.updatedAt).toISOString(), verdict: r.verdict, reasons: r.reasons ?? [], note: r.note ?? "",
       score: r.score ?? null, notify: r.notify ?? null, title: r.title ?? "", reason: r.reason ?? "", source: r.source,
       listing: r.listing ?? (alert ? { id: alert.listingId, title: alert.title, price_eur: alert.priceEur ?? null,
         city: alert.city ?? null, distance_km: null, url: alert.url, image: alert.image ?? null } : null),

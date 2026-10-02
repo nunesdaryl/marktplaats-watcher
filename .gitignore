@@ -22,3 +22,5 @@ references/img/
 
 # Software factory build worktrees (factory-build)
 .factory-worktrees/
+evals/data/user_cases_pending.json
+evals/data/user_ratings.json
