@@ -227,6 +227,8 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
 
 @app.post("/api/watch/estimate")
 def watch_estimate_route(request: WatchEstimate, user: str = Depends(current_user)):
+    if too_many(user):
+        return JSONResponse({"volumeNote": None}, status_code=429)
     return {"volumeNote": estimate_volume_note(request.model_dump())}
 
 

@@ -749,7 +749,7 @@ def test_ranking_failure_leaves_listings_unranked_instead_of_dropping_them(monke
 
 
 def test_chat_can_only_propose_watches_never_save_them(monkeypatch):
-    monkeypatch.setattr(agent, "read_since", lambda *args: ([], False))
+    monkeypatch.setattr(agent, "estimate_volume_note", lambda *_: None)
     ctx = agent.ChatContext([{"id": "w1", "label": "Mac mini"}])
     _, propose, change = agent.make_tools(ctx)
     propose.invoke({"query": "mac mini", "schedule_kind": "weekly", "days": ["fri", "mon"], "times": ["18:00"]})
@@ -763,24 +763,62 @@ def test_chat_can_only_propose_watches_never_save_them(monkeypatch):
 
 def test_proposal_warns_only_when_new_listings_exceed_one_checks_budget(monkeypatch):
     reads = []
-    def fake_read(query, filters, days, today):
-        reads.append((query, filters, days))
-        return ([{"date": "Gisteren", "title": "iPhone 15 Pro 256GB"} for _ in range(25)] +
-                [{"date": "20 sep 26", "title": "iPhone 15 Pro 256GB"}], False)
-    monkeypatch.setattr(agent, "read_since", fake_read)
+    def fake_read(query, filters, offset, **kwargs):
+        reads.append((query, filters, offset))
+        return {"listings": [{"itemId": f"m{i}", "date": "Gisteren", "title": "iPhone 15 Pro 256GB"}
+                             for i in range(25)] + [{"itemId": "old", "date": "20 sep 26", "title": "iPhone 15 Pro 256GB"}]}
+    monkeypatch.setattr(agent, "fetch_search", fake_read)
     ctx = agent.ChatContext([{"id": "w1", "label": "iPhone", "query": "iphone",
                              "schedule": {"kind": "daily", "times": ["08:00"]}}])
     _, propose, change = agent.make_tools(ctx)
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00"]})
     assert "25 new listings per check" in ctx.proposals[0]["volumeNote"]
-    assert reads == [("iphone", {}, 1)]
+    assert reads == [("iphone", {}, 0)]
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00", "20:00"]})
     assert ctx.proposals[1]["volumeNote"] is None
     propose.invoke({"query": "iphone", "must_include": "16gb", "schedule_kind": "daily", "times": ["08:00"]})
     assert ctx.proposals[2]["volumeNote"] is None
     change.invoke({"watch_id": "w1", "max_price_eur": 600})
     assert "25 new listings per check" in ctx.proposals[3]["volumeNote"]
-    assert reads[-1] == ("iphone", {"attributeRanges[]": "PriceCents:null:60000"}, 1)
+    assert reads[-1] == ("iphone", {"attributeRanges[]": "PriceCents:null:60000"}, 0)
+
+
+def test_estimate_stops_after_two_pages_and_marks_lower_bound(monkeypatch):
+    offsets = []
+    def fake_read(query, filters, offset, **kwargs):
+        offsets.append(offset)
+        return {"listings": [{"itemId": f"m{offset + i}", "date": "Vandaag", "title": "iPhone"}
+                             for i in range(agent.PAGE_SIZE)]}
+    monkeypatch.setattr(agent, "fetch_search", fake_read)
+    note = agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}})
+    assert offsets == [0, agent.PAGE_SIZE]
+    assert "at least 60 new listings per check" in note
+
+
+def test_estimate_timeout_leaves_no_note(monkeypatch):
+    def slow_read(*args, **kwargs):
+        time.sleep(0.05)
+        return {"listings": [{"itemId": f"m{i}", "date": "Vandaag", "title": "iPhone"}
+                             for i in range(agent.PAGE_SIZE)]}
+    monkeypatch.setattr(agent, "fetch_search", slow_read)
+    monkeypatch.setattr(agent, "ESTIMATE_BUDGET_SECONDS", 0.01)
+    started = time.monotonic()
+    assert agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}}) is None
+    assert time.monotonic() - started < 0.1
+    ctx = agent.ChatContext([])
+    _, propose, _ = agent.make_tools(ctx)
+    propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00"]})
+    assert len(ctx.proposals) == 1 and ctx.proposals[0]["volumeNote"] is None
+
+
+def test_estimate_failed_page_leaves_no_note(monkeypatch):
+    def failed_read(query, filters, offset, **kwargs):
+        if offset:
+            raise ValueError("bad page")
+        return {"listings": [{"itemId": f"m{i}", "date": "Vandaag", "title": "iPhone"}
+                             for i in range(agent.PAGE_SIZE)]}
+    monkeypatch.setattr(agent, "fetch_search", failed_read)
+    assert agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}}) is None
 
 
 def test_sheet_estimate_route_requires_login_and_returns_note(client, monkeypatch):
@@ -791,6 +829,19 @@ def test_sheet_estimate_route_requires_login_and_returns_note(client, monkeypatc
                            headers={"Authorization": f"Bearer {client.token()}"})
     assert response.status_code == 200
     assert response.json() == {"volumeNote": "Narrow this search"}
+
+
+def test_sheet_estimate_route_shares_chat_rate_limit(client, monkeypatch):
+    calls = []
+    monkeypatch.setattr(client.main, "chat", lambda *args: {"answer": "ok"})
+    monkeypatch.setattr(client.main, "estimate_volume_note", lambda watch: calls.append(watch) or "Narrow this search")
+    monkeypatch.setattr(client.main, "RATE_PER_MINUTE", 1)
+    headers = {"Authorization": f"Bearer {client.token()}"}
+    body = {"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}}
+    assert client.post("/api/chat", json={"message": "hi"}, headers=headers).status_code == 200
+    response = client.post("/api/watch/estimate", json=body, headers=headers)
+    assert response.status_code == 429
+    assert calls == []
 
 
 def test_broken_page_json_means_no_listings_not_a_crash():
