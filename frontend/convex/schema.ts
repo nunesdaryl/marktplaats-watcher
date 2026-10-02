@@ -49,6 +49,15 @@ export const catchupItem = v.object({
 });
 
 export default defineSchema({
+  dashboardTotals: defineTable({
+    key: v.string(),
+    rows: v.array(v.any()),
+    quiet: v.optional(v.array(v.any())),
+    drift: v.optional(v.array(v.string())),
+    checkedAt: v.optional(v.number()),
+    sent: v.optional(v.number()),
+    summary: v.optional(v.any()),
+  }).index("by_key", ["key"]),
   // Only what alerts need: the Clerk id and the e-mail address to send them to.
   users: defineTable({
     clerkId: v.string(),

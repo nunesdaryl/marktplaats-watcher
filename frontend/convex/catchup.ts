@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { insertTracked } from "./totals";
 import type { Id } from "./_generated/dataModel";
 import { renderEmail, sendEmail } from "./checker";
 import { ratingToken } from "./ratings";
@@ -132,7 +133,7 @@ export const claimPlan = internalMutation({
       const ids = alerted.get(item.watchId)!;
       if (ids.has(item.listingId)) continue;
       ids.add(item.listingId);
-      const alertId = await ctx.db.insert("alerts", {
+      const alertId = await insertTracked(ctx, "alerts", {
         userId: item.userId, watchId: item.watchId, listingId: item.listingId,
         title: item.title, url: item.url, priceEur: item.priceEur, score: item.score,
         city: item.city, image: item.image, reason: "Match we missed.", channel: "email",
