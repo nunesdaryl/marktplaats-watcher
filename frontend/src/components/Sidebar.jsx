@@ -9,6 +9,10 @@ import InlineRename from "./InlineRename.jsx";
 import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
+export function forwardAccountClick(event, trigger) {
+  if (!event.target.closest("button")) trigger?.querySelector("button")?.click();
+}
+
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
 export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
@@ -21,6 +25,7 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
   const [openFolders, setOpenFolders] = useState({});
   const [newFolder, setNewFolder] = useState(false);
   const searchRef = useRef(null);
+  const accountTriggerRef = useRef(null);
 
   // ⌘K (from App) opens search
   useEffect(() => {
@@ -184,8 +189,11 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
         <Icon name="feedback" size={18} />Feedback &amp; suggestions
       </button>
       <div className="account">
-        <AccountButton />
-        <span className="email" data-private>{email}</span>
+        <div className="account-trigger" ref={accountTriggerRef} onClick={(e) => forwardAccountClick(e, accountTriggerRef.current)}>
+          <AccountButton />
+          <span className="email" data-private aria-hidden="true">{email}</span>
+          <span className="account-chevron" aria-hidden="true"><Icon name="chevron" size={16} /></span>
+        </div>
         <button className="icon-button small" onClick={() => go("/archived")} aria-label="Archived" title="Archived">
           <Icon name="archive" size={18} />
         </button>
