@@ -18,6 +18,9 @@ CHAT_RESULTS = DATA / "chat_results.json"
 REPEAT_RESULTS = DATA / "repeat_results.json"
 SPOTCHECK = DATA / "spotcheck.md"
 USER_RATINGS = DATA / "user_ratings.json"   # people's "good match / not right" on real alerts (evals/pull_ratings.py)
+USER_CASES_PENDING = DATA / "user_cases_pending.json"
+USER_CASES_GOLDEN = DATA / "user_cases_golden.json"
+RATING_REASONS = DATA / "rating_reasons.json"
 REPORT = Path(__file__).parent / "report.md"
 
 # USD per 1M tokens, standard tier (developers.openai.com/api/docs/pricing, checked 27 Sep 2026)
