@@ -1287,11 +1287,16 @@ def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
 
 
 def test_canary_check_counts_new_listings_without_ranking(monkeypatch):
-    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(["m100", "m101"]))
+    first_page = api_page([(100, "Vandaag"), (101, "Vandaag"), (105, "Vandaag")] +
+                          [(90 - i, "Vandaag") for i in range(27)])
+    first_page["listings"][2]["vipUrl"] = ""  # A readable listing still counts if its link cannot be parsed.
+    read = serve_search(monkeypatch, [first_page, api_page([(106, "Vandaag")])])
     monkeypatch.setattr(agent, "rank_listings", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ranked")))
-    [result] = agent.check_query("iphone", [{"id": "canary", "read_only": True, "watermark": 100}])
-    assert result["ok"] and result["readCount"] == 1
-    assert result["newestId"] == 101 and result["listings"] == []
+    [result] = agent.check_query("iphone", [{"id": "canary", "read_only": True, "watermark": 100,
+                                              "last_checked_at": YESTERDAY}])
+    assert [page for _, page in read] == [0]
+    assert result["ok"] and result["readCount"] == 2
+    assert result["newestId"] == 105 and result["listings"] == []
 
 
 def test_canary_check_route_keeps_read_only_mode(client, monkeypatch):
