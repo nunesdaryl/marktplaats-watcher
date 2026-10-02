@@ -95,6 +95,8 @@ export default defineSchema({
     notify: v.optional(v.string()),              // the watch's "which alerts" setting then
     title: v.optional(v.string()),               // kept for the evaluation even after the alert is forgotten (30 days)
     reason: v.optional(v.string()),              // the scorer's reason that was rated
+    listing: v.optional(listingCard),             // scorer input kept after the alert expires
+    watchDescription: v.optional(v.string()),
     source: v.union(v.literal("app"), v.literal("email")),
     createdAt: v.number(),
     updatedAt: v.number(),

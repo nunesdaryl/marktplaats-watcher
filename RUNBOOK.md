@@ -178,7 +178,13 @@ Ratings arrive from the e-mail links and the Alerts page; see them on `/admin` â
 stop showing rating links, `RATING_SECRET` is missing in Convex (production). To rotate it, generate a new value and
 pipe it in (`K=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))"); npx convex env set RATING_SECRET "$K" --prod`);
 links in older e-mails then say "This link isn't valid", and those people can still rate in the app. For the
-evaluation: `.venv/bin/python -m evals.pull_ratings && .venv/bin/python -m evals.report`.
+evaluation: run `.venv/bin/python -m evals.feedback_cases` to fetch ratings read-only and write
+`evals/data/user_cases_pending.json`. Review each candidate's listing, watch description, verdict and reasons. Confirm
+only cases you agree should be scorer labels with `.venv/bin/python -m evals.feedback_cases --confirm <rating-id> [<rating-id> ...]`.
+That moves them to `evals/data/user_cases_golden.json`; commit the reviewed file, then run
+`.venv/bin/python -m evals.run_scorer --runs 3 && .venv/bin/python -m evals.report`.
+Ratings without a saved listing and watch description remain in the report but cannot become cases. When reason labels
+change, run `node evals/generate_rating_reasons.mjs` and check the generated JSON diff.
 
 ## 11. Vercel Web Analytics in the dashboard (token)
 The "Website visitors" section reads Vercel Web Analytics with `VERCEL_TOKEN` in Convex (prod and dev). Vercel tokens

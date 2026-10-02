@@ -106,7 +106,7 @@ function AdminAsk({ open, users, watches }) {
   return <div className="admin-ask">
     <form onSubmit={submit}>
       <input aria-label="Ask the dashboard" type="text" maxLength={300} value={question}
-        onChange={(e) => setQuestion(e.target.value)} placeholder="Ask anything: alerts for Vin this week above 8" />
+        onChange={(e) => setQuestion(e.target.value)} placeholder="Ask anything: alerts this week above 8" />
       <button className="button tinted" type="submit" disabled={busy || !question.trim() || !users || !watches}>
         {busy ? "Finding…" : "Ask"}
       </button>
