@@ -4,7 +4,8 @@ export async function installCacheReset(win) {
     if (win.localStorage.getItem("mw-cache-reset") === "1") return;
     win.localStorage.setItem("mw-cache-reset", "1");
   } catch {
-    // A blocked storage API must not prevent the purge request.
+    // Without a saved flag, a browser would purge again on every load.
+    return;
   }
   try {
     await win.fetch("/cache-reset.txt?v=1", { cache: "no-store" });

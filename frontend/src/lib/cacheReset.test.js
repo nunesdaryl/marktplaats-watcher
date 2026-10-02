@@ -32,16 +32,16 @@ test("a flagged browser does not fetch the purge endpoint", async () => {
   expect(win.fetch).not.toHaveBeenCalled();
 });
 
-test("a storage read failure still fetches the purge endpoint", async () => {
+test("a storage read failure skips the purge endpoint", async () => {
   const { win, run } = runScript(null);
   win.localStorage.getItem = () => { throw new Error("Storage blocked"); };
   await expect(run()).resolves.toBeUndefined();
-  expect(win.fetch).toHaveBeenCalledTimes(1);
+  expect(win.fetch).not.toHaveBeenCalled();
 });
 
-test("a storage write failure still fetches the purge endpoint", async () => {
+test("a storage write failure skips the purge endpoint", async () => {
   const { win, run } = runScript(null);
   win.localStorage.setItem = () => { throw new Error("Storage blocked"); };
   await expect(run()).resolves.toBeUndefined();
-  expect(win.fetch).toHaveBeenCalledTimes(1);
+  expect(win.fetch).not.toHaveBeenCalled();
 });
