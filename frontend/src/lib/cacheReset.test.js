@@ -8,14 +8,19 @@ function runScript(value) {
     fetch: vi.fn().mockResolvedValue({ ok: true }),
     location: { reload: vi.fn() },
   };
-  return { win, store, run: () => new Function("window", cacheResetScript)(win) };
+  return { win, store, run: () => new Function("window", `return ${cacheResetScript}`)(win) };
 }
 
-test("fetches the purge endpoint once, then records the browser flag", async () => {
+test("records the browser flag before fetching the purge endpoint", async () => {
   const { win, store, run } = runScript(null);
+  let flagAtFetch;
+  win.fetch.mockImplementation(() => {
+    flagAtFetch = store.get("mw-cache-reset");
+    return Promise.resolve({ ok: true });
+  });
   await run();
+  expect(flagAtFetch).toBe("1");
   expect(win.fetch).toHaveBeenCalledWith("/cache-reset.txt?v=1", { cache: "no-store" });
-  expect(store.get("mw-cache-reset")).toBe("1");
   await run();
   expect(win.fetch).toHaveBeenCalledTimes(1);
   expect(win.location.reload).not.toHaveBeenCalled();
@@ -27,9 +32,16 @@ test("a flagged browser does not fetch the purge endpoint", async () => {
   expect(win.fetch).not.toHaveBeenCalled();
 });
 
-test("unavailable local storage skips the purge", async () => {
+test("a storage read failure still fetches the purge endpoint", async () => {
   const { win, run } = runScript(null);
   win.localStorage.getItem = () => { throw new Error("Storage blocked"); };
-  await run();
-  expect(win.fetch).not.toHaveBeenCalled();
+  await expect(run()).resolves.toBeUndefined();
+  expect(win.fetch).toHaveBeenCalledTimes(1);
+});
+
+test("a storage write failure still fetches the purge endpoint", async () => {
+  const { win, run } = runScript(null);
+  win.localStorage.setItem = () => { throw new Error("Storage blocked"); };
+  await expect(run()).resolves.toBeUndefined();
+  expect(win.fetch).toHaveBeenCalledTimes(1);
 });
