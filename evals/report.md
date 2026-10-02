@@ -2,7 +2,7 @@
 
 Scorer run 2026-09-30 22:53, chat run 2026-09-30 21:39. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
 Prompt versions: chat **chat-2026-09-30.2**, rank **rank-2026-10-01.1**.
-UAT sign-off: ______ (name), ______ (date), prompt versions ______
+UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-2026-09-30.2 / rank-2026-10-01.1
 
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
 
