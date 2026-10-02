@@ -130,6 +130,23 @@ test("top-up plan preserves explicit items and skips an already alerted listing 
   expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 });
 
+test("audit plans reuse the same day and allow one owner notice claim", async () => {
+  const { t, id } = await watch();
+  const userId = (await t.run((ctx) => ctx.db.get(id)))!.userId;
+  const item = { watchId: id, userId, listingId: "m1", title: "Mac mini",
+    url: "https://www.marktplaats.nl/v/m1", score: 9 };
+  const planId = await t.mutation(internal.catchup.planFromItems, { items: [item], auditDay: "2026-09-30" });
+  expect(await t.mutation(internal.catchup.planFromItems, { items: [{ ...item, listingId: "m2" }],
+    auditDay: "2026-09-30" })).toBe(planId);
+  expect(await t.run((ctx) => ctx.db.get(planId))).toMatchObject({ status: "draft", items: [item] });
+  expect(await t.mutation(internal.catchup.claimOwnerNotice, { planId })).toEqual([
+    { user: "alice@example.com", watch: "Mac mini", title: "Mac mini", score: 9,
+      url: "https://www.marktplaats.nl/v/m1" },
+  ]);
+  expect(await t.mutation(internal.catchup.claimOwnerNotice, { planId })).toBeNull();
+  expect(await t.run((ctx) => ctx.db.query("catchupPlans").collect())).toHaveLength(1);
+});
+
 test("preview keeps new listings when the watch already received a catch-up", async () => {
   const { t, id } = await watch();
   await t.run(async (ctx) => {

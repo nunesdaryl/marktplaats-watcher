@@ -148,7 +148,9 @@ export default defineSchema({
     at: v.number(),
     status: v.union(v.literal("draft"), v.literal("sent")),
     items: v.array(catchupItem),
-  }),
+    auditDay: v.optional(v.string()),
+    ownerNoticeClaimedAt: v.optional(v.number()),
+  }).index("by_auditDay", ["auditDay"]),
 
   errors: defineTable({
     kind: v.union(v.literal("chat"), v.literal("check")),

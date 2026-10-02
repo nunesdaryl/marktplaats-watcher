@@ -2,6 +2,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { sendEmail } from "./checker";
 
 const DAY = 86_400_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -67,6 +68,25 @@ export const record = internalMutation({
   },
 });
 
+export const ownerItems = internalQuery({
+  args: { results: v.array(result) },
+  handler: async (ctx, { results }) => {
+    const items = [];
+    for (const r of results) {
+      if (!r.ok) continue;
+      const watchId = ctx.db.normalizeId("watches", r.watchId);
+      const watch = watchId && await ctx.db.get(watchId);
+      if (!watch) continue;
+      for (const m of r.misses) {
+        if (m.score < 9 || (m.kind !== "handled" && m.kind !== "rescored")) continue;
+        items.push({ watchId: watch._id, userId: watch.userId, listingId: m.id,
+          title: m.title, url: m.url, score: m.score });
+      }
+    }
+    return items;
+  },
+});
+
 export const run = internalAction({
   args: {},
   handler: async (ctx) => {
@@ -75,6 +95,7 @@ export const run = internalAction({
     const groups = await ctx.runQuery(internal.audit.groups, { now: at });
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
     let checked = 0, misses = 0;
+    const ownerResults = [];
     for (const [index, group] of groups.entries()) {
       const requestId = `audit-${runId}.${index}`;
       let results;
@@ -96,8 +117,30 @@ export const run = internalAction({
           candidates: 0, scored: 0, missCount: 0, misses: [], error }));
       }
       await ctx.runMutation(internal.audit.record, { at, requestId, results });
+      ownerResults.push(...results.filter((r: { ok: boolean; misses: { score: number; kind: string }[] }) =>
+        r.ok && r.misses.some((m) => m.score >= 9 && (m.kind === "handled" || m.kind === "rescored"))));
       checked += results.length;
       misses += results.reduce((n: number, r: { missCount: number }) => n + r.missCount, 0);
+    }
+    if (ownerResults.length) {
+      const items = await ctx.runQuery(internal.audit.ownerItems, { results: ownerResults });
+      if (items.length) {
+        const auditDay = new Date(at).toISOString().slice(0, 10);
+        const planId = await ctx.runMutation(internal.catchup.planFromItems, { items, auditDay });
+        const to = process.env.OWNER_EMAIL;
+        if (to) {
+          const notice = await ctx.runMutation(internal.catchup.claimOwnerNotice, { planId });
+          if (notice) {
+            const subject = `Marktplaats Watcher: ${notice.length} high-scoring delivery miss${notice.length === 1 ? "" : "es"}`;
+            const text = [subject, "", ...notice.flatMap((m) => [
+              `User: ${m.user}`, `Watch: ${m.watch}`, `Title: ${m.title}`, `Score: ${m.score}/10`, `Link: ${m.url}`, "",
+            ]), `Draft catch-up plan: ${planId}`,
+              `Send after review: cd frontend && npx convex run --prod catchup:send '{"planId":"${planId}"}'`].join("\n");
+            const html = `<pre style="font:14px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap">${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</pre>`;
+            await sendEmail(to, { subject, text, html });
+          }
+        }
+      }
     }
     return { checked, misses };
   },

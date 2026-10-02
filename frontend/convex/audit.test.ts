@@ -12,11 +12,15 @@ beforeEach(() => {
   process.env.CRON_SECRET = "s3cret";
   process.env.OWNER_CLERK_ID = "owner";
   process.env.OWNER_EMAIL = "owner@example.com";
+  process.env.AGENTMAIL_API_KEY = "am_test";
+  process.env.AGENTMAIL_INBOX_ID = "inbox@test";
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); delete process.env.OWNER_CLERK_ID; delete process.env.OWNER_EMAIL; });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); delete process.env.OWNER_CLERK_ID; delete process.env.OWNER_EMAIL;
+  delete process.env.AGENTMAIL_API_KEY; delete process.env.AGENTMAIL_INBOX_ID; });
 
 test("daily audit stores misses without changing seen listings or alerts; digest reports them", async () => {
   const t = convexTest(schema, modules);
+  const mails: any[] = [];
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
   const id = await alice.mutation(api.watches.create, { query: "mac mini",
     schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
@@ -25,7 +29,11 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     await ctx.db.insert("seenListings", { watchId: id, listingId: "m1", lastSeenAt: Date.now(),
       score: 4, reason: "Weak match", scoredAt: Date.now() });
   });
-  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    if (url.includes("agentmail")) {
+      mails.push(JSON.parse(init.body as string));
+      return new Response("{}");
+    }
     const body = JSON.parse(init.body as string);
     expect(init.headers).toMatchObject({ "X-Request-Id": expect.stringMatching(/^audit-.*\.0$/) });
     expect(body.watches[0].seen_ids).toEqual(["m1"]);
@@ -41,6 +49,14 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     misses: [{ listingId: "m1", score: 9, kind: "rescored", checkScore: 4 }] });
   expect(await t.run((ctx) => ctx.db.query("seenListings").collect())).toHaveLength(1);
   expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toHaveLength(0);
+  const plans = await t.run((ctx) => ctx.db.query("catchupPlans").collect());
+  expect(plans).toHaveLength(1);
+  expect(plans[0]).toMatchObject({ status: "draft", items: [{ watchId: id, listingId: "m1", score: 9 }] });
+  expect(mails).toHaveLength(1);
+  expect(mails[0]).toMatchObject({ to: ["owner@example.com"] });
+  for (const detail of ["a@example.com", "Mac mini", "9/10", "https://www.marktplaats.nl/v/m1",
+    String(plans[0]._id), `catchup:send '{"planId":"${plans[0]._id}"}'`])
+    expect(mails[0].text).toContain(detail);
   const report = await t.query(internal.health.report, { now: Date.now() });
   expect(report.summary).toContain("Delivery audit: 1 watches checked, 1 misses");
   expect(report.problems.join(" ")).toContain('Delivery audit: 1 missed match(es) on 1 watch(es): "Mac mini" (9/10 "Mac mini"');
@@ -50,6 +66,63 @@ test("daily audit stores misses without changing seen listings or alerts; digest
   const dashboard = await owner.query(api.admin.dashboard, {});
   expect(dashboard?.deliveryAudit).toMatchObject({ checked: 1, misses: 1,
     latestMisses: [{ listingId: "m1", url: "https://www.marktplaats.nl/v/m1" }] });
+});
+
+test("one owner e-mail and one exact draft plan for qualifying misses across watches, even on a repeat run", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const bob = t.withIdentity({ subject: "b", email: "b@example.com" });
+  const a = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const b = await bob.mutation(api.watches.create, { query: "thinkpad",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run(async (ctx) => { await ctx.db.patch(a, { seeded: true }); await ctx.db.patch(b, { seeded: true }); });
+  const mails: any[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    if (url.includes("agentmail")) { mails.push(JSON.parse(init.body as string)); return new Response("{}"); }
+    const group = JSON.parse(init.body as string);
+    return new Response(JSON.stringify({ results: group.watches.map((w: { id: string }) => ({
+      watchId: w.id, ok: true, read: 10, candidates: 10, scored: 10, missCount: 10,
+      misses: w.id === a ? [
+        ...Array.from({ length: 6 }, (_, i) => ({ id: `high${i}`, title: `High ${i}`,
+          url: `https://www.marktplaats.nl/v/high${i}`, score: 9, kind: "handled" })),
+        { id: "low", title: "Low", url: "https://www.marktplaats.nl/v/low", score: 8, kind: "handled" },
+        { id: "unscored", title: "Unscored", url: "https://www.marktplaats.nl/v/unscored", score: 10, kind: "never_scored" },
+        { id: "unread", title: "Unread", url: "https://www.marktplaats.nl/v/unread", score: 10, kind: "never_read" },
+      ] : [{ id: "rescored", title: "Rescored", url: "https://www.marktplaats.nl/v/rescored",
+        score: 10, kind: "rescored" }],
+    })) }));
+  }));
+  await t.action(internal.audit.run, {});
+  await t.action(internal.audit.run, {});
+  const plans = await t.run((ctx) => ctx.db.query("catchupPlans").collect());
+  expect(plans).toHaveLength(1);
+  expect(plans[0].status).toBe("draft");
+  expect(plans[0].items.map((item) => item.listingId).sort()).toEqual([
+    ...Array.from({ length: 6 }, (_, i) => `high${i}`), "rescored" ].sort());
+  expect(mails).toHaveLength(1);
+  expect(mails[0].text).toContain("b@example.com");
+  expect(mails[0].text).toContain("Thinkpad");
+  expect(mails[0].text).toContain("High 5");
+  expect(mails[0].text).not.toContain("Unscored");
+  expect(await t.run((ctx) => ctx.db.query("alerts").collect())).toEqual([]);
+});
+
+test("lower scores and never_scored misses create no plan or owner e-mail", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const id = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(id, { seeded: true }));
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{ watchId: id, ok: true,
+    read: 2, candidates: 2, scored: 2, missCount: 2, misses: [
+      { id: "low", title: "Low", url: "https://www.marktplaats.nl/v/low", score: 8, kind: "handled" },
+      { id: "unscored", title: "Unscored", url: "https://www.marktplaats.nl/v/unscored", score: 10,
+        kind: "never_scored" },
+    ] }] }))));
+  await t.action(internal.audit.run, {});
+  expect(await t.run((ctx) => ctx.db.query("catchupPlans").collect())).toEqual([]);
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 });
 
 test("audit groups send only listings created near the first look as baseline", async () => {
