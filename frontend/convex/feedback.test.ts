@@ -32,6 +32,20 @@ test("feedback is stored, e-mailed to the owner and counted", async () => {
   ]);
 });
 
+test("weekly status counts open feedback and shipped replies still waiting", async () => {
+  const t = convexTest(schema, modules);
+  await t.run(async (ctx) => {
+    for (const row of [
+      { message: "New", createdAt: 1 },
+      { message: "Planned", createdAt: 2, status: "planned" as const },
+      { message: "Shipped", createdAt: 3, status: "shipped" as const, replyDraft: "Reply" },
+      { message: "Answered", createdAt: 4, status: "shipped" as const, repliedAt: 5 },
+      { message: "Declined", createdAt: 5, status: "declined" as const },
+    ]) await ctx.db.insert("feedback", row);
+  });
+  expect(await t.query(internal.feedback.loopStatus, {})).toEqual({ new: 1, open: 2, repliesWaiting: 1 });
+});
+
 test("empty, too long and too frequent feedback is refused; delete-my-data removes it", async () => {
   const t = convexTest(schema, modules);
   vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));

@@ -1251,6 +1251,17 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   replies made through outside channels are recorded by hand. The daily digest counts new and open feedback. The
   <a href="audit/2026-10-02-feedback-loop.md">feedback loop audit</a> traces each channel, the factory as run, and
   the planned work in MW-47 to MW-51 and MW-53.</p>
+<p>The Monday routine is in <code>RUNBOOK.md</code>. <code>scripts/factory/loop-status.sh</code> gives a read-only checkpoint:
+  tracker counts, pending local user cases, Linear conveyor labels, and the last recorded merge and eval run.</p>
+<table>
+  <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
+  <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
+  <tr><td>Draft and approve</td><td><code>feedback_drafts.py</code> proposes evidence-cited specs; the owner reviews and marks chosen issues <code>agent-ready</code>.</td><td>Linear draft and linked tracker item.</td></tr>
+  <tr><td>Build and review</td><td>Dispatch one issue; reviewer checks the committed tip and records PASS before merge approval.</td><td>Review verdict and reviewed SHA in Linear.</td></tr>
+  <tr><td>Merge and verify</td><td>The merge gate checks the approved SHA, release evidence, and production.</td><td>Merge log, production SHA, and closed issue.</td></tr>
+  <tr><td>Record and reply</td><td>Mark linked feedback shipped with release SHA and date; review and send or record the reply.</td><td>Tracker timeline and sent reply.</td></tr>
+  <tr><td>Learn again</td><td>Confirm pending user eval cases, check the weekly eval, and note started, finished, came back.</td><td>Reviewed scorer labels, eval report, and three weekly numbers.</td></tr>
+</table>
 </section>
 
 </body>
