@@ -53,6 +53,9 @@ async function save(ctx: MutationCtx, alert: Doc<"alerts">, change:
   return await ctx.db.insert("ratings", {
     alertId: alert._id, userId: alert.userId, watchId: alert.watchId, ...fields,
     score: alert.score, notify: watch?.notify, title: alert.title.slice(0, 200), reason: alert.reason.slice(0, 200),
+    watchDescription: watch?.label,
+    listing: { id: alert.listingId, title: alert.title, price_eur: alert.priceEur ?? null,
+      city: alert.city ?? null, distance_km: null, url: alert.url, image: alert.image ?? null },
     source: change.source, createdAt: now, updatedAt: now,
   });
 }
@@ -119,11 +122,18 @@ export const mine = query({
   },
 });
 
-/** For evals/pull_ratings.py: every rating, without who gave it. `npx convex run --prod ratings:exportAll`. */
+/** For evals: every rating and its scorer inputs, without who gave it. `npx convex run --prod ratings:exportAll`. */
 export const exportAll = internalQuery({
   args: {},
-  handler: async (ctx) => (await ctx.db.query("ratings").withIndex("by_created").collect()).map((r) => ({
-    at: new Date(r.updatedAt).toISOString(), verdict: r.verdict, reasons: r.reasons ?? [], note: r.note ?? "",
-    score: r.score ?? null, notify: r.notify ?? null, title: r.title ?? "", reason: r.reason ?? "", source: r.source,
+  handler: async (ctx) => Promise.all((await ctx.db.query("ratings").withIndex("by_created").collect()).map(async (r) => {
+    const alert = r.listing ? null : await ctx.db.get(r.alertId);
+    const watch = r.watchDescription ? null : await ctx.db.get(r.watchId);
+    return {
+      id: r._id, at: new Date(r.updatedAt).toISOString(), verdict: r.verdict, reasons: r.reasons ?? [], note: r.note ?? "",
+      score: r.score ?? null, notify: r.notify ?? null, title: r.title ?? "", reason: r.reason ?? "", source: r.source,
+      listing: r.listing ?? (alert ? { id: alert.listingId, title: alert.title, price_eur: alert.priceEur ?? null,
+        city: alert.city ?? null, distance_km: null, url: alert.url, image: alert.image ?? null } : null),
+      watchDescription: r.watchDescription ?? watch?.label ?? null,
+    };
   })),
 });
