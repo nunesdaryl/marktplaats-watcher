@@ -166,3 +166,17 @@ export const summary = internalQuery({
     };
   },
 });
+
+/** Counts for the owner's weekly, read-only status command. */
+export const loopStatus = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("feedback").withIndex("by_created").collect();
+    const status = (row: typeof rows[number]) => row.status ?? (row.handledAt ? "planned" : "new");
+    return {
+      new: rows.filter((row) => status(row) === "new").length,
+      open: rows.filter((row) => !["shipped", "declined"].includes(status(row))).length,
+      repliesWaiting: rows.filter((row) => status(row) === "shipped" && !row.repliedAt).length,
+    };
+  },
+});

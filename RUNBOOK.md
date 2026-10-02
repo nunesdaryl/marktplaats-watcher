@@ -28,7 +28,16 @@ repo root unless they start with `cd frontend`.
 
 ## Weekly listening loop
 
-The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) maps the current path; the full Monday routine arrives with MW-51.
+Every Monday, allow about 20 minutes to close the loop. Run `scripts/factory/loop-status.sh` from the repo root for a read-only checkpoint. It shows current tracker counts, pending local user cases, Linear queue labels, and the last recorded merge and local eval run. If the pending cases file has not been fetched, it says "not fetched"; the eval date comes from the checked-out result files.
+
+1. Read the 05:00 UTC health digest in `OWNER_EMAIL`; investigate any problems before taking new work. Open `/admin` → Feedback, add outside-channel observations, and triage each new item with its screenshot and context. Record a plan or a reason to decline it.
+2. Run `scripts/factory/feedback_drafts.py` from the repo root. Read its evidence and proposed scope. File only useful drafts through its explicit `--file` flow, review and edit the resulting Linear issues, then mark the chosen issues `agent-ready`. The script only reads production by default; filing is a separate decision. If it is not installed yet, continue triage in the tracker and return to drafts when MW-50 lands.
+3. Dispatch one ready issue with `scripts/factory/dispatch.sh MW-<number>`. Have the reviewer run and review the exact committed branch tip. After a PASS verdict and `ready-to-merge` label, get the per-issue `Operator merge approval:` comment. Merge from a clean main checkout with `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` and check its production evidence.
+4. For each released change, open its linked feedback item, enter the merge SHA and release date, then mark it shipped. Review the reply draft and send it from the tracker, or record the reply and channel after answering outside the app. Check the timeline and sent record.
+5. Pull pending user evaluation cases with `.venv/bin/python -m evals.feedback_cases`. Inspect each candidate and confirm only sound labels as in §11a. Check the latest Monday evaluation run; rerun the scorer and report after confirmed cases or model changes.
+6. Note three numbers for the past week: people who started (new signups), finished (new users who completed setup), and came back (users active again after their first day). Use `/admin` account dates and activity for the same seven-day window; record the window and numbers together so the next Monday is comparable.
+
+The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) explains why each handoff exists.
 
 ## Trace a request
 
