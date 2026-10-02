@@ -37,6 +37,38 @@ test("a watch is listed with its schedule in plain English", async () => {
   expect(watch.summary).toBe("every day at 08:00");
 });
 
+test("backfillSeededAt previews and writes the earliest seen listing only for eligible watches", async () => {
+  const { t, alice } = setup();
+  const target = await alice.mutation(api.watches.create, macMini);
+  const existing = await alice.mutation(api.watches.create, { ...macMini, query: "bike" });
+  const empty = await alice.mutation(api.watches.create, { ...macMini, query: "camera" });
+  const unseeded = await alice.mutation(api.watches.create, { ...macMini, query: "phone" });
+  await t.run(async (ctx) => {
+    await ctx.db.patch(target, { seeded: true });
+    await ctx.db.patch(existing, { seeded: true, seededAt: 123 });
+    await ctx.db.patch(empty, { seeded: true });
+  });
+  const first = Date.now();
+  const firstSeenId = await t.run((ctx) => ctx.db.insert("seenListings", { watchId: target, listingId: "first", lastSeenAt: first + 10_000 }));
+  const firstSeenAt = (await t.run((ctx) => ctx.db.get(firstSeenId)))!._creationTime;
+  vi.setSystemTime(first + 60_000);
+  await t.run(async (ctx) => {
+    await ctx.db.insert("seenListings", { watchId: target, listingId: "second", lastSeenAt: first });
+    await ctx.db.insert("seenListings", { watchId: existing, listingId: "old", lastSeenAt: first });
+    await ctx.db.insert("seenListings", { watchId: unseeded, listingId: "not-seeded", lastSeenAt: first });
+  });
+
+  const proposed = [{ watchId: target, label: "Mac mini, under €500", seededAt: firstSeenAt }];
+  expect(await t.mutation(internal.watches.backfillSeededAt, { dryRun: true })).toEqual(proposed);
+  expect((await t.run((ctx) => ctx.db.get(target)))?.seededAt).toBeUndefined();
+  expect(await t.mutation(internal.watches.backfillSeededAt, { dryRun: false })).toEqual(proposed);
+  expect((await t.run((ctx) => ctx.db.get(target)))?.seededAt).toBe(firstSeenAt);
+  expect((await t.run((ctx) => ctx.db.get(existing)))?.seededAt).toBe(123);
+  expect((await t.run((ctx) => ctx.db.get(empty)))?.seededAt).toBeUndefined();
+  expect((await t.run((ctx) => ctx.db.get(unseeded)))?.seededAt).toBeUndefined();
+  expect(await t.mutation(internal.watches.backfillSeededAt, { dryRun: false })).toEqual([]);
+});
+
 test("nobody can see or change someone else's watches", async () => {
   const { alice, bob } = setup();
   const id = await alice.mutation(api.watches.create, macMini);
