@@ -143,6 +143,12 @@ borderline score as a delivery bug: model scores can vary, and the audit require
 threshold. If the replay confirms the gap, record the watch, listing id, timestamps and request ids, fix the cause,
 and decide with the owner whether to contact the user. The audit never sends a missed alert itself.
 
+## Backfill seededAt
+
+Run `cd frontend && npx convex run --prod watches:backfillSeededAt '{"dryRun":true}'` and review the watch ids,
+labels, and proposed times. After the operator approves that list, run
+`npx convex run --prod watches:backfillSeededAt '{"dryRun":false}'` from `frontend` and confirm the returned list matches.
+
 ## 7. Content-Security-Policy
 - The CSP is **report-only**: violations are logged as `csp_violation` in the Vercel logs, and nothing is blocked.
 - **To enforce it:** after a sign-in in a private window shows no violations, rename the header key in `vercel.json`
