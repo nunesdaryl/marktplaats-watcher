@@ -6,7 +6,7 @@ export const filterParams = ["userId", "watchId", "when", "since", "until", "min
 const dateValue = (value) => value && Number.isFinite(Number(value)) ? new Date(Number(value)).toISOString().slice(0, 10) : "";
 const dateNumber = (value, end = false) => value ? Date.parse(`${value}T00:00:00Z`) + (end ? 86_400_000 : 0) : undefined;
 
-export default function FilterBar({ params, update, user = true, watch = false, score = false, status, search = true }) {
+export default function FilterBar({ params, update, user = true, watch = false, score = false, status, source, search = true }) {
   const options = useContext(AdminOptionsContext);
   const users = user ? options?.users : undefined;
   const watches = watch ? options?.watches?.filter((w) => !params.userId || w.userId === params.userId) : undefined;
@@ -43,6 +43,9 @@ export default function FilterBar({ params, update, user = true, watch = false, 
     {score && <label>Score ≥<input aria-label="Minimum score" type="number" min="0" max="10" step="1" value={params.minScore ?? ""} onChange={(e) => set("minScore", e.target.value)} /></label>}
     {status && <label>{status.label}<select aria-label={status.label} value={params[status.key] ?? ""} onChange={(e) => set(status.key, e.target.value)}>
       <option value="">All</option>{status.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+    </select></label>}
+    {source && <label>{source.label}<select aria-label={source.label} value={params[source.key] ?? ""} onChange={(e) => set(source.key, e.target.value)}>
+      <option value="">All sources</option>{source.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>}
     {search && <label className="filter-text"><Icon name="search" size={15} /><input aria-label="Search list" type="search" placeholder="Search" value={params.q ?? ""} onChange={(e) => set("q", e.target.value)} /></label>}
   </>;
