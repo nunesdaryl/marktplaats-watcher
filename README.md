@@ -166,3 +166,7 @@ uptime check).
   filters share one read, each user has at most 5 watches, and the shortest interval is 15 minutes.
 - Data kept: e-mail address, watches, listings already seen and alerts, 30 days (purged daily).
   "Delete my data" removes all of it. Listing titles and search text are sent to OpenAI for scoring.
+
+## Running the factory
+
+The MW queue is in Linear. From the main checkout, run `scripts/factory/dispatch.sh MW-<number>` for one `agent-ready` issue. After review marks it `ready-to-merge`, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>`. The gate and evidence log are described in [AGENTS.md](AGENTS.md) and [RUNBOOK.md](RUNBOOK.md).

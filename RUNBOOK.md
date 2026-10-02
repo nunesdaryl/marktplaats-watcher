@@ -206,3 +206,7 @@ the portfolio version.
 3. Send: `npx convex run --prod catchup:send '{"planId": "<id>"}'`. It sends only the plan's items, skips any listing
    already alerted, and a plan can't be sent twice.
 4. Check: the Catch-ups list on /admin (filter by user) and each alert's e-mail status.
+
+## Running the factory
+
+Use `scripts/factory/dispatch.sh MW-<number>` from the repo for a single `agent-ready` issue. Review the branch and record the verdict in Linear. From a clean main checkout, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` only after the issue has `ready-to-merge`. The gate runs tests, builds, deploy checks and smoke checks, then records the merge in `docs/factory/merges.md`. For UI changes, the reviewer also records a preview walk and screenshots. See [AGENTS.md](AGENTS.md) for the environment-file and production-data limits.

@@ -1,6 +1,11 @@
 name: evals
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - agent.py
+      - evals/**
   pull_request:
     paths:
       - agent.py
