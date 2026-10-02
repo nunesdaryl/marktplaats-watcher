@@ -44,6 +44,9 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const failedAlerts = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).collect())
     .filter((a) => a.emailStatus === "failed");
   const failedEmails = failedAlerts.length;
+  const feedback = await ctx.db.query("feedback").withIndex("by_created").order("desc").take(5000);
+  const newFeedback = feedback.filter((f) => (f.status ?? (f.handledAt ? "planned" : "new")) === "new").length;
+  const openFeedback = feedback.filter((f) => !["shipped", "declined"].includes(f.status ?? (f.handledAt ? "planned" : "new"))).length;
   const activeWatches = (await ctx.db.query("watches").withIndex("by_active_next", (q) => q.eq("active", true)).collect())
     .filter((w) => w.archivedAt === undefined);
   const failing = activeWatches
@@ -131,7 +134,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     problems,
     issues,
     stats: { runs: runs.length, checksFailed: sum("failed"), emailsSent: sum("emails"), errors: errors.length },
-    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}. Delivery audit: ${audits.length} watches checked, ${missCount} misses.`,
+    summary: `Last 24 h: ${runs.length} runs, ${sum("checked")} watch checks (${sum("failed")} failed), ${sum("emails")} alert e-mails sent, ${errors.length} errors (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ") || "none"}. Delivery audit: ${audits.length} watches checked, ${missCount} misses. Feedback: ${newFeedback} new, ${openFeedback} open.`,
     lastRunAt: lastRun?.at ?? null,
   };
 }

@@ -35,6 +35,65 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("outside feedback tracks owner decisions, release and a manually recorded reply", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const other = t.withIdentity({ subject: "s", email: "s@example.com" });
+  const input = { personName: "Instructor", receivedAt: Date.now() - 86_400_000, source: "whatsapp" as const,
+    message: "The alerts saved me time", paraphrase: true };
+  await expect(other.mutation(api.admin.addFeedback, input)).rejects.toThrow(/Not found/);
+  const id = await owner.mutation(api.admin.addFeedback, input);
+  const initial = (await owner.query(api.admin.feedback, { feedbackSource: "whatsapp" }))!.rows[0];
+  expect(initial).toMatchObject({ source: "whatsapp", status: "new", paraphrase: true, personName: "Instructor" });
+  const change = { id, note: "Review for next release", issues: ["MW-48"] };
+  await owner.mutation(api.admin.updateFeedback, { ...change, status: "planned" });
+  await owner.mutation(api.admin.updateFeedback, { ...change, status: "in_progress" });
+  await expect(other.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() }))
+    .rejects.toThrow(/Not found/);
+  await owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() });
+  const shipped = (await owner.query(api.admin.feedback, { status: "shipped" }))!.rows[0];
+  expect(shipped.replyDraft).toContain("saved me time");
+  expect(shipped.timeline.map((e) => e.status)).toEqual(["new", "planned", "in_progress", "shipped"]);
+  await owner.mutation(api.admin.markFeedbackReplied, { id, channel: "whatsapp", text: "I told them where to find it." });
+  expect((await owner.query(api.admin.feedback, {}))!.rows[0]).toMatchObject({ replyChannel: "whatsapp", replyText: "I told them where to find it.", repliedBy: "owner@example.com" });
+  const dashboard = (await owner.query(api.admin.dashboard, {}))!;
+  expect(dashboard.totals).toMatchObject({ feedbackOpen: 0, feedbackShipped: 1, feedbackReplied: 1 });
+  expect((await t.query(internal.health.report, { now: Date.now() })).summary).toContain("Feedback: 0 new, 0 open.");
+});
+
+test("a shipped app reply is sent only on owner action and recorded", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const user = t.withIdentity({ subject: "u", email: "user@example.com" });
+  const sent: any[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => { sent.push(JSON.parse(init.body as string)); return new Response("{}"); }));
+  const id = await user.mutation(api.feedback.submit, { message: "Please add this" });
+  const args = { id, issues: ["MW-48"], releaseSha: "123abcd", releaseAt: Date.now(), status: "shipped" as const, note: "the alert settings" };
+  await expect(owner.mutation(api.admin.updateFeedback, args)).rejects.toThrow(/status line/);
+  await owner.mutation(api.admin.updateFeedback, { id, status: "planned", issues: ["MW-48"] });
+  await owner.mutation(api.admin.updateFeedback, { id, status: "in_progress", issues: ["MW-48"] });
+  await owner.mutation(api.admin.updateFeedback, args);
+  expect(sent).toHaveLength(0);
+  await expect(user.action(api.feedback.sendReply, { id })).rejects.toThrow(/Not found/);
+  await owner.action(api.feedback.sendReply, { id });
+  expect(sent).toHaveLength(1);
+  expect(sent[0].to).toEqual(["user@example.com"]);
+  expect((await owner.query(api.admin.feedback, {}))!.rows[0]).toMatchObject({ replyChannel: "email", repliedBy: "owner@example.com" });
+  await expect(owner.action(api.feedback.sendReply, { id })).rejects.toThrow(/not ready/);
+});
+
+test("declining requires a reason and keeps handledAt in sync", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const id = await owner.mutation(api.admin.addFeedback, { personName: "Visitor", receivedAt: Date.now(),
+    source: "in_person", message: "Please change the colour", paraphrase: true });
+  await expect(owner.mutation(api.admin.updateFeedback, { id, status: "declined", issues: [] })).rejects.toThrow(/reason/);
+  await owner.mutation(api.admin.updateFeedback, { id, status: "declined", issues: [], declinedReason: "Outside scope" });
+  expect((await owner.query(api.admin.feedback, {}))!.rows[0]).toMatchObject({ status: "declined", declinedReason: "Outside scope", handledAt: Date.now() });
+  await owner.mutation(api.admin.updateFeedback, { id, status: "new", issues: [] });
+  expect((await owner.query(api.admin.feedback, {}))!.rows[0].handledAt).toBeUndefined();
+});
+
 test("refresh arguments keep server time, result shape and owner checks", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });

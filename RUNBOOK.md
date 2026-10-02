@@ -191,6 +191,14 @@ Every number on `/admin` opens its records: click an account to see its watches 
 conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
 app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.
 
+For feedback triage, open Feedback. Add feedback received by e-mail, WhatsApp, in person or another channel with its
+received date, person and original words or a marked paraphrase. Use the status and source filters to find open items.
+Open an item to record the plan, linked MW issues and notes. Mark a decline with its reason. When a linked issue ships,
+enter the merge SHA and release date, then mark the item shipped. Review and edit the drafted reply. Send sends an
+e-mail through AgentMail only when pressed; for an outside conversation, Mark as replied records the text and channel
+after you have answered there. Check the timeline and sent record before treating the loop as closed. The daily digest
+includes new and open feedback counts.
+
 ## 11a. Alert ratings ("Good match?")
 Ratings arrive from the e-mail links and the Alerts page; see them on `/admin` → "Are the scores right?". If e-mails
 stop showing rating links, `RATING_SECRET` is missing in Convex (production). To rotate it, generate a new value and

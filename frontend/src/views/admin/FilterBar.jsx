@@ -2,7 +2,7 @@ import { createContext, useContext, useRef } from "react";
 import Icon from "../../components/Icon.jsx";
 
 export const AdminOptionsContext = createContext(null);
-export const filterParams = ["userId", "watchId", "when", "since", "until", "minScore", "status", "emailStatus", "kind", "verdict", "handled", "stage", "stuck", "name", "scheduleKey", "notify", "wouldPay", "band", "reason", "requestId", "behind", "activeSince", "createdSince", "createdUntil", "section", "mode", "device", "value", "q"];
+export const filterParams = ["userId", "watchId", "when", "since", "until", "minScore", "status", "feedbackSource", "emailStatus", "kind", "verdict", "handled", "stage", "stuck", "name", "scheduleKey", "notify", "wouldPay", "band", "reason", "requestId", "behind", "activeSince", "createdSince", "createdUntil", "section", "mode", "device", "value", "q"];
 const dateValue = (value) => value && Number.isFinite(Number(value)) ? new Date(Number(value)).toISOString().slice(0, 10) : "";
 const dateNumber = (value, end = false) => value ? Date.parse(`${value}T00:00:00Z`) + (end ? 86_400_000 : 0) : undefined;
 

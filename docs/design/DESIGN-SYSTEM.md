@@ -179,6 +179,7 @@ a set.
 | Count badge | `.tabbar .badge, .new-count` (`:367`) | `Sidebar.jsx`, `TabBar.jsx` | accent fill, mono digits, "9+" cap | — |
 | Grouped list | `.grouped` (`:482`) | Watches, Archived, settings | hairline dividers inset 16px; selected = `--accent-soft` | shadows on rows |
 | Sheet | `.sheet` (`:503`), `.sheet-head`, `.sheet-body`, `.sheet-foot` | `Sheet.jsx` | native `<dialog>`; bottom sheet on phones with a grabber | stacking sheets |
+| Feedback editor | `.fb-editor`, `.fb-timeline` | `views/admin/Views.jsx` | owner-only fields and chronological status entries inside the feedback drilldown | sending a drafted reply without an explicit press |
 | Toast | `.toast` (`:323`) | `App.jsx` | inverted, `--great` check, short past-tense sentence | buttons in the toast (there is no undo system) |
 | Tab bar | `.tabbar` (`:353`) | `TabBar.jsx` | phones only; glass; active in `--accent` | more than 4 tabs |
 | Sidebar | `.sidebar` (`:236`), `.nav-item` (`:249`), `.nav-row`, `.dot` (`:260`) | `Sidebar.jsx` | active row `--fill-strong`; watch dot: filled = active, ring = paused; whole account row opens the menu, with an up chevron and `--fill` hover | — |
