@@ -66,6 +66,7 @@ The design system (colours, type, spacing, motion, components, states, voice, wi
 [`docs/design/DESIGN-SYSTEM.md`](docs/design/DESIGN-SYSTEM.md): the one source of truth for the app's look.
 
 Architecture decisions are indexed in [docs/adr/](docs/adr/README.md); current non-functional requirements are in [docs/nfr.md](docs/nfr.md).
+The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) traces user signals through evaluation, release and reply.
 
 The look follows the **Sieve** design system (`docs/design/sieve/`, made with Claude Design): warm graphite, one teal
 accent, lilac highlights for the fill-in sentence, Geist and Geist Mono (self-hosted). The logo is defined once in
