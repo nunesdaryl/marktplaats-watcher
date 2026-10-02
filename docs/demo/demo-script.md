@@ -25,9 +25,9 @@ Signed in, dark mode, zoom 125%, notifications off, phone hotspot ready.
 ## The script (5:00)
 
 **0:00, hook: a real result (30 s).** *Tab 1, the Switch alert.*
-> "This came in yesterday morning: a Nintendo Switch OLED for €150, scored 10 out of 10, and one sentence on why.
-> Marktplaats' own saved search sends you every ad with your words in it, once a day. This one reads every new ad and
-> e-mails only the ones worth a look."
+> "A good listing appears. Minutes later, you have an alert with a score and a reason, so you can bid first.
+> Here's a real one: a Nintendo Switch OLED for €150, scored 10 out of 10, with a sentence on why.
+> The watch reads each new ad and e-mails only the ones worth a look."
 
 *If Gmail won't load:* open the app's **Alerts** page; the same alert is there with its score and reason.
 
@@ -82,7 +82,8 @@ Type in the Ask box: *alerts this week above 8* → **Ask** → the list opens w
 ---
 
 ## The 3-minute cut
-Hook (0:00–0:30) → Search now (0:30–1:15) → Watch it (1:15–1:50) → trust numbers + cost (1:50–2:30) →
+First-to-bid hook with the real €150 Switch alert (0:00–0:30) → Search now (0:30–1:15) →
+Watch it (1:15–1:50) → trust numbers + cost (1:50–2:30) →
 the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the Marktplaats page and the factory.
 
 ## Two audiences, same clicks
@@ -99,6 +100,7 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 | Wi-Fi fails | Phone hotspot. If everything fails, play the backup video and narrate over it. |
 
 ## Q&A crib (20 seconds each)
+- **"Does anyone use it?"** "A beta user with a Mac mini watch says he's now first to bid on the Mac minis it finds."
 - **"Why not Marktplaats' saved search?"** "It matches the words you typed and sends every match, once a day per its
   help pages, with no reason. This scores each new ad 0 to 10, says why, e-mails only the ones worth a look, on your
   schedule, every 15 minutes if you like. And you can tell it when it got one wrong."
