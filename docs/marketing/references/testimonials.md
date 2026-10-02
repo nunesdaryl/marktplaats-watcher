@@ -6,7 +6,7 @@
 ## Our Reviews & Testimonials
 
 ### Customer Testimonials
-**2026-10-01, WhatsApp, FDE cohort group.** The course instructor, a beta user with a Mac mini watch, shared an 08:05 alert for a Mac mini M4 at €675, scored 9/10. Paraphrase: the watch runs smoothly, does its one job well, saves him time and effort, and lets him bid first on Mac minis. Permission to quote: not yet asked. Next step: ask him.
+**2026-10-01, WhatsApp, FDE cohort group.** The course instructor, a beta user with a Mac mini watch, shared an 08:05 alert for a Mac mini M4 at €675, scored 9/10. Paraphrase: the watch runs smoothly, does its one job well, saves him time and effort, and lets him bid first on Mac minis. Permission to quote: asked on WhatsApp 2 Oct 2026, no answer yet. Until he says yes, use only this paraphrase, unnamed.
 
 ### Success Stories
 [TO BE ADDED] None yet. See the collection plan below.

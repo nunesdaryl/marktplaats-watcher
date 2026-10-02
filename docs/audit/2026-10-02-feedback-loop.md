@@ -21,7 +21,7 @@ reply attached. Sources: `frontend/convex/feedback.ts:40-84,87-109`;
 `3 Skills/fde-skill/SKILL.md:112-125`; Day 1 deck, slide 26.6.
 
 This audit is a dated snapshot. The six follow-up issues in §7 describe planned work; they are
-not evidence that the target loop already runs. **Update, 2 Oct 12:45:** all of them shipped the same day (main `be39d17`; system design §22; `docs/factory/merges.md`), and the loop ran once for real: item #1 recorded, one reply sent to the owner's test item, `loop-status.sh` and `feedback_drafts.py` run on production (read-only). Source: Linear MW-47–MW-51 and MW-53, issue
+not evidence that the target loop already runs. **Update, 2 Oct 12:45:** all of them shipped the same day (main `be39d17`; system design §22; `docs/factory/merges.md`), and the loop ran once for real: item #1 recorded, one reply sent to the owner's test item, `loop-status.sh` and `feedback_drafts.py` run on production (read-only). **2 Oct 14:40:** item #1 closed the full circle: shipped via MW-53 (`2cfe4bc`) and replied on WhatsApp by Daryl, recorded in the tracker. Source: Linear MW-47–MW-51 and MW-53, issue
 descriptions read 2 October.
 
 ## 2. The loop today

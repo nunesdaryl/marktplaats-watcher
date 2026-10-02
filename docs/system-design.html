@@ -1287,7 +1287,15 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   score panel were captured as the owner before and after the backfill and compared field by field: identical, apart
   from the order of three tied feature rows (each used once). The read reduction is being measured with one live /admin
   tab open from 14:01; at 14:04 <code>admin.dashboard</code> and <code>admin.ratingStats</code> had not moved
-  (563.8 MB and 379.87 MB) while the checker's reads did. The final figure follows after the 30-minute window.</p>
+  (563.8 MB and 379.87 MB) while the checker's reads did. Measured over 14:01–14:32 with one live tab re-running throughout: <code>admin.dashboard</code> +3.86 MB and
+  <code>admin.ratingStats</code> +0.77 MB, about 9 MB an hour against roughly 90 MB an hour on 1–2 October: about 90%
+  lower. The like-for-like 95% target is not proven (the earlier tab count varied). The first real alert after the
+  switch (14:34, sent) landed in its hourly totals bucket with no drift, so the write path is proven on production.</p>
+<p><b>Feedback item #1 closed (2 October 14:40).</b> The instructor's WhatsApp feedback went new → planned → in progress
+  → shipped in the tracker, linked to MW-53 (release <code>2cfe4bc</code>), and Daryl replied on WhatsApp, recorded with
+  "Mark as replied" (nothing e-mailed). His words stay a paraphrase; permission to quote was asked, no answer yet.
+  The same afternoon Daryl signed off UAT in <code>evals/report.md</code> (MW-5) and checked the phone layout on his
+  iPhone. Left before the freeze: two rehearsals (one recorded), the 21:00 walk-through.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>

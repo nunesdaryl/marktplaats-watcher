@@ -20,7 +20,7 @@ What did not move is telling:
 
 - **The business side (Day 3)** is unchanged at 0 met: no interviews, no pricing test, no trademark search, no lawful
   data route. The course treats these as the core of the FDE role; the project has treated them as "after the demo".
-- **Human-owned demo items** are still open: two rehearsals, a backup recording, the UAT sign-off line, on-device checks.
+- **Human-owned demo items:** the UAT sign-off line and the iPhone check were done on 2 Oct; two rehearsals and a backup recording remain.
 - **Platform hardening** that no incident forced (egress allowlist, backups, SLOs, feature flags, end-to-end UI tests)
   stayed open. Everything an incident did force got fixed within hours.
 
@@ -76,7 +76,7 @@ errors coexisted with users missing good listings for a day (MW-17). The nightly
 | 9 | Kill switch for every autonomous loop | 🟡 | ✅ | `CHAT_PAUSED` joins `CHECKS_PAUSED` (MW-4) |
 | 10 | Rollback path known and tested | ❌ | ✅ | As §3.7 above |
 
-**Checked and deliberately not upgraded:** UAT sign-off (the line in `evals/report.md:5` is still blank); rehearsals and
+**Checked and deliberately not upgraded:** UAT sign-off (the line in `evals/report.md:5` was blank here; signed 2 Oct, `749e205`); rehearsals and
 backup recording (checklist 12 open); bounded memory (`RANK_USAGE` still grows, `agent.py:500`; `_recent` keeps a key per
 user, `main.py:102`); hostile listing titles (the injection cases `I1`/`I2` in `evals/chat_cases.py` test the user's
 message only); error boundary (MW-28's chunk recovery is not one); the factory row (no machine merge gate; the gate is
@@ -289,7 +289,7 @@ Also 1 Oct evening: **one authoritative design system** (`docs/design/DESIGN-SYS
 
 **2 Oct: the whole backlog shipped.** MW-35 to MW-55 (19 issues, MW-45 and MW-46 having shipped on 1 Oct; including the parked MW-35 to MW-44 and the feedback-loop work MW-47 to MW-53) were reviewed by running them and merged on Daryl's per-issue OK by 12:40, the last eleven through the new merge gate (`docs/factory/merges.md`). Details in system design §22.
 
-**Convex usage (2 Oct):** the owner dashboard's live whole-table reads (`admin.dashboard` 2.11 GB, `admin.ratingStats` 1.11 GB) pushed October past the free plan's 1 GB of database reads in two days; the team moved to the Starter plan ($20 monthly disable threshold). Lesson: a live query that scans tables costs in proportion to how often its data changes times how many screens watch it. Fix filed as MW-56 (after the demo). **MW-56 shipped the same afternoon** (merged `3b73ce3`, backfilled, dashboard numbers identical before and after; read reduction being measured). Review caught that one-document-per-day buckets could have hit Convex's 1 MB limit and stopped alerts; hourly buckets and a guard that never blocks the source write fixed it.
+**Convex usage (2 Oct):** the owner dashboard's live whole-table reads (`admin.dashboard` 2.11 GB, `admin.ratingStats` 1.11 GB) pushed October past the free plan's 1 GB of database reads in two days; the team moved to the Starter plan ($20 monthly disable threshold). Lesson: a live query that scans tables costs in proportion to how often its data changes times how many screens watch it. Fix filed as MW-56 (after the demo). **MW-56 shipped the same afternoon** (merged `3b73ce3`, backfilled, dashboard numbers identical before and after; dashboard reads about 90% lower with a live tab open; first live alert landed in the totals with no drift). Review caught that one-document-per-day buckets could have hit Convex's 1 MB limit and stopped alerts; hourly buckets and a guard that never blocks the source write fixed it.
 
 ### After the demo: from this audit
 - **Business side first** (the course's weakest theme here): 20 interviews, Sean Ellis question, a pricing hypothesis
