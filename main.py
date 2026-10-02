@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import admin_intent, audit_watch, chat, chat_events, check_query  # noqa: E402
+from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
@@ -57,6 +57,21 @@ class WatchRef(BaseModel):
     label: str = Field(max_length=100)
     summary: str = Field(default="", max_length=160)
     active: bool = True
+    query: str | None = None
+    maxPriceEur: int | None = None
+    mustInclude: str | None = None
+    postcode: str | None = None
+    maxDistanceKm: int | None = None
+    schedule: dict | None = None
+
+
+class WatchEstimate(BaseModel):
+    query: str = Field(min_length=2, max_length=80)
+    maxPriceEur: int | None = None
+    mustInclude: str | None = None
+    postcode: str | None = None
+    maxDistanceKm: int | None = None
+    schedule: dict
 
 
 class ChatRequest(BaseModel):
@@ -208,6 +223,11 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
         background_tasks.add_task(record_chat_error, e, answer, request_id.get())
         return JSONResponse({"answer": answer, "saved": save_assistant(request, user, {"answer": answer})},
                             status_code=status)
+
+
+@app.post("/api/watch/estimate")
+def watch_estimate_route(request: WatchEstimate, user: str = Depends(current_user)):
+    return {"volumeNote": estimate_volume_note(request.model_dump())}
 
 
 @app.post("/api/chat/stream")

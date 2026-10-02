@@ -80,7 +80,9 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
         await streamChat({
           token: await getToken(),
           body: { message, chatId: id, history, mode: sendMode,
-                  watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active })) },
+                  watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active,
+                    query: w.query, maxPriceEur: w.maxPriceEur, mustInclude: w.mustInclude, postcode: w.postcode,
+                    maxDistanceKm: w.maxDistanceKm, schedule: w.schedule })) },
           onEvent: (e) => {
             if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
             else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));
@@ -100,7 +102,8 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
     } finally {
       setLive(null);
     }
-    if (proposal) onAdjust({ ...watchFields(proposal), schedule: proposal.schedule, notify: proposal.notify });
+    if (proposal) onAdjust({ ...watchFields(proposal), schedule: proposal.schedule, notify: proposal.notify,
+                             volumeNote: proposal.volumeNote });
   }
 
   const empty = !chatId && !live;

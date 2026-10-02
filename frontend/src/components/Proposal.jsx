@@ -49,6 +49,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
       ) : (
         <p>For <strong>{p.label}</strong>: {changeText(p)}.</p>
       )}
+      {p.volumeNote && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {state === "saved" ? (
         <p className="done">{p.type === "create" ? "Watch saved. The first check only notes what's listed now; after that, new ones that fit are e-mailed with the reason." : "Change saved."}</p>
@@ -58,7 +59,8 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
             {p.type === "create" ? "Save watch" : "Save change"}
           </button>
           {p.type === "create"
-            ? <button className="button" onClick={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify: p.notify })}>Adjust</button>
+            ? <button className="button" onClick={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify: p.notify,
+              volumeNote: p.volumeNote })}>Adjust</button>
             : <button className="button" onClick={() => setState("dismissed")}>Dismiss</button>}
         </div>
       )}

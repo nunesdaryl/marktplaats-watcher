@@ -250,10 +250,12 @@ def make_tools(ctx):
             schedule = make_schedule(schedule_kind, every_minutes, times, days)
         except ValueError as e:
             return f"Invalid schedule: {e}"
-        ctx.proposals.append({"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
+        proposal = {"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
                               "mustInclude": must_include, "postcode": postcode,
                               "maxDistanceKm": max_distance_km if postcode else None,
-                              "schedule": schedule, "notify": notify})
+                              "schedule": schedule, "notify": notify}
+        proposal["volumeNote"] = estimate_volume_note(proposal)
+        ctx.proposals.append(proposal)
         return "Proposal shown to the user with a Save button. Tell them in one sentence what it will do."
 
     @tool
@@ -279,6 +281,13 @@ def make_tools(ctx):
                 change[key] = value
         if len(change) == 3:
             return "Nothing to change."
+        watch = ctx.watches[watch_id]
+        if watch.get("query"):
+            change["volumeNote"] = estimate_volume_note({
+                "query": watch["query"], "maxPriceEur": change.get("maxPriceEur", watch.get("maxPriceEur")),
+                "mustInclude": watch.get("mustInclude"), "postcode": watch.get("postcode"),
+                "maxDistanceKm": watch.get("maxDistanceKm"), "schedule": change.get("schedule", watch.get("schedule")),
+            })
         ctx.proposals.append(change)
         return "Change shown to the user with a Save button. Tell them in one sentence what will change."
 
@@ -622,6 +631,42 @@ def read_since(query, filters, since_days, today):
             return listings, page + 1 >= MAX_PAGES
     print(json.dumps({"event": "coverage_capped", "query": query, "pages": MAX_PAGES}))
     return listings, True
+
+
+def estimate_volume_note(w):
+    """Estimate arrivals per check from today's and yesterday's dated search results."""
+    schedule = w.get("schedule") or {}
+    kind = schedule.get("kind")
+    if kind == "interval":
+        minutes = schedule.get("everyMinutes")
+        checks_per_day = 1440 / minutes if isinstance(minutes, int) and minutes > 0 else 0
+    elif kind == "daily":
+        checks_per_day = len(schedule.get("times") or [])
+    elif kind == "weekly":
+        checks_per_day = len(schedule.get("days") or []) / 7
+    else:
+        return None
+    if not checks_per_day:
+        return None
+    today = datetime.now(AMSTERDAM).date()
+    filters = search_filters({"max_price_eur": w.get("maxPriceEur"), "postcode": w.get("postcode"),
+                              "max_distance_km": w.get("maxDistanceKm")})
+    try:
+        listings, _ = read_since(w["query"], filters, 1, today)
+    except (httpx.HTTPError, ValueError):
+        return None
+    must_include = re.sub(r"\s+", "", (w.get("mustInclude") or "").lower())
+    counts = [0, 0]
+    for item in listings:
+        age = days_old(item.get("date"), today)
+        title = re.sub(r"\s+", "", (item.get("title") or "").lower())
+        if age in (0, 1) and (not must_include or must_include in title):
+            counts[age] += 1
+    per_check = math.ceil(max(counts) / checks_per_day)
+    if per_check <= MAX_RANK_PER_CHECK:
+        return None
+    return (f"This search gets about {per_check} new listings per check; one check can read "
+            f"{MAX_RANK_PER_CHECK}. Add a word or a max price so nothing is missed.")
 
 
 def check_query(query, watches, now=None):

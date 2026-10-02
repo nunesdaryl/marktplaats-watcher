@@ -23,11 +23,13 @@ const proposal = v.union(
     type: v.literal("create"), query: v.string(), maxPriceEur: v.union(v.number(), v.null()),
     mustInclude: v.union(v.string(), v.null()), postcode: v.union(v.string(), v.null()),
     maxDistanceKm: v.union(v.number(), v.null()), schedule: scheduleValidator, notify: notifyValidator,
+    volumeNote: v.optional(v.union(v.string(), v.null())),
   }),
   v.object({
     type: v.literal("update"), watchId: v.string(), label: v.union(v.string(), v.null()),
     schedule: v.optional(scheduleValidator), notify: v.optional(notifyValidator),
     active: v.optional(v.boolean()), maxPriceEur: v.optional(v.number()),
+    volumeNote: v.optional(v.union(v.string(), v.null())),
   }),
 );
 

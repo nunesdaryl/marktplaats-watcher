@@ -1,5 +1,6 @@
+import { useAuth } from "@clerk/clerk-react";
 import { useMutation } from "convex/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import ScheduleEditor from "./ScheduleEditor.jsx";
 import Sheet from "./Sheet.jsx";
@@ -10,6 +11,7 @@ const number = (value) => (value === "" || value === null || value === undefined
 
 /** Create a watch (from a search, a chat proposal or from scratch) or edit one. */
 export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
+  const { getToken } = useAuth();
   const create = useMutation(api.watches.create);
   const update = useMutation(api.watches.update);
   const [f, setF] = useState(() => ({
@@ -19,8 +21,33 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
   }));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const field = (key) => ({ value: f[key], onChange: (e) => setF({ ...f, [key]: e.target.value }) });
+  const [volumeNote, setVolumeNote] = useState(initial.volumeNote ?? null);
+  const skipInitialEstimate = useRef(Boolean(initial.volumeNote));
+  const field = (key) => ({ value: f[key], onChange: (e) => { setF({ ...f, [key]: e.target.value }); setVolumeNote(null); } });
   const weeklyWithoutDays = f.schedule.kind === "weekly" && !f.schedule.days.length;
+
+  useEffect(() => {
+    if (skipInitialEstimate.current) { skipInitialEstimate.current = false; return; }
+    if (f.query.trim().length < 2 || weeklyWithoutDays) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch("/api/watch/estimate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getToken()}` },
+          body: JSON.stringify({ query: f.query, mustInclude: f.mustInclude || null,
+            maxPriceEur: number(f.maxPriceEur), postcode: f.postcode || null,
+            maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : null, schedule: f.schedule }),
+          signal: controller.signal,
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (!controller.signal.aborted) setVolumeNote(result.volumeNote);
+        }
+      } catch { /* The estimate is advisory; saving still works if the search is unavailable. */ }
+    }, 400);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [f.query, f.mustInclude, f.maxPriceEur, f.postcode, f.maxDistanceKm, f.schedule]);
 
   async function save(e) {
     e.preventDefault();
@@ -67,7 +94,11 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           </div>
         )}
         {mode === "edit" && <p className="hint">Changing the item or place starts a fresh first look, so you're only told about listings that are new from then on.</p>}
-        <ScheduleEditor schedule={f.schedule} notify={f.notify} onChange={(s) => setF({ ...f, ...s })} />
+        <ScheduleEditor schedule={f.schedule} notify={f.notify} onChange={(s) => {
+          setF({ ...f, ...s });
+          if (s.schedule !== f.schedule) setVolumeNote(null);
+        }} />
+        {volumeNote && <p className="hint" role="status">{volumeNote}</p>}
         {mode === "create" && <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>}
         {error && <p className="error" role="alert">{error}</p>}
         <button type="submit" className="button primary wide" disabled={busy || weeklyWithoutDays}>
