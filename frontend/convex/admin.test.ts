@@ -35,6 +35,17 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("the canary does not count as a user watch on the dashboard", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await t.mutation(internal.checker.claimCanary, { now: Date.now() });
+  await t.mutation(internal.checker.recordCanary, { now: Date.now(), ok: true, readCount: 5, newestId: 5 });
+  const dashboard = await owner.query(api.admin.dashboard, {});
+  expect(dashboard?.totals.watchesActive).toBe(0);
+  expect(dashboard?.funnel.find((step) => step.step === "Saved a watch")?.count).toBe(0);
+  expect((await owner.query(api.admin.watches, {}))?.rows).toEqual([]);
+});
+
 test("refresh arguments keep server time, result shape and owner checks", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });

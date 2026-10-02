@@ -118,6 +118,9 @@ or when the read limit is reached. Tell the user to narrow the search with a wor
 search gives each new listing a better chance to be read and scored in the next check.
 
 ## 6. Marktplaats changed its page (0 listings everywhere)
+- **First signal:** the owner dashboard and health digest show a high-severity canary alarm if the hourly read-only
+  "iphone" check fails or reads no new listings for 3 hours. The canary never scores or sends alerts. Set
+  `CANARY_DISABLED=1` in Convex to turn it off; remove the flag to resume hourly checks.
 - **Symptoms:** watches show "Marktplaats showed an unexpected page. We'll try again soon.", the chat says it couldn't
   read the page, and the health digest lists failing watches. (If the listings data moved but is still readable, you'd
   instead see "Checked 0 listings" everywhere.)

@@ -701,7 +701,7 @@ def check_query(query, watches, now=None):
     only new listings and rank those. New means not seen by this watch, regardless of id or creation number;
     Convex dedupes against its full seen table. The watermark remains for the silent first look.
     watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids, seeded, watermark,
-    last_checked_at}]"""
+    last_checked_at, read_only}]"""
     now = now or datetime.now(AMSTERDAM)
     today = now.astimezone(AMSTERDAM).date()
     plans, results, to_rank = [], [], []
@@ -721,11 +721,13 @@ def check_query(query, watches, now=None):
         last = w.get("last_checked_at") if w.get("seeded", True) and w.get("watermark") is not None else None
         since = max((today - datetime.fromtimestamp(last / 1000, AMSTERDAM).date()).days, 0) if last else 0
         filters = search_filters(w)
-        plans.append((w, home, (json.dumps(filters, sort_keys=True), since)))
+        plans.append((w, home, (json.dumps(filters, sort_keys=True), since, bool(w.get("read_only")))))
 
     # Watches with the same filters share one read; different ones are read in parallel (a broad one takes ~10 s)
     def read(key):
         try:
+            if key[2]:
+                return fetch_search(query, json.loads(key[0]), 0)["listings"], False
             return read_since(query, json.loads(key[0]), key[1], today)
         except (httpx.HTTPError, ValueError) as e:
             return e
@@ -742,6 +744,13 @@ def check_query(query, watches, now=None):
             results.append({"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."})
             continue
         raw, capped = reads[key]
+        if w.get("read_only"):
+            previous = w.get("watermark") or 0
+            numbers = [listing_number(item.get("itemId")) for item in raw]
+            results.append({"watchId": w["id"], "ok": True, "currentIds": [], "listings": [],
+                            "newestId": max((n for n in numbers if n is not None), default=None),
+                            "readCount": sum(n is not None and n > previous for n in numbers)})
+            continue
         # Every listing read counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
         listings, _ = parse_listings(raw, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)

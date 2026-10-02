@@ -78,6 +78,34 @@ test("a missing scheduler run has a structured issue", async () => {
     items: [{ label: "No runs yet", requestId: undefined }] }]);
 });
 
+test("the canary alarms after three hours without new reads or a failed check", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0 });
+  await t.mutation(internal.checker.claimCanary, { now });
+  await t.mutation(internal.checker.recordCanary, { now, ok: true, readCount: 2, newestId: 101 });
+  expect((await t.query(internal.health.report, { now })).issues.find((i) => i.kind === "canary_silent")).toBeUndefined();
+  const later = now + 3 * 60 * 60_000;
+  expect((await t.query(internal.health.report, { now: later })).issues.find((i) => i.kind === "canary_silent"))
+    .toMatchObject({ severity: "high" });
+  await t.mutation(internal.checker.claimCanary, { now: later });
+  await t.mutation(internal.checker.recordCanary, { now: later, ok: false, error: "Search failed" });
+  expect((await t.query(internal.health.report, { now: later })).problems).toContain("The canary check failed: Search failed.");
+  process.env.CANARY_DISABLED = "1";
+  expect((await t.query(internal.health.report, { now: later })).issues.find((i) => i.kind === "canary_silent")).toBeUndefined();
+  delete process.env.CANARY_DISABLED;
+});
+
+test("a new canary gets three hours before an empty read becomes an alarm", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.checker.claimCanary, { now });
+  await t.mutation(internal.checker.recordCanary, { now, ok: true, readCount: 0, newestId: null });
+  expect((await t.query(internal.health.report, { now })).issues.find((i) => i.kind === "canary_silent")).toBeUndefined();
+  expect((await t.query(internal.health.report, { now: now + 3 * 60 * 60_000 })).issues.find((i) => i.kind === "canary_silent"))
+    .toMatchObject({ severity: "high" });
+});
+
 test("the digest reports active watches with a large backlog or capped coverage", async () => {
   const t = convexTest(schema, modules);
   await t.mutation(internal.health.logRun, { at: Date.now(), checked: 1, failed: 0, emails: 0, emailFailures: 0 });
