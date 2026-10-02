@@ -156,3 +156,70 @@ test("delivery audit headlines use matches and watches for plural counts", async
   const report = await t.query(internal.health.report, { now });
   expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.headline).toBe("31 missed matches on 5 watches");
 });
+
+test("the report, digest, and dashboard count only the latest audit for a watch", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 1, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create,
+    { query: "bike", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  const misses = (count: number) => Array.from({ length: count }, (_, i) => ({
+    listingId: `listing-${i}`, title: "Bike", url: "https://example.com", score: 8, kind: "never_read" as const,
+  }));
+  await t.run(async (ctx) => {
+    await ctx.db.insert("audits", { at: now - 60_000, watchId, userId: watch!.userId, requestId: "manual",
+      ok: false, read: 0, scored: 0, missCount: 31, misses: misses(31), error: "old failure" });
+    await ctx.db.insert("audits", { at: now, watchId, userId: watch!.userId, requestId: "nightly",
+      ok: true, read: 0, scored: 0, missCount: 3, misses: misses(3) });
+  });
+  const report = await t.query(internal.health.report, { now });
+  expect(report.problems).toEqual([expect.stringContaining("3 missed match(es) on 1 watch(es)")]);
+  expect(report.problems[0]).toContain("request nightly");
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")).toMatchObject({
+    headline: "3 missed matches on 1 watch", count: 3,
+  });
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.items).toHaveLength(3);
+  expect(report.issues.some((issue) => issue.kind === "audit_failed")).toBe(false);
+  expect(report.summary).toContain("Delivery audit: 1 watches checked, 3 misses.");
+  const digest = await t.action(internal.health.digest, { dryRun: true });
+  expect(digest.problems).toEqual(report.problems);
+  expect(digest.summary).toBe(report.summary);
+  process.env.OWNER_CLERK_ID = "owner";
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  const dashboard = await owner.query(api.admin.dashboard, {});
+  expect(dashboard?.deliveryAudit.misses).toBe(3);
+  expect(dashboard?.health.issues.find((issue) => issue.kind === "delivery_misses")?.count).toBe(3);
+  delete process.env.OWNER_CLERK_ID;
+});
+
+test("the report sums each watch's latest audit and reports only current failures", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const ids = await Promise.all(["bike", "chair"].map((query) => alice.mutation(api.watches.create,
+    { query, schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" })));
+  await t.run(async (ctx) => {
+    const watches = await Promise.all(ids.map((id) => ctx.db.get(id)));
+    const miss = { listingId: "listing", title: "Item", url: "https://example.com", score: 8, kind: "never_read" as const };
+    await ctx.db.insert("audits", { at: now - 60_000, watchId: ids[0], userId: watches[0]!.userId,
+      requestId: "bike-old", ok: false, read: 0, scored: 0, missCount: 2, misses: [miss, miss], error: "old failure" });
+    await ctx.db.insert("audits", { at: now, watchId: ids[0], userId: watches[0]!.userId,
+      requestId: "bike-new", ok: true, read: 0, scored: 0, missCount: 1, misses: [miss] });
+    await ctx.db.insert("audits", { at: now, watchId: ids[1], userId: watches[1]!.userId,
+      requestId: "chair-new", ok: false, read: 0, scored: 0, missCount: 2, misses: [miss, miss], error: "current failure" });
+  });
+  const report = await t.query(internal.health.report, { now });
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")).toMatchObject({
+    headline: "3 missed matches on 2 watches", count: 3,
+  });
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.items).toHaveLength(3);
+  expect(report.issues.find((issue) => issue.kind === "audit_failed")).toMatchObject({
+    count: 1, items: [{ watchId: ids[1], requestId: "chair-new" }],
+  });
+  expect(report.problems.filter((problem) => problem.startsWith("Delivery audit failed"))).toEqual([
+    expect.stringContaining("current failure"),
+  ]);
+  expect(report.summary).toContain("Delivery audit: 2 watches checked, 3 misses.");
+});

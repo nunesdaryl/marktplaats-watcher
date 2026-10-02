@@ -133,6 +133,7 @@ search gives each new listing a better chance to be read and scored in the next 
 
 The 04:30 UTC audit replays the previous day's search for each active, seeded watch. Its rows are in Convex
 `audits`; the owner dashboard shows the latest misses, and the 05:00 UTC digest includes the audit request id.
+The problem box counts each watch's latest audit in the last 24 hours.
 `handled` means the listing was seen but no alert was recorded. `never_read` means it was absent from seen listings
 although a check should have covered its listing day. `read` counts eligible listings and `scored` counts the
 candidates sent to the ranker (at most 40 per watch). A failed audit says why and is not evidence of a miss.

@@ -30,7 +30,13 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const since = now - DAY;
   const runs = await ctx.db.query("runs").withIndex("by_at", (q) => q.gte("at", since)).collect();
   const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
-  const audits = await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
+  const recentAudits = await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect();
+  const seenWatches = new Set<string>();
+  const audits = recentAudits.filter((a) => {
+    if (seenWatches.has(a.watchId)) return false;
+    seenWatches.add(a.watchId);
+    return true;
+  });
   const chatErrors = errors.filter((e) => e.kind === "chat").length;
   const checkErrors = errors.length - chatErrors;
   const lastRun = await ctx.db.query("runs").withIndex("by_at").order("desc").first();
