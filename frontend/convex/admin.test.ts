@@ -1,6 +1,7 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
+import { draftFeedbackReply } from "./admin";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -13,6 +14,34 @@ beforeEach(() => {
   process.env.AGENTMAIL_INBOX_ID = "inbox@test";
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+test("reply draft uses a known first name and keeps the note as its own sentence", () => {
+  expect(draftFeedbackReply({ personName: "Alex Morgan", email: "other@example.com",
+    receivedAt: Date.parse("2026-10-01T10:00:00Z"), note: "Saved alerts are easier to find." }))
+    .toBe("Hi Alex, thanks for your feedback on 1 October. Saved alerts are easier to find. It's live in the app now. Daryl, Marktplaats Watcher");
+});
+
+test("reply draft has no name when the e-mail does not identify one and adds one full stop", () => {
+  expect(draftFeedbackReply({ email: "42@example.com", receivedAt: Date.parse("2026-10-01T10:00:00Z"),
+    note: "Alerts now include the saved search" }))
+    .toBe("Hi, thanks for your feedback on 1 October. Alerts now include the saved search. It's live in the app now. Daryl, Marktplaats Watcher");
+});
+
+test("reply draft uses the e-mail's first name only before a separator", () => {
+  expect(draftFeedbackReply({ email: "jane.doe2@example.com", receivedAt: Date.parse("2026-10-01T10:00:00Z"),
+    note: "The watch list loads faster." })).toMatch(/^Hi Jane, thanks/);
+  expect(draftFeedbackReply({ email: "hikari_dev@example.com", receivedAt: Date.parse("2026-10-01T10:00:00Z"),
+    note: "The watch list loads faster." })).toMatch(/^Hi Hikari, thanks/);
+  expect(draftFeedbackReply({ email: "alex-smith@example.com", receivedAt: Date.parse("2026-10-01T10:00:00Z"),
+    note: "The watch list loads faster." })).toMatch(/^Hi Alex, thanks/);
+});
+
+test.each(["darylnunes@example.com", "vinodkumarbhovi9797@example.com"])(
+  "reply draft does not guess a first name from %s", (email) => {
+    expect(draftFeedbackReply({ email, receivedAt: Date.parse("2026-10-01T10:00:00Z"),
+      note: "The watch list loads faster." })).toMatch(/^Hi, thanks/);
+  },
+);
 
 test("only the owner gets dashboard data", async () => {
   const t = convexTest(schema, modules);
@@ -52,7 +81,7 @@ test("outside feedback tracks owner decisions, release and a manually recorded r
     .rejects.toThrow(/Not found/);
   await owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() });
   const shipped = (await owner.query(api.admin.feedback, { status: "shipped" }))!.rows[0];
-  expect(shipped.replyDraft).toContain("saved me time");
+  expect(shipped.replyDraft).toBe("Hi Instructor, thanks for your feedback on 28 September. Review for next release. It's live in the app now. Daryl, Marktplaats Watcher");
   expect(shipped.timeline.map((e) => e.status)).toEqual(["new", "planned", "in_progress", "shipped"]);
   await owner.mutation(api.admin.markFeedbackReplied, { id, channel: "whatsapp", text: "I told them where to find it." });
   expect((await owner.query(api.admin.feedback, {}))!.rows[0]).toMatchObject({ replyChannel: "whatsapp", replyText: "I told them where to find it.", repliedBy: "owner@example.com" });

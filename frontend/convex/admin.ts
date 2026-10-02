@@ -803,6 +803,17 @@ export const feedbackUploadUrl = mutation({ args: {}, handler: async (ctx) => {
   return ctx.storage.generateUploadUrl();
 } });
 
+export function draftFeedbackReply({ personName, email, receivedAt, note }: {
+  personName?: string; email?: string; receivedAt: number; note: string;
+}) {
+  const named = personName?.trim().split(/\s+/)[0];
+  const fromEmail = email?.split("@")[0].match(/^([a-z]{2,})[._-]/i)?.[1];
+  const firstName = named || (fromEmail ? fromEmail[0].toUpperCase() + fromEmail.slice(1) : "");
+  const received = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long" }).format(receivedAt);
+  const change = `${note.trim().replace(/\.+$/, "")}.`;
+  return `Hi${firstName ? ` ${firstName}` : ""}, thanks for your feedback on ${received}. ${change} It's live in the app now. Daryl, Marktplaats Watcher`;
+}
+
 export const updateFeedback = mutation({
   args: { id: v.id("feedback"), status: feedbackStatus, note: v.optional(v.string()),
     declinedReason: v.optional(v.string()), issues: v.array(v.string()), releaseSha: v.optional(v.string()),
@@ -823,10 +834,10 @@ export const updateFeedback = mutation({
     if (args.status === "shipped" && !args.note?.trim()) throw new ConvexError("Describe what changed before shipping.");
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
-    const asked = row.message?.trim().split(/[.!?\n]/)[0]?.slice(0, 120) || "your experience";
-    const changed = args.note?.trim().split(/[.!?\n]/)[0]?.slice(0, 150);
+    const user = row.userId ? await ctx.db.get(row.userId) : null;
     const draft = args.status === "shipped" ? (args.replyDraft?.trim() || row.replyDraft ||
-      `Thank you for telling us about ${asked}. We changed ${changed}. You can see it in the app now.`) : args.replyDraft?.trim();
+      draftFeedbackReply({ personName: row.personName, email: row.personEmail ?? user?.email,
+        receivedAt: row.createdAt, note: args.note! })) : args.replyDraft?.trim();
     await ctx.db.patch(args.id, { status: args.status, note: args.note?.trim() || undefined,
       declinedReason: args.status === "declined" ? args.declinedReason?.trim() : undefined, issues,
       releaseSha: args.releaseSha?.trim() || undefined, releaseAt: args.releaseAt,
