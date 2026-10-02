@@ -7,6 +7,19 @@ import { sendEmail } from "./checker";
 const DAY = 86_400_000;
 const MAX_WATCHES_PER_REQUEST = 20;
 
+/** The most recent audit run is one batch even when it checked several watches. */
+export const latestMissesForDrafts = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const latest = await ctx.db.query("audits").withIndex("by_at").order("desc").first();
+    if (!latest) return [];
+    return (await ctx.db.query("audits").withIndex("by_at", (q) => q.eq("at", latest.at)).collect())
+      .filter((row) => row.ok && row.missCount > 0)
+      .map((row) => ({ id: row._id, at: row.at, watchId: row.watchId,
+        missCount: row.missCount, misses: row.misses }));
+  },
+});
+
 export const groups = internalQuery({
   args: { now: v.number() },
   handler: async (ctx, { now }) => {
