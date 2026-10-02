@@ -85,6 +85,8 @@ export const deleteMyData = mutation({
       await ctx.db.delete(row._id);
     for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect()) {
       if (row.screenshotId) await ctx.storage.delete(row.screenshotId);
+      for (const event of await ctx.db.query("feedbackEvents").withIndex("by_feedback", (q) => q.eq("feedbackId", row._id)).collect())
+        await ctx.db.delete(event._id);
       await ctx.db.delete(row._id);
     }
     for (const row of await ctx.db.query("events").withIndex("by_user_at", (q) => q.eq("userId", user._id)).collect())

@@ -1,6 +1,7 @@
 // The drilldown views: every list and record behind the dashboard's numbers. Rows open the next level.
-import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
+import { useContext, useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { NOTIFY_LABEL } from "../../../convex/schedule";
 import Icon from "../../components/Icon.jsx";
@@ -9,10 +10,24 @@ import RichText from "../../lib/text.jsx";
 import { ConfirmButton } from "../WatchView.jsx";
 import { FeedbackItem } from "./Overview.jsx";
 import { DAY, dateFilters, dayLabel, euro, label, when } from "./nav.js";
-import FilterBar from "./FilterBar.jsx";
+import FilterBar, { AdminOptionsContext } from "./FilterBar.jsx";
 import Table from "./Table.jsx";
 
 const num = (v) => (v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v));
+const amsterdamDay = (at) => {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(at).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+export function receivedTimestamp(day, now = Date.now()) {
+  if (day === amsterdamDay(now)) return now;
+  if (day > amsterdamDay(now)) throw new Error("Future received date");
+  const utcNoon = Date.parse(`${day}T12:00:00Z`);
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hourCycle: "h23" }).format(utcNoon));
+  return utcNoon - (hour - 12) * 3_600_000;
+}
+export const adminError = (error) => error instanceof ConvexError && typeof error.data === "string"
+  ? error.data : "That didn't work. Try again.";
 const STAGES = { signed_up: "Signed up", setup: "Finished setup", chatted: "Chatted", watch: "Saved a watch", alert: "Got an alert" };
 const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
 
@@ -128,21 +143,130 @@ export function Events({ params, open, update }) {
 
 export function Feedback({ params, open, update }) {
   const rows = useQuery(api.admin.feedback, { limit: 200, wouldPay: params.wouldPay, userId: params.userId,
-    handled: params.handled ? params.handled === "yes" : undefined, search: params.q, ...dateFilters(params) });
-  const setDone = useMutation(api.admin.setFeedbackHandled);
+    status: params.status, feedbackSource: params.feedbackSource, search: params.q, ...dateFilters(params) });
+  const [selected, setSelected] = useState(null);
+  const [adding, setAdding] = useState(false);
   const shown = rows?.rows;
+  const item = shown?.find((f) => f._id === selected);
   return <div className="stack">
-    <FilterBar params={params} update={update} status={{ key: "handled", label: "Status", options: [["no", "To do"], ["yes", "Handled"]] }} />
+    <button className="button tinted" onClick={() => setAdding(!adding)}>Add feedback</button>
+    {adding && <AddFeedback onDone={() => setAdding(false)} />}
+    <FilterBar params={params} update={update} status={{ key: "status", label: "Status", options: [["new", "New"], ["planned", "Planned"], ["in_progress", "In progress"], ["shipped", "Shipped"], ["declined", "Declined"]] }}
+      source={{ key: "feedbackSource", label: "Source", options: [["app", "App"], ["email", "Email"], ["whatsapp", "WhatsApp"], ["in_person", "In person"], ["other", "Other"]] }} />
     {rows?.more && <p className="dt-count">Showing {shown.length} of {shown.length}+ — narrow the filters</p>}
-    {shown === undefined ? <p className="hint">Loading…</p> : shown.length === 0 ? <p className="hint">No feedback here.</p> : (
-      <ul className="fb-list">{shown.map((f) => <FeedbackItem key={f._id} f={f}
-        onPerson={() => open({ view: "user", title: f.email, params: { id: f.userId } })}
-        action={<button className={`button ${f.handledAt ? "" : "tinted"}`}
-          onClick={() => setDone({ id: f._id, handled: !f.handledAt })}>
-          <Icon name={f.handledAt ? "restore" : "compose"} size={15} />{f.handledAt ? `Handled ${when(f.handledAt)} · reopen` : "Mark handled"}
-        </button>} />)}</ul>
-    )}
+    {shown === undefined ? <p className="hint">Loading…</p> : <Table name="feedback" rows={shown} empty="No feedback here." onOpen={(f) => setSelected(f._id)}
+      columns={[
+        { key: "createdAt", label: "Received", render: (f) => when(f.createdAt) },
+        { key: "source", label: "Source" }, { key: "email", label: "Person", render: (f) => f.personName ? `${f.personName}${f.email !== f.personName ? ` · ${f.email}` : ""}` : f.email },
+        { key: "status", label: "Status", render: (f) => f.status.replace("_", " ") },
+        { key: "issues", label: "Issue", render: (f) => f.issues.join(", "), csv: (f) => f.issues.join(", ") },
+        { key: "releaseSha", label: "Shipped in", render: (f) => f.releaseSha?.slice(0, 7) ?? "–" },
+        { key: "repliedAt", label: "Replied", render: (f) => f.repliedAt ? when(f.repliedAt) : "–" },
+      ]} />}
+    {item && <FeedbackDetail key={item._id} f={item} close={() => setSelected(null)} open={open} />}
   </div>;
+}
+
+export function AddFeedback({ onDone }) {
+  const users = useContext(AdminOptionsContext)?.users ?? [];
+  const add = useMutation(api.admin.addFeedback);
+  const uploadUrl = useMutation(api.admin.feedbackUploadUrl);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const fileInput = useRef(null);
+  async function submit(e) {
+    e.preventDefault(); setBusy(true); setError("");
+    const form = new FormData(e.currentTarget);
+    try {
+      const file = form.get("screenshot");
+      let screenshotId;
+      if (file?.size) {
+        if (file.size > 1_500_000 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Choose a JPEG, PNG or WebP under 1.5 MB.");
+        const url = await uploadUrl({});
+        const response = await fetch(url, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+        if (!response.ok) throw new Error("The screenshot could not be uploaded.");
+        screenshotId = (await response.json()).storageId;
+      }
+      await add({ userId: form.get("userId") || undefined, personName: form.get("personName") || undefined,
+        personEmail: form.get("personEmail") || undefined, receivedAt: receivedTimestamp(form.get("receivedAt")),
+        source: form.get("source"), message: form.get("message"), paraphrase: form.has("paraphrase"), screenshotId });
+      onDone();
+    } catch (err) { setError(adminError(err)); } finally { setBusy(false); }
+  }
+  return <form className="stack fb-editor" onSubmit={submit}>
+    <label>Account <select name="userId"><option value="">Choose an account or enter a person below</option>{users.map((u) => <option key={u._id} value={u._id}>{u.email}</option>)}</select></label>
+    <label>Name <input name="personName" maxLength="120" /></label>
+    <label>E-mail <input name="personEmail" type="email" /></label>
+    <label>Received <input name="receivedAt" type="date" defaultValue={amsterdamDay(Date.now())} max={amsterdamDay(Date.now())} required /></label>
+    <label>Channel <select name="source">{["email", "whatsapp", "in_person", "other"].map((source) => <option key={source} value={source}>{source.replace("_", " ")}</option>)}</select></label>
+    <label>Their words or paraphrase <textarea name="message" maxLength="2000" required /></label>
+    <label><input name="paraphrase" type="checkbox" /> Paraphrase</label>
+    <div className="fb-attachment"><span>Screenshot</span><input ref={fileInput} name="screenshot" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Screenshot" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} />
+      <button type="button" className="button tinted" onClick={() => fileInput.current?.click()}>Attach screenshot</button>{fileName && <span>{fileName}</span>}</div>
+    {error && <p role="alert">{error}</p>}
+    <button className="button tinted" disabled={busy}>Save feedback</button>
+  </form>;
+}
+
+export function FeedbackDetail({ f, close, open }) {
+  const update = useMutation(api.admin.updateFeedback);
+  const send = useAction(api.feedback.sendReply);
+  const mark = useMutation(api.admin.markFeedbackReplied);
+  const [status, setStatus] = useState(f.status);
+  const [note, setNote] = useState(f.note ?? "");
+  const [reason, setReason] = useState(f.declinedReason ?? "");
+  const [issues, setIssues] = useState(f.issues.join(", "));
+  const [sha, setSha] = useState(f.releaseSha ?? "");
+  const [releaseDate, setReleaseDate] = useState(f.releaseAt ? new Date(f.releaseAt).toISOString().slice(0, 10) : "");
+  const [draft, setDraft] = useState(f.replyDraft ?? "");
+  useEffect(() => { if (f.replyDraft && !draft) setDraft(f.replyDraft); }, [f.replyDraft]);
+  const [channel, setChannel] = useState(f.source === "app" ? "email" : f.source);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const save = async (e) => {
+    e.preventDefault(); setBusy(true); setError("");
+    try { await update({ id: f._id, status, note, declinedReason: reason, issues: issues.split(/[\s,]+/).filter(Boolean),
+      releaseSha: sha || undefined, releaseAt: releaseDate ? Date.parse(`${releaseDate}T12:00:00`) : undefined,
+      replyDraft: draft || undefined }); }
+    catch (err) { setError(adminError(err)); } finally { setBusy(false); }
+  };
+  const reply = async (method) => {
+    setBusy(true); setError("");
+    try { if (draft !== f.replyDraft) await update({ id: f._id, status: f.status, note: f.note, declinedReason: f.declinedReason,
+      issues: f.issues, releaseSha: f.releaseSha, releaseAt: f.releaseAt, replyDraft: draft });
+      if (method === "send") await send({ id: f._id });
+      else await mark({ id: f._id, channel, text: draft });
+    } catch (err) { setError(adminError(err)); } finally { setBusy(false); }
+  };
+  return <section className="stack fb-editor" aria-label="Feedback timeline">
+    <button className="link-button" onClick={close}>Close feedback</button>
+    <ul className="fb-list"><FeedbackItem f={f} onPerson={f.userId ? () => open({ view: "user", title: f.email, params: { id: f.userId } }) : undefined} /></ul>
+    <ol className="fb-timeline"><li>Received {when(f.createdAt)} · {f.source}</li>
+      {f.timeline.map((event) => <li key={event._id}>{event.status.replace("_", " ")} · {when(event.at)} · {event.by}</li>)}
+      {f.repliedAt && <li>Replied · {when(f.repliedAt)} · {f.replyChannel} · {f.repliedBy}</li>}</ol>
+    <form className="stack" onSubmit={save}>
+      <label>Status <select value={status} onChange={(e) => setStatus(e.target.value)}>{["new", "planned", "in_progress", "shipped", "declined"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select></label>
+      <label>Note <textarea value={note} onChange={(e) => setNote(e.target.value)} /></label>
+      {status === "declined" && <label>Reason <textarea value={reason} onChange={(e) => setReason(e.target.value)} required /></label>}
+      <label>Linked issues <input value={issues} onChange={(e) => setIssues(e.target.value)} placeholder="MW-48, MW-51" /></label>
+      {f.issues.map((id) => <a key={id} href={`https://linear.app/software-factory-ai/issue/${id}`} target="_blank" rel="noopener noreferrer">{id}</a>)}
+      <label>Release SHA <input value={sha} onChange={(e) => setSha(e.target.value)} placeholder="Short merge SHA" /></label>
+      <label>Release date <input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} /></label>
+      {f.status === "shipped" && <p>Shipped in {f.releaseSha?.slice(0, 7)} on {f.releaseAt && when(f.releaseAt)}</p>}
+      {status === "shipped" && <label>Reply draft <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="A draft appears after you save the shipped status" /></label>}
+      {error && <p role="alert">{error}</p>}
+      <button className="button tinted" disabled={busy}>Save changes</button>
+    </form>
+    {f.status === "shipped" && !f.repliedAt && <div className="stack">
+      <button className="button" disabled={busy || !draft.trim() || f.sending} onClick={() => reply("send")}>Send</button>
+      {f.source !== "app" && <>
+        <label>Outside channel <select value={channel} onChange={(e) => setChannel(e.target.value)}>{["email", "whatsapp", "in_person", "other"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select></label>
+        <button className="button" disabled={busy || !draft.trim()} onClick={() => reply("mark")}>Mark as replied</button>
+      </>}
+    </div>}
+    {f.repliedAt && <p>Reply sent: {f.replyText}</p>}
+  </section>;
 }
 
 export function Ratings({ params, open, update }) {

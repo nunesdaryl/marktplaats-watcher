@@ -3,11 +3,12 @@
 // OWNER_EMAIL so a real person reads it, and listed on the owner dashboard (/admin). `npx convex run feedback:summary`
 // counts the answers.
 import { ConvexError, v } from "convex/values";
-import { internalAction, internalQuery, mutation, type MutationCtx } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
 import { feedbackContext, wouldPayValidator } from "./schema";
+import { ownerMatches } from "./admin";
 import { requireUser } from "./users";
 
 export const WOULD_PAY = {
@@ -67,7 +68,7 @@ export const submit = mutation({
       errors: context.errors?.slice(0, 5).map((e) => e.slice(0, 200)),
     };
     const id = await ctx.db.insert("feedback", {
-      userId: user._id, message: text, wouldPay, page: page?.slice(0, 40), screenshotId: shot, context: ctxRow, createdAt: now,
+      userId: user._id, source: "app", status: "new", message: text, wouldPay, page: page?.slice(0, 40), screenshotId: shot, context: ctxRow, createdAt: now,
     });
     await ctx.scheduler.runAfter(0, internal.feedback.notifyOwner, { id });
     return id;
@@ -79,8 +80,50 @@ export const get = internalQuery({
   handler: async (ctx, { id }) => {
     const row = await ctx.db.get(id);
     if (!row) return null;
-    const user = await ctx.db.get(row.userId);
-    return { ...row, email: user?.email ?? "(deleted user)" };
+    const user = row.userId ? await ctx.db.get(row.userId) : null;
+    return { ...row, email: row.personEmail ?? user?.email ?? "(deleted user)" };
+  },
+});
+
+export const claimReply = internalMutation({
+  args: { id: v.id("feedback"), by: v.string() },
+  handler: async (ctx, { id, by }) => {
+    const row = await ctx.db.get(id);
+    if (!row || row.status !== "shipped" || row.repliedAt || row.sending || !row.replyDraft?.trim())
+      throw new ConvexError("This reply is not ready to send.");
+    const user = row.userId ? await ctx.db.get(row.userId) : null;
+    const to = row.personEmail ?? user?.email;
+    if (!to) throw new ConvexError("Add an e-mail address before sending.");
+    await ctx.db.patch(id, { sending: true });
+    return { to, text: row.replyDraft.trim(), by };
+  },
+});
+
+export const finishReply = internalMutation({
+  args: { id: v.id("feedback"), text: v.string(), by: v.string(), sent: v.boolean() },
+  handler: async (ctx, { id, text, by, sent }) => {
+    const row = await ctx.db.get(id);
+    if (!row?.sending) return;
+    await ctx.db.patch(id, sent ? { sending: false, replyText: text, repliedAt: Date.now(), replyChannel: "email", repliedBy: by }
+      : { sending: false });
+  },
+});
+
+export const sendReply = action({
+  args: { id: v.id("feedback") },
+  handler: async (ctx, { id }): Promise<void> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!ownerMatches(identity)) throw new ConvexError("Not found.");
+    const by = identity!.email!;
+    const { to, text } = await ctx.runMutation(internal.feedback.claimReply, { id, by });
+    try {
+      await sendEmail(to, { subject: "An update on your feedback", text, html: `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!).replace(/\n/g, "<br>")}</p>` });
+    } catch (error) {
+      await ctx.runMutation(internal.feedback.finishReply, { id, text, by, sent: false });
+      throw error;
+    }
+    // If recording fails after AgentMail accepts the message, keep the claim so a retry cannot send twice.
+    await ctx.runMutation(internal.feedback.finishReply, { id, text, by, sent: true });
   },
 });
 

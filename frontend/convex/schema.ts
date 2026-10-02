@@ -16,6 +16,8 @@ export const listingCard = v.object({
 
 // The answers to "Would you pay for this?" (labels in feedback.ts)
 export const wouldPayValidator = v.union(v.literal("no"), v.literal("maybe"), v.literal("eur2"), v.literal("eur5"), v.literal("eur10"));
+export const feedbackSource = v.union(v.literal("app"), v.literal("email"), v.literal("whatsapp"), v.literal("in_person"), v.literal("other"));
+export const feedbackStatus = v.union(v.literal("new"), v.literal("planned"), v.literal("in_progress"), v.literal("shipped"), v.literal("declined"));
 
 // What the app adds to feedback so a bug can be reproduced: where it was sent from and what the screen was like
 export const feedbackContext = v.object({
@@ -72,7 +74,23 @@ export default defineSchema({
 
   // Feedback and "would you pay?" answers from the in-app button. Each one is e-mailed to the owner.
   feedback: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    personName: v.optional(v.string()),
+    personEmail: v.optional(v.string()),
+    source: v.optional(feedbackSource),
+    paraphrase: v.optional(v.boolean()),
+    status: v.optional(feedbackStatus),
+    note: v.optional(v.string()),
+    declinedReason: v.optional(v.string()),
+    issues: v.optional(v.array(v.string())),
+    releaseSha: v.optional(v.string()),
+    releaseAt: v.optional(v.number()),
+    replyDraft: v.optional(v.string()),
+    replyText: v.optional(v.string()),
+    repliedAt: v.optional(v.number()),
+    replyChannel: v.optional(feedbackSource),
+    repliedBy: v.optional(v.string()),
+    sending: v.optional(v.boolean()),
     message: v.optional(v.string()),
     wouldPay: v.optional(wouldPayValidator),
     page: v.optional(v.string()),
@@ -81,6 +99,11 @@ export default defineSchema({
     handledAt: v.optional(v.number()),          // the owner marked it handled on the dashboard
     createdAt: v.number(),
   }).index("by_user_created", ["userId", "createdAt"]).index("by_created", ["createdAt"]),
+
+  feedbackEvents: defineTable({
+    feedbackId: v.id("feedback"), status: feedbackStatus, at: v.number(), by: v.string(),
+    note: v.optional(v.string()),
+  }).index("by_feedback", ["feedbackId"]),
 
   // Users' verdicts on their alerts ("good match" / "not right, because …"): labelled examples for the scorer's
   // evaluation (evals/report.py) and the owner dashboard. One per alert; a new rating replaces the old one.

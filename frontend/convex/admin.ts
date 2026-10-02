@@ -7,6 +7,7 @@ import type { UserIdentity } from "convex/server";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { describe, describeWhen } from "./schedule";
+import { feedbackSource, feedbackStatus } from "./schema";
 import { activePatch } from "./watches";
 import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
@@ -138,6 +139,9 @@ export const dashboard = query({
         emailsSent: alerts.filter((a) => a.emailStatus === "sent").length,
         emailsFailed: alerts.filter((a) => a.emailStatus === "failed").length,
         feedback: feedback.length,
+        feedbackOpen: feedback.filter((f) => !["shipped", "declined"].includes(f.status ?? (f.handledAt ? "planned" : "new"))).length,
+        feedbackShipped: feedback.filter((f) => f.status === "shipped").length,
+        feedbackReplied: feedback.filter((f) => !!f.repliedAt).length,
         events: events.length,
       },
       daily,
@@ -167,9 +171,9 @@ export const dashboard = query({
 /** Feedback, newest first: message, would-pay answer, screenshot, context and what the person did just before. */
 export const feedback = query({
   args: { limit: v.optional(v.number()), at: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
-          handled: v.optional(v.boolean()), since: v.optional(v.number()), until: v.optional(v.number()),
+          handled: v.optional(v.boolean()), status: v.optional(feedbackStatus), feedbackSource: v.optional(feedbackSource), since: v.optional(v.number()), until: v.optional(v.number()),
           search: v.optional(v.string()) },
-  handler: async (ctx, { limit = 50, wouldPay, userId, handled, since, until, search }) => {
+  handler: async (ctx, { limit = 50, wouldPay, userId, handled, status, feedbackSource, since, until, search }) => {
     if (!(await isOwner(ctx))) return null;
     const needle = search?.trim().toLowerCase();
     const source = userId ? ctx.db.query("feedback").withIndex("by_user_created", (q) => {
@@ -183,15 +187,23 @@ export const feedback = query({
     const page = await listPage(source.order("desc"), async (f) =>
       (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
         && (handled === undefined || !!f.handledAt === handled) && inRange(f.createdAt, since, until)
-        && (!needle || [f.message, f.page, (await ctx.db.get(f.userId))?.email]
+        && (!status || (f.status ?? (f.handledAt ? "planned" : "new")) === status)
+        && (!feedbackSource || (f.source ?? "app") === feedbackSource)
+        && (!needle || [f.message, f.page, f.personName, f.personEmail, f.userId ? (await ctx.db.get(f.userId))?.email : undefined]
           .some((x) => x?.toLowerCase().includes(needle))), Math.min(PAGE, limit));
     const rows = await Promise.all(page.rows.map(async (f) => {
-      const user = await ctx.db.get(f.userId);
-      const before = await ctx.db.query("events")
-        .withIndex("by_user_at", (q) => q.eq("userId", f.userId).lte("at", f.createdAt)).order("desc").take(10);
+      const user = f.userId ? await ctx.db.get(f.userId) : null;
+      const before = f.userId ? await ctx.db.query("events")
+        .withIndex("by_user_at", (q) => q.eq("userId", f.userId!).lte("at", f.createdAt)).order("desc").take(10) : [];
+      const timeline = await ctx.db.query("feedbackEvents").withIndex("by_feedback", (q) => q.eq("feedbackId", f._id)).collect();
       return {
         _id: f._id, userId: f.userId, createdAt: f.createdAt, handledAt: f.handledAt, wouldPayKey: f.wouldPay,
-        email: user?.email ?? "(deleted user)", message: f.message,
+        email: f.personEmail ?? user?.email ?? f.personName ?? "(deleted user)", personName: f.personName,
+        source: f.source ?? "app", status: f.status ?? (f.handledAt ? "planned" : "new"), paraphrase: f.paraphrase,
+        note: f.note, declinedReason: f.declinedReason, issues: f.issues ?? [], releaseSha: f.releaseSha,
+        releaseAt: f.releaseAt, replyDraft: f.replyDraft, replyText: f.replyText, repliedAt: f.repliedAt,
+        replyChannel: f.replyChannel, repliedBy: f.repliedBy, sending: f.sending, timeline,
+        message: f.message,
         wouldPay: f.wouldPay ? WOULD_PAY[f.wouldPay] : undefined, page: f.page, context: f.context,
         screenshotUrl: f.screenshotId ? await ctx.storage.getUrl(f.screenshotId) : null,
         before: before.reverse().map((e) => ({ at: e.at, name: e.name, props: e.props })),
@@ -746,8 +758,105 @@ export const setFeedbackHandled = mutation({
   args: { id: v.id("feedback"), handled: v.boolean() },
   handler: async (ctx, { id, handled }) => {
     await requireOwner(ctx);
-    if (!(await ctx.db.get(id))) throw new ConvexError("That feedback no longer exists.");
-    await ctx.db.patch(id, { handledAt: handled ? Date.now() : undefined });
+    const row = await ctx.db.get(id);
+    if (!row) throw new ConvexError("That feedback no longer exists.");
+    const now = Date.now();
+    const status = handled ? "planned" : "new";
+    await ctx.db.patch(id, { status, handledAt: handled ? now : undefined });
+    const identity = await ctx.auth.getUserIdentity();
+    await ctx.db.insert("feedbackEvents", { feedbackId: id, status, at: now, by: identity!.email! });
+  },
+});
+
+const issuePattern = /^MW-\d+$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const addFeedback = mutation({
+  args: { userId: v.optional(v.id("users")), personName: v.optional(v.string()), personEmail: v.optional(v.string()),
+    receivedAt: v.number(), source: feedbackSource, message: v.string(), paraphrase: v.boolean(),
+    screenshotId: v.optional(v.id("_storage")) },
+  handler: async (ctx, args) => {
+    await requireOwner(ctx);
+    if (args.source === "app") throw new ConvexError("Use an outside channel.");
+    if (args.userId && !(await ctx.db.get(args.userId))) throw new ConvexError("Choose an existing account.");
+    if (!args.userId && !args.personName?.trim() && !args.personEmail?.trim()) throw new ConvexError("Add a person or choose an account.");
+    if (args.personEmail?.trim() && !emailPattern.test(args.personEmail.trim())) throw new ConvexError("Enter a valid e-mail address.");
+    const message = args.message.trim();
+    if (!message || message.length > 2000) throw new ConvexError("Write feedback under 2000 characters.");
+    if (!Number.isFinite(args.receivedAt) || args.receivedAt > Date.now() || args.receivedAt < 0) throw new ConvexError("Choose a valid received date.");
+    if (args.screenshotId) {
+      const meta = await ctx.db.system.get(args.screenshotId);
+      if (!meta || meta.size > 1_500_000 || (meta.contentType && !/^image\/(jpeg|png|webp)$/.test(meta.contentType)))
+        throw new ConvexError("Choose a JPEG, PNG or WebP under 1.5 MB.");
+    }
+    const id = await ctx.db.insert("feedback", { userId: args.userId, personName: args.personName?.trim() || undefined,
+      personEmail: args.personEmail?.trim() || undefined, createdAt: args.receivedAt, source: args.source,
+      message, paraphrase: args.paraphrase, screenshotId: args.screenshotId, status: "new" });
+    const identity = await ctx.auth.getUserIdentity();
+    await ctx.db.insert("feedbackEvents", { feedbackId: id, status: "new", at: Date.now(), by: identity!.email! });
+    return id;
+  },
+});
+
+export const feedbackUploadUrl = mutation({ args: {}, handler: async (ctx) => {
+  await requireOwner(ctx);
+  return ctx.storage.generateUploadUrl();
+} });
+
+export function draftFeedbackReply({ personName, email, receivedAt, note }: {
+  personName?: string; email?: string; receivedAt: number; note: string;
+}) {
+  const named = personName?.trim().split(/\s+/)[0];
+  const fromEmail = email?.split("@")[0].match(/^([a-z]{2,})[._-]/i)?.[1];
+  const firstName = named || (fromEmail ? fromEmail[0].toUpperCase() + fromEmail.slice(1) : "");
+  const received = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long" }).format(receivedAt);
+  const change = `${note.trim().replace(/\.+$/, "")}.`;
+  return `Hi${firstName ? ` ${firstName}` : ""}, thanks for your feedback on ${received}. ${change} It's live in the app now. Daryl, Marktplaats Watcher`;
+}
+
+export const updateFeedback = mutation({
+  args: { id: v.id("feedback"), status: feedbackStatus, note: v.optional(v.string()),
+    declinedReason: v.optional(v.string()), issues: v.array(v.string()), releaseSha: v.optional(v.string()),
+    releaseAt: v.optional(v.number()), replyDraft: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requireOwner(ctx);
+    const row = await ctx.db.get(args.id);
+    if (!row) throw new ConvexError("That feedback no longer exists.");
+    const current = row.status ?? (row.handledAt ? "planned" : "new");
+    const next: Record<string, string[]> = { new: ["planned", "declined"], planned: ["in_progress", "declined"],
+      in_progress: ["shipped", "declined"], shipped: [], declined: ["new"] };
+    if (args.status !== current && !next[current]?.includes(args.status)) throw new ConvexError("Move feedback through the status line in order.");
+    const issues = [...new Set(args.issues.map((s) => s.trim().toUpperCase()).filter(Boolean))];
+    if (issues.some((s) => !issuePattern.test(s))) throw new ConvexError("Use issue IDs such as MW-48.");
+    if (args.status === "declined" && !args.declinedReason?.trim()) throw new ConvexError("Give a reason for declining.");
+    if (args.status === "shipped" && (!issues.length || !args.releaseSha || !/^[a-f0-9]{7,40}$/i.test(args.releaseSha)
+      || !args.releaseAt || !Number.isFinite(args.releaseAt))) throw new ConvexError("Add an issue, release SHA and date before shipping.");
+    if (args.status === "shipped" && !args.note?.trim()) throw new ConvexError("Describe what changed before shipping.");
+    const now = Date.now();
+    const identity = await ctx.auth.getUserIdentity();
+    const user = row.userId ? await ctx.db.get(row.userId) : null;
+    const draft = args.status === "shipped" ? (args.replyDraft?.trim() || row.replyDraft ||
+      draftFeedbackReply({ personName: row.personName, email: row.personEmail ?? user?.email,
+        receivedAt: row.createdAt, note: args.note! })) : args.replyDraft?.trim();
+    await ctx.db.patch(args.id, { status: args.status, note: args.note?.trim() || undefined,
+      declinedReason: args.status === "declined" ? args.declinedReason?.trim() : undefined, issues,
+      releaseSha: args.releaseSha?.trim() || undefined, releaseAt: args.releaseAt,
+      replyDraft: draft, handledAt: args.status === "new" ? undefined : row.handledAt ?? now });
+    if (current !== args.status)
+      await ctx.db.insert("feedbackEvents", { feedbackId: args.id, status: args.status, at: now, by: identity!.email!, note: args.note?.trim() || undefined });
+  },
+});
+
+export const markFeedbackReplied = mutation({
+  args: { id: v.id("feedback"), channel: feedbackSource, text: v.string() },
+  handler: async (ctx, { id, channel, text }) => {
+    await requireOwner(ctx);
+    const row = await ctx.db.get(id);
+    if (!row || row.status !== "shipped" || row.repliedAt || row.sending || channel === "app" || (row.source ?? "app") === "app")
+      throw new ConvexError("This reply cannot be marked as sent.");
+    if (!text.trim()) throw new ConvexError("Write the reply that was sent.");
+    const identity = await ctx.auth.getUserIdentity();
+    await ctx.db.patch(id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel, repliedBy: identity!.email! });
   },
 });
 

@@ -125,13 +125,13 @@ export function FeedbackItem({ f, action, onPerson }) {
         <span className="fb-when">{when(f.createdAt)}</span>
         {onPerson ? <button className="link-button fb-from" onClick={onPerson}>{f.email}</button> : <span className="fb-from">{f.email}</span>}
         {f.wouldPay && <span className="pill">{f.wouldPay}</span>}
-        {f.handledAt && <span className="status-pill sent">handled</span>}
+        <span className="status-pill sent">{(f.status ?? "new").replace("_", " ")}</span>
       </div>
       <div className="fb-body">
         <div className="fb-text">
           <p className="fb-message">{f.message ?? <span className="muted">(no message, only the would-pay answer)</span>}</p>
           <p className="fb-meta">
-            {c ? <>{c.path} · {c.device} {c.viewport} · {c.theme} · {c.browser ?? "?"}{c.version ? ` · ${c.version}` : ""}</> : `Page: ${f.page ?? "?"}`}
+            {c ? <>{c.path} · {c.device} {c.viewport} · {c.theme} · {c.browser ?? "?"}{c.version ? ` · ${c.version}` : ""}</> : f.source !== "app" ? `${f.source?.replace("_", " ")}${f.paraphrase ? " · paraphrase" : ""}` : `Page: ${f.page ?? "?"}`}
           </p>
           {c?.errors?.length > 0 && (
             <details className="fb-errors" open>
@@ -321,7 +321,7 @@ export default function Overview({ open, onSearch, ask }) {
           onOpen={() => go("errors", "Errors (24 h)", { since: now - DAY })} />
         <Stat value={data.deliveryAudit.misses} name="Delivery audit" note={`${data.deliveryAudit.checked} watches checked · ${data.deliveryAudit.lastRunAt ? when(data.deliveryAudit.lastRunAt) : "No run yet"}`}
           onOpen={() => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })} />
-        <Stat value={t.feedback} name="Feedback" note="with screenshots" onOpen={() => go("feedback", "Feedback and suggestions")} />
+        <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
 
       <nav className="admin-list-nav" aria-label="Dashboard lists">
@@ -390,7 +390,7 @@ export default function Overview({ open, onSearch, ask }) {
         {feedback === undefined ? <p className="hint">Loading…</p> : feedback.length === 0 ? (
           <p className="hint">Nothing yet. It arrives here and in your inbox.</p>
         ) : <ul className="fb-list">{feedback.map((f) => <FeedbackItem key={f._id} f={f}
-              onPerson={() => open({ view: "user", title: f.email, params: { id: f.userId } }, { fresh: true })} />)}</ul>}
+              onPerson={f.userId ? () => open({ view: "user", title: f.email, params: { id: f.userId } }, { fresh: true }) : undefined} />)}</ul>}
       </section>
 
       <p className="hint admin-foot">
