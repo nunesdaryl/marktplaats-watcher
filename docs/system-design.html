@@ -1253,6 +1253,20 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   the planned work in MW-47 to MW-51 and MW-53.</p>
 <p>The Monday routine is in <code>RUNBOOK.md</code>. <code>scripts/factory/loop-status.sh</code> gives a read-only checkpoint:
   tracker counts, pending local user cases, Linear conveyor labels, and the last recorded merge and eval run.</p>
+<p><b>Status at 2 October 12:45: the whole backlog shipped.</b> MW-35 to MW-55 (19 issues; MW-45 and MW-46 had shipped on 1 October) were built by GPT-6 Sol,
+  reviewed by running them, and merged on Daryl's per-issue OK between 1 October night and 2 October 12:40; from MW-35
+  on, every merge went through <code>scripts/factory-merge.sh</code> and is a row in <code>docs/factory/merges.md</code>.
+  Shipped: the merge gate itself (MW-47, fixed on first use by MW-55: CRLF scripts and Convex <code>_generated</code>),
+  the feedback tracker (MW-48), user ratings into an eval review queue (MW-49), feedback to draft specs (MW-50), the
+  weekly loop (MW-51), plus the parked hardening: problem box dedupe (MW-35), no warning on paused watches (MW-36),
+  cache reset order (MW-37), an end-to-end test of the check route (MW-38), the <code>seededAt</code> backfill tool
+  (MW-39, not yet run on production), owner e-mail for 9/10+ misses (MW-40), quiet-watch alarm (MW-41), canary watch
+  (MW-42, one page an hour), narrow-at-save note (MW-43), neutral Ask placeholder (MW-44) and the clickable account row
+  (MW-54). Review sent back MW-37, 42, 43, 47 and 48 (three rounds) before they shipped. First real use: the tracker's
+  item #1 is the instructor's WhatsApp feedback, and one reply was sent to the owner's own test item; on production
+  <code>loop-status.sh</code> shows 1 new, 1 open, an empty factory queue, and <code>feedback_drafts.py</code> produced
+  draft specs from the latest audit read-only (nothing filed). Open: Convex warned the team is above the free-plan
+  limits; eval case E2 drifted with the live market; draft titles use watch ids instead of names.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
