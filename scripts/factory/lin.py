@@ -89,24 +89,37 @@ def ready(identifier, reviewed_sha=None):
         raise RuntimeError(f"factory: {identifier} requires exactly one ready-to-merge conveyor label")
     if item["state"]["type"] in {"completed", "canceled"}:
         raise RuntimeError(f"factory: {identifier} is terminal")
-    if reviewed_sha and not any(re.match(r"factory-review verdict .* result=PASS sha=" + reviewed_sha + r"(?:\s|$)", c["body"].splitlines()[0]) for c in item["comments"]):
-        raise RuntimeError(f"factory: {identifier} has no PASS verdict for {reviewed_sha}")
+    if reviewed_sha:
+        if not any(state["name"] == "Done" for state in item["team"]["states"]["nodes"]):
+            raise RuntimeError("factory: Done state not found")
+        verdict_pattern = re.compile(r"^factory-review verdict \S+ station=(\S+)(?: claim=(\S+))? result=PASS sha=" + re.escape(reviewed_sha) + r"$")
+        verdicts = [(c, verdict_pattern.fullmatch(c["body"].splitlines()[0])) for c in item["comments"]]
+        verdicts = [(c, match) for c, match in verdicts if match]
+        if not verdicts:
+            raise RuntimeError(f"factory: {identifier} has no PASS verdict for {reviewed_sha}")
+        verdict, match = max(verdicts, key=lambda pair: (pair[0]["createdAt"], pair[0]["id"]))
+        claims = [c for c in item["comments"] if c["createdAt"] < verdict["createdAt"] and c["body"].splitlines()[0].startswith("factory-review claim ")]
+        if match.group(2):
+            claims = [c for c in claims if c["id"] == match.group(2)]
+        claims = [c for c in claims if re.search(r"\bstation=" + re.escape(match.group(1)) + r"(?:\s|$)", c["body"].splitlines()[0])]
+        if not claims:
+            raise RuntimeError(f"factory: {identifier} PASS verdict has no valid review claim")
+        claim = max(claims, key=lambda c: (c["createdAt"], c["id"]))
+        approvals = [c for c in item["comments"] if c["createdAt"] > verdict["createdAt"] and c["body"].startswith("Operator merge approval:")]
+        if not approvals:
+            raise RuntimeError(f"factory: {identifier} needs Operator merge approval after the PASS verdict")
+        approval = max(approvals, key=lambda c: (c["createdAt"], c["id"]))["body"].splitlines()[0].partition(":")[2].strip()
+        if not approval:
+            raise RuntimeError(f"factory: {identifier} has an empty Operator merge approval")
+        item["merge"] = {"claim": claim["id"], "station": match.group(1), "approver": approval}
     return item
 
 
 def finish(identifier, reviewed_sha, merge_sha, approver, checks):
-    item = ready(identifier)
-    verdicts = [c for c in item["comments"] if re.match(r"factory-review verdict .* result=PASS sha=" + reviewed_sha + r"(?:\s|$)", c["body"].splitlines()[0])]
-    if not verdicts:
-        raise RuntimeError(f"factory: {identifier} has no PASS verdict for {reviewed_sha}")
-    verdict = max(verdicts, key=lambda c: (c["createdAt"], c["id"]))
-    claim_id = re.search(r"\bclaim=([^\s]+)", verdict["body"].splitlines()[0])
-    claim = next((c for c in item["comments"] if claim_id and c["id"] == claim_id.group(1) and c["body"].startswith("factory-review claim ")), None)
-    if not claim:
-        raise RuntimeError(f"factory: {identifier} PASS verdict has no valid review claim")
-    first_line = claim["body"].splitlines()[0]
-    station = first_line.split("station=")[-1].split()[0]
-    body = f"factory-review merged {now()} station={station} claim={claim['id']} sha={reviewed_sha}\n\nLanded on main as {merge_sha} through scripts/factory-merge.sh. Approver: {approver}. Checks: {checks}."
+    item = ready(identifier, reviewed_sha)
+    if item["merge"]["approver"] != approver:
+        raise RuntimeError(f"factory: {identifier} approval changed since the gate started")
+    body = f"factory-review merged {now()} station={item['merge']['station']} claim={item['merge']['claim']} sha={reviewed_sha}\n\nLanded on main as {merge_sha} through scripts/factory-merge.sh. Approver: {approver}. Checks: {checks}."
     comment(item["id"], body)
     current = ready(identifier)
     if not any(c["body"] == body for c in current["comments"]):
@@ -120,7 +133,8 @@ def finish(identifier, reviewed_sha, merge_sha, approver, checks):
 def main():
     command, identifier = sys.argv[1:3]
     if command == "ready":
-        ready(identifier, sys.argv[3] if len(sys.argv) > 3 else None)
+        item = ready(identifier, sys.argv[3] if len(sys.argv) > 3 else None)
+        print(json.dumps(item.get("merge", {})))
     elif command == "issue":
         print(json.dumps(issue(identifier)))
     elif command == "spec":

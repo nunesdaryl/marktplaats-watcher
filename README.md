@@ -169,4 +169,4 @@ uptime check).
 
 ## Running the factory
 
-The MW queue is in Linear. From the main checkout, run `scripts/factory/dispatch.sh MW-<number>` for one `agent-ready` issue. After review marks it `ready-to-merge`, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>`. The gate and evidence log are described in [AGENTS.md](AGENTS.md) and [RUNBOOK.md](RUNBOOK.md).
+The MW queue is in Linear. From the main checkout, run `scripts/factory/dispatch.sh MW-<number>` for one `agent-ready` issue. After a PASS review marks it `ready-to-merge` and Daryl adds an `Operator merge approval:` comment, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>`. The gate and evidence log are described in [AGENTS.md](AGENTS.md) and [RUNBOOK.md](RUNBOOK.md).

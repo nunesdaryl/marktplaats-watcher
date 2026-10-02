@@ -12,7 +12,8 @@ cd "$repo"
 [[ $(git branch --show-current) == main ]] || fail "run from the main checkout on main"
 [[ -z $(git status --porcelain) ]] || fail "main checkout is dirty"
 [[ $(git rev-parse "refs/heads/factory/$issue" 2>/dev/null || true) == "$reviewed_sha" ]] || fail "factory/$issue tip differs from reviewed SHA"
-python3 scripts/factory/lin.py ready "$issue" "$reviewed_sha" || fail "$issue is missing ready-to-merge, a PASS verdict, or Linear is unavailable"
+approval=$(python3 scripts/factory/lin.py ready "$issue" "$reviewed_sha" | python3 -c 'import json,sys; print(json.load(sys.stdin)["approver"])') || fail "$issue is missing merge readiness or Linear is unavailable"
+[[ $approval != *'|'* && $approval != *'`'* ]] || fail "approval text cannot be written safely to the merge log"
 [[ $(git rev-parse main) == $(git rev-parse origin/main) ]] || fail "main is not at origin/main"
 [[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]] || fail "wave1-demo-ready is not at origin"
 git checkout wave1-demo-ready
@@ -68,7 +69,7 @@ else
 fi
 checks="pytest, vitest, typecheck, build, Convex:$convex, Vercel Production:$merge_sha, smoke:passed, evals:$evals"
 log=docs/factory/merges.md
-printf '| %s | %s | `%s` | `%s` | Daryl (standing authority) | %s |\n' "$(date -u +%Y-%m-%d)" "$issue" "$reviewed_sha" "$merge_sha" "$checks" >> "$log"
+printf '| %s | %s | `%s` | `%s` | %s | %s |\n' "$(date -u +%Y-%m-%d)" "$issue" "$reviewed_sha" "$merge_sha" "$approval" "$checks" >> "$log"
 git add "$log"
 git commit -m "Record factory merge $issue"
 git push origin main
@@ -77,10 +78,13 @@ git merge --ff-only main
 git push origin wave1-demo-ready
 git checkout main
 wait_production "$(git rev-parse HEAD)"
-python3 scripts/factory/lin.py finish "$issue" "$reviewed_sha" "$merge_sha" 'Daryl (standing authority)' "$checks"
+python3 scripts/factory/lin.py finish "$issue" "$reviewed_sha" "$merge_sha" "$approval" "$checks"
 worktree="$repo/.factory-worktrees/$issue"
 if git worktree list --porcelain | grep -Fqx "worktree $worktree"; then
-    git worktree remove "$worktree"
+    git worktree remove --force "$worktree"
 fi
 git branch -d "factory/$issue"
+if git ls-remote --exit-code --heads origin "factory/$issue" >/dev/null 2>&1; then
+    git push origin --delete "factory/$issue"
+fi
 echo "factory: $issue merged as $merge_sha and recorded in $log"
