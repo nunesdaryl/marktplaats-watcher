@@ -259,7 +259,7 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 0. **Free a watch slot** before rehearsing: you have 5 of 5 watches, so the live **Save watch** would fail (see the script's setup).
 1. **Two timed rehearsals, engineer and business versions** (checklist 12) with the 1 Oct 5-minute script.
 2. **Record a backup run** and keep one real alert e-mail ready (§3.10 of the 29 Sep audit).
-3. **UAT sign-off line** in `evals/report.md:5`: name, date, `chat-2026-09-30.2` / `rank-2026-10-01.1` (MW-5, checklist 33).
+3. ✅ **Done 2 Oct** (`749e205`, MW-5 closed). **UAT sign-off line** in `evals/report.md:5`: name, date, `chat-2026-09-30.2` / `rank-2026-10-01.1` (MW-5, checklist 33).
 4. **On-device checks** on the iPhone (checklist 15, 18, 19, 28), signed-out landing (23), Website visitors panel (21),
    rate one real alert (25).
 5. **State the cost unprompted**, with the honest busiest-case number (checklist 34: spend within the $10 cap).
