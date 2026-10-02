@@ -133,6 +133,7 @@ search gives each new listing a better chance to be read and scored in the next 
 
 The 04:30 UTC audit replays the previous day's search for each active, seeded watch. Its rows are in Convex
 `audits`; the owner dashboard shows the latest misses, and the 05:00 UTC digest includes the audit request id.
+The problem box counts each watch's latest audit in the last 24 hours.
 If the audit finds a `handled` or `rescored` miss scoring 9/10 or higher, the owner also receives an e-mail after
 the audit with each match and a draft catch-up plan id. Review the plan before sending it.
 
@@ -145,6 +146,12 @@ check in Convex `runs`, `seenListings`, and `alerts`. Re-run the same search and
 borderline score as a delivery bug: model scores can vary, and the audit requires one point above the notification
 threshold. If the replay confirms the gap, record the watch, listing id, timestamps and request ids, fix the cause,
 and decide with the owner whether to contact the user. The audit never sends a missed alert itself.
+
+## Backfill seededAt
+
+Run `cd frontend && npx convex run --prod watches:backfillSeededAt '{"dryRun":true}'` and review the watch ids,
+labels, and proposed times. After the operator approves that list, run
+`npx convex run --prod watches:backfillSeededAt '{"dryRun":false}'` from `frontend` and confirm the returned list matches.
 
 ## 7. Content-Security-Policy
 - The CSP is **report-only**: violations are logged as `csp_violation` in the Vercel logs, and nothing is blocked.
@@ -181,7 +188,13 @@ Ratings arrive from the e-mail links and the Alerts page; see them on `/admin` â
 stop showing rating links, `RATING_SECRET` is missing in Convex (production). To rotate it, generate a new value and
 pipe it in (`K=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))"); npx convex env set RATING_SECRET "$K" --prod`);
 links in older e-mails then say "This link isn't valid", and those people can still rate in the app. For the
-evaluation: `.venv/bin/python -m evals.pull_ratings && .venv/bin/python -m evals.report`.
+evaluation: run `.venv/bin/python -m evals.feedback_cases` to fetch ratings read-only and write
+`evals/data/user_cases_pending.json`. Review each candidate's listing, watch description, verdict and reasons. Confirm
+only cases you agree should be scorer labels with `.venv/bin/python -m evals.feedback_cases --confirm <rating-id> [<rating-id> ...]`.
+That moves them to `evals/data/user_cases_golden.json`; commit the reviewed file, then run
+`.venv/bin/python -m evals.run_scorer --runs 3 && .venv/bin/python -m evals.report`.
+Ratings without a saved listing and watch description remain in the report but cannot become cases. When reason labels
+change, run `node evals/generate_rating_reasons.mjs` and check the generated JSON diff.
 
 ## 11. Vercel Web Analytics in the dashboard (token)
 The "Website visitors" section reads Vercel Web Analytics with `VERCEL_TOKEN` in Convex (prod and dev). Vercel tokens
@@ -212,3 +225,9 @@ reviewing its items. The audit does not e-mail users.
 3. Send: `npx convex run --prod catchup:send '{"planId": "<id>"}'`. It sends only the plan's items, skips any listing
    already alerted, and a plan can't be sent twice.
 4. Check: the Catch-ups list on /admin (filter by user) and each alert's e-mail status.
+
+## Running the factory
+
+Shell and Python files use LF line endings in every checkout, including with `core.autocrlf=true`.
+
+Use `scripts/factory/dispatch.sh MW-<number>` from the repo for a single `agent-ready` issue. Review the branch and record the verdict in Linear. From a clean main checkout, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` only after the issue has `ready-to-merge` and an `Operator merge approval:` comment later than the PASS verdict. The gate runs tests, builds, deploy checks and smoke checks, then records the merge in `docs/factory/merges.md`. For UI changes, the reviewer also records a preview walk and screenshots. See [AGENTS.md](AGENTS.md) for the environment-file and production-data limits.

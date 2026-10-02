@@ -181,7 +181,7 @@ a set.
 | Sheet | `.sheet` (`:503`), `.sheet-head`, `.sheet-body`, `.sheet-foot` | `Sheet.jsx` | native `<dialog>`; bottom sheet on phones with a grabber | stacking sheets |
 | Toast | `.toast` (`:323`) | `App.jsx` | inverted, `--great` check, short past-tense sentence | buttons in the toast (there is no undo system) |
 | Tab bar | `.tabbar` (`:353`) | `TabBar.jsx` | phones only; glass; active in `--accent` | more than 4 tabs |
-| Sidebar | `.sidebar` (`:236`), `.nav-item` (`:249`), `.nav-row`, `.dot` (`:260`) | `Sidebar.jsx` | active row `--fill-strong`; watch dot: filled = active, ring = paused | — |
+| Sidebar | `.sidebar` (`:236`), `.nav-item` (`:249`), `.nav-row`, `.dot` (`:260`) | `Sidebar.jsx` | active row `--fill-strong`; watch dot: filled = active, ring = paused; whole account row opens the menu, with an up chevron and `--fill` hover | — |
 | Row menu | `.row-menu`, `.row-menu-trigger` (`:280`), `.menu` (`:290`) | `RowMenu.jsx`, `lib/actions.js` | destructive items need a second tap ("Delete for good?"); iOS action sheet on touch (`:663`) | one-tap delete |
 | Proposal | `.proposal` (`:470`) | `Proposal.jsx` | lilac inset top bar = "the model proposes" | — |
 | Composer | `.composer` (`:402`), `.mode-switch` (`:411`) | `Composer.jsx` | Watch mode turns the switch and send lilac | — |
