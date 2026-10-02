@@ -1127,7 +1127,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <li>Backfill <code>seededAt</code> for existing watches, so every audit miss is real.</li>
   <li>An immediate owner e-mail for a real miss (9/10 or better), with a one-click "send it to the user now".</li>
   <li>A quiet-watch alarm (reads listings for 3 days, sends nothing).</li>
-  <li>A canary watch on a query with hourly new listings: silence means the pipeline is down.</li>
+  <li>Done (MW-42): an hourly read-only "iphone" canary; a failed check or 3 hours without new listings alarms the owner.</li>
   <li>Done (MW-43): chat proposals and the watch editor warn when estimated new listings per check exceed 20; users can still save the watch.</li>
 </ol>
 <div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing

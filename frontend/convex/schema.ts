@@ -240,6 +240,17 @@ export default defineSchema({
     .index("by_user_createdAt", ["userId", "createdAt"])
     .index("by_active_next", ["active", "nextRunAt"]),
 
+  canary: defineTable({
+    startedAt: v.number(),
+    nextRunAt: v.number(),
+    claimedAt: v.optional(v.number()),
+    lastCheckedAt: v.optional(v.number()),
+    lastReadAt: v.optional(v.number()),
+    lastError: v.optional(v.string()),
+    watermark: v.optional(v.number()),
+    recentReads: v.array(v.object({ at: v.number(), count: v.number() })),
+  }),
+
   // Listings a watch has already seen, so each one is only ever alerted once.
   seenListings: defineTable({
     watchId: v.id("watches"),

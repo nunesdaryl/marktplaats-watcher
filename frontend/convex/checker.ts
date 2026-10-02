@@ -22,6 +22,38 @@ const MAX_EMAIL_ATTEMPTS = 4;                // an alert e-mail is tried at most
 const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_SEEN_SENT = 1500;              // must exceed MAX_PAGES * PAGE_SIZE in agent.py
 const RETENTION_MS = 30 * 86_400_000;
+const CANARY_INTERVAL_MS = 60 * 60_000;
+const CANARY_WINDOW_MS = 3 * CANARY_INTERVAL_MS;
+
+export const claimCanary = internalMutation({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    if (process.env.CANARY_DISABLED === "1") return null;
+    let canary = await ctx.db.query("canary").first();
+    if (!canary) {
+      const id = await ctx.db.insert("canary", { startedAt: now, nextRunAt: now, recentReads: [] });
+      canary = (await ctx.db.get(id))!;
+    }
+    if (canary.nextRunAt > now) return null;
+    await ctx.db.patch(canary._id, { nextRunAt: now + CANARY_INTERVAL_MS, claimedAt: now });
+    return { watermark: canary.watermark ?? 0, lastReadAt: canary.lastReadAt ?? null };
+  },
+});
+
+export const recordCanary = internalMutation({
+  args: { now: v.number(), ok: v.boolean(), readCount: v.optional(v.number()),
+    newestId: v.optional(v.union(v.number(), v.null())), error: v.optional(v.string()) },
+  handler: async (ctx, { now, ok, readCount, newestId, error }) => {
+    const canary = await ctx.db.query("canary").first();
+    if (!canary || canary.claimedAt !== now) return;
+    await ctx.db.patch(canary._id, {
+      claimedAt: undefined, lastCheckedAt: now, lastError: ok ? undefined : error ?? "The search service did not answer.",
+      ...(ok ? { lastReadAt: now, watermark: Math.max(canary.watermark ?? 0, newestId ?? 0),
+        recentReads: [...canary.recentReads.filter((r) => r.at > now - CANARY_WINDOW_MS),
+          { at: now, count: readCount ?? 0 }] } : {}),
+    });
+  },
+});
 
 function isTimeout(e: unknown): boolean {
   return typeof e === "object" && e !== null && "name" in e &&
@@ -396,6 +428,29 @@ export const checkDue = internalAction({
           const email = renderEmail(mail.preview, appUrl);
           console.log(`[dry-run] to ${mail.to}: ${email.subject}\n${email.text}`);
         } else await deliver(mail);
+      }
+    }
+    if (!dryRun) {
+      const canary = await ctx.runMutation(internal.checker.claimCanary, { now });
+      if (canary) {
+        let result: { ok: boolean; readCount?: number; newestId?: number | null; error?: string };
+        try {
+          if (!api || !secret) throw new Error("WATCHER_API_URL / CRON_SECRET are not set in Convex.");
+          const res = await fetch(`${api.replace(/\/$/, "")}/api/internal/check`, {
+            method: "POST", headers: { "Content-Type": "application/json", "X-Cron-Secret": secret, "X-Request-Id": `${runId}.canary` },
+            body: JSON.stringify({ query: "iphone", watches: [{ id: "canary", read_only: true,
+              watermark: canary.watermark, last_checked_at: canary.lastReadAt }] }),
+            signal: AbortSignal.timeout(240_000),
+          });
+          if (!res.ok) throw new Error(`Search service answered ${res.status}.`);
+          result = (await res.json()).results[0];
+          if (!result || typeof result.ok !== "boolean" || (result.ok && typeof result.readCount !== "number"))
+            throw new Error("The search service returned an invalid canary result.");
+        } catch (e) {
+          result = { ok: false, error: e instanceof Error ? e.message : String(e) };
+        }
+        await ctx.runMutation(internal.checker.recordCanary, { now, ok: result.ok,
+          readCount: result.readCount, newestId: result.newestId, error: result.error });
       }
     }
     if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent

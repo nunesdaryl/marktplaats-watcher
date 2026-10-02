@@ -17,8 +17,9 @@ beforeEach(() => {
   process.env.CRON_SECRET = "s3cret";
   process.env.AGENTMAIL_API_KEY = "am_test";
   process.env.AGENTMAIL_INBOX_ID = "inbox@test";
+  process.env.CANARY_DISABLED = "1";
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); delete process.env.CANARY_DISABLED; });
 
 async function seededWatch(schedule: any = hourly) {
   const t = convexTest(schema, modules);
@@ -81,6 +82,30 @@ function fakeServices(page: () => string[], failures = 0) {
   return mails;
 }
 const alerts = (t: any) => t.run((ctx: any) => ctx.db.query("alerts").collect());
+
+test("the hourly canary reads without creating user watches or alerts", async () => {
+  delete process.env.CANARY_DISABLED;
+  const t = convexTest(schema, modules);
+  const requests: any[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(init.body as string);
+    requests.push(body);
+    return new Response(JSON.stringify({ results: [{ watchId: "canary", ok: true, readCount: 4, newestId: 104 }] }));
+  }));
+  await t.action(internal.checker.checkDue, {});
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toMatchObject({ query: "iphone", watches: [{ id: "canary", read_only: true, watermark: 0 }] });
+  expect((await t.run((ctx) => ctx.db.query("canary").first()))).toMatchObject({ watermark: 104, recentReads: [{ count: 4 }] });
+  expect(await t.run((ctx) => ctx.db.query("watches").collect())).toEqual([]);
+  expect(await alerts(t)).toEqual([]);
+  vi.advanceTimersByTime(59 * 60_000);
+  await t.action(internal.checker.checkDue, {});
+  expect(requests).toHaveLength(1);
+  vi.advanceTimersByTime(60_000);
+  await t.action(internal.checker.checkDue, {});
+  expect(requests).toHaveLength(2);
+  expect(requests[1].watches[0]).toMatchObject({ watermark: 104, read_only: true });
+});
 
 test("record stores and clears the waiting count and page cap", async () => {
   const { t, id } = await seededWatch();
