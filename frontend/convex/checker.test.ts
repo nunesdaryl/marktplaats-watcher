@@ -37,8 +37,10 @@ test("record stores scores and reasons for alerted and non-alerted listings", as
   await t.mutation(internal.checker.record, { now, dryRun: false,
     results: [{ watchId: id, ok: true, currentIds: ["low", "high", "unscored"], listings: [low, high] }] });
   const rows = await t.run((ctx) => ctx.db.query("seenListings").collect());
-  expect(rows.find((row) => row.listingId === "low")).toMatchObject({ score: 4, reason: "Too expensive", scoredAt: now });
-  expect(rows.find((row) => row.listingId === "high")).toMatchObject({ score: 9, reason: "match", scoredAt: now });
+  expect(rows.find((row) => row.listingId === "low")).toMatchObject({ score: 4, reason: "Too expensive", scoredAt: now,
+    firstSeenAt: now, title: "Mac mini low", url: "https://www.marktplaats.nl/v/low" });
+  expect(rows.find((row) => row.listingId === "high")).toMatchObject({ score: 9, reason: "match", scoredAt: now,
+    firstSeenAt: now, title: "Mac mini high", url: "https://www.marktplaats.nl/v/high" });
   expect(rows.find((row) => row.listingId === "unscored")?.score).toBeUndefined();
   expect(rows.find((row) => row.listingId === "unscored")?.reason).toBeUndefined();
   expect(rows.find((row) => row.listingId === "unscored")?.scoredAt).toBeUndefined();
@@ -48,7 +50,7 @@ test("record stores scores and reasons for alerted and non-alerted listings", as
       listings: [{ ...low, score: 5, reason: "x".repeat(210) }] }] });
   const updated = await t.run((ctx) => ctx.db.query("seenListings")
     .withIndex("by_watch_listing", (q) => q.eq("watchId", id).eq("listingId", "low")).unique());
-  expect(updated).toMatchObject({ score: 5, reason: "x".repeat(200), scoredAt: now + 60_000 });
+  expect(updated).toMatchObject({ score: 5, reason: "x".repeat(200), scoredAt: now + 60_000, firstSeenAt: now });
   expect(await alerts(t)).toHaveLength(1);
 });
 

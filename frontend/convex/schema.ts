@@ -220,9 +220,12 @@ export default defineSchema({
     watchId: v.id("watches"),
     listingId: v.string(),
     lastSeenAt: v.number(),
+    firstSeenAt: v.optional(v.number()),
     score: v.optional(v.number()),
     reason: v.optional(v.string()),
     scoredAt: v.optional(v.number()),
+    title: v.optional(v.string()),
+    url: v.optional(v.string()),
   })
     .index("by_watch_listing", ["watchId", "listingId"])
     .index("by_watch_lastSeen", ["watchId", "lastSeenAt"])

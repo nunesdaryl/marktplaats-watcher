@@ -144,6 +144,14 @@ borderline score as a delivery bug: model scores can vary, and the audit require
 threshold. If the replay confirms the gap, record the watch, listing id, timestamps and request ids, fix the cause,
 and decide with the owner whether to contact the user. The audit never sends a missed alert itself.
 
+## A watch is quiet
+
+The health digest and owner dashboard flag an active watch that read new listings on each of the last three UTC days,
+sent no alert, and stored a score at or above its notification threshold. Open the linked listing and check that watch's
+`seenListings` scores and `alerts` in Convex. Run a delivery audit for the watch, then compare the audit result with
+the stored scores before deciding whether scoring or delivery needs repair. A watch with no qualifying score can
+remain quiet without an alarm.
+
 ## 7. Content-Security-Policy
 - The CSP is **report-only**: violations are logged as `csp_violation` in the Vercel logs, and nothing is blocked.
 - **To enforce it:** after a sign-in in a private window shows no violations, rename the header key in `vercel.json`

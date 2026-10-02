@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
+import { MIN_SCORE } from "./schedule";
 
 const DAY = 86_400_000;
 const STUCK_AFTER = 60 * 60_000;             // the dispatcher runs every 15 min; an hour of silence is a problem
@@ -48,6 +49,23 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const failing = activeWatches
     .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError!, watchId: w._id, userId: w.userId }));
   const behind = activeWatches.filter((w) => (w.backlog ?? 0) >= 100 || w.coverageCapped);
+  const today = Math.floor(now / DAY) * DAY;
+  const quietSince = today - 2 * DAY;
+  const quiet = (await Promise.all(activeWatches.map(async (w) => {
+    const seen = await ctx.db.query("seenListings")
+      .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id).gte("lastSeenAt", quietSince)).collect();
+    const newListings = seen.filter((s) => (s.firstSeenAt ?? s._creationTime) >= quietSince
+      && (s.firstSeenAt ?? s._creationTime) <= now
+      && (w.seededAt === undefined || (s.firstSeenAt ?? s._creationTime) > w.seededAt));
+    if (new Set(newListings.map((s) => Math.floor((s.firstSeenAt ?? s._creationTime) / DAY))).size < 3) return null;
+    const alerts = await ctx.db.query("alerts")
+      .withIndex("by_watch_createdAt", (q) => q.eq("watchId", w._id).gte("createdAt", quietSince)).collect();
+    if (alerts.some((a) => a.createdAt <= now && a.emailStatus === "sent")) return null;
+    const best = newListings.filter((s) => s.scoredAt !== undefined && s.scoredAt >= quietSince && s.scoredAt <= now
+      && s.score !== undefined && s.score >= MIN_SCORE[w.notify] && s.title !== undefined && s.url !== undefined)
+      .sort((a, b) => b.score! - a.score!)[0];
+    return best ? { watch: w, listing: best } : null;
+  }))).filter((item) => item !== null);
   const sum = (key: "checked" | "failed" | "emails" | "emailFailures") => runs.reduce((n, r) => n + r[key], 0);
   const problems: string[] = [];
   if (errors.length >= 5) problems.push(`${errors.length} errors in the last 24 hours (chat ${chatErrors}, check ${checkErrors}); latest: ${errors.slice(0, 5).map((e) => e.requestId).join(", ")}.`);
@@ -70,6 +88,8 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     problems.push(`Delivery audit failed for "${w?.name ?? w?.label ?? "Deleted watch"}": ${a.error ?? "Unknown error"}; request ${a.requestId}.`);
   }
   if (behind.length) problems.push(`${behind.length} watch(es) can't keep up: ${behind.map((w) => `"${w.name ?? w.label}" (backlog ${w.backlog ?? 0})`).join("; ")}.`);
+  for (const { watch, listing } of quiet)
+    problems.push(`Watch "${watch.name ?? watch.label}" is quiet after reading new listings on each of the last 3 days: ${listing.score}/10 "${listing.title}" (${listing.url}).`);
   type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string };
   type Issue = { kind: string; severity: "high" | "medium" | "low"; headline: string; count: number; items: Item[] };
   const issues: Issue[] = [];
@@ -104,6 +124,9 @@ export async function healthReport(ctx: QueryCtx, now: number) {
       userId: a.userId, requestId: a.requestId })) });
   if (behind.length) issues.push({ kind: "watches_behind", severity: "medium", headline: `${plural(behind.length, "watch")} can't keep up`, count: behind.length,
     items: behind.map((w) => ({ label: `${w.name ?? w.label} (backlog ${w.backlog ?? 0})`, watchId: w._id, userId: w.userId })) });
+  if (quiet.length) issues.push({ kind: "watch_quiet", severity: "high", headline: `${plural(quiet.length, "watch")} quiet for 3 days`, count: quiet.length,
+    items: quiet.map(({ watch, listing }) => ({ label: watch.name ?? watch.label, watchId: watch._id,
+      userId: watch.userId, listingId: listing.listingId, score: listing.score, title: listing.title, url: listing.url })) });
   return {
     problems,
     issues,

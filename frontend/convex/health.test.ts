@@ -223,3 +223,78 @@ test("the report sums each watch's latest audit and reports only current failure
   ]);
   expect(report.summary).toContain("Delivery audit: 2 watches checked, 3 misses.");
 });
+
+test("a watch quiet for three days with a qualifying unsent score appears in the report and digest", async () => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 1, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create,
+    { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(watchId, { seeded: true, seededAt: now - 4 * 86_400_000 }));
+  for (const [daysAgo, score, title] of [[2, 4, "Older Mac"], [1, 9, "Best Mac"], [0, 7, "Other Mac"]] as const) {
+    vi.setSystemTime(now - daysAgo * 86_400_000);
+    await t.run((ctx) => ctx.db.insert("seenListings", { watchId, listingId: title, lastSeenAt: Date.now(), firstSeenAt: Date.now(),
+      scoredAt: Date.now(), score, title, url: `https://www.marktplaats.nl/v/${daysAgo}` }));
+  }
+  vi.setSystemTime(now);
+  const report = await t.query(internal.health.report, { now });
+  expect(report.issues.find((issue) => issue.kind === "watch_quiet")).toMatchObject({ count: 1,
+    items: [{ label: "Mac mini", watchId, score: 9, title: "Best Mac", url: "https://www.marktplaats.nl/v/1" }] });
+  expect(report.problems).toEqual([expect.stringContaining('"Mac mini"')]);
+  expect(report.problems[0]).toContain('"Best Mac"');
+  expect(report.problems[0]).toContain("9/10");
+  expect(report.problems[0]).toContain("https://www.marktplaats.nl/v/1");
+  expect((await t.action(internal.health.digest, { dryRun: true })).problems).toEqual(report.problems);
+  process.env.OWNER_CLERK_ID = "owner";
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  expect((await owner.query(api.admin.dashboard, {}))?.health.issues.find((issue) => issue.kind === "watch_quiet"))
+    .toMatchObject({ count: 1, items: [{ watchId, score: 9, title: "Best Mac" }] });
+  delete process.env.OWNER_CLERK_ID;
+});
+
+test.each([
+  ["no qualifying score", 4, true],
+  ["paused", 9, false],
+])("a quiet watch with %s raises no alarm", async (_case, score, active) => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 1, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create,
+    { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(watchId, { seeded: true, seededAt: now - 4 * 86_400_000, active }));
+  for (let daysAgo = 2; daysAgo >= 0; daysAgo--) {
+    vi.setSystemTime(now - daysAgo * 86_400_000);
+    await t.run((ctx) => ctx.db.insert("seenListings", { watchId, listingId: `m${daysAgo}`, lastSeenAt: Date.now(), firstSeenAt: Date.now(),
+      scoredAt: Date.now(), score, title: "Mac mini", url: `https://www.marktplaats.nl/v/m${daysAgo}` }));
+  }
+  vi.setSystemTime(now);
+  expect((await t.query(internal.health.report, { now })).issues.some((issue) => issue.kind === "watch_quiet")).toBe(false);
+});
+
+test.each(["an alert was sent", "only two days had new listings"])("a watch is not quiet when %s", async (reason) => {
+  const t = convexTest(schema, modules);
+  const now = Date.now();
+  await t.mutation(internal.health.logRun, { at: now, checked: 1, failed: 0, emails: 0, emailFailures: 0 });
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create,
+    { query: "mac mini", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const watch = await t.run((ctx) => ctx.db.get(watchId));
+  await t.run((ctx) => ctx.db.patch(watchId, { seeded: true, seededAt: now - 4 * 86_400_000 }));
+  const days = reason === "an alert was sent" ? [2, 1, 0] : [1, 0];
+  for (const daysAgo of days) {
+    vi.setSystemTime(now - daysAgo * 86_400_000);
+    await t.run((ctx) => ctx.db.insert("seenListings", { watchId, listingId: `m${daysAgo}`,
+      lastSeenAt: Date.now(), firstSeenAt: Date.now(), scoredAt: Date.now(), score: 9,
+      title: "Mac mini", url: `https://www.marktplaats.nl/v/m${daysAgo}` }));
+  }
+  vi.setSystemTime(now);
+  if (reason === "an alert was sent") await t.run((ctx) => ctx.db.insert("alerts", {
+    userId: watch!.userId, watchId, listingId: "m2", title: "Mac mini", url: "https://www.marktplaats.nl/v/m2",
+    score: 9, reason: "match", channel: "email", emailStatus: "sent", createdAt: now - 2 * 86_400_000,
+  }));
+  const report = await t.query(internal.health.report, { now });
+  expect(report.issues.some((issue) => issue.kind === "watch_quiet")).toBe(false);
+  expect(report.problems).toEqual([]);
+});
