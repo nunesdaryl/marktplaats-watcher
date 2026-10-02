@@ -295,6 +295,7 @@ class CheckWatch(BaseModel):
     seeded: bool = True          # False on the first check: nothing is e-mailed then, so nothing is scored
     watermark: int | None = Field(default=None, ge=0)          # newest listing number handled at the last check
     last_checked_at: int | None = Field(default=None, ge=0)    # ms; the check reads listings placed since that day
+    read_only: bool = False
 
 
 class CheckRequest(BaseModel):

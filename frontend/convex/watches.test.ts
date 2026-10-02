@@ -14,10 +14,12 @@ beforeEach(() => {
   process.env.CRON_SECRET = "s3cret";
   process.env.AGENTMAIL_API_KEY = "am_test";
   process.env.AGENTMAIL_INBOX_ID = "inbox@test";
+  process.env.CANARY_DISABLED = "1";
 });
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  delete process.env.CANARY_DISABLED;
 });
 
 function setup() {

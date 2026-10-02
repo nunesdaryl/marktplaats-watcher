@@ -749,6 +749,13 @@ def check_query(query, watches, now=None):
         seen = set(w.get("seen_ids") or [])
         # New = not seen by this watch; Convex dedupes against its full seen table.
         fresh = [item for item in listings if item["id"] and item["id"] not in seen]
+        if w.get("read_only"):
+            previous = w.get("watermark") or 0
+            new_count = sum((number := listing_number(item["id"])) is not None and number > previous
+                            for item in listings if item["id"])
+            results.append({"watchId": w["id"], "ok": True, "currentIds": [], "listings": [],
+                            "newestId": newest, "readCount": new_count})
+            continue
         if not w.get("seeded", True) or w.get("watermark") is None:
             # First check, or the first since checks moved to the date-sorted search (no watermark yet): only
             # remember what's there, nothing is e-mailed, so don't score
