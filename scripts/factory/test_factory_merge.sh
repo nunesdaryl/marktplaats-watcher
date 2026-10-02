@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source_root=$(cd "$(dirname "$0")/../.." && pwd)
+historical_tip=0898b29513b58e5cd3ba13d0c13211892162a8a7
+merge_count=$(git -C "$source_root" log --merges --first-parent "$historical_tip" --format='%s' | awk '/^Merge MW-[0-9]+:/{count++} END{print count+0}')
+row_count=$(awk '/^\| 20[0-9][0-9]-/ && / \| merge.sh:/{count++} END{print count+0}' "$source_root/docs/factory/merges.md")
+if [[ "$row_count" -ne "$merge_count" ]]; then
+    echo "FAIL historical merge log: $row_count rows for $merge_count Merge MW- commits" >&2
+    exit 1
+fi
+echo "PASS historical merge log: $row_count rows"
 repo=$(mktemp -d)
 trap 'rm -rf "$repo"' EXIT
 cd "$repo"
