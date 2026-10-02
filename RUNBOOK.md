@@ -133,6 +133,9 @@ search gives each new listing a better chance to be read and scored in the next 
 
 The 04:30 UTC audit replays the previous day's search for each active, seeded watch. Its rows are in Convex
 `audits`; the owner dashboard shows the latest misses, and the 05:00 UTC digest includes the audit request id.
+If the audit finds a `handled` or `rescored` miss scoring 9/10 or higher, the owner also receives an e-mail after
+the audit with each match and a draft catch-up plan id. Review the plan before sending it.
+
 `handled` means the listing was seen but no alert was recorded. `never_read` means it was absent from seen listings
 although a check should have covered its listing day. `read` counts eligible listings and `scored` counts the
 candidates sent to the ranker (at most 40 per watch). A failed audit says why and is not evidence of a miss.
@@ -199,6 +202,9 @@ Reply, and record the decision in `docs/system-design.html` §11/§13. The risk 
 the portfolio version.
 
 ## Send a catch-up (missed matches)
+For a 9/10 or higher delivery miss, use the draft plan id and send command in the owner's audit e-mail after
+reviewing its items. The audit does not e-mail users.
+
 1. Dry run: `cd frontend && npx convex run --prod catchup:run '{"dryRun": true}'` returns a `planId` and the exact list
    per user and watch (real misses, still online, not reserved, never already alerted).
 2. The operator approves that exact list. To send a hand-picked list instead, create a plan with

@@ -90,8 +90,30 @@ export const record = internalMutation({
 });
 
 export const planFromItems = internalMutation({
-  args: { items: v.array(catchupItem) },
-  handler: async (ctx, { items }) => ctx.db.insert("catchupPlans", { at: Date.now(), status: "draft", items }),
+  args: { items: v.array(catchupItem), auditDay: v.optional(v.string()) },
+  handler: async (ctx, { items, auditDay }) => {
+    if (auditDay) {
+      const existing = await ctx.db.query("catchupPlans").withIndex("by_auditDay", (q) => q.eq("auditDay", auditDay)).first();
+      if (existing) return existing._id;
+    }
+    return ctx.db.insert("catchupPlans", { at: Date.now(), status: "draft", items, ...(auditDay ? { auditDay } : {}) });
+  },
+});
+
+export const claimOwnerNotice = internalMutation({
+  args: { planId: v.id("catchupPlans") },
+  handler: async (ctx, { planId }) => {
+    const plan = await ctx.db.get(planId);
+    if (!plan?.auditDay || plan.ownerNoticeClaimedAt !== undefined) return null;
+    // Claim before the external send so a repeated audit cannot e-mail the owner twice.
+    await ctx.db.patch(planId, { ownerNoticeClaimedAt: Date.now() });
+    return Promise.all(plan.items.map(async (item) => {
+      const watch = await ctx.db.get(item.watchId);
+      const user = await ctx.db.get(item.userId);
+      return { user: user?.email ?? "Deleted user", watch: watch?.name ?? watch?.label ?? "Deleted watch",
+        title: item.title, score: item.score, url: item.url };
+    }));
+  },
 });
 
 export const claimPlan = internalMutation({
