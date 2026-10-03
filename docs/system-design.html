@@ -1380,6 +1380,15 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   every batch failed silently (likely the 1.5 s connection budget from a cold Vercel function to Atlas Frankfurt); MW-73
   adds a longer connect timeout, bulk writes and a readable error log. The Atlas vector index is created by the owner
   in the Atlas UI from <code>ops/atlas/alerts_vec.json</code>.</p>
+<p><b>MongoDB Atlas live (3 October, 16:15).</b> MW-73 (merged <code>3d15462</code>) made the mirror log a readable error,
+  and the errors told the real story one step at a time: <code>InvalidURI</code> (the stored value didn't start with
+  <code>mongodb+srv://</code>), then "URI options are key=value pairs" (a malformed query string), then
+  <code>bad auth</code> (the password didn't match the user). Daryl re-entered <code>MONGODB_URI</code> three times in his
+  own terminal; the secret never passed through the station. The fourth run mirrored all 1,131 embeddings into
+  <code>watcher.alert_embeddings</code> (IDs, user ID and vector only). The station then created the Atlas Vector Search index
+  <code>alerts_vec</code> in the Atlas UI on Daryl's request ("bring your own embeddings", 1,536 dimensions, cosine, filter
+  <code>userId</code>; Atlas's default automated-embedding option was declined: extra cost, US region): READY, queryable,
+  1,131 of 1,131 indexed. Lesson: a mirror that swallows errors costs an hour; one that names the error costs minutes.</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).

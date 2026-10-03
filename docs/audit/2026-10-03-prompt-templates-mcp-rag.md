@@ -80,7 +80,7 @@ The two plans agree on Convex vectors, stateless MCP, read-only tools and a user
 
 ## 6. Build plan and dependencies
 
-**Update, 3 October afternoon:** MW-64 (this audit), MW-60 (prompt templates), MW-61 + MW-66 (RAG index, 1,124 alerts backfilled), MW-62 (MCP server + chat; RAG and MCP switched on in production and checked live) and MW-67 (evals explained) shipped; MW-72 (mcp security upgrade, CI green again) and MW-63 (MongoDB mirror, failover, comparison) shipped, and the first live sync to Atlas failed on a connection timeout (fix MW-73); follow-ups MW-68 to MW-71 filed. The original snapshot below said: all statuses below are **planned** at this audit snapshot. The factory station updates the issue status as each piece ships. [Approved build plan, Deliverables and Order](#7-sources).
+**Update, 3 October afternoon:** MW-64 (this audit), MW-60 (prompt templates), MW-61 + MW-66 (RAG index, 1,124 alerts backfilled), MW-62 (MCP server + chat; RAG and MCP switched on in production and checked live) and MW-67 (evals explained) shipped; MW-72 (mcp security upgrade, CI green again) and MW-63 (MongoDB mirror, failover, comparison) shipped, the first live sync to Atlas failed, MW-73 made the error readable, the connection string was corrected, and by 16:15 Atlas held all 1,131 embeddings with the vector index `alerts_vec` READY; follow-ups MW-68 to MW-71 filed. The original snapshot below said: all statuses below are **planned** at this audit snapshot. The factory station updates the issue status as each piece ships. [Approved build plan, Deliverables and Order](#7-sources).
 
 | Issue | Planned deliverable | Status |
 |---|---|---|
