@@ -112,3 +112,11 @@ http.route({ path: "/api/alerts/activity", method: "POST", handler: httpAction(a
   try { return Response.json(await ctx.runQuery(internal.embeddings.activity, body)); }
   catch { return new Response("Invalid request.", { status: 400 }); }
 }) });
+
+http.route({ path: "/api/alerts/evidence", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  if (typeof body.alertId !== "string") return new Response("Invalid request.", { status: 400 });
+  try { return Response.json(await ctx.runQuery(internal.embeddings.evidence, body)); }
+  catch { return new Response("Invalid request.", { status: 400 }); }
+}) });

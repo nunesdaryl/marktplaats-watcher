@@ -99,6 +99,20 @@ test("exact activity counts all alerts in the window before limiting results", a
   delete process.env.API_TO_CONVEX_SECRET;
 });
 
+test("alert evidence returns only the caller's recorded alert", async () => {
+  const { t, ids } = await fixture();
+  process.env.API_TO_CONVEX_SECRET = "secret";
+  const post = (alertId: string) => t.fetch("/api/alerts/evidence", { method: "POST",
+    headers: { "Content-Type": "application/json", "X-Api-Secret": "secret" },
+    body: JSON.stringify({ clerkId: "alice", alertId }) });
+  try {
+    const owned = await post(ids[0]);
+    expect(owned.status).toBe(200);
+    expect(await owned.json()).toMatchObject({ alertId: ids[0], title: "Mac mini M5 Pro", score10: 9 });
+    expect(await (await post(ids[1])).json()).toBeNull();
+  } finally { delete process.env.API_TO_CONVEX_SECRET; }
+});
+
 test("backfill dry run counts missing recent alerts without embedding them", async () => {
   const { t } = await fixture();
   const result = await t.action(internal.embeddings.backfill, { dryRun: true });

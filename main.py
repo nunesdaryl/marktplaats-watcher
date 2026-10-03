@@ -22,6 +22,8 @@ load_dotenv()  # before importing agent: it reads the environment at import time
 
 from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
 from convex_api import convex_post  # noqa: E402
+from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
+
 
 app = FastAPI()
 request_id = ContextVar("request_id", default=None)
@@ -32,7 +34,26 @@ async def identify_request(request: Request, call_next):
     incoming = request.headers.get("X-Request-Id", "")
     ident = incoming if re.fullmatch(r"[A-Za-z0-9._-]{1,100}", incoming) else uuid.uuid4().hex
     token = request_id.set(ident)
+    mcp_token = None
     try:
+        if request.url.path.startswith("/api/mcp"):
+            if request.url.path == "/api/mcp":
+                request.scope["path"] = "/api/mcp/"
+            if os.getenv("MCP_ENABLED", "0").lower() not in ("1", "true", "yes"):
+                return JSONResponse({"detail": "Not Found"}, status_code=404)
+            authorization = request.headers.get("Authorization", "")
+            bearer = authorization.removeprefix("Bearer ").strip() if authorization.startswith("Bearer ") else ""
+            owner_token, owner_id = os.getenv("MCP_OWNER_TOKEN", ""), os.getenv("OWNER_CLERK_ID", "")
+            if bearer and owner_token and owner_id and hmac.compare_digest(bearer, owner_token):
+                user = owner_id
+            else:
+                try:
+                    user = current_user(authorization)
+                except HTTPException:
+                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+            if too_many(user):
+                return JSONResponse({"detail": "Too many requests"}, status_code=429)
+            mcp_token = mcp_user.set(user)
         try:
             response = await call_next(request)
         except Exception as e:
@@ -43,7 +64,12 @@ async def identify_request(request: Request, call_next):
         response.headers["X-Request-Id"] = ident
         return response
     finally:
+        if mcp_token is not None:
+            mcp_user.reset(mcp_token)
         request_id.reset(token)
+
+
+app.mount("/api/mcp", mcp_http_app)
 
 
 class Turn(BaseModel):
@@ -156,6 +182,19 @@ def chat_args(request):
             request.mode)
 
 
+def with_mcp_identity(events, user):
+    """StreamingResponse may resume each next() in a different thread context."""
+    while True:
+        identity = mcp_user.set(user)
+        try:
+            event = next(events)
+        except StopIteration:
+            return
+        finally:
+            mcp_user.reset(identity)
+        yield event
+
+
 def chat_allowance(user):
     try:
         result = convex_post("/api/usage/consume", {"clerkId": user})
@@ -216,7 +255,11 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
     if not allowance["allowed"]:
         return JSONResponse({"answer": limit_answer(allowance["limit"])}, status_code=429)
     try:
-        answer = chat(*chat_args(request))
+        identity = mcp_user.set(user)
+        try:
+            answer = chat(*chat_args(request))
+        finally:
+            mcp_user.reset(identity)
         return {**answer, "saved": save_assistant(request, user, answer)}
     except Exception as e:
         answer, status = friendly_error(e)
@@ -252,7 +295,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
         started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}
         final_sent = False
         try:
-            for event in chat_events(*chat_args(request)):
+            for event in with_mcp_identity(chat_events(*chat_args(request)), user):
                 if event["type"] == "status":
                     stats["statuses"] += 1
                 elif event["type"] == "listings":

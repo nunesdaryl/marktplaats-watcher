@@ -285,3 +285,25 @@ Review the missing count and obtain the operator's OK before the production writ
 `npx convex run --prod embeddings:backfill '{"dryRun":false}'` and repeat the dry run until it reports zero.
 The Python search helper remains off until `RAG_ENABLED=1` is set in production. A failed embedding job is logged;
 the backfill retries alerts that still lack an embedding.
+
+## MCP access (MW-62)
+
+Set `MCP_ENABLED=1` to expose the stateless streamable HTTP endpoint at
+`https://marktplaats-watcher.vercel.app/api/mcp`. Set `RAG_ENABLED=1` to enable
+past-alert search in chat and MCP. Configure `MCP_OWNER_TOKEN` and
+`OWNER_CLERK_ID` in Vercel Production; the owner token is a secret and must not
+be printed or saved in this runbook. Clerk session JWTs also work for individual
+users. Every request needs `Authorization: Bearer <token>`.
+
+In MCP Inspector, choose **Streamable HTTP**, enter the URL above, and add the
+bearer header. Initialize and list tools; the server exposes five read-only
+tools and the `review_my_alerts` prompt. For Claude Desktop, add a custom
+Streamable HTTP connector pointing to the same URL and set its Authorization
+header to `Bearer <MCP_OWNER_TOKEN>` in the local connector settings. The owner token
+maps to `OWNER_CLERK_ID`; it does not grant write tools. Try
+`search_my_alerts("Mac mini M5 Pro")`, then confirm the returned links belong to
+the owner. Direct calls use the per-minute limiter. Set `MCP_ENABLED=0` to
+disable external MCP and return chat to its existing tools.
+
+The separate RAG evaluation is `python -m evals.run_rag` with model credentials;
+it has a 7/7 pass bar and does not alter the 20-case chat gate.
