@@ -1361,7 +1361,18 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   fresh OK after main moved under it (both edited this paragraph). The gate stopped at its last step, deleting the
   branch, because the branch had been pushed for the eval run; everything before it had completed, and the cleanup
   was finished by hand (follow-up: delete the remote branch first). New for Daryl: a UAT sign-off for the new rank
-  prompt <code>rank-2026-10-03.1</code>. Open in Linear: MW-9 and MW-14 only.</p>
+  prompt <code>rank-2026-10-03.1</code>.</p>
+<p><b>Prompt templates, MCP and RAG shipped (3 October afternoon).</b> Through the factory, each with Daryl's merge OK:
+  MW-64 the audit (<code>docs/audit/2026-10-03-prompt-templates-mcp-rag.md</code>), MW-60 prompt templates
+  (<code>prompts.py</code>, wording byte-identical, eval gate 20/20, 0.917), MW-61 the RAG index (alert embeddings with
+  <code>text-embedding-3-small</code> in a Convex vector + keyword index, per-user), MW-66 its backfill fix (1,124 alerts
+  embedded), MW-62 the MCP server (stateless <code>/api/mcp</code>, read-only, user from sign-in) and the chat using it
+  in-process, MW-67 §8 rewritten with the LLM/RAG/Agent scorecard. RAG and MCP were switched on in production at 14:35
+  and checked live (§8). MongoDB Atlas: Daryl set up a scoped user, network access and <code>MONGODB_URI</code> (Secret,
+  Production + Preview); the mirror + failover code is MW-63. Follow-ups: MW-68 real retrieval metrics and MCP evals,
+  MW-69 RAG answer quality, MW-70 chat crash on unsaved answers / preview env / 304 responses, MW-71 merge-gate fixes.
+  An Atlas credentials file placed in the repo root was never opened, is git-ignored, and the password was rotated.</p>
+<p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
   The Switch watch: 0 misses (was 4). The same run found 4 possible misses on a beta user's daily "Mac mini" watch,

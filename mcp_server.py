@@ -16,6 +16,7 @@ from mcp import ClientSession
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.server import StreamableHTTPASGIApp
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field
 
 from convex_api import convex_post
@@ -23,7 +24,12 @@ from convex_api import convex_post
 
 mcp_user = ContextVar("mcp_user", default=None)
 server = FastMCP("Marktplaats Watcher", stateless_http=True, json_response=True,
-                 streamable_http_path="/")
+                 streamable_http_path="/", transport_security=TransportSecuritySettings(
+                     enable_dns_rebinding_protection=True,
+                     allowed_hosts=["marktplaats-watcher.vercel.app", "127.0.0.1:*", "localhost:*", "[::1]:*"],
+                     allowed_origins=["https://marktplaats-watcher.vercel.app", "http://127.0.0.1:*",
+                                      "http://localhost:*", "http://[::1]:*"],
+                 ))
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 
 

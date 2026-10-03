@@ -82,6 +82,17 @@ counts, e.g. "Mac mini · 10/10 · check scored 2 · Apple Mac mini | M5 Pro …
 
 *Do not click Send on a catch-up during the demo* (it e-mails a real user).
 
+**4:15, the chat knows your alerts: RAG + MCP (live since 3 Oct, 30 s).** *Tab 1, New chat.* Type:
+*Which Mac mini alerts did I get this week, and which was the best value?* → Mac mini cards from your own alerts.
+> "This is RAG: every alert is embedded into a vector index in Convex, and the chat retrieves only my own alerts and
+> cites them as cards. The chat reaches them through an MCP server, the same read-only tools my desktop assistant can
+> use. And it only ever sees my data: an M5 Pro alert from another user stays invisible to me."
+
+*If asked how it's tested:* "Twenty chat cases, a scorer gate at 90% precision, and a separate RAG suite. Retrieval
+recall is the next thing we measure." *If MongoDB is live:* "Every embedding is mirrored to MongoDB Atlas; if Convex
+is slow, search fails over." *If not:* "MongoDB Atlas is connected and is the next step: a mirror with failover."
+*Don't ask about counts ("how many alerts"); exact counts via the activity tool are MW-69.*
+
 **4:30, how it was built, and the ask (30 s).**
 > "I built it with a software factory: GPT builds each change, Claude reviews it by actually running it, and I approve
 > every merge. 34 changes in the last two days, each one tested live. The honest risk: it reads Marktplaats' public pages,

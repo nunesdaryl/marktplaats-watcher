@@ -29,7 +29,7 @@ def test_mcp_works_without_asgi_lifespan(monkeypatch):
     monkeypatch.setenv("MCP_ENABLED", "1")
     monkeypatch.setenv("MCP_OWNER_TOKEN", "owner-secret")
     monkeypatch.setenv("OWNER_CLERK_ID", "owner")
-    client = TestClient(main.app)  # no context manager: lifespan is never entered
+    client = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app")  # no lifespan
     initialized = rpc(client, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
                                              "clientInfo": {"name": "test", "version": "1"}}, "owner-secret")
     assert initialized.status_code == 200
@@ -53,7 +53,7 @@ def test_mcp_auth_tools_and_user_scope(monkeypatch):
             return [{"watchId": "w-" + payload["clerkId"], "label": "Mac", "query": "mac mini", "active": True}]
         return None
     monkeypatch.setattr(mcp_server, "convex_post", convex)
-    with TestClient(main.app) as client:
+    with TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app") as client:
         assert rpc(client, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
                                             "clientInfo": {"name": "test", "version": "1"}}).status_code == 401
         assert rpc(client, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
