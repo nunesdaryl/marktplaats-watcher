@@ -554,6 +554,7 @@ MAX_RANK_PER_CHECK = 20
 ESTIMATE_BUDGET_SECONDS = 3
 PAGE_SIZE = 30
 MAX_PAGES = 40        # 1,200 listings since the last check; beyond that a check logs "coverage_capped"
+CANARY_MAX_PAGES = 3
 SEARCH_API = "https://www.marktplaats.nl/lrp/api/search"
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 MONTHS = {"jan": 1, "feb": 2, "mrt": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "okt": 10,
@@ -633,6 +634,28 @@ def read_since(query, filters, since_days, today):
             return listings, page + 1 >= MAX_PAGES
     print(json.dumps({"event": "coverage_capped", "query": query, "pages": MAX_PAGES}))
     return listings, True
+
+
+def read_canary(query, filters, watermark):
+    """Read up to three pages of organic listings, stopping at the previous watermark."""
+    listings, seen = [], set()
+    for page in range(CANARY_MAX_PAGES):
+        data = fetch_search(query, filters, page * PAGE_SIZE)
+        batch = data["listings"]
+        reached_watermark = False
+        for item in batch:
+            if item.get("priorityProduct", "NONE") != "NONE":
+                continue
+            number = listing_number(item.get("itemId"))
+            if number is not None and number <= watermark:
+                reached_watermark = True
+            item_id = item.get("itemId")
+            if item_id not in seen:
+                seen.add(item_id)
+                listings.append(item)
+        if reached_watermark or len(batch) < PAGE_SIZE or page + 1 >= (data.get("maxAllowedPageNumber") or CANARY_MAX_PAGES):
+            break
+    return listings, False
 
 
 def estimate_volume_note(w):
@@ -721,13 +744,14 @@ def check_query(query, watches, now=None):
         last = w.get("last_checked_at") if w.get("seeded", True) and w.get("watermark") is not None else None
         since = max((today - datetime.fromtimestamp(last / 1000, AMSTERDAM).date()).days, 0) if last else 0
         filters = search_filters(w)
-        plans.append((w, home, (json.dumps(filters, sort_keys=True), since, bool(w.get("read_only")))))
+        plans.append((w, home, (json.dumps(filters, sort_keys=True), since, bool(w.get("read_only")),
+                                (w.get("watermark") or 0) if w.get("read_only") else None)))
 
     # Watches with the same filters share one read; different ones are read in parallel (a broad one takes ~10 s)
     def read(key):
         try:
             if key[2]:
-                return fetch_search(query, json.loads(key[0]), 0)["listings"], False
+                return read_canary(query, json.loads(key[0]), key[3])
             return read_since(query, json.loads(key[0]), key[1], today)
         except (httpx.HTTPError, ValueError) as e:
             return e

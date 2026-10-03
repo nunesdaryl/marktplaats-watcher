@@ -107,6 +107,19 @@ test("the hourly canary reads without creating user watches or alerts", async ()
   expect(requests[1].watches[0]).toMatchObject({ watermark: 104, read_only: true });
 });
 
+test("canary keeps successful reads across the six-hour night window", async () => {
+  delete process.env.CANARY_DISABLED;
+  const t = convexTest(schema, modules);
+  const start = Date.parse("2026-09-28T22:30:00Z");
+  await t.mutation(internal.checker.claimCanary, { now: start });
+  await t.mutation(internal.checker.recordCanary, { now: start, ok: true, readCount: 1, newestId: 101 });
+  const later = start + 5 * 60 * 60_000;
+  await t.mutation(internal.checker.claimCanary, { now: later });
+  await t.mutation(internal.checker.recordCanary, { now: later, ok: true, readCount: 0, newestId: 101 });
+  expect((await t.run((ctx) => ctx.db.query("canary").first()))?.recentReads.map((r) => r.count)).toEqual([1, 0]);
+  expect((await t.query(internal.health.report, { now: later })).issues.find((i) => i.kind === "canary_silent")).toBeUndefined();
+});
+
 test("record stores and clears the waiting count and page cap", async () => {
   const { t, id } = await seededWatch();
   const report = (extra: object) => t.mutation(internal.checker.record, { now: Date.now(), dryRun: false,

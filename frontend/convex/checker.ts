@@ -24,7 +24,7 @@ const EMAIL_RETRY_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_SEEN_SENT = 1500;              // must exceed MAX_PAGES * PAGE_SIZE in agent.py
 const RETENTION_MS = 30 * 86_400_000;
 const CANARY_INTERVAL_MS = 60 * 60_000;
-const CANARY_WINDOW_MS = 3 * CANARY_INTERVAL_MS;
+const CANARY_WINDOW_MS = 6 * CANARY_INTERVAL_MS;
 
 export const claimCanary = internalMutation({
   args: { now: v.number() },

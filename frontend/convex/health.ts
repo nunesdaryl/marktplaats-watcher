@@ -58,8 +58,12 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     .filter((w) => w.active && w.archivedAt === undefined);
   const canary = process.env.CANARY_DISABLED === "1" ? null : await ctx.db.query("canary").first();
   const canaryFailed = canary?.lastError;
-  const canarySilent = !!canary && !canaryFailed && now - canary.startedAt >= 3 * 60 * 60_000 &&
-    canary.recentReads.filter((r) => r.at > now - 3 * 60 * 60_000).reduce((n, r) => n + r.count, 0) === 0;
+  const amsterdamHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hourCycle: "h23" }).format(now));
+  const canaryWindowHours = amsterdamHour < 8 ? 6 : 3;
+  const canaryWindowMs = canaryWindowHours * 60 * 60_000;
+  const canarySilent = !!canary && !canaryFailed && now - canary.startedAt >= canaryWindowMs &&
+    canary.recentReads.filter((r) => r.at > now - canaryWindowMs).reduce((n, r) => n + r.count, 0) === 0;
+  const canarySilenceText = `0 new iphone listings (paid placements excluded) in the last ${canaryWindowHours} hours`;
   const failing = activeWatches
     .filter((w) => w.lastError).map((w) => ({ label: w.name ?? w.label, error: w.lastError!, watchId: w._id, userId: w.userId }));
   const behind = activeWatches.filter((w) => (w.backlog ?? 0) >= 100 || w.coverageCapped);
@@ -74,7 +78,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (runs.some((r) => r.paused)) problems.push("Checks are paused (CHECKS_PAUSED=1).");
   if (failedEmails) problems.push(`${failedEmails} alert e-mail(s) failed to send.`);
   if (canaryFailed) problems.push(`The canary check failed: ${canaryFailed}.`);
-  else if (canarySilent) problems.push("The canary read 0 new iphone listings in the last 3 hours.");
+  else if (canarySilent) problems.push(`The canary read ${canarySilenceText}.`);
   if (failing.length) problems.push(`${failing.length} watch(es) failing: ${failing.slice(0, 5).map((w) => `"${w.label}" (${w.error})`).join("; ")}.`);
   const missed = audits.filter((a) => a.missCount > 0);
   const missCount = audits.reduce((n, a) => n + a.missCount, 0);
@@ -114,8 +118,8 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (failedEmails) issues.push({ kind: "emails_failed", severity: "high", headline: `${plural(failedEmails, "alert e-mail")} failed`, count: failedEmails,
     items: failedAlertItems });
   if (canaryFailed || canarySilent) issues.push({ kind: "canary_silent", severity: "high",
-    headline: canaryFailed ? "Canary check failed" : "Canary read no new listings", count: 1,
-    items: [{ label: canaryFailed ?? "0 new iphone listings in the last 3 hours" }] });
+    headline: canaryFailed ? "Canary check failed" : "Canary read no new organic iphone listings", count: 1,
+    items: [{ label: canaryFailed ?? canarySilenceText }] });
   if (failing.length) issues.push({ kind: "watches_failing", severity: "high", headline: `${plural(failing.length, "watch")} failing`, count: failing.length,
     items: failing.map((w) => ({ label: `${w.label}: ${w.error}`, watchId: w.watchId, userId: w.userId })) });
   const auditWatches = new Map(await Promise.all(audits.filter((a) => a.missCount > 0 || !a.ok).map(async (a) => {
