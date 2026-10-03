@@ -96,7 +96,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (behind.length) problems.push(`${behind.length} watch(es) can't keep up: ${behind.map((w) => `"${w.name ?? w.label}" (backlog ${w.backlog ?? 0})`).join("; ")}.`);
   for (const { watch, listing } of quiet)
     problems.push(`Watch "${watch.name ?? watch.label}" is quiet after reading new listings on each of the last 3 days: ${listing.score}/10 "${listing.title}" (${listing.url}).`);
-  type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string };
+  type Item = { label: string; watchId?: string; userId?: string; requestId?: string; listingId?: string; score?: number; title?: string; url?: string; kind?: string; checkScore?: number };
   type Issue = { kind: string; severity: "high" | "medium" | "low"; headline: string; count: number; items: Item[] };
   const issues: Issue[] = [];
   if (drift.length) issues.push({ kind: "dashboard_drift", severity: "high", headline: "Dashboard totals differed at recount",
@@ -129,7 +129,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   if (missCount) issues.push({ kind: "delivery_misses", severity: "high",
     headline: `${plural(missCount, "missed match")} on ${plural(new Set(missed.map((a) => a.watchId)).size, "watch")}`, count: missCount,
     items: missed.flatMap((a) => a.misses.map((m) => ({ label: auditWatches.get(a.watchId)!, watchId: a.watchId, userId: a.userId,
-      requestId: a.requestId, listingId: m.listingId, score: m.score, title: m.title, url: m.url }))) });
+      requestId: a.requestId, listingId: m.listingId, score: m.score, title: m.title, url: m.url, kind: m.kind, checkScore: m.checkScore }))) });
   const failedAudits = audits.filter((a) => !a.ok);
   if (failedAudits.length) issues.push({ kind: "audit_failed", severity: "high", headline: `${plural(failedAudits.length, "delivery audit")} failed`, count: failedAudits.length,
     items: failedAudits.map((a) => ({ label: `${auditWatches.get(a.watchId)}: ${a.error ?? "Unknown error"}`, watchId: a.watchId,

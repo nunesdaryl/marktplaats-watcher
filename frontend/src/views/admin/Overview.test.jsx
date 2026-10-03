@@ -79,3 +79,51 @@ test("the refresh icon reruns all three queries and keeps old figures until all 
   expect(done.tree.props.children[0].props.children[3].props.children[0].props.disabled).toBe(false);
   vi.restoreAllMocks();
 });
+
+test("delivery misses explain why each match was missed without showing request IDs", () => {
+  const data = dashboard(oldNow, 3);
+  const misses = [
+    { requestId: "audit-rescored", listingId: "listing-1", label: "Mac mini", watchId: "watch-1", userId: "user-1", score: 10, checkScore: 2, kind: "rescored", title: "Apple Mac mini", url: "https://example.com/1" },
+    { requestId: "audit-unread", listingId: "listing-2", label: "Mac mini", watchId: "watch-1", score: 8, kind: "never_read", title: "Other Mac mini" },
+    { requestId: "audit-unscored", listingId: "listing-3", label: "Mac mini", watchId: "watch-1", score: 7, kind: "never_scored", title: "Third Mac mini" },
+    { requestId: "audit-handled", listingId: "listing-4", label: "Mac mini", watchId: "watch-1", score: 9, kind: "handled", title: "Fourth Mac mini" },
+  ];
+  data.health.issues = [{ kind: "delivery_misses", severity: "high", headline: "4 missed matches on 1 watch", count: 4, items: misses }];
+  data.deliveryAudit.latestMisses = misses.map((miss) => ({ ...miss, watchLabel: miss.label }));
+  responses[0] = data;
+
+  const { html } = render();
+  expect(html).toContain("10/10</span><span class=\"health-meta\"> · check scored 2");
+  expect(html).toContain("not read by the check");
+  expect(html).toContain("not scored by the check");
+  expect(html).toContain("scored but not sent");
+  expect(html).toContain("Apple Mac mini · check scored 2");
+  expect(html).not.toContain("audit-rescored");
+  expect(html).not.toContain("audit-unread");
+  expect(html).not.toContain("audit-unscored");
+  expect(html).not.toContain("audit-handled");
+  expect(html).toContain('aria-label="Copy request ID"');
+});
+
+test("the health issue copy icon copies the request ID and briefly confirms it", async () => {
+  const data = dashboard(oldNow, 3);
+  data.health.issues = [{ kind: "errors", severity: "high", headline: "1 error", count: 1,
+    items: [{ label: "Check error", requestId: "check-123" }] }];
+  responses[0] = data;
+  const { tree, html } = render();
+  expect(html).not.toContain("check-123");
+  expect(html).toContain('title="Copy request ID" aria-label="Copy request ID"');
+  const issueElement = tree.props.children[3].props.children[1].props.children[0];
+  const issueTree = issueElement.type(issueElement.props);
+  const copyElement = issueTree.props.children[1].props.children[0].props.children.at(-1);
+  renderCount = 2;
+  const button = copyElement.type(copyElement.props);
+  expect(button.props.children.props).toMatchObject({ name: "copy", size: 14 });
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  vi.stubGlobal("navigator", { clipboard: { writeText } });
+  await button.props.onClick({ stopPropagation: vi.fn() });
+  expect(writeText).toHaveBeenCalledWith("check-123");
+  renderCount = 2;
+  expect(copyElement.type(copyElement.props).props.children.props.children).toBe("Copied");
+  vi.unstubAllGlobals();
+});

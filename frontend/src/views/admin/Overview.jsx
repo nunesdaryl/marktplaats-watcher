@@ -9,6 +9,12 @@ import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
 const shortDay = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
 const FUNNEL_KEYS = ["signed_up", "setup", "chatted", "watch", "alert"];
+const deliveryMissReason = (miss) => ({
+  rescored: `check scored ${miss.checkScore}`,
+  never_read: "not read by the check",
+  never_scored: "not scored by the check",
+  handled: "scored but not sent",
+})[miss.kind];
 
 function Stat({ value, name, note, onOpen }) {
   return (
@@ -20,6 +26,14 @@ function Stat({ value, name, note, onOpen }) {
   );
 }
 
+function CopyRequestId({ requestId }) {
+  const [done, setDone] = useState(false);
+  return <button className="icon-button small health-request" title="Copy request ID" aria-label="Copy request ID"
+    onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(requestId).then(() => { setDone(true); setTimeout(() => setDone(false), 1500); }); }}>
+    {done ? <span className="copied">Copied</span> : <Icon name="copy" size={14} />}
+  </button>;
+}
+
 function HealthIssue({ issue, go }) {
   return <details className="health-issue">
     <summary><span className={`health-dot ${issue.severity}`} /><span className="health-headline">{issue.headline}</span>
@@ -28,10 +42,11 @@ function HealthIssue({ issue, go }) {
       {item.watchId ? <button className="link-button" onClick={() => go("watch", item.label, { id: item.watchId })}>{item.label}</button>
         : <span>{item.label}</span>}
       {item.score !== undefined && <span className="health-meta"> · {item.score}/10</span>}
+      {issue.kind === "delivery_misses" && <span className="health-meta"> · {deliveryMissReason(item)}</span>}
       {item.title && <span className="health-meta"> · </span>}
       {item.title && (item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a> : <span>{item.title}</span>)}
       {item.userId && <button className="link-button health-user" onClick={() => go("user", "Account", { id: item.userId })}>Account</button>}
-      {item.requestId && <button className="health-request" title={`Copy request ${item.requestId}`} onClick={() => navigator.clipboard?.writeText(item.requestId)}>{item.requestId} · Copy</button>}
+      {item.requestId && <CopyRequestId requestId={item.requestId} />}
     </li>)}</ul>
   </details>;
 }
@@ -339,7 +354,7 @@ export default function Overview({ open, onSearch, ask }) {
       {data.deliveryAudit.latestMisses.length > 0 && <section className="panel">
         <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses</button></h2>
         <ul>{data.deliveryAudit.latestMisses.map((miss) => <li key={`${miss.requestId}-${miss.listingId}`}>
-          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {miss.kind} · {miss.requestId}</button>
+          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {deliveryMissReason(miss)}</button>
         </li>)}</ul>
       </section>}
 
