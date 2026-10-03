@@ -1380,6 +1380,29 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   every batch failed silently (likely the 1.5 s connection budget from a cold Vercel function to Atlas Frankfurt); MW-73
   adds a longer connect timeout, bulk writes and a readable error log. The Atlas vector index is created by the owner
   in the Atlas UI from <code>ops/atlas/alerts_vec.json</code>.</p>
+<h3>Two vector databases: Convex primary, MongoDB Atlas mirror</h3>
+<p><b>In plain English.</b> Every alert is turned into a vector (1,536 numbers, OpenAI <code>text-embedding-3-small</code>) and
+  stored twice. <b>Convex is the primary</b>: the chat always searches there first. <b>MongoDB Atlas is a mirror</b>: the
+  same vectors, with only IDs and numbers (no titles, prices or text). If Convex's search errors or takes longer than
+  3 seconds, the search <b>fails over</b> to Atlas, and the answer records which database served it. This is deliberately
+  <i>not</i> load balancing: splitting traffic would let the same question get different answers depending on which
+  database answered; one primary keeps answers consistent and the mirror adds resilience.</p>
+<table>
+  <tr><th>Step</th><th>What happens</th><th>Where in the code</th></tr>
+  <tr><td>1. Write</td><td>A new alert is saved; Convex embeds it via the Python backend and stores the vector with the alert's text in <code>alertEmbeddings</code> (vector index <code>by_embedding</code> + keyword index <code>by_text</code>, both filtered by user).</td><td><code>frontend/convex/embeddings.ts</code> (<code>embedAlerts</code>, <code>save</code>); <code>agent.py</code> <code>embed_texts</code>; route <code>/api/internal/embed</code></td></tr>
+  <tr><td>2. Mirror</td><td>After saving, Convex schedules <code>mirror</code>, which posts the IDs and vectors to the backend; it upserts them into Atlas <code>watcher.alert_embeddings</code> in one bulk write. A mirror failure is logged with its error class and never blocks the alert.</td><td><code>embeddings.ts</code> <code>mirror</code> / <code>mirrorBackfill</code>; <code>main.py</code> <code>/api/internal/mirror</code>; <code>vector_store.py</code> <code>MongoStore.mirror</code></td></tr>
+  <tr><td>3. Search (normal)</td><td>The question is embedded; Convex runs vector + keyword search for that user only, re-checks ownership and returns the alerts with title, price, score, reason and any rating. Answer marked <code>servedBy: "convex"</code>.</td><td><code>agent.py:903</code> <code>search_alerts</code>; <code>vector_store.py:72</code> <code>ConvexStore.search</code> (<code>timeout=3</code>); <code>embeddings.ts</code> <code>search</code></td></tr>
+  <tr><td>4. Failover</td><td>If the Convex call raises an error or hits the 3-second timeout (or answered but took over 3 s), the same vector is sent to Atlas <code>$vectorSearch</code> on index <code>alerts_vec</code>, filtered by <code>userId</code>; the returned IDs are turned back into listing cards via Convex. Answer marked <code>servedBy: "mongo"</code>.</td><td><code>agent.py:918–928</code>; <code>vector_store.py:83</code> <code>mongo_results</code>; <code>vector_store.py:56</code> <code>MongoStore.search</code> (1.5 s connect budget)</td></tr>
+  <tr><td>Switch</td><td><code>VECTOR_PRIMARY=mongo</code> in Vercel makes Atlas the first choice (e.g. during Convex maintenance); default <code>convex</code>.</td><td><code>agent.py:909</code></td></tr>
+  <tr><td>Compare</td><td>Owner-only MCP tool <code>compare_vector_stores(query)</code> runs one question against both and shows the two top-5 lists, their overlap and latency.</td><td><code>mcp_server.py</code></td></tr>
+</table>
+<p><b>Honest limits (3 October).</b> (1) The failover still asks Convex twice: to map the signed-in user to the internal
+  user ID and to add titles, prices and links to the IDs Atlas returns (Atlas holds no listing text, by design). So it
+  covers a slow or failing Convex <i>search</i>, not a full Convex outage; then the chat says alert history is unavailable
+  and still answers everything else. (2) Atlas does vector similarity only; Convex also matches exact words such as
+  "M5 Pro", so the backup is slightly less precise. (3) Deletions are not mirrored yet: alerts purged after 30 days stay in
+  Atlas until a delete-parity follow-up. (4) Failover is covered by tests with a fake Atlas; it has not yet been triggered
+  by a real Convex failure. To see which database served an answer, search the backend logs for <code>servedBy</code>.</p>
 <p><b>MongoDB Atlas live (3 October, 16:15).</b> MW-73 (merged <code>3d15462</code>) made the mirror log a readable error,
   and the errors told the real story one step at a time: <code>InvalidURI</code> (the stored value didn't start with
   <code>mongodb+srv://</code>), then "URI options are key=value pairs" (a malformed query string), then
