@@ -80,7 +80,7 @@ The two plans agree on Convex vectors, stateless MCP, read-only tools and a user
 
 ## 6. Build plan and dependencies
 
-All statuses below are **planned** at this audit snapshot. The factory station updates the issue status as each piece ships. [Approved build plan, Deliverables and Order](#7-sources).
+**Update, 3 October afternoon:** MW-64 (this audit), MW-60 (prompt templates), MW-61 + MW-66 (RAG index, 1,124 alerts backfilled), MW-62 (MCP server + chat; RAG and MCP switched on in production and checked live) and MW-67 (evals explained) shipped; MW-63 (MongoDB mirror) was being built for the demo; follow-ups MW-68 to MW-71 filed. The original snapshot below said: all statuses below are **planned** at this audit snapshot. The factory station updates the issue status as each piece ships. [Approved build plan, Deliverables and Order](#7-sources).
 
 | Issue | Planned deliverable | Status |
 |---|---|---|
