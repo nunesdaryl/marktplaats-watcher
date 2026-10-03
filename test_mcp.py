@@ -36,7 +36,7 @@ def test_mcp_works_without_asgi_lifespan(monkeypatch):
     assert "mcp-session-id" not in initialized.headers
     listed = rpc(client, "tools/list", token="owner-secret")
     assert listed.status_code == 200
-    assert len(listed.json()["result"]["tools"]) == 5
+    assert len(listed.json()["result"]["tools"]) == 6
 
 
 def test_mcp_auth_tools_and_user_scope(monkeypatch):
@@ -64,7 +64,7 @@ def test_mcp_auth_tools_and_user_scope(monkeypatch):
         assert "mcp-session-id" not in initialized.headers
         names = {t["name"] for t in rpc(client, "tools/list", token="alice").json()["result"]["tools"]}
         assert names == {"list_my_watches", "get_watch_activity", "get_alert_evidence",
-                         "search_my_alerts", "search_marktplaats"}
+                         "search_my_alerts", "search_marktplaats", "compare_vector_stores"}
         prompts = rpc(client, "prompts/list", token="alice").json()["result"]["prompts"]
         assert [prompt["name"] for prompt in prompts] == ["review_my_alerts"]
         for token, expected in (("alice", "alice"), ("bob", "bob"), ("owner-secret", "owner")):

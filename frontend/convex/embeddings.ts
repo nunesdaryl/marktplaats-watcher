@@ -28,12 +28,56 @@ export const pending = internalQuery({
 export const save = internalMutation({
   args: { rows: v.array(v.object({ alertId: v.id("alerts"), embedding: vectorValidator, text: v.string(), model: v.string() })) },
   handler: async (ctx, { rows }) => {
+    const mirrored: { alertId: Id<"alerts">; userId: Id<"users">; embedding: number[] }[] = [];
     for (const row of rows) {
       if (row.embedding.length !== 1536 || row.embedding.some((x) => !Number.isFinite(x))) throw new Error("Invalid embedding vector");
       const alert = await ctx.db.get(row.alertId);
       if (!alert || await ctx.db.query("alertEmbeddings").withIndex("by_alert", (q) => q.eq("alertId", row.alertId)).first()) continue;
       await ctx.db.insert("alertEmbeddings", { ...row, userId: alert.userId, createdAt: Date.now() });
+      mirrored.push({ alertId: row.alertId, userId: alert.userId, embedding: row.embedding });
     }
+    if (mirrored.length) await ctx.scheduler.runAfter(0, internal.embeddings.mirror, { rows: mirrored });
+  },
+});
+
+export const mirror = internalAction({
+  args: { rows: v.array(v.object({ alertId: v.id("alerts"), userId: v.id("users"), embedding: vectorValidator })) },
+  handler: async (_ctx, { rows }) => {
+    const base = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
+    if (!base || !secret) { console.error("Atlas mirror service is not configured"); return; }
+    try {
+      const response = await fetch(`${base.replace(/\/$/, "")}/api/internal/mirror`, {
+        method: "POST", headers: { "Content-Type": "application/json", "X-Cron-Secret": secret },
+        body: JSON.stringify({ rows }),
+      });
+      if (!response.ok) console.error("Atlas mirror failed", response.status);
+    } catch (error) { console.error("Atlas mirror failed", error instanceof Error ? error.name : "Error"); }
+  },
+});
+
+export const mirrorBackfillPage = internalQuery({
+  args: { cutoff: v.number(), cursor: v.optional(v.string()) },
+  handler: async (ctx, { cutoff, cursor }) => {
+    const page = await ctx.db.query("alertEmbeddings").withIndex("by_createdAt", (q) => q.lte("createdAt", cutoff))
+      .paginate({ cursor: cursor ?? null, numItems: 100 });
+    return { rows: page.page.map((row) => ({ alertId: row.alertId, userId: row.userId, embedding: row.embedding })),
+      cursor: page.continueCursor, done: page.isDone };
+  },
+});
+
+export const mirrorBackfill = internalAction({
+  args: { dryRun: v.boolean() },
+  handler: async (ctx, { dryRun }) => {
+    const cutoff = Date.now();
+    let cursor: string | undefined, count = 0;
+    do {
+      const page = await ctx.runQuery(internal.embeddings.mirrorBackfillPage, { cutoff, cursor });
+      count += page.rows.length;
+      if (!dryRun && page.rows.length) await ctx.runAction(internal.embeddings.mirror, { rows: page.rows });
+      cursor = page.done ? undefined : page.cursor;
+      if (page.done) break;
+    } while (cursor);
+    return { count, dryRun };
   },
 });
 
@@ -93,6 +137,24 @@ export const backfill = internalAction({
 export const user = internalQuery({
   args: { clerkId: v.string() },
   handler: async (ctx, { clerkId }) => (await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique())?._id ?? null,
+});
+
+export const hydrateAlerts = internalQuery({
+  args: { clerkId: v.string(), ids: v.array(v.object({ alertId: v.id("alerts"), score: v.number() })) },
+  handler: async (ctx, { clerkId, ids }) => {
+    const userId = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique();
+    if (!userId) return [];
+    const results = [];
+    for (const { alertId, score } of ids) {
+      const alert = await ctx.db.get(alertId);
+      if (!alert || alert.userId !== userId._id) continue;
+      const watch = await ctx.db.get(alert.watchId);
+      results.push({ alertId, score, title: alert.title, priceEur: alert.priceEur ?? null,
+        score10: alert.score ?? null, reason: alert.reason, url: alert.url, image: alert.image ?? null,
+        createdAt: alert.createdAt, watchLabel: watch?.name ?? watch?.label ?? null });
+    }
+    return results;
+  },
 });
 
 export const keyword = internalQuery({

@@ -375,6 +375,26 @@ class EmbedRequest(BaseModel):
     texts: list[str] = Field(min_length=1)
 
 
+class MirrorRow(BaseModel):
+    alertId: str = Field(min_length=1, max_length=64)
+    userId: str = Field(min_length=1, max_length=64)
+    embedding: list[float] = Field(min_length=1536, max_length=1536)
+
+
+class MirrorRequest(BaseModel):
+    rows: list[MirrorRow] = Field(min_length=1, max_length=100)
+
+
+@app.post("/api/internal/mirror", dependencies=[Depends(cron_caller)])
+def mirror_route(request: MirrorRequest):
+    from vector_store import MongoStore
+    result = MongoStore().mirror([row.model_dump() for row in request.rows])
+    if result["status"] == "error":
+        log("mirror_failed")
+        return JSONResponse(result, status_code=503)
+    return result
+
+
 @app.post("/api/internal/embed", dependencies=[Depends(cron_caller)])
 def embed_route(request: EmbedRequest):
     return {"vectors": embed_texts(request.texts)}

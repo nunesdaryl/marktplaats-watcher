@@ -41,6 +41,32 @@ test("embedding action stores a separate row and skips a second insert", async (
   } finally { vi.unstubAllGlobals(); }
 });
 
+test("saved embedding schedules a mirror call and backfill dry run does not post", async () => {
+  vi.useFakeTimers();
+  const { t, ids } = await fixture();
+  process.env.WATCHER_API_URL = "https://watcher.test";
+  process.env.CRON_SECRET = "secret";
+  const fetchMock = vi.fn(async (_url: string, _options?: RequestInit) => Response.json({ status: "ok" }));
+  vi.stubGlobal("fetch", fetchMock);
+  try {
+    await t.mutation(internal.embeddings.save, { rows: [{ alertId: ids[0], text: "Mac mini",
+      embedding: Array(1536).fill(0.1), model: "text-embedding-3-small" }] });
+    expect(await t.action(internal.embeddings.mirrorBackfill, { dryRun: true })).toEqual({ count: 1, dryRun: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+    const mirrorCalls = () => fetchMock.mock.calls.filter(([url]) => String(url).includes("/api/internal/mirror"));
+    expect(mirrorCalls().length).toBeGreaterThan(0);
+    const scheduledCount = mirrorCalls().length;
+    const options = mirrorCalls().find(([, options]) =>
+      JSON.parse(String(options?.body)).rows.some((row: { alertId: string }) => row.alertId === ids[0]))![1]!;
+    expect(options.headers).toMatchObject({ "X-Cron-Secret": "secret" });
+    const rows = JSON.parse(String(options.body)).rows;
+    expect(rows).toMatchObject([{ alertId: ids[0], embedding: Array(1536).fill(0.1) }]);
+    expect(await t.action(internal.embeddings.mirrorBackfill, { dryRun: false })).toEqual({ count: 1, dryRun: false });
+    expect(mirrorCalls()).toHaveLength(scheduledCount + 1);
+  } finally { vi.unstubAllGlobals(); vi.useRealTimers(); }
+});
+
 test("search route requires its secret and does not expose another user's alert", async () => {
   const { t, ids, a } = await fixture();
   process.env.API_TO_CONVEX_SECRET = "secret";
@@ -64,6 +90,19 @@ test("search route requires its secret and does not expose another user's alert"
     const hits = await result.json();
     expect(hits.map((r: { alertId: string }) => r.alertId)).toEqual([ids[0]]);
     expect(hits[0]).toMatchObject({ watchLabel: "Mac mini", rating: { verdict: "good", reasons: ["price"] } });
+  } finally { delete process.env.API_TO_CONVEX_SECRET; }
+});
+
+test("Atlas IDs hydrate only owned alerts", async () => {
+  const { t, ids } = await fixture();
+  process.env.API_TO_CONVEX_SECRET = "secret";
+  const request = (clerkId: string) => t.fetch("/api/alerts/hydrate", { method: "POST",
+    headers: { "Content-Type": "application/json", "X-Api-Secret": "secret" },
+    body: JSON.stringify({ clerkId, ids: ids.map((alertId) => ({ alertId, score: 0.9 })) }) });
+  try {
+    const rows = await (await request("alice")).json();
+    expect(rows.map((row: { alertId: string }) => row.alertId)).toEqual([ids[0]]);
+    expect(rows[0].title).toBe("Mac mini M5 Pro");
   } finally { delete process.env.API_TO_CONVEX_SECRET; }
 });
 

@@ -88,6 +88,22 @@ http.route({ path: "/api/alerts/search", method: "POST", handler: httpAction(asy
   return Response.json(await ctx.runAction(internal.embeddings.search, body));
 }) });
 
+http.route({ path: "/api/alerts/user", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  return Response.json(await ctx.runQuery(internal.embeddings.user, { clerkId: body.clerkId }));
+}) });
+
+http.route({ path: "/api/alerts/hydrate", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  if (!Array.isArray(body.ids) || body.ids.length > 10 || body.ids.some((item: any) =>
+    !item || typeof item.alertId !== "string" || typeof item.score !== "number" || !Number.isFinite(item.score)))
+    return new Response("Invalid request.", { status: 400 });
+  try { return Response.json(await ctx.runQuery(internal.embeddings.hydrateAlerts, { clerkId: body.clerkId, ids: body.ids })); }
+  catch { return new Response("Invalid request.", { status: 400 }); }
+}) });
+
 http.route({ path: "/api/alerts/recent", method: "POST", handler: httpAction(async (ctx, request) => {
   const { body, error } = await alertRequest(request);
   if (error) return error;

@@ -450,6 +450,8 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
                     found = None                # "No listings matched…" and other plain-text results
                 if call["name"] == "search_my_alerts" and isinstance(found, dict):
                     found = found.get("data")
+                if call["name"] == "search_my_alerts" and isinstance(found, dict):
+                    found = found.get("hits", found)
                 if isinstance(found, list):
                     if call["name"] == "search_my_alerts":
                         from mcp_server import alert_card
@@ -901,7 +903,29 @@ def embed_texts(texts):
 def search_alerts(clerk_id, query, k=5):
     if os.getenv("RAG_ENABLED", "0").lower() not in ("1", "true", "yes"):
         return {"status": "disabled"}
-    from convex_api import convex_post
+    from vector_store import ConvexStore, mongo_results
     vector = embed_texts([query])[0]
-    return convex_post("/api/alerts/search", {"clerkId": clerk_id, "query": query,
-                                               "vector": vector, "limit": min(max(k, 1), 10)})
+    limit = min(max(k, 1), 10)
+    if os.getenv("VECTOR_PRIMARY", "convex").lower() == "mongo":
+        try:
+            result = mongo_results(clerk_id, vector, limit)
+            if result["status"] == "ok":
+                return {"servedBy": "mongo", "hits": result["hits"]}
+        except Exception:
+            pass
+    started = time.monotonic()
+    try:
+        hits = ConvexStore().search(clerk_id, vector, limit, query)
+    except Exception:
+        result = mongo_results(clerk_id, vector, limit)
+        if result["status"] == "ok":
+            return {"servedBy": "mongo", "hits": result["hits"]}
+        raise
+    if time.monotonic() - started > 3 and os.getenv("MONGODB_URI"):
+        try:
+            result = mongo_results(clerk_id, vector, limit)
+            if result["status"] == "ok":
+                return {"servedBy": "mongo", "hits": result["hits"]}
+        except Exception:
+            pass
+    return {"servedBy": "convex", "hits": hits}
