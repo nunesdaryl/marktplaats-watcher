@@ -67,6 +67,7 @@ The design system (colours, type, spacing, motion, components, states, voice, wi
 
 Architecture decisions are indexed in [docs/adr/](docs/adr/README.md); current non-functional requirements are in [docs/nfr.md](docs/nfr.md).
 The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) traces user signals through evaluation, release and reply.
+The [3 October prompt templates, MCP and RAG audit](docs/audit/2026-10-03-prompt-templates-mcp-rag.md) maps the course material to the planned demo-day work.
 The [weekly listening loop](RUNBOOK.md#weekly-listening-loop) gives the Monday routine and its read-only `scripts/factory/loop-status.sh` checkpoint.
 
 The look follows the **Sieve** design system (`docs/design/sieve/`, made with Claude Design): warm graphite, one teal
