@@ -65,3 +65,50 @@ http.route({
 });
 
 export default http;
+
+async function alertRequest(request: Request) {
+  const secret = process.env.API_TO_CONVEX_SECRET;
+  if (!secret) return { error: new Response("Alert API is not configured.", { status: 503 }) };
+  if (!sameSecret(request.headers.get("X-Api-Secret") ?? "", secret))
+    return { error: new Response("Wrong API secret.", { status: 401 }) };
+  let body: any;
+  try { body = await request.json(); } catch { return { error: new Response("Invalid request.", { status: 400 }) }; }
+  if (!body || typeof body.clerkId !== "string" || !body.clerkId)
+    return { error: new Response("Invalid request.", { status: 400 }) };
+  return { body };
+}
+
+http.route({ path: "/api/alerts/search", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  if (!Array.isArray(body.vector) || body.vector.length !== 1536 || body.vector.some((x: unknown) => typeof x !== "number" || !Number.isFinite(x)) ||
+      (body.query !== undefined && typeof body.query !== "string") ||
+      !Number.isInteger(body.limit) || body.limit < 1 || body.limit > 10)
+    return new Response("Invalid request.", { status: 400 });
+  return Response.json(await ctx.runAction(internal.embeddings.search, body));
+}) });
+
+http.route({ path: "/api/alerts/recent", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  if (!Number.isInteger(body.limit) || body.limit < 1 || body.limit > 20)
+    return new Response("Invalid request.", { status: 400 });
+  return Response.json(await ctx.runQuery(internal.embeddings.recent, body));
+}) });
+
+http.route({ path: "/api/watches/mine", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  return Response.json(await ctx.runQuery(internal.embeddings.watchesMine, { clerkId: body.clerkId }));
+}) });
+
+http.route({ path: "/api/alerts/activity", method: "POST", handler: httpAction(async (ctx, request) => {
+  const { body, error } = await alertRequest(request);
+  if (error) return error;
+  if (!Number.isFinite(body.from) || !Number.isFinite(body.to) || body.from > body.to ||
+      !Number.isInteger(body.limit) || body.limit < 1 || body.limit > 50 ||
+      (body.watchId !== undefined && typeof body.watchId !== "string"))
+    return new Response("Invalid request.", { status: 400 });
+  try { return Response.json(await ctx.runQuery(internal.embeddings.activity, body)); }
+  catch { return new Response("Invalid request.", { status: 400 }); }
+}) });

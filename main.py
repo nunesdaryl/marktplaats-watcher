@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note  # noqa: E402
+from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 
 app = FastAPI()
@@ -326,6 +326,15 @@ def cron_caller(x_cron_secret: str = Header(default="")):
         raise HTTPException(503, "Scheduled checks are not configured on this server.")
     if not hmac.compare_digest(x_cron_secret.encode(), secret.encode()):  # constant-time compare
         raise HTTPException(401, "Wrong cron secret.")
+
+
+class EmbedRequest(BaseModel):
+    texts: list[str] = Field(min_length=1)
+
+
+@app.post("/api/internal/embed", dependencies=[Depends(cron_caller)])
+def embed_route(request: EmbedRequest):
+    return {"vectors": embed_texts(request.texts)}
 
 
 @app.post("/api/internal/check", dependencies=[Depends(cron_caller)])

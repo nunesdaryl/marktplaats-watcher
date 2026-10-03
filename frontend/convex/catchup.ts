@@ -141,6 +141,8 @@ export const claimPlan = internalMutation({
       });
       byWatch.set(item.watchId, [...(byWatch.get(item.watchId) ?? []), alertId]);
     }
+    const created = [...byWatch.values()].flat();
+    if (created.length) await ctx.scheduler.runAfter(0, internal.embeddings.embedAlerts, { alertIds: created });
     await ctx.db.patch(planId, { status: "sent" });
     return [...byWatch].map(([watchId, alertIds]) => ({ watchId, alertIds }));
   },
