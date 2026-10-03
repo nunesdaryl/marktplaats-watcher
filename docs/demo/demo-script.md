@@ -73,7 +73,8 @@ Type in the Ask box: *alerts this week above 8* → **Ask** → the list opens w
 
 *If the Ask box is slow:* click the **Alerts this week** tile: same list.
 
-*Then point at the red line at the top* ("4 missed matches on 1 watch") and click it (20 s):
+*Then point at the red line at the top* ("4 missed matches on 1 watch") and click it (20 s). Each row says why it
+counts, e.g. "Mac mini · 10/10 · check scored 2 · Apple Mac mini | M5 Pro …"; read that one out:
 > "And this is that audit at work, today. It re-checked a beta user's Mac mini watch and found four listings the
 > morning check scored low or never read. Nothing is sent automatically: I review them, and with one click the user
 > gets a catch-up e-mail. This morning the same audit also exposed a scoring gap, prices that are only a starting
@@ -156,6 +157,11 @@ What it means:
 - Nothing is broken: every check ran, every alert was e-mailed, no errors.
 - The system caught its own possible mistakes and told the owner. Nothing goes to the user without Daryl's review.
 - Daryl got one owner e-mail ("high-scoring delivery miss") with a draft catch-up plan. No user was e-mailed.
+
+The dashboard row, polished the same morning (MW-59, live 10:40):
+- Each missed match now says why in plain words: "check scored 2" (the morning check scored it 2, the re-check 10),
+  "not read by the check", "not scored by the check" or "scored but not sent". The raw request ids are gone; a small
+  copy icon keeps them for debugging.
 
 Proof the fix works, if asked:
 - **09:34:** the first alert on the new scoring: a Switch OLED at **€185, fixed price**, scored **10/10** and e-mailed

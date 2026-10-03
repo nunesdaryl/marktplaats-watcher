@@ -1337,6 +1337,16 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 <p><b>First real alert on the new scoring (3 October 09:34).</b> A Nintendo Switch OLED at €185, fixed price, listed
   that morning, scored 10/10 on Daryl's Switch watch ("exactly the watched item and €185 is under budget") and was
   e-mailed. So MW-58 stops the false "great" on starting bids at the limit without blocking real deals below it.</p>
+<p><b>MW-59, the red line explains itself (3 October, merged <code>f567ec2</code>).</b> On Daryl's "Polish it": each
+  delivery-miss row says why in plain words ("check scored 2", "not read by the check", "not scored by the check",
+  "scored but not sent"), raw request ids are replaced by a copy icon, and "Latest delivery misses" drops the ids too.
+  The additive Convex part (<code>kind</code>, <code>checkScore</code> in the health items) was deployed first on his OK
+  so the preview showed real data; reviewed on the preview as the owner at desktop and phone width, light and dark.
+  The gate merged, deployed and smoke-tested, then stopped at its final production wait when GitHub's API briefly did
+  not answer; the remaining steps (production success for <code>d9bac5e</code>, Linear Done, worktree and branch
+  removal) were finished by hand. Known small quirk, not from this change: on a phone, the bullets of "Latest delivery
+  misses" sit on the wrapped line. The round icon Daryl saw on the preview is Vercel's preview toolbar; production does
+  not load it (checked).</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
