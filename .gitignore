@@ -24,3 +24,7 @@ references/img/
 .factory-worktrees/
 evals/data/user_cases_pending.json
 evals/data/user_ratings.json
+
+# Credentials files must never be committed (3 Oct 2026)
+*credentials*
+*.env
