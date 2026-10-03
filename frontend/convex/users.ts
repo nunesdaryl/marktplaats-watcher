@@ -2,6 +2,7 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { ConvexError } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { deleteChat } from "./chats";
+import { deleteAlertEmbedding } from "./embeddings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
 /** The signed-in user's row, or null. */
@@ -66,8 +67,10 @@ export async function deleteWatchData(ctx: MutationCtx, watchId: Id<"watches">) 
     await deleteTracked(ctx, "ratings", row._id);
   for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", watchId)).collect())
     await ctx.db.delete(row._id);
-  for (const row of await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect())
+  for (const row of await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect()) {
+    await deleteAlertEmbedding(ctx, row._id);
     await deleteTracked(ctx, "alerts", row._id);
+  }
   await deleteTracked(ctx, "watches", watchId);
 }
 
@@ -96,6 +99,8 @@ export const deleteMyData = mutation({
       await deleteTracked(ctx, "ratings", row._id);
     for (const folder of await ctx.db.query("folders").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(folder._id);
+    for (const row of await ctx.db.query("alertEmbeddings").filter((q) => q.eq(q.field("userId"), user._id)).collect())
+      await ctx.db.delete(row._id);
     await deleteTracked(ctx, "users", user._id);
   },
 });

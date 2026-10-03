@@ -86,3 +86,28 @@ def test_check_route_accepts_convex_batch_limits(monkeypatch):
     watches = [watch(i, checker_limit("MAX_SEEN_SENT"))
                for i in range(checker_limit("MAX_WATCHES_PER_REQUEST"))]
     post_check(monkeypatch, watches)
+
+
+def test_embed_route_requires_secret_and_batches(monkeypatch):
+    monkeypatch.setenv("CRON_SECRET", "test-secret")
+    batches = []
+    class FakeEmbeddings:
+        def __init__(self, model, dimensions):
+            assert model == "text-embedding-3-small"
+            assert dimensions == 1536
+        def embed_documents(self, texts):
+            batches.append(texts)
+            return [[0.1] * 1536 for _ in texts]
+    monkeypatch.setattr(agent, "OpenAIEmbeddings", FakeEmbeddings)
+    client = TestClient(main.app)
+    payload = {"texts": [f"item {i}" for i in range(101)]}
+    assert client.post("/api/internal/embed", json=payload).status_code == 401
+    response = client.post("/api/internal/embed", headers={"X-Cron-Secret": "test-secret"}, json=payload)
+    assert response.status_code == 200
+    assert len(response.json()["vectors"]) == 101
+    assert [len(batch) for batch in batches] == [100, 1]
+
+
+def test_search_helper_is_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("RAG_ENABLED", raising=False)
+    assert agent.search_alerts("alice", "Mac mini") == {"status": "disabled"}

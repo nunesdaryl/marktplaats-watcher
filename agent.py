@@ -16,7 +16,7 @@ import httpx
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import BaseModel, Field
 
 load_dotenv()
@@ -911,3 +911,25 @@ def audit_watch(w, now=None):
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"
     return result
+
+
+def embed_texts(texts):
+    """Embed listing facts or a search query in provider batches of at most 100."""
+    model = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+    client = OpenAIEmbeddings(model=model, dimensions=1536)
+    vectors = []
+    for start in range(0, len(texts), 100):
+        batch = texts[start:start + 100]
+        vectors.extend(client.embed_documents(batch))
+        print(json.dumps({"event": "embedding_usage", "model": model, "texts": len(batch),
+                          "characters": sum(map(len, batch))}))
+    return vectors
+
+
+def search_alerts(clerk_id, query, k=5):
+    if os.getenv("RAG_ENABLED", "0").lower() not in ("1", "true", "yes"):
+        return {"status": "disabled"}
+    from convex_api import convex_post
+    vector = embed_texts([query])[0]
+    return convex_post("/api/alerts/search", {"clerkId": clerk_id, "query": query,
+                                               "vector": vector, "limit": min(max(k, 1), 10)})

@@ -277,6 +277,13 @@ export default defineSchema({
     .index("by_watch_lastSeen", ["watchId", "lastSeenAt"])
     .index("by_lastSeen", ["lastSeenAt"]),
 
+  alertEmbeddings: defineTable({
+    alertId: v.id("alerts"), userId: v.id("users"), text: v.string(),
+    embedding: v.array(v.float64()), model: v.string(), createdAt: v.number(),
+  }).index("by_alert", ["alertId"])
+    .vectorIndex("by_embedding", { vectorField: "embedding", dimensions: 1536, filterFields: ["userId"] })
+    .searchIndex("by_text", { searchField: "text", filterFields: ["userId"] }),
+
   alerts: defineTable({
     userId: v.id("users"),
     watchId: v.id("watches"),

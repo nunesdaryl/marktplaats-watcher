@@ -25,7 +25,7 @@ RATING_REASONS = DATA / "rating_reasons.json"
 REPORT = Path(__file__).parent / "report.md"
 
 # USD per 1M tokens, standard tier (developers.openai.com/api/docs/pricing, checked 27 Sep 2026)
-PRICES = {"gpt-5.4-mini": (0.75, 4.50), "gpt-5.5": (5.00, 30.00)}
+PRICES = {"gpt-5.4-mini": (0.75, 4.50), "gpt-5.5": (5.00, 30.00), "text-embedding-3-small": (0.02, 0.00)}
 USD_TO_EUR = 0.92   # rough; the report states it
 
 # The five watches the dataset is built from: realistic searches with typical noise (accessories, parts, look-alikes)

@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { MIN_SCORE, NOTIFY_LABEL, describe, nextRun } from "./schedule";
 import { deleteChat } from "./chats";
+import { deleteAlertEmbedding } from "./embeddings";
 import { ratingToken } from "./ratings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
@@ -185,6 +186,7 @@ export const record = internalMutation({
         backlog: r.waiting || undefined, coverageCapped: r.capped || undefined,
         nextRunAt: keepNext ? watch.nextRunAt : nextRun(watch.schedule, now, watch.timezone) });
       const user = await ctx.db.get(watch.userId);
+      if (newAlerts.length) await ctx.scheduler.runAfter(0, internal.embeddings.embedAlerts, { alertIds: newAlerts });
       if (newAlerts.length && user) emails.push({ watchId: watch._id, alertIds: newAlerts, to: user.email });
     }
     return emails;
@@ -493,7 +495,10 @@ export const purgeOld = internalMutation({
     const errors = await ctx.db.query("errors").withIndex("by_at", (q) => q.lt("at", cutoff)).take(500);
     const ratings = await ctx.db.query("ratings").withIndex("by_updated", (q) => q.lt("updatedAt", ratingsCutoff.getTime())).take(500);
     for (const row of seen) await ctx.db.delete(row._id);
-    for (const row of alerts) await deleteTracked(ctx, "alerts", row._id);
+    for (const row of alerts) {
+      await deleteAlertEmbedding(ctx, row._id);
+      await deleteTracked(ctx, "alerts", row._id);
+    }
     for (const row of audits) await deleteTracked(ctx, "audits", row._id);
     for (const row of ratings) await deleteTracked(ctx, "ratings", row._id);
     for (const row of errors) await deleteTracked(ctx, "errors", row._id);

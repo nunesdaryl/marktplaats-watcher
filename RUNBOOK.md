@@ -277,3 +277,11 @@ reviewing its items. The audit does not e-mail users.
 Shell and Python files use LF line endings in every checkout, including with `core.autocrlf=true`.
 
 Use `scripts/factory/dispatch.sh MW-<number>` from the repo for a single `agent-ready` issue. Review the branch and record the verdict in Linear. From a clean main checkout, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` only after the issue has `ready-to-merge` and an `Operator merge approval:` comment later than the PASS verdict. The gate runs tests, builds, deploy checks and smoke checks, then records the merge in `docs/factory/merges.md`. For UI changes, the reviewer also records a preview walk and screenshots. See [AGENTS.md](AGENTS.md) for the environment-file and production-data limits.
+
+### Alert search embeddings (MW-61)
+
+After the backend is deployed, first run `cd frontend && npx convex run --prod embeddings:backfill '{"dryRun":true}'`.
+Review the missing count and obtain the operator's OK before the production write. Then run
+`npx convex run --prod embeddings:backfill '{"dryRun":false}'` and repeat the dry run until it reports zero.
+The Python search helper remains off until `RAG_ENABLED=1` is set in production. A failed embedding job is logged;
+the backfill retries alerts that still lack an embedding.
