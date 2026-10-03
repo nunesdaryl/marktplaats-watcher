@@ -90,7 +90,10 @@ counts, e.g. "Mac mini · 10/10 · check scored 2 · Apple Mac mini | M5 Pro …
 
 *If asked how it's tested:* "Twenty chat cases, a scorer gate at 90% precision, and a separate RAG suite. Retrieval
 recall is the next thing we measure." "Every alert is embedded with OpenAI and stored in two vector databases: Convex, which the chat searches, and
-MongoDB Atlas as a mirror: 1,131 vectors, indexed and queryable. If Convex is slow, search fails over to Atlas."
+MongoDB Atlas as a mirror: 1,131 vectors, indexed and queryable. If Convex's search errors or takes more than 3 seconds,
+search fails over to Atlas." *If asked "is that load balancing?":* "No, one primary keeps answers consistent; the mirror is
+for resilience." *Don't claim it survives a full Convex outage: it still needs Convex for the listing details
+(system design, "Two vector databases").*
 *(Verified 16:15: `watcher.alert_embeddings` holds 1,131 documents; index `alerts_vec` READY, 100% indexed. Visual:
 the Atlas Search & Vector Search tab next to the Convex `alertEmbeddings` table.)*
 *Don't ask about counts ("how many alerts"); exact counts via the activity tool are MW-69.*
