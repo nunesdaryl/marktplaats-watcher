@@ -192,3 +192,18 @@ export const watchesMine = internalQuery({
       .map((watch) => ({ watchId: watch._id, label: watch.name ?? watch.label, query: watch.query, active: watch.active }));
   },
 });
+
+export const evidence = internalQuery({
+  args: { clerkId: v.string(), alertId: v.id("alerts") },
+  handler: async (ctx, { clerkId, alertId }) => {
+    const user = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique();
+    const alert = await ctx.db.get(alertId);
+    if (!user || !alert || alert.userId !== user._id) return null;
+    const watch = await ctx.db.get(alert.watchId);
+    const rating = await ctx.db.query("ratings").withIndex("by_alert", (q) => q.eq("alertId", alertId)).first();
+    return { alertId, title: alert.title, priceEur: alert.priceEur ?? null, score10: alert.score ?? null,
+      reason: alert.reason, url: alert.url, image: alert.image ?? null, createdAt: alert.createdAt,
+      watchLabel: watch?.name ?? watch?.label ?? null,
+      rating: rating?.userId === user._id ? { verdict: rating.verdict, reasons: rating.reasons ?? [] } : null };
+  },
+});

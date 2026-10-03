@@ -372,6 +372,16 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
     ctx = ChatContext(watches)
     tools = {t.name: t for t in make_tools(ctx) if not (mode == "watch" and t.name == "search_marktplaats")}
     llm = watch_model if mode == "watch" else model
+    if mode != "watch" and os.getenv("MCP_ENABLED", "0").lower() in ("1", "true", "yes") and \
+            os.getenv("RAG_ENABLED", "0").lower() in ("1", "true", "yes"):
+        try:
+            from mcp_server import chat_tools, mcp_user
+            if mcp_user.get():
+                extra = chat_tools()
+                tools.update({t.name: t for t in extra})
+                llm = base_model.bind_tools(list(tools.values()))
+        except Exception as e:
+            print(json.dumps({"event": "mcp_chat_fallback", "error": type(e).__name__}), flush=True)
     watch_mode = WATCH_MODE if mode == "watch" else ""
     watch_data = ""
     if ctx.watches:
@@ -423,14 +433,26 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
                 continue
             if call["name"] == "search_marktplaats":
                 ctx.searches.append(call["args"])
-            result = tools[call["name"]].invoke(call["args"])
-            if call["name"] == "search_marktplaats":
+            try:
+                result = tools[call["name"]].invoke(call["args"])
+            except Exception as e:
+                if call["name"] in ("search_marktplaats", "propose_watch", "propose_watch_change"):
+                    raise
+                print(json.dumps({"event": "mcp_tool_failed", "error": type(e).__name__}), flush=True)
+                result = "That source is unavailable right now. Answer using the information you already have."
+            if call["name"] in ("search_marktplaats", "search_my_alerts"):
                 try:
                     found = json.loads(result)
                 except ValueError:
                     found = None                # "No listings matched…" and other plain-text results
+                if call["name"] == "search_my_alerts" and isinstance(found, dict):
+                    found = found.get("data")
                 if isinstance(found, list):
-                    listings = [{k: v for k, v in item.items() if k != "price_type"} for item in found]
+                    if call["name"] == "search_my_alerts":
+                        from mcp_server import alert_card
+                        listings = [alert_card(item) for item in found]
+                    else:
+                        listings = [{k: v for k, v in item.items() if k != "price_type"} for item in found]
                     yield {"type": "listings", "listings": listings}
             messages.append(ToolMessage(result, tool_call_id=call["id"]))
         if timed_out:

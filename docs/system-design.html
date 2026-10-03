@@ -1360,5 +1360,24 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 </table>
 </section>
 
+<section id="mcp-rag">
+<h3>22.1 MCP and grounded alert review (MW-62)</h3>
+<p>The Python API mounts a stateless, JSON-response Streamable HTTP MCP server at
+<code>/api/mcp</code>. Each request authenticates either a Clerk JWT or a constant-time
+checked owner token; the resulting Clerk id is held in request context and never
+accepted from tool arguments. The five read-only tools list watches, inspect exact
+watch activity, retrieve one owned alert's recorded evidence, search past alerts,
+and search public Marktplaats listings. The server also exposes a
+<code>review_my_alerts</code> prompt.</p>
+<p>Chat invokes the same MCP server through an in-memory protocol session. Its
+proposal tools remain in process and require the user's Save click. When MCP is
+unavailable, chat logs the failure and continues with its original tools.
+<code>MCP_ENABLED</code> gates the endpoint and chat integration;
+<code>RAG_ENABLED</code> gates retrieval. Retrieved listing titles and reasons are
+data, not instructions. Search results are emitted as the existing listing-card
+event. A separate seven-case RAG evaluation covers grounded answers, empty
+results, a malicious title and a forged user id.</p>
+</section>
+
 </body>
 </html>
