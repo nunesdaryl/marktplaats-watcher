@@ -1321,6 +1321,37 @@ def test_canary_check_counts_new_listings_without_ranking(monkeypatch):
     assert result["newestId"] == 105 and result["listings"] == []
 
 
+def test_canary_excludes_paid_placements_and_reads_until_organic_watermark(monkeypatch):
+    paid = [(300 - i, "Vandaag", "DAGTOPPER") for i in range(29)]
+    first = api_page(paid + [(105, "Vandaag")])
+    second = api_page([(104, "Vandaag"), (100, "Vandaag")] + paid[:28])
+    read = serve_search(monkeypatch, [first, second, api_page([(106, "Vandaag")])])
+    [result] = agent.check_query("iphone", [{"id": "canary", "read_only": True, "watermark": 100}])
+    assert [page for _, page in read] == [0, 1]
+    assert result["readCount"] == 2
+    assert result["newestId"] == 105
+
+
+def test_canary_stops_after_three_pages_when_paid_placements_hide_watermark(monkeypatch):
+    pages = [api_page([(300 - page * 30 - i, "Vandaag", "DAGTOPPER") for i in range(29)] +
+                      [(105 - page, "Vandaag")]) for page in range(4)]
+    read = serve_search(monkeypatch, pages)
+    [result] = agent.check_query("iphone", [{"id": "canary", "read_only": True, "watermark": 100}])
+    assert [page for _, page in read] == [0, 1, 2]
+    assert result["readCount"] == 3
+    assert result["newestId"] == 105
+
+
+def test_canary_reports_quiet_when_only_paid_listings_are_new(monkeypatch):
+    page = api_page([(300 - i, "Vandaag", "DAGTOPPER") for i in range(29)] + [(100, "Vandaag")])
+    page["listings"][-1].pop("priorityProduct")
+    read = serve_search(monkeypatch, [page, api_page([(106, "Vandaag")])])
+    [result] = agent.check_query("iphone", [{"id": "canary", "read_only": True, "watermark": 100}])
+    assert [number for _, number in read] == [0]
+    assert result["readCount"] == 0
+    assert result["newestId"] == 100
+
+
 def test_canary_check_route_keeps_read_only_mode(client, monkeypatch):
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page(["m101"]))
     monkeypatch.setattr(agent, "rank_listings", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ranked")))

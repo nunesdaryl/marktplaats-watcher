@@ -79,6 +79,7 @@ test("a missing scheduler run has a structured issue", async () => {
 });
 
 test("the canary alarms after three hours without new reads or a failed check", async () => {
+  vi.setSystemTime(new Date("2026-09-29T09:00:00Z")); // 11:00 Amsterdam
   const t = convexTest(schema, modules);
   const now = Date.now();
   await t.mutation(internal.health.logRun, { at: now, checked: 0, failed: 0, emails: 0, emailFailures: 0 });
@@ -97,6 +98,7 @@ test("the canary alarms after three hours without new reads or a failed check", 
 });
 
 test("a new canary gets three hours before an empty read becomes an alarm", async () => {
+  vi.setSystemTime(new Date("2026-09-29T09:00:00Z")); // 11:00 Amsterdam
   const t = convexTest(schema, modules);
   const now = Date.now();
   await t.mutation(internal.checker.claimCanary, { now });
@@ -104,6 +106,37 @@ test("a new canary gets three hours before an empty read becomes an alarm", asyn
   expect((await t.query(internal.health.report, { now })).issues.find((i) => i.kind === "canary_silent")).toBeUndefined();
   expect((await t.query(internal.health.report, { now: now + 3 * 60 * 60_000 })).issues.find((i) => i.kind === "canary_silent"))
     .toMatchObject({ severity: "high" });
+});
+
+test.each([
+  ["2026-09-29T09:00:00Z", "2026-09-29T12:00:00Z", true, "3"], // 11:00–14:00 Amsterdam
+  ["2026-09-29T00:00:00Z", "2026-09-29T03:00:00Z", false, "6"], // 02:00–05:00 Amsterdam
+  ["2026-09-28T22:30:00Z", "2026-09-29T04:30:00Z", true, "6"], // 00:30–06:30 Amsterdam
+  ["2026-09-29T03:30:00Z", "2026-09-29T06:30:00Z", false, "6"], // 05:30–08:30 Amsterdam
+  ["2026-09-29T05:30:00Z", "2026-09-29T08:30:00Z", false, "6"], // 07:30–10:30 Amsterdam
+  ["2026-09-29T02:30:00Z", "2026-09-29T08:30:00Z", true, "6"], // 04:30–10:30 Amsterdam
+  ["2026-09-29T06:00:00Z", "2026-09-29T09:00:00Z", true, "3"], // 08:00–11:00 Amsterdam
+])("canary silence at %s through %s alarms=%s", async (start, end, alarm, hours) => {
+  const t = convexTest(schema, modules);
+  const at = Date.parse(start);
+  await t.mutation(internal.checker.claimCanary, { now: at });
+  await t.mutation(internal.checker.recordCanary, { now: at, ok: true, readCount: 0, newestId: 100 });
+  const report = await t.query(internal.health.report, { now: Date.parse(end) });
+  const issue = report.issues.find((i) => i.kind === "canary_silent");
+  expect(!!issue).toBe(alarm);
+  if (alarm) {
+    expect(issue?.headline).toBe("Canary read no new organic iphone listings");
+    expect(report.problems).toContain(`The canary read 0 new iphone listings (paid placements excluded) in the last ${hours} hours.`);
+    expect(issue?.items[0].label).toBe(`0 new iphone listings (paid placements excluded) in the last ${hours} hours`);
+  }
+});
+
+test("a failed canary read alarms immediately during Amsterdam night hours", async () => {
+  const t = convexTest(schema, modules);
+  const at = Date.parse("2026-09-29T01:00:00Z");
+  await t.mutation(internal.checker.claimCanary, { now: at });
+  await t.mutation(internal.checker.recordCanary, { now: at, ok: false, error: "Search failed" });
+  expect((await t.query(internal.health.report, { now: at })).problems).toContain("The canary check failed: Search failed.");
 });
 
 test("the digest reports active watches with a large backlog or capped coverage", async () => {

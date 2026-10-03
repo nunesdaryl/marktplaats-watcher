@@ -1133,7 +1133,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <li>Backfill <code>seededAt</code> for existing watches, so every audit miss is real.</li>
   <li>An immediate owner e-mail for a real miss (9/10 or better), with a one-click "send it to the user now".</li>
   <li>A quiet-watch alarm (reads listings for 3 days, sends nothing).</li>
-  <li>Done (MW-42): an hourly read-only "iphone" canary; a failed check or 3 hours without new listings alarms the owner.</li>
+  <li>Done (MW-42, refined by MW-57): an hourly read-only "iphone" canary counts organic listings across up to 3 pages; a failed check alarms immediately, while silence alarms after 3 hours by day or 6 hours from 00:00 to 08:00 Amsterdam.</li>
   <li>Done (MW-43): chat proposals and the watch editor warn when estimated new listings per check exceed 20; users can still save the watch.</li>
 </ol>
 <div class="pattern"><b>Pattern:</b> monitor the outcome, not just the machinery. Green runs and zero errors said nothing
@@ -1307,12 +1307,13 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   listings": the hourly <code>iphone</code> canary read Marktplaats fine but counted 0 new listings at 04:34, 05:34 and
   06:49. Measured: 29 of the 30 items on its one page are paid <code>DAGTOPPER</code> placements, so it sees at most one
   organic listing an hour and a quiet night looks like an outage; the watches themselves found and e-mailed 4 alerts
-  that night. Filed as <b>MW-57</b> (organic listings only, read up to 3 pages, a 6-hour window at night). (2) "4 missed
+  that night. MW-57 fixes the false alarm by counting organic listings only, reading up to 3 pages, and using a 6-hour
+  night window. (2) "4 missed
   matches" on the Nintendo Switch OLED watch: the check scored them 7, the audit's re-score 10. All four are
   "bidding from €200" (<code>MIN_BID</code>) at the watch's €200 limit. The scorer previously saw only €200,
   so it guessed; the 7 is the more honest score and the audit's flag is a false one. <b>MW-58:</b> the scorer now
   sees "bidding from" and treats a starting bid at the cap as likely over budget. The four 3 October snapshots
-  and a fixed-price control are in the scorer eval gate. MW-57 tracks the canary change.
+  and a fixed-price control are in the scorer eval gate. MW-57 (shipped the same morning) fixed the canary.
   Lesson: a miss reported by a second look is a claim to check against the listing, not proof the first look was
   wrong.</p>
 <table>
