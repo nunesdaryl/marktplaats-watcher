@@ -59,7 +59,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
   const canary = process.env.CANARY_DISABLED === "1" ? null : await ctx.db.query("canary").first();
   const canaryFailed = canary?.lastError;
   const amsterdamHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hourCycle: "h23" }).format(now));
-  const canaryWindowHours = amsterdamHour < 8 ? 6 : 3;
+  const canaryWindowHours = amsterdamHour < 11 ? 6 : 3;
   const canaryWindowMs = canaryWindowHours * 60 * 60_000;
   const canarySilent = !!canary && !canaryFailed && now - canary.startedAt >= canaryWindowMs &&
     canary.recentReads.filter((r) => r.at > now - canaryWindowMs).reduce((n, r) => n + r.count, 0) === 0;
