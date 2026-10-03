@@ -263,7 +263,7 @@ once left MW-29 with two labels; repaired by hand. A detached `&` dispatch was k
 4. **On-device checks** on the iPhone (checklist 15, 18, 19, 28), signed-out landing (23), Website visitors panel (21),
    rate one real alert (25).
 5. **State the cost unprompted**, with the honest busiest-case number (checklist 34: spend within the $10 cap).
-6. **Read the ADRs** (MW-9) and **submit the API application** (MW-14).
+6. **Read the ADRs** (MW-9) and **ask Marktplaats about API access** (MW-14). Update 3 Oct: there is no public sign-up; API access goes through certified partners for posting ads, so the route is a call to the Ondernemersdesk (steps in MW-14).
 7. **Delete the old Azure course key** (checklist 14, the one unverified check).
 8. **One personal line** in the LinkedIn post (checklist 17).
 9. Three hunter conversations, if there's time (checklist 13).

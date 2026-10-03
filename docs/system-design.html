@@ -955,6 +955,12 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
 </table>
 <p><b>Next step:</b> apply to Marktplaats for API access (issue MW-14). If granted, the checks switch to
   <code>/v1/search</code> with the watch's filters, and the robots.txt and terms risk in section 7 goes away.</p>
+<p><b>Update, 3 October:</b> there is no public sign-up. The API docs say only that credentials are "assigned by
+  Marktplaats", and Marktplaats Zakelijk says it gives no API or feed access itself but works through about fifteen
+  certified partners, for businesses <i>posting</i> ads. Read-only search access for a project like this may not exist.
+  The one direct route is the business desk (Ondernemersdesk, 088 008 26 26, weekdays 09:00–17:00); MW-14 now carries
+  the question to ask, in Dutch and English. If the answer is no, the decision to stay on the current read, with its
+  known terms risk, is recorded in MW-14 and here.</p>
 <div class="pattern"><b>Pattern:</b> "does it really do X?" is answered by the code and a live run, not by memory or
   docs. Both defects here had passed every test, because the tests used a saved page, and a saved page can't show
   what the live site leaves out.</div>
@@ -1296,7 +1302,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   "Mark as replied" (nothing e-mailed). His words stay a paraphrase; permission to quote was asked, no answer yet.
   The same afternoon Daryl signed off UAT in <code>evals/report.md</code> (MW-5) and checked the phone layout on his
   iPhone. MW-5 is closed: secrets set, sign-off in <code>749e205</code>, and the eval run on that commit passed the
-  gate (chat 19/20, "great" precision 0.944–1.0). Open in Linear: MW-9 and MW-14, both Daryl's, after the demo. Left before the freeze: two rehearsals (one recorded), the 21:00 walk-through.</p>
+  gate (chat 19/20, "great" precision 0.944–1.0). Open in Linear: MW-9 and MW-14, both Daryl's, after the demo; on 3 October both got a plain-English "What Daryl does" comment (MW-9: read two ADRs and say "accepted"; MW-14: call the Marktplaats business desk, see section 16). Left before the freeze: two rehearsals (one recorded), the 21:00 walk-through.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
