@@ -360,7 +360,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
 <h3>In plain English</h3>
 <ul>
   <li>An evaluation, or <b>eval</b>, gives the real agent a saved question or listing and checks its answer against a written pass condition.</li>
-  <li>There are three running test suites: chat, listing scorer, and price-type regression cases. RAG is a fourth planned suite (MW-62). Users' ratings provide a separate check from real alerts.</li>
+  <li>Four suites are available: chat, listing scorer, price-type cases, and RAG. The RAG suite was added with MW-62 and runs by hand; users' ratings provide a separate check from real alerts.</li>
   <li>The chat bar is at least <b>19 of 20</b>. For listings scored “great” (8–10), at least <b>90%</b> must be true matches after Daryl's label corrections. The scorer is run three times and the middle precision is used.</li>
   <li>All five price-type cases must pass in <b>all three</b> scorer runs. Missing a required bar fails the eval job and should hold review.</li>
   <li>GitHub runs the evals after relevant code changes, every Monday at 06:00 UTC, or on request. The factory merge script also starts a run after agent, prompt, or eval changes.</li>
@@ -381,14 +381,43 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     <td>Checks that a starting bid is not treated as a fixed price.</td>
     <td>Four Switch OLED listings with “bidding from €200” must score no more than 7; a fixed-price €160 control must score at least 8.</td>
     <td>All five cases in all three runs; the bidding reasons must mention the bid.</td><td>With each scorer run in the GitHub eval job.</td></tr>
-  <tr><td><b>RAG</b> (planned, MW-62)</td>
-    <td>Planned checks for answers using retrieved alert history.</td><td>Cases and pass bar to be defined by MW-62.</td>
-    <td>Not gated yet.</td><td>Not running yet.</td></tr>
+  <tr><td><b>RAG</b> (added with MW-62; manual run, CI in MW-68)<br><code>evals/rag_cases.py</code><br><code>evals/run_rag.py</code></td>
+    <td>Five past-alert questions use fake search results. Two more cases check prompt injection and forged user ids. Real vector search is outside this suite.</td>
+    <td>“Which Mac mini alert was best value this week?” must return the saved Mac mini card. A question about an absent PlayStation 6 alert must return no card.</td>
+    <td>All 7 cases pass.</td><td>Run by hand with model credentials; not in the GitHub eval job yet.</td></tr>
   <tr><td><b>Users' ratings</b> (MW-49)<br><code>evals/feedback_cases.py</code><br><code>evals/pull_ratings.py</code></td>
     <td>“Not right” ratings become candidate scorer cases. The owner must confirm them before they join the saved set. The report shows agreement by score band when ratings exist.</td>
     <td>A recipient says an alert scored 8 was not a good match.</td>
     <td>Report only; no current merge bar.</td><td>After ratings are pulled and the report is rerun; confirmed cases are scored in later scorer runs.</td></tr>
 </table>
+<h3>What we measure, against the course's three kinds of system</h3>
+<p>✅ measured · 🟡 partly measured · ❌ not measured yet.</p>
+<h4>LLM</h4>
+<table>
+  <tr><th>Measure</th><th>Status</th><th>How, exactly</th></tr>
+  <tr><td>Correctness</td><td>✅</td><td>20 chat cases have written pass checks. The listing scorer is compared with corrected labels; “great” precision must reach 90%.</td></tr>
+  <tr><td>Format</td><td>✅</td><td>The scorer returns structured output. Chat cases check tool arguments, and unit tests check their shape.</td></tr>
+  <tr><td>Safety</td><td>🟡</td><td>Chat cases try prompt injection, a system-prompt leak, and off-topic questions. There is no toxicity or bias test; those risks are low for this shopping task.</td></tr>
+  <tr><td>Judge score</td><td>✅</td><td>GPT-5.5 labels the fixed listing set. Daryl checks a sample and corrects disputed labels in <code>evals/data/spotcheck.md</code>.</td></tr>
+</table>
+<h4>RAG</h4>
+<table>
+  <tr><th>Measure</th><th>Status</th><th>How, exactly</th></tr>
+  <tr><td>Context recall</td><td>❌</td><td>The RAG eval supplies fake search results, so it does not test whether real vector search finds the right alerts.</td></tr>
+  <tr><td>Context precision</td><td>❌</td><td>For the same reason, it does not measure how many real search hits are relevant.</td></tr>
+  <tr><td>Faithfulness</td><td>🟡</td><td>The answer must include the expected alert card, or say nothing was found when there is no card. Claims are not checked one by one against the source.</td></tr>
+  <tr><td>Answer relevance</td><td>🟡</td><td>Five saved questions get pass/fail checks for the returned card or empty result.</td></tr>
+</table>
+<p>The RAG suite runs by hand; the GitHub workflow does not run it yet.</p>
+<h4>Agent</h4>
+<table>
+  <tr><th>Measure</th><th>Status</th><th>How, exactly</th></tr>
+  <tr><td>Task success</td><td>✅</td><td>Chat cases check whether searches, watch proposals, changes, and refusals meet their written conditions.</td></tr>
+  <tr><td>Tool accuracy</td><td>✅</td><td>The cases check the chosen tool, its arguments, and a per-case tool-call limit.</td></tr>
+  <tr><td>Efficiency</td><td>🟡</td><td>The logs put a chat run near $0.04. The agent loop allows at most 5 model calls and 6 tool calls per question. There is no per-case cost bar.</td></tr>
+  <tr><td>Safety and permissions</td><td>✅</td><td>Chat writes are proposals for the user to save. MCP tools are read-only and take the user from sign-in. Tests cover missing or wrong tokens and forged user ids.</td></tr>
+</table>
+<p><b>Next:</b> MW-68 adds real retrieval metrics (recall/precision@5, faithfulness, cost) and 10 MCP cases to CI.</p>
 <h3>When it runs</h3>
 <p><code>.github/workflows/evals.yml</code> runs on pushes to <code>main</code> and pull requests that touch
   <code>agent.py</code>, <code>prompts.py</code>, or <code>evals/**</code>. It also runs Mondays at 06:00 UTC and by manual dispatch.
@@ -408,8 +437,13 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     <td>20/20</td><td>0.947</td><td>15/15 across three runs; pass</td></tr>
   <tr><td><a href="https://github.com/nunesdaryl/marktplaats-watcher/actions/runs/37118120393">MW-60 run 37118120393</a></td>
     <td>20/20</td><td>0.917</td><td>15/15 across three runs; pass</td></tr>
+  <tr><td><a href="https://github.com/nunesdaryl/marktplaats-watcher/actions/runs/37121619171">MW-62 run 37121619171</a></td>
+    <td>20/20</td><td>0.941</td><td>15/15 across three runs; pass</td></tr>
 </table>
 <p class="small">These are the linked CI run results. The checked-in <code>evals/report.md</code> still contains older saved measurements; rerun the report with the new results before using it as the current measurement.</p>
+<h3>Live check, 3 October 14:40 (production, RAG on)</h3>
+<p>“Which Mac mini alerts did I get this week, and which was the best value?” returned Mac mini cards from the owner's own alerts. It named the Mac mini M4 16 GB at €300 as the best value. “Which of my alerts mention an M5 Pro?” returned “none.” That was correct: the M5 Pro alert belonged to another user, so the per-user filter kept it out.</p>
+<p>The check also found duplicate cards, a count taken from the top five results instead of an exact query, and unrelated cards next to “none found.” These flaws were filed as MW-69.</p>
 <details>
 <summary>History (26 September): first evaluation and defects</summary>
 <p>The first version had 8 offline tests in <code>test_agent.py</code> and 6 live browser cases using the Azure model and real Marktplaats. They checked search, distance, the cheapest listing, refusal, prompt injection, and an invalid postcode. All passed after fixes, but six browser cases were only a smoke check. Evidence is in <code>docs/img/</code> and the original 42-frame recording at <code>~/Downloads/marktplaats-watcher-eval.gif</code>.</p>
