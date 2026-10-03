@@ -281,6 +281,7 @@ export default defineSchema({
     alertId: v.id("alerts"), userId: v.id("users"), text: v.string(),
     embedding: v.array(v.float64()), model: v.string(), createdAt: v.number(),
   }).index("by_alert", ["alertId"])
+    .index("by_createdAt", ["createdAt"])
     .vectorIndex("by_embedding", { vectorField: "embedding", dimensions: 1536, filterFields: ["userId"] })
     .searchIndex("by_text", { searchField: "text", filterFields: ["userId"] }),
 

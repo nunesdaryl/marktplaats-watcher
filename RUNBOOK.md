@@ -286,6 +286,29 @@ Review the missing count and obtain the operator's OK before the production writ
 The Python search helper remains off until `RAG_ENABLED=1` is set in production. A failed embedding job is logged;
 the backfill retries alerts that still lack an embedding.
 
+### Atlas vector mirror (MW-63)
+
+Atlas uses database `watcher`, collection `alert_embeddings`, and the `alerts_vec` Vector Search index.
+The collection holds only alert IDs, Convex user IDs, vectors, and creation times. Provision an Atlas
+database user with `readWrite` limited to `watcher`. Choose network access deliberately: a broad
+`0.0.0.0/0` rule exposes the database endpoint to the internet, even though credentials are still required.
+Rotate any credential previously placed in the checkout before enabling Atlas. The operator adds the
+URI to Vercel with `vercel env add MONGODB_URI`; it must never go in source, logs, or this runbook.
+
+After setting `MONGODB_URI` locally in a private environment, run `python scripts/atlas_index.py` and
+wait for `alerts_vec` to become READY in Atlas. Configure `MONGODB_URI` in the Python deployment and
+`WATCHER_API_URL` / `CRON_SECRET` in Convex. Run
+`cd frontend && npx convex run --prod embeddings:mirrorBackfill '{"dryRun":true}'`, review the count,
+then obtain the operator's OK before the production write. Run the same command with `dryRun:false`.
+Compare the Atlas document count with Convex `alertEmbeddings` and call the owner-only MCP tool
+`compare_vector_stores("Mac mini M5 Pro")`; check that the top alert ID agrees. In a preview, set
+`VECTOR_PRIMARY=mongo` and confirm past-alert search returns `servedBy: mongo`. The default is
+`VECTOR_PRIMARY=convex`; a Convex vector search error or 3-second timeout falls back to Atlas.
+If Atlas is absent, mirror calls return `unconfigured` and Convex search continues normally.
+
+The demo implementation does not mirror deletes or run nightly drift checks. Do not treat Atlas
+as a complete retention copy until deletion parity is implemented and verified.
+
 ## MCP access (MW-62)
 
 Set `MCP_ENABLED=1` to expose the stateless streamable HTTP endpoint at
@@ -296,7 +319,7 @@ be printed or saved in this runbook. Clerk session JWTs also work for individual
 users. Every request needs `Authorization: Bearer <token>`.
 
 In MCP Inspector, choose **Streamable HTTP**, enter the URL above, and add the
-bearer header. Initialize and list tools; the server exposes five read-only
+bearer header. Initialize and list tools; the server exposes six read-only
 tools and the `review_my_alerts` prompt. For Claude Desktop, add a custom
 Streamable HTTP connector pointing to the same URL and set its Authorization
 header to `Bearer <MCP_OWNER_TOKEN>` in the local connector settings. The owner token

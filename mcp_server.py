@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import os
+import time
 from contextvars import ContextVar
 from datetime import datetime, timedelta
 from typing import Annotated
@@ -120,6 +122,39 @@ def search_my_alerts(query: str, k: int = 5) -> str:
     from agent import search_alerts
     result = search_alerts(user_id(), query, min(max(k, 1), 5))
     return as_data(result)
+
+
+@server.tool()
+def compare_vector_stores(query: str) -> str:
+    """Owner-only comparison of the top five Convex and Atlas alert results."""
+    if not os.getenv("OWNER_CLERK_ID") or user_id() != os.getenv("OWNER_CLERK_ID"):
+        raise PermissionError("Owner access required")
+    from agent import embed_texts
+    from vector_store import ConvexStore, MongoStore, mongo_results
+    mongo = MongoStore()
+    if not mongo.configured:
+        return as_data({"status": "MongoDB not configured"})
+    vector = embed_texts([query])[0]
+    convex = ConvexStore()
+    started = time.monotonic()
+    try:
+        primary = convex.search(user_id(), vector, 5, query, timeout=5)
+        convex_ms = round((time.monotonic() - started) * 1000)
+    except Exception:
+        primary, convex_ms = {"status": "error"}, round((time.monotonic() - started) * 1000)
+    started = time.monotonic()
+    try:
+        secondary = mongo_results(user_id(), vector, 5, mongo, convex)
+        mongo_ms = round((time.monotonic() - started) * 1000)
+    except Exception:
+        secondary, mongo_ms = {"status": "error"}, round((time.monotonic() - started) * 1000)
+    mongo_hits = secondary.get("hits", []) if secondary.get("status") == "ok" else []
+    convex_hits = primary if isinstance(primary, list) else []
+    overlap = len({row["alertId"] for row in convex_hits} & {row["alertId"] for row in mongo_hits})
+    return as_data({"convex": {"hits": convex_hits, "latencyMs": convex_ms,
+                                "status": "ok" if isinstance(primary, list) else "error"},
+                    "mongo": {"hits": mongo_hits, "latencyMs": mongo_ms, "status": secondary["status"]},
+                    "overlap": overlap})
 
 
 @server.tool()
