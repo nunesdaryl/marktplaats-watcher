@@ -1,23 +1,40 @@
 """Atlas mirror and owner-scoped vector retrieval. Mongo stores IDs and vectors only."""
 
 import os
+import re
 from datetime import datetime, timezone
+
+from pymongo import UpdateOne
 
 from convex_api import convex_post
 
 
+def _mirror_error_fields(error):
+    detail = str(error)
+    uri = os.getenv("MONGODB_URI")
+    if uri:
+        detail = detail.replace(uri, "[redacted MongoDB URI]")
+    detail = re.sub(r"mongodb(?:\+srv)?://[^\s\"'<>]+", "[redacted MongoDB URI]", detail)
+    return {"error": type(error).__name__, "detail": detail[:200]}
+
+
 class MongoStore:
-    def __init__(self, collection=None):
+    def __init__(self, collection=None, purpose="search"):
         self.configured = collection is not None or bool(os.getenv("MONGODB_URI"))
         self.collection = collection
         self._init_error = False
+        self.error_info = None
         if self.configured and collection is None:
             try:
                 from pymongo import MongoClient
-                self.collection = MongoClient(os.environ["MONGODB_URI"], serverSelectionTimeoutMS=1500,
-                                              timeoutMS=1500)["watcher"]["alert_embeddings"]
-            except Exception:
+                selection_timeout, timeout = (10000, 20000) if purpose == "mirror" else (1500, 1500)
+                self.collection = MongoClient(os.environ["MONGODB_URI"],
+                                              serverSelectionTimeoutMS=selection_timeout,
+                                              timeoutMS=timeout)["watcher"]["alert_embeddings"]
+            except Exception as error:
                 self._init_error = True
+                if purpose == "mirror":
+                    self.error_info = _mirror_error_fields(error)
 
     def mirror(self, rows):
         if not self.configured:
@@ -25,12 +42,15 @@ class MongoStore:
         if self._init_error:
             return {"status": "error"}
         try:
-            for row in rows:
-                self.collection.update_one({"_id": row["alertId"]}, {"$set": {
+            operations = [UpdateOne({"_id": row["alertId"]}, {"$set": {
                     "userId": row["userId"], "embedding": row["embedding"],
                 }, "$setOnInsert": {"createdAt": datetime.now(timezone.utc)}}, upsert=True)
+                for row in rows]
+            if operations:
+                self.collection.bulk_write(operations, ordered=False)
             return {"status": "ok", "count": len(rows)}
-        except Exception:
+        except Exception as error:
+            self.error_info = _mirror_error_fields(error)
             return {"status": "error"}
 
     def search(self, user_id, vector, k):

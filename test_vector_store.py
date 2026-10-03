@@ -17,9 +17,15 @@ class FakeCollection:
     def __init__(self):
         self.docs = {}
         self.pipeline = None
+        self.bulk_calls = 0
 
-    def update_one(self, match, update, upsert):
-        self.docs.setdefault(match["_id"], {"_id": match["_id"], **update["$setOnInsert"]}).update(update["$set"])
+    def bulk_write(self, operations, ordered):
+        assert ordered is False
+        self.bulk_calls += 1
+        for operation in operations:
+            assert operation._upsert is True
+            match, update = operation._filter, operation._doc
+            self.docs.setdefault(match["_id"], {"_id": match["_id"], **update["$setOnInsert"]}).update(update["$set"])
 
     def aggregate(self, pipeline):
         self.pipeline = pipeline
@@ -33,11 +39,81 @@ def test_mirror_upsert_and_user_scoped_search():
     row = {"alertId": "a1", "userId": "u1", "embedding": [0.1] * 1536}
     assert store.mirror([row]) == {"status": "ok", "count": 1}
     assert store.mirror([{**row, "embedding": [0.2] * 1536}])["status"] == "ok"
+    assert collection.bulk_calls == 2
     assert len(collection.docs) == 1
     assert collection.docs["a1"]["embedding"][0] == 0.2
     assert store.search("u2", [0.1] * 1536, 5)["hits"] == []
     assert store.search("u1", [0.1] * 1536, 5)["hits"][0]["alertId"] == "a1"
     assert collection.pipeline[0]["$vectorSearch"]["index"] == "alerts_vec"
+
+
+def test_mirror_batch_uses_one_bulk_write():
+    collection = FakeCollection()
+    rows = [{"alertId": str(i), "userId": "u1", "embedding": [0.1]} for i in range(3)]
+    assert vector_store.MongoStore(collection).mirror(rows) == {"status": "ok", "count": 3}
+    assert collection.bulk_calls == 1
+    assert set(collection.docs) == {"0", "1", "2"}
+
+
+def test_mirror_and_search_client_budgets(monkeypatch):
+    import pymongo
+    seen = []
+    class Client:
+        def __init__(self, uri, **kwargs):
+            seen.append(kwargs)
+        def __getitem__(self, name):
+            return {"watcher": {"alert_embeddings": FakeCollection()}}[name]
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://user:secret@host.example/db")
+    monkeypatch.setattr(pymongo, "MongoClient", Client)
+    vector_store.MongoStore(purpose="mirror")
+    vector_store.MongoStore()
+    assert seen == [
+        {"serverSelectionTimeoutMS": 10000, "timeoutMS": 20000},
+        {"serverSelectionTimeoutMS": 1500, "timeoutMS": 1500},
+    ]
+
+
+def test_mirror_write_error_log_redacts_uri(monkeypatch, capsys):
+    uri = "mongodb+srv://user:secret@host.example/db"
+    store_class = vector_store.MongoStore
+    class BrokenCollection:
+        def bulk_write(self, operations, ordered):
+            raise RuntimeError(f"write failed at {uri} " + "x" * 300)
+    monkeypatch.setenv("CRON_SECRET", "secret")
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://different:private@other.example/db")
+    monkeypatch.setattr(vector_store, "MongoStore", lambda **kwargs: store_class(BrokenCollection()))
+    response = TestClient(main.app).post("/api/internal/mirror", json={"rows": [
+        {"alertId": "a1", "userId": "u1", "embedding": [0.1] * 1536}
+    ]}, headers={"X-Cron-Secret": "secret"})
+    assert response.status_code == 503
+    output = capsys.readouterr().out
+    entry = json.loads(output.strip().splitlines()[-1])
+    assert entry["event"] == "mirror_failed"
+    assert entry["error"] == "RuntimeError"
+    assert "write failed" in entry["detail"]
+    assert uri not in output
+    assert "secret" not in output
+    assert len(entry["detail"]) == 200
+
+
+def test_mirror_init_error_log_redacts_uri(monkeypatch, capsys):
+    import pymongo
+    uri = "mongodb+srv://user:secret@host.example/db"
+    def broken_client(*args, **kwargs):
+        raise ValueError(f"bad URI {uri}")
+    monkeypatch.setenv("CRON_SECRET", "secret")
+    monkeypatch.setenv("MONGODB_URI", uri)
+    monkeypatch.setattr(pymongo, "MongoClient", broken_client)
+    response = TestClient(main.app).post("/api/internal/mirror", json={"rows": [
+        {"alertId": "a1", "userId": "u1", "embedding": [0.1] * 1536}
+    ]}, headers={"X-Cron-Secret": "secret"})
+    assert response.status_code == 503
+    output = capsys.readouterr().out
+    entry = json.loads(output.strip().splitlines()[-1])
+    assert entry["error"] == "ValueError"
+    assert "bad URI" in entry["detail"]
+    assert uri not in output
+    assert "secret" not in output
 
 
 def test_unset_uri_is_noop(monkeypatch):
