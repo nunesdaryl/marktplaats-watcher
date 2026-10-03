@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - agent.py
+      - prompts.py
       - evals/**
   pull_request:
     paths:
       - agent.py
+      - prompts.py
       - evals/**
   schedule:
     - cron: "0 6 * * 1"
