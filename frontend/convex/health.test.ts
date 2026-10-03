@@ -65,7 +65,7 @@ test("health issues group the same problems with counts and record links", async
   expect(report.issues.find((issue) => issue.kind === "checks_paused")?.items).toEqual([{ label: `Paused run ${new Date(now).toISOString()}`, requestId: "run-1" }]);
   expect(report.issues.find((issue) => issue.kind === "emails_failed")?.items[0]).toMatchObject({ watchId, userId, listingId: "listing-1", score: 9, url: "https://example.com/listing-1" });
   expect(report.issues.find((issue) => issue.kind === "delivery_misses")).toMatchObject({ headline: "1 missed match on 1 watch",
-    items: [{ watchId, userId, requestId: "audit-1", listingId: "listing-2", score: 8, title: "Mac Studio", url: "https://example.com/listing-2" }] });
+    items: [{ watchId, userId, requestId: "audit-1", listingId: "listing-2", score: 8, title: "Mac Studio", url: "https://example.com/listing-2", kind: "never_read" }] });
   expect(report.issues.find((issue) => issue.kind === "audit_failed")?.items[0]).toMatchObject({ watchId, userId, requestId: "audit-1" });
   expect(report.issues.find((issue) => issue.kind === "watches_behind")?.items[0]).toMatchObject({ watchId, userId });
   expect(report.stats).toEqual({ runs: 1, checksFailed: 1, emailsSent: 3, errors: 5 });
@@ -227,7 +227,8 @@ test("the report, digest, and dashboard count only the latest audit for a watch"
     { query: "bike", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
   const watch = await t.run((ctx) => ctx.db.get(watchId));
   const misses = (count: number) => Array.from({ length: count }, (_, i) => ({
-    listingId: `listing-${i}`, title: "Bike", url: "https://example.com", score: 8, kind: "never_read" as const,
+    listingId: `listing-${i}`, title: "Bike", url: "https://example.com", score: 8,
+    kind: i === 0 ? "rescored" as const : "never_read" as const, ...(i === 0 ? { checkScore: 2 } : {}),
   }));
   await t.run(async (ctx) => {
     await ctx.db.insert("audits", { at: now - 60_000, watchId, userId: watch!.userId, requestId: "manual",
@@ -242,6 +243,7 @@ test("the report, digest, and dashboard count only the latest audit for a watch"
     headline: "3 missed matches on 1 watch", count: 3,
   });
   expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.items).toHaveLength(3);
+  expect(report.issues.find((issue) => issue.kind === "delivery_misses")?.items[0]).toMatchObject({ kind: "rescored", checkScore: 2 });
   expect(report.issues.some((issue) => issue.kind === "audit_failed")).toBe(false);
   expect(report.summary).toContain("Delivery audit: 1 watches checked, 3 misses.");
   const digest = await t.action(internal.health.digest, { dryRun: true });
