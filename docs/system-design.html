@@ -1372,6 +1372,14 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   Production + Preview); the mirror + failover code is MW-63. Follow-ups: MW-68 real retrieval metrics and MCP evals,
   MW-69 RAG answer quality, MW-70 chat crash on unsaved answers / preview env / 304 responses, MW-71 merge-gate fixes.
   An Atlas credentials file placed in the repo root was never opened, is git-ignored, and the password was rotated.</p>
+<p><b>Security fix and MongoDB (3 October, before the demo).</b> CI's dependency audit had been red since MW-62:
+  <code>mcp 1.15.0</code> carried 6 known vulnerabilities. The merge gate does not wait for CI, so it merged anyway
+  (MW-71 fixes the gate). MW-72 upgraded to <code>mcp 1.30.0</code> / <code>langchain-mcp-adapters 0.3.2</code>; CI is green
+  again. MW-63 shipped the MongoDB Atlas side: a mirror of each alert embedding (IDs and vectors only, no titles or
+  prices), failover search and an owner-only comparison tool. The first production mirror run sent 1,129 embeddings but
+  every batch failed silently (likely the 1.5 s connection budget from a cold Vercel function to Atlas Frankfurt); MW-73
+  adds a longer connect timeout, bulk writes and a readable error log. The Atlas vector index is created by the owner
+  in the Atlas UI from <code>ops/atlas/alerts_vec.json</code>.</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).

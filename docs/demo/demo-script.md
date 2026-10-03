@@ -89,8 +89,9 @@ counts, e.g. "Mac mini · 10/10 · check scored 2 · Apple Mac mini | M5 Pro …
 > use. And it only ever sees my data: an M5 Pro alert from another user stays invisible to me."
 
 *If asked how it's tested:* "Twenty chat cases, a scorer gate at 90% precision, and a separate RAG suite. Retrieval
-recall is the next thing we measure." *If MongoDB is live:* "Every embedding is mirrored to MongoDB Atlas; if Convex
-is slow, search fails over." *If not:* "MongoDB Atlas is connected and is the next step: a mirror with failover."
+recall is the next thing we measure." "MongoDB Atlas is connected, and every embedding is set up to mirror there with failover if Convex is slow;
+the live sync is being finished now." *(Status 15:20: the mirror code is live, the first sync to Atlas failed on a
+connection timeout; fix MW-73 in progress. Only say "it's live" if Claude confirms the sync before you present.)*
 *Don't ask about counts ("how many alerts"); exact counts via the activity tool are MW-69.*
 
 **4:30, how it was built, and the ask (30 s).**
