@@ -1326,6 +1326,14 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   branch, because the branch had been pushed for the eval run; everything before it had completed, and the cleanup
   was finished by hand (follow-up: delete the remote branch first). New for Daryl: a UAT sign-off for the new rank
   prompt <code>rank-2026-10-03.1</code>. Open in Linear: MW-9 and MW-14 only.</p>
+<p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
+  again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
+  The Switch watch: 0 misses (was 4). The same run found 4 possible misses on a beta user's daily "Mac mini" watch,
+  whose 08:04 check came after the 06:30 audit: two listings scored 2 and 3 by the check but 10 and 8 by the audit
+  (a €1,750 M5 Pro; a "+ accessoires" bundle likely mistaken for an accessory), and two the check never read. The audit
+  drafted a catch-up plan and e-mailed the owner; nothing went to the user. Daryl chose to present the red line in the
+  demo rather than hide it (talking points in <code>docs/demo/demo-script.md</code>); the findings go to the factory
+  after the demo.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>

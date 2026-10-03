@@ -73,10 +73,18 @@ Type in the Ask box: *alerts this week above 8* → **Ask** → the list opens w
 
 *If the Ask box is slow:* click the **Alerts this week** tile: same list.
 
+*Then point at the red line at the top* ("4 missed matches on 1 watch") and click it (20 s):
+> "And this is that audit at work, today. It re-checked a beta user's Mac mini watch and found four listings the
+> morning check scored low or never read. Nothing is sent automatically: I review them, and with one click the user
+> gets a catch-up e-mail. This morning the same audit also exposed a scoring gap, prices that are only a starting
+> bid, and that fix went live within two hours."
+
+*Do not click Send on a catch-up during the demo* (it e-mails a real user).
+
 **4:30, how it was built, and the ask (30 s).**
 > "I built it with a software factory: GPT builds each change, Claude reviews it by actually running it, and I approve
 > every merge. 34 changes in the last two days, each one tested live. The honest risk: it reads Marktplaats' public pages,
-> which their terms don't allow at scale, so I've applied for their official API.
+> which their terms don't allow at scale, so I'm asking Marktplaats about their official API.
 > What would you want it to watch for you?"
 
 ---
@@ -108,14 +116,46 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
   cap with a kill switch. The busiest possible watch would exceed the cap, which is why broad searches get a 'narrow
   this' warning."
 - **"Is this allowed?"** "It reads public pages, which their terms don't allow at scale. That's a risk I accepted for
-  a portfolio project: it's not indexed, it's small, and I've applied for the official API. If they ask me to stop,
+  a portfolio project: it's not indexed, it's small, and I'm asking Marktplaats about their official API, which today
+  is only offered through partners. If they ask me to stop,
   the runbook has the steps."
 - **"Why scores instead of filters?"** "Filters can't tell a Mac mini from a Mac mini adapter. The filters (price,
   distance) are still applied by code; the model only judges what code can't."
 - **"What breaks?"** "Marktplaats changing its pages, or the model misjudging. Both are watched: health e-mail every
   morning, a nightly delivery audit, an uptime check every 30 minutes."
-- **"What's next?"** "Real users' ratings into the eval set, the official API, and a canary watch that alarms on
-  silence."
+- **"What's next?"** "Real users' ratings into the eval set, the official API if Marktplaats offers it, and fixing
+  what today's audit found on the Mac mini watch."
+
+- **"Why is there a red line on your dashboard?"** "Because it tells the truth. Every morning it re-checks every
+  watch; today it found four listings a user may have missed. I review them and decide whether to send a catch-up.
+  A dashboard that is always green is one nobody believes."
+
+## Today's red line, in plain words (3 October 2026)
+
+What it is:
+- Every morning at 06:30 the system re-checks every watch: "did we miss anything good?"
+- The red line, **"4 missed matches on 1 watch"**, means that re-check found 4 listings it thinks a user should have
+  had, on a beta user's daily "Mac mini" watch.
+
+What happened this morning:
+- **06:30:** the re-check flagged 4 listings on **your** Switch watch. Cause: they were "bidding from €200" at your
+  €200 limit, and the scorer was never told a price can be only a starting bid. Not real misses.
+- **08:48:** the fix went live (MW-58): the scorer now knows "bidding from" and treats a starting bid at your limit as
+  probably over budget. Tested 3 times on those exact listings: "not great" every time.
+- **09:29:** on Daryl's OK the re-check was run again on the fixed scoring. The Switch watch: **0 misses**. But it
+  also re-checked the Mac mini watch, whose 08:04 check had run after 06:30, and found **4 possible misses** there.
+  That is today's red line.
+
+The 4 Mac mini listings:
+- A Mac mini M5 Pro (€1,750, fixed): the 08:04 check scored it 2/10, the re-check 10/10.
+- A Mac mini M4 "+ accessoires" (bidding from €475): 3/10 vs 8/10. Probably mistaken for an accessory.
+- Two Mac mini M4s (bidding from €720; make an offer) that the 08:04 check never read.
+- To look into after the demo (a factory issue): why two scores were so low, and why two listings were never read.
+
+What it means:
+- Nothing is broken: every check ran, every alert was e-mailed, no errors.
+- The system caught its own possible mistakes and told the owner. Nothing goes to the user without Daryl's review.
+- Daryl got one owner e-mail ("high-scoring delivery miss") with a draft catch-up plan. No user was e-mailed.
 
 ## Sources for every number (checked 1 Oct 2026)
 - Switch alert, 10/10 at €150: Gmail, 30 Sep 11:34 CEST, from marktplaats-watcher@agentmail.to.
