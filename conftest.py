@@ -12,6 +12,7 @@ SECRET_NAMES = (
     "HEALTH_KEY",
     "OPENAI_API_KEY",
     "AGENTMAIL_API_KEY",
+    "MCP_OWNER_TOKEN",
 )
 for name in SECRET_NAMES:
     os.environ.pop(name, None)
