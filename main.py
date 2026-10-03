@@ -388,9 +388,10 @@ class MirrorRequest(BaseModel):
 @app.post("/api/internal/mirror", dependencies=[Depends(cron_caller)])
 def mirror_route(request: MirrorRequest):
     from vector_store import MongoStore
-    result = MongoStore().mirror([row.model_dump() for row in request.rows])
+    store = MongoStore(purpose="mirror")
+    result = store.mirror([row.model_dump() for row in request.rows])
     if result["status"] == "error":
-        log("mirror_failed")
+        log("mirror_failed", **store.error_info)
         return JSONResponse(result, status_code=503)
     return result
 
