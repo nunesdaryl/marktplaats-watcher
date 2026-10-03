@@ -4,6 +4,10 @@ Scorer run 2026-09-30 22:53, chat run 2026-09-30 21:39. Model under test: **gpt-
 Prompt versions: chat **chat-2026-09-30.2**, rank **rank-2026-10-01.1**.
 UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-2026-09-30.2 / rank-2026-10-01.1
 
+MW-58 changes the rank prompt to **rank-2026-10-03.1**. The measurements below are from the previous prompt;
+the new scorer run and sign-off are pending. Run `.venv/bin/python -m evals.run_scorer --runs 3`,
+`.venv/bin/python -m evals.report`, and `.venv/bin/python -m evals.gate` with the eval credentials.
+
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
 
 53 real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **23** are real matches.

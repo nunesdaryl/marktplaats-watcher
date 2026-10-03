@@ -9,6 +9,7 @@ def eval_files(monkeypatch, tmp_path):
         "CHAT_RESULTS": "chat_results.json",
         "REPEAT_RESULTS": "repeat_results.json",
         "SCORER_RESULTS": "scorer_results.json",
+        "PRICE_TYPE_CASES": "price_type_cases.json",
         "LABELS": "labels.json",
         "LISTINGS": "listings.json",
         "SPOTCHECK": "spotcheck.md",
@@ -34,6 +35,7 @@ def eval_files(monkeypatch, tmp_path):
     ]
     common.write(paths["LISTINGS"], {"listings": listings})
     common.write(paths["LABELS"], {"judge": "gpt-5.5", "cost_usd": 0})
+    common.write(paths["PRICE_TYPE_CASES"], [])
     common.write(paths["SCORER_RESULTS"], {
         "run_at": "2026-09-30", "model": "gpt-5.4-mini", "tokens": {"input": 0, "output": 0},
         "listings": 4, "judge_matches": 1, "scored": scored,
@@ -179,6 +181,42 @@ def test_median_run_uses_great_precision_then_recall():
     assert run_scorer.median_run([runs[0]]) is runs[0]
 
 
+def test_price_type_gate_requires_each_snapshot_on_every_run(monkeypatch):
+    monkeypatch.setattr(gate, "PRICE_TYPE_CASES", common.PRICE_TYPE_CASES)
+    cases = common.read(common.PRICE_TYPE_CASES)
+    rows = [{"id": case["id"], "score": case.get("max_score", case.get("min_score")),
+             "reason": "Bidding starts at the budget cap" if "max_score" in case else "Fixed price below budget"}
+            for case in cases]
+    scorer = {"runs": [{"price_type_cases": [dict(row) for row in rows]} for _ in range(3)]}
+    assert gate.price_type_cases_pass(scorer)
+    scorer["runs"][1]["price_type_cases"][0]["score"] = 8
+    assert not gate.price_type_cases_pass(scorer)
+    scorer["runs"][1]["price_type_cases"][0]["score"] = 7
+    scorer["runs"][2]["price_type_cases"][0]["reason"] = "Looks affordable"
+    assert not gate.price_type_cases_pass(scorer)
+    scorer["runs"][2]["price_type_cases"] = []
+    assert not gate.price_type_cases_pass(scorer)
+
+
+def test_scorer_rescores_all_price_type_cases_three_times(monkeypatch):
+    calls = []
+
+    def fake_rank(description, listings, raise_on_failure=False):
+        assert raise_on_failure
+        assert description == "Nintendo Switch OLED, under €200"
+        item = listings[0]
+        calls.append(item["id"])
+        bid = item["price_type"] == "bidding from"
+        return [item | {"score": 7 if bid else 9,
+                        "reason": "Bidding starts at the cap" if bid else "Fixed price below the cap"}]
+
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", fake_rank)
+    runs = [run_scorer.score_once({"watches": [], "listings": []}, {}, "gpt-5.4-mini") for _ in range(3)]
+    cases = common.read(common.PRICE_TYPE_CASES)
+    assert calls == [case["id"] for _ in range(3) for case in cases]
+    assert gate.price_type_cases_pass({"runs": runs})
+
+
 def test_confirmed_user_case_uses_saved_scorer_inputs(monkeypatch):
     calls = []
 
@@ -206,6 +244,9 @@ def test_scorer_three_runs_keep_each_result_and_select_median(monkeypatch, tmp_p
     monkeypatch.setattr(run_scorer, "LISTINGS", listings)
     monkeypatch.setattr(run_scorer, "LABELS", labels)
     monkeypatch.setattr(run_scorer, "SCORER_RESULTS", result)
+    cases = tmp_path / "price_type_cases.json"
+    common.write(cases, [])
+    monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", cases)
     scores = [(8, 0, 8, 0), (8, 0, 8, 8), (8, 8, 8, 8)]
 
     def fake_rank(description, items):
@@ -263,6 +304,19 @@ def test_report_shows_run_count_range_and_three_run_cost(monkeypatch, eval_files
     assert "3 scorer runs" in text
 
 
+def test_report_shows_price_type_cases_and_new_rank_version(monkeypatch, eval_files):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    scorer = common.read(eval_files["SCORER_RESULTS"])
+    scorer["prompt_version"] = "rank-2026-10-03.1"
+    scorer["price_type_cases"] = [{"id": "m2448861737", "label": "not great: bidding from the cap",
+                                   "score": 7, "reason": "Starting bid at the cap likely exceeds budget"}]
+    common.write(eval_files["SCORER_RESULTS"], scorer)
+    report.main()
+    text = eval_files["REPORT"].read_text()
+    assert "rank **rank-2026-10-03.1**" in text
+    assert "m2448861737 | not great: bidding from the cap | 7" in text
+
+
 def test_report_preserves_filled_signoff(monkeypatch, eval_files):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     signoff = "UAT sign-off: Daryl (name), 2026-10-01 (date), prompt versions chat-1/rank-1"
@@ -291,6 +345,9 @@ def test_scorer_results_record_prompt_version(monkeypatch, tmp_path):
     monkeypatch.setattr(run_scorer, "LISTINGS", listings)
     monkeypatch.setattr(run_scorer, "LABELS", labels)
     monkeypatch.setattr(run_scorer, "SCORER_RESULTS", result)
+    cases = tmp_path / "price_type_cases.json"
+    common.write(cases, [])
+    monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", cases)
     monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda description, items: [items[0] | {"score": 8, "reason": "Chair"}])
     run_scorer.main()
     saved = common.read(result)

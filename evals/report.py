@@ -116,6 +116,7 @@ def main():
                                        {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["precision"]
                         for run in runs]
     scorer_eval_cost = sum(run.get("cost_usd", cost_usd(model, run["tokens"]["input"], run["tokens"]["output"]))
+                           + run.get("price_type_cost_usd", 0)
                            for run in runs)
     measured = [precision for precision in great_precisions if precision is not None]
     run_summary = (f"median of {len(runs)} {'run' if len(runs) == 1 else 'runs'}; "
@@ -160,6 +161,15 @@ def main():
                   "|---|---|---|"]
         for category in sorted({category for _, category in m["failures"]}):
             lines.append(f"| {category} | {m['failures']['false_positive', category]} | {m['failures']['false_negative', category]} |")
+        lines.append("")
+    if any(run.get("price_type_cases") for run in runs):
+        lines += ["## 1a. Price type regression cases", "",
+                  "Four Switch OLED listings from 3 October were bidding from €200 at a €200 watch limit. "
+                  "The fixed €160 case checks that an affordable fixed price can still score great.", "",
+                  "| Run | Listing | Label | Score | Reason |", "|---|---|---|---:|---|"]
+        for number, run in enumerate(runs, 1):
+            for case in run.get("price_type_cases", []):
+                lines.append(f"| {number} | {case['id']} | {case['label']} | {case['score']} | {case['reason']} |")
         lines.append("")
     pending = read(USER_CASES_PENDING) if USER_CASES_PENDING.exists() else []
     confirmed = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []

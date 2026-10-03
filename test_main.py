@@ -40,12 +40,13 @@ def post_check(monkeypatch, watches):
         calls.append((query, filters, offset))
         return {"listings": [{
             "itemId": LISTING_ID, "title": "Mac mini M2", "vipUrl": "/v/mac-mini-m2",
-            "date": "Vandaag", "priceInfo": {"priceCents": 40000},
+            "date": "Vandaag", "priceInfo": {"priceCents": 40000, "priceType": "MIN_BID"},
         }]}
 
     def rank_listings(description, listings, raise_on_failure=False):
         assert raise_on_failure
         for listing in listings:
+            assert listing["price_type"] == "bidding from"
             listing["score"] = 8
             listing["reason"] = "Matches the watch."
         return listings

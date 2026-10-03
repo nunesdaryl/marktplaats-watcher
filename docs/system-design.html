@@ -1309,9 +1309,10 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   organic listing an hour and a quiet night looks like an outage; the watches themselves found and e-mailed 4 alerts
   that night. Filed as <b>MW-57</b> (organic listings only, read up to 3 pages, a 6-hour window at night). (2) "4 missed
   matches" on the Nintendo Switch OLED watch: the check scored them 7, the audit's re-score 10. All four are
-  "bidding from €200" (<code>MIN_BID</code>) at the watch's €200 limit, and the scorer is never told the price type,
-  so it guesses; the 7 is the more honest score and the audit's flag is a false one. Filed as <b>MW-58</b> (pass the
-  price type, one prompt rule, four eval cases snapshotted that morning). Both are in Backlog for after the demo.
+  "bidding from €200" (<code>MIN_BID</code>) at the watch's €200 limit. The scorer previously saw only €200,
+  so it guessed; the 7 is the more honest score and the audit's flag is a false one. <b>MW-58:</b> the scorer now
+  sees "bidding from" and treats a starting bid at the cap as likely over budget. The four 3 October snapshots
+  and a fixed-price control are in the scorer eval gate. MW-57 tracks the canary change.
   Lesson: a miss reported by a second look is a claim to check against the listing, not proof the first look was
   wrong.</p>
 <table>

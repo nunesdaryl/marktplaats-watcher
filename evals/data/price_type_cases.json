@@ -1,0 +1,37 @@
+[
+  {
+    "id": "m2448861737",
+    "label": "not great: bidding from the cap",
+    "watch_description": "Nintendo Switch OLED, under €200",
+    "listing": {"id": "m2448861737", "title": "Nintendo Switch Oled model (with 3 games)", "price_eur": 200, "price_type": "bidding from"},
+    "max_score": 7
+  },
+  {
+    "id": "m2449235953",
+    "label": "not great: bidding from the cap",
+    "watch_description": "Nintendo Switch OLED, under €200",
+    "listing": {"id": "m2449235953", "title": "Nintendo Switch OLED - nieuwstaat", "price_eur": 200, "price_type": "bidding from"},
+    "max_score": 7
+  },
+  {
+    "id": "m2449231794",
+    "label": "not great: bidding from the cap",
+    "watch_description": "Nintendo Switch OLED, under €200",
+    "listing": {"id": "m2449231794", "title": "Nintendo Switch OLED Wit - Zo goed als nieuw", "price_eur": 200, "price_type": "bidding from"},
+    "max_score": 7
+  },
+  {
+    "id": "m2449225496",
+    "label": "not great: bidding from the cap",
+    "watch_description": "Nintendo Switch OLED, under €200",
+    "listing": {"id": "m2449225496", "title": "Nintendo Switch OLED – Compleet & Nette Staat", "price_eur": 200, "price_type": "bidding from"},
+    "max_score": 7
+  },
+  {
+    "id": "fixed-160-control",
+    "label": "great: fixed price below the cap",
+    "watch_description": "Nintendo Switch OLED, under €200",
+    "listing": {"id": "fixed-160-control", "title": "Nintendo Switch OLED - nieuwstaat", "price_eur": 160, "price_type": "fixed price"},
+    "min_score": 8
+  }
+]
