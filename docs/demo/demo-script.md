@@ -157,6 +157,11 @@ What it means:
 - The system caught its own possible mistakes and told the owner. Nothing goes to the user without Daryl's review.
 - Daryl got one owner e-mail ("high-scoring delivery miss") with a draft catch-up plan. No user was e-mailed.
 
+Proof the fix works, if asked:
+- **09:34:** the first alert on the new scoring: a Switch OLED at **€185, fixed price**, scored **10/10** and e-mailed
+  ("exactly the watched item and €185 is under budget"). Starting bids at the limit are no longer "great"; real deals
+  below it still are. It is a good real alert e-mail to show (in Daryl's inbox from 09:34).
+
 ## Sources for every number (checked 1 Oct 2026)
 - Switch alert, 10/10 at €150: Gmail, 30 Sep 11:34 CEST, from marktplaats-watcher@agentmail.to.
 - 9 of 25 not a Mac mini: `docs/marketing/positioning-audit-2026-09-29.md` (live page, 29 Sep).
