@@ -63,9 +63,9 @@ export const embedAlerts = internalAction({
 });
 
 export const backfillPage = internalQuery({
-  args: { cursor: v.optional(v.string()) },
-  handler: async (ctx, { cursor }) => {
-    const page = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", Date.now() - 30 * DAY))
+  args: { since: v.number(), cursor: v.optional(v.string()) },
+  handler: async (ctx, { since, cursor }) => {
+    const page = await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since))
       .paginate({ cursor: cursor ?? null, numItems: 100 });
     const missing = [];
     for (const alert of page.page)
@@ -77,9 +77,10 @@ export const backfillPage = internalQuery({
 export const backfill = internalAction({
   args: { dryRun: v.boolean() },
   handler: async (ctx, { dryRun }) => {
+    const since = Date.now() - 30 * DAY;
     let cursor: string | undefined, count = 0;
     do {
-      const page = await ctx.runQuery(internal.embeddings.backfillPage, { cursor });
+      const page = await ctx.runQuery(internal.embeddings.backfillPage, { since, cursor });
       count += page.ids.length;
       if (!dryRun && page.ids.length) await ctx.runAction(internal.embeddings.embedAlerts, { alertIds: page.ids });
       cursor = page.done ? undefined : page.cursor;

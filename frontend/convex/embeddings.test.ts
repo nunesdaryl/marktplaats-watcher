@@ -1,6 +1,8 @@
 import { convexTest } from "convex-test";
 import { expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
+import { internalAction, internalQuery } from "./_generated/server";
+import { v } from "convex/values";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -116,6 +118,50 @@ test("backfill dry run counts missing recent alerts without embedding them", asy
   const result = await t.action(internal.embeddings.backfill, { dryRun: true });
   expect(result).toEqual({ missing: 2, dryRun: true });
   expect(await t.run((ctx) => ctx.db.query("alertEmbeddings").collect())).toEqual([]);
+});
+
+test("backfill keeps its cutoff across two pages in dry-run and real mode", async () => {
+  const seenSince: number[] = [];
+  const embeddedIds: string[] = [];
+  const mockEmbedAlerts = internalAction({
+    args: { alertIds: v.array(v.id("alerts")) },
+    handler: async (_ctx, { alertIds }) => { embeddedIds.push(...alertIds); },
+  });
+  const t = convexTest(schema, { ...modules, "./embeddings.ts": async () => {
+    const original = await import("./embeddings");
+    return { ...original, embedAlerts: mockEmbedAlerts, backfillPage: internalQuery({
+      args: { since: v.number(), cursor: v.optional(v.string()) },
+      handler: async (ctx, args) => {
+        seenSince.push(args.since);
+        const pageHandler = Reflect.get(original.backfillPage, "_handler") as
+          (ctx: unknown, args: unknown) => Promise<unknown>;
+        return pageHandler(ctx, args);
+      },
+    }) };
+  } });
+  const alice = t.withIdentity({ subject: "alice", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create, watch);
+  await t.run(async (ctx) => {
+    const userId = (await ctx.db.get(watchId))!.userId;
+    for (let i = 0; i < 101; i++) await ctx.db.insert("alerts", {
+      userId, watchId, listingId: `backfill-${i}`, title: `Backfill ${i}`,
+      url: `https://example.test/backfill-${i}`, reason: "Good match", score: 9,
+      channel: "email", emailStatus: "sent", createdAt: Date.now(),
+    });
+  });
+  const realNow = Date.now;
+  let now = realNow();
+  vi.spyOn(Date, "now").mockImplementation(() => ++now);
+  try {
+    expect(await t.action(internal.embeddings.backfill, { dryRun: true })).toEqual({ missing: 101, dryRun: true });
+    expect(embeddedIds).toEqual([]);
+    expect(await t.action(internal.embeddings.backfill, { dryRun: false })).toEqual({ missing: 101, dryRun: false });
+    expect(embeddedIds).toHaveLength(101);
+    expect(new Set(embeddedIds).size).toBe(101);
+    expect(seenSince).toHaveLength(4);
+    expect(seenSince[1]).toBe(seenSince[0]);
+    expect(seenSince[3]).toBe(seenSince[2]);
+  } finally { vi.restoreAllMocks(); }
 });
 
 test("delete my data removes that user's embedding only", async () => {
