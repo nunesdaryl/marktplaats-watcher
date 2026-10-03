@@ -1303,6 +1303,17 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   The same afternoon Daryl signed off UAT in <code>evals/report.md</code> (MW-5) and checked the phone layout on his
   iPhone. MW-5 is closed: secrets set, sign-off in <code>749e205</code>, and the eval run on that commit passed the
   gate (chat 19/20, "great" precision 0.944–1.0). Open in Linear: MW-9 and MW-14, both Daryl's, after the demo; on 3 October both got a plain-English "What Daryl does" comment (MW-9: read two ADRs and say "accepted"; MW-14: call the Marktplaats business desk, see section 16). Left before the freeze: two rehearsals (one recorded), the 21:00 walk-through.</p>
+<p><b>Demo morning (3 October 07:24): two red lines on the dashboard, neither a breakage.</b> (1) "Canary read no new
+  listings": the hourly <code>iphone</code> canary read Marktplaats fine but counted 0 new listings at 04:34, 05:34 and
+  06:49. Measured: 29 of the 30 items on its one page are paid <code>DAGTOPPER</code> placements, so it sees at most one
+  organic listing an hour and a quiet night looks like an outage; the watches themselves found and e-mailed 4 alerts
+  that night. Filed as <b>MW-57</b> (organic listings only, read up to 3 pages, a 6-hour window at night). (2) "4 missed
+  matches" on the Nintendo Switch OLED watch: the check scored them 7, the audit's re-score 10. All four are
+  "bidding from €200" (<code>MIN_BID</code>) at the watch's €200 limit, and the scorer is never told the price type,
+  so it guesses; the 7 is the more honest score and the audit's flag is a false one. Filed as <b>MW-58</b> (pass the
+  price type, one prompt rule, four eval cases snapshotted that morning). Both are in Backlog for after the demo.
+  Lesson: a miss reported by a second look is a claim to check against the listing, not proof the first look was
+  wrong.</p>
 <table>
   <tr><th>Step</th><th>Input and decision</th><th>Recorded result</th></tr>
   <tr><td>Listen and triage</td><td>Read the 05:00 digest and new feedback, including outside channels and screenshots.</td><td>Tracker status, context, and plan or decline reason.</td></tr>
