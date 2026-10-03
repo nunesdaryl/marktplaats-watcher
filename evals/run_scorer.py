@@ -6,7 +6,7 @@ import sys
 import time
 
 import agent
-from evals.common import LABELS, LISTINGS, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
+from evals.common import LABELS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
 
 THRESHOLDS = {"great": 8, "good": 6}
 
@@ -60,6 +60,15 @@ def score_once(data, labels, model):
         "cost_usd": round(usd, 5), "cost_usd_per_100_listings": round(usd / max(len(scored), 1) * 100, 5),
         "seconds_total": round(time.time() - started, 1), "scored": scored,
     }
+    price_type_cases = []
+    for case in read(PRICE_TYPE_CASES):
+        listing = agent.rank_listings(case["watch_description"], [dict(case["listing"])], raise_on_failure=True)[0]
+        price_type_cases.append({"id": case["id"], "label": case["label"],
+                                 "score": listing["score"], "reason": listing["reason"]})
+    case_usage = agent.RANK_USAGE[result["tokens"]["calls"]:]
+    result["price_type_cases"] = price_type_cases
+    result["price_type_cost_usd"] = round(cost_usd(model, sum(u[0] for u in case_usage),
+                                                   sum(u[1] for u in case_usage)), 5)
     for name, m in metrics.items():
         print(f"{name:5} ≥{m['threshold']}: precision {m['precision']}  recall {m['recall']}  (tp {m['tp']} fp {m['fp']} fn {m['fn']})")
     print(f"cost ${usd:.5f} for {len(scored)} listings")
@@ -90,7 +99,8 @@ def main(argv=None):
         write(SCORER_RESULTS, results[0] | {"user_scored": user_scored})
         return
     runs = [{"great": result["metrics"]["great"], "good": result["metrics"]["good"],
-             "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"]}
+             "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"],
+             "price_type_cases": result["price_type_cases"], "price_type_cost_usd": result["price_type_cost_usd"]}
             for result in results]
     selected = median_run(runs)
     write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored})

@@ -37,8 +37,25 @@ def test_parses_listings_without_seller_data():
     assert listings[0]["id"] == "a9000000001"          # stable id, used to tell new listings from seen ones
     assert listings[0]["title"].startswith("Apple Mac mini M1")
     assert listings[0]["price_eur"] == 425
+    assert listings[0]["price_type"] == "fixed price"
     assert listings[0]["url"].startswith("https://www.marktplaats.nl/")
     assert all("seller" not in json.dumps(item).lower() for item in listings)
+
+
+@pytest.mark.parametrize("raw, expected", [
+    ("FIXED", "fixed price"), ("MIN_BID", "bidding from"),
+    ("FAST_BID", "make an offer"), ("BID", "make an offer"),
+    ("SEE_DESCRIPTION", "see description"), ("FREE", "free"),
+    ("SWAP", "swap"), ("UNRECOGNIZED", "UNRECOGNIZED"),
+])
+def test_parse_listings_sends_price_type_but_no_seller_details(raw, expected):
+    item = {"itemId": "one", "title": "Switch OLED", "vipUrl": "/v/one",
+            "priceInfo": {"priceCents": 20000, "priceType": raw},
+            "sellerInformation": {"sellerName": "Private seller", "sellerId": 123}}
+    listings, _ = agent.parse_listings([item], max_price_eur=200)
+    assert len(listings) == 1  # a starting bid at the cap still passes the price filter
+    assert listings[0]["price_type"] == expected
+    assert "seller" not in json.dumps(listings[0]).lower()
 
 
 def test_max_price_drops_expensive_and_unpriced_listings():
@@ -893,15 +910,17 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
 
 
 def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
-    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-01.1"
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-03.1"
     assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
     assert "0–4" in agent.RANK_PROMPT
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
+    assert "bidding from" in agent.RANK_PROMPT
+    assert "make an offer" in agent.RANK_PROMPT
 
 
-def test_scorer_loads_and_counts_accessory_cases(monkeypatch):
+def test_scorer_loads_and_counts_accessory_cases(monkeypatch, tmp_path):
     from evals import run_scorer
-    from evals.common import LABELS, LISTINGS, read
+    from evals.common import LABELS, LISTINGS, read, write
 
     expected = {
         "mw22-display-frames": False,
@@ -917,6 +936,9 @@ def test_scorer_loads_and_counts_accessory_cases(monkeypatch):
 
     results = {}
     monkeypatch.setattr(run_scorer, "model_under_test", lambda: "gpt-5.5")
+    cases = tmp_path / "price_type_cases.json"
+    write(cases, [])
+    monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", cases)
     monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda _description, listings:
                         [dict(item, score=8 if expected.get(item["id"], False) else 2, reason="test")
                          for item in listings])
