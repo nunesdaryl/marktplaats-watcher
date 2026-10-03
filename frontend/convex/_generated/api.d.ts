@@ -16,6 +16,7 @@ import type * as analytics from "../analytics.js";
 import type * as chats from "../chats.js";
 import type * as checker from "../checker.js";
 import type * as crons from "../crons.js";
+import type * as embeddings from "../embeddings.js";
 import type * as events from "../events.js";
 import type * as feedback from "../feedback.js";
 import type * as folders from "../folders.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   chats: typeof chats;
   checker: typeof checker;
   crons: typeof crons;
+  embeddings: typeof embeddings;
   events: typeof events;
   feedback: typeof feedback;
   folders: typeof folders;
