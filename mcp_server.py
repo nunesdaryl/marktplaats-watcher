@@ -12,6 +12,8 @@ from langchain_core.tools import StructuredTool
 from langchain_mcp_adapters.tools import load_mcp_tools
 from mcp import ClientSession
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.server import StreamableHTTPASGIApp
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from pydantic import Field
 
 from convex_api import convex_post
@@ -21,6 +23,16 @@ mcp_user = ContextVar("mcp_user", default=None)
 server = FastMCP("Marktplaats Watcher", stateless_http=True, json_response=True,
                  streamable_http_path="/")
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
+
+
+async def http_app(scope, receive, send):
+    """Give each stateless HTTP request a live session manager, even without ASGI lifespan."""
+    manager = StreamableHTTPSessionManager(
+        app=server._mcp_server, json_response=True, stateless=True,
+        security_settings=server.settings.transport_security,
+    )
+    async with manager.run():
+        await StreamableHTTPASGIApp(manager)(scope, receive, send)
 
 
 def user_id():
@@ -155,7 +167,7 @@ def chat_tools():
         def invoke(_name=schema.name, **kwargs):
             async def call(session):
                 return await session.call_tool(_name, kwargs)
-            result = asyncio.run(asyncio.wait_for(_with_session(call), timeout=3))
+            result = asyncio.run(asyncio.wait_for(_with_session(call), timeout=15))
             if result.isError:
                 raise RuntimeError(f"MCP tool {_name} failed")
             return "\n".join(block.text for block in result.content if hasattr(block, "text"))

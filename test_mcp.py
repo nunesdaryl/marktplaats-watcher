@@ -25,6 +25,20 @@ def rpc(client, method, params=None, token=None):
                                                     "method": method, "params": params or {}})
 
 
+def test_mcp_works_without_asgi_lifespan(monkeypatch):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setenv("MCP_OWNER_TOKEN", "owner-secret")
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner")
+    client = TestClient(main.app)  # no context manager: lifespan is never entered
+    initialized = rpc(client, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
+                                             "clientInfo": {"name": "test", "version": "1"}}, "owner-secret")
+    assert initialized.status_code == 200
+    assert "mcp-session-id" not in initialized.headers
+    listed = rpc(client, "tools/list", token="owner-secret")
+    assert listed.status_code == 200
+    assert len(listed.json()["result"]["tools"]) == 5
+
+
 def test_mcp_auth_tools_and_user_scope(monkeypatch):
     verify_clerk = main.current_user
     monkeypatch.setenv("MCP_ENABLED", "1")
@@ -86,20 +100,28 @@ def test_mcp_chat_rag_cards_and_fallback(monkeypatch):
     }] if user == "alice" else [])
 
     class Model:
-        def __init__(self): self.calls = 0
+        def __init__(self):
+            self.calls = 0
+            self.system_text = ""
         def stream(self, messages):
             self.calls += 1
+            self.system_text = messages[0].content
             if self.calls == 1:
                 yield AIMessageChunk(content="", tool_call_chunks=[{"name": "search_my_alerts",
                     "args": '{"query":"Mac mini"}', "id": "c1", "index": 0}])
             else:
                 yield AIMessageChunk(content="The Mac mini M5 Pro is the best value.")
     class Base:
-        def bind_tools(self, tools): return Model()
-    monkeypatch.setattr(agent, "base_model", Base())
+        def __init__(self): self.bound = None
+        def bind_tools(self, tools):
+            self.bound = Model()
+            return self.bound
+    base = Base()
+    monkeypatch.setattr(agent, "base_model", base)
     identity = mcp_server.mcp_user.set("alice")
     try:
         events = list(agent.chat_events("Which Mac mini alert was best?", []))
+        assert "use search_my_alerts" in base.bound.system_text
         card = next(e for e in events if e["type"] == "listings")["listings"][0]
         assert card["url"].endswith("/mac")
         assert set(card) == {"id", "title", "price_eur", "city", "distance_km", "url", "image"}
@@ -110,6 +132,7 @@ def test_mcp_chat_rag_cards_and_fallback(monkeypatch):
         events = list(agent.chat_events("Mac mini?", []))
         assert events[-1]["type"] == "done"
         assert fallback.calls > 0
+        assert fallback.system_text == agent.SYSTEM_PROMPT
     finally:
         mcp_server.mcp_user.reset(identity)
 
@@ -132,6 +155,12 @@ def test_mcp_activity_evidence_and_rag_use_request_identity(monkeypatch):
          "reason": "Good value", "url": "https://www.marktplaats.nl/v/mac", "rating": {"verdict": "good"}}])
     identity = mcp_server.mcp_user.set("alice")
     try:
+        original_wait_for = mcp_server.asyncio.wait_for
+        timeouts = []
+        async def timed(coroutine, timeout):
+            timeouts.append(timeout)
+            return await original_wait_for(coroutine, timeout)
+        monkeypatch.setattr(mcp_server.asyncio, "wait_for", timed)
         tools = {t.name: t for t in mcp_server.chat_tools()}
         assert "from" in tools["get_watch_activity"].args
         assert json.loads(tools["get_watch_activity"].invoke({"watch": "Mac", "from": "today", "to": "now"}))["data"]["total"] == 1
@@ -140,6 +169,7 @@ def test_mcp_activity_evidence_and_rag_use_request_identity(monkeypatch):
         assert rag[0]["reason"] == "Good value" and rag[0]["rating"]["verdict"] == "good"
         assert ("rag", "alice", 5) in seen
         assert all(entry[1]["clerkId"] == "alice" for entry in seen if entry[0].startswith("/api/"))
+        assert timeouts == [3, 15, 15, 15]
     finally:
         mcp_server.mcp_user.reset(identity)
 

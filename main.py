@@ -6,7 +6,6 @@ import uuid
 import time
 from datetime import datetime
 from contextvars import ContextVar
-from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Literal
@@ -23,15 +22,10 @@ load_dotenv()  # before importing agent: it reads the environment at import time
 
 from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
 from convex_api import convex_post  # noqa: E402
-from mcp_server import mcp_user, server as mcp_server  # noqa: E402
-
-@asynccontextmanager
-async def lifespan(app):
-    async with mcp_server.session_manager.run():
-        yield
+from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 request_id = ContextVar("request_id", default=None)
 
 
@@ -75,7 +69,7 @@ async def identify_request(request: Request, call_next):
         request_id.reset(token)
 
 
-app.mount("/api/mcp", mcp_server.streamable_http_app())
+app.mount("/api/mcp", mcp_http_app)
 
 
 class Turn(BaseModel):
