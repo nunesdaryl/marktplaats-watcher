@@ -714,6 +714,10 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .beta-arrow { transition: transform var(--dur-fast) var(--ease); }
 .beta-banner:hover:not(:disabled) .beta-arrow { transform: translateX(3px); }
 .beta-strip .theme-toggle { flex: none; }
+.beta-account { flex: none; display: grid; place-items: center; width: var(--touch); height: var(--touch); border-radius: var(--radius); }
+.beta-account:hover { background: var(--fill); }
+.beta-account:has(button:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.beta-account button { min-width: var(--touch); min-height: var(--touch); }
 .theme-toggle svg { transition: transform var(--dur) var(--ease); }
 .theme-toggle:hover svg { transform: rotate(-15deg); }
 
