@@ -12,7 +12,8 @@ const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 const convex = convexUrl ? new ConvexReactClient(convexUrl) : null;
 
 // Clerk's sign-in and account screens in the Sieve colours (docs/design/sieve/README.md, "Clerk sign-in")
-const clerkLook = (dark) => ({
+export const clerkLook = (dark) => ({
+  layout: { unsafe_disableDevelopmentModeWarnings: true },
   variables: {
     borderRadius: "6px", fontFamily: "Geist, system-ui, sans-serif",
     ...(dark

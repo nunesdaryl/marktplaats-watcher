@@ -8,7 +8,7 @@ repo root unless they start with `cd frontend`.
   https://marktplaats-watcher.vercel.app. The no-hyphen address https://marktplaatswatcher.vercel.app is a project
   domain that 308-redirects there, keeping the path (Vercel → Settings → Domains).
 - **Convex** production (`chatty-sardine-719`) holds the data and runs the schedules.
-- **Clerk** handles login.
+- **Clerk** handles login. It remains a development instance (dev usage limits; Google consent says "Clerk"); MW-74 only hides the development label, and MW-76 is the real fix.
 - **AgentMail** (`marktplaats-watcher@agentmail.to`) sends e-mail.
 - **OpenAI** project "Marktplaats Watcher" runs the model, with a $10/month hard cap.
 
