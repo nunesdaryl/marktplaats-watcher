@@ -86,6 +86,17 @@ To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment 
 HTML is served no-store so a deploy never leaves a browser on stale HTML.
 After a caching incident, bump both the cache reset fetch's `?v=` and the `mw-cache-reset` flag value for a new one-time browser cache purge.
 
+### Desktop account-menu experiment (MW-75)
+
+`NEXT_PUBLIC_ACCOUNT_TOP_RIGHT` is a build-time Vercel environment variable. Set it to `1` for the **Preview** environment
+and redeploy the preview to show the account avatar beside the theme toggle on desktop. Check the avatar menu and the
+sidebar account row in light and dark mode, and confirm the phone layout is unchanged. Leave Production unset until
+Daryl approves enabling it there.
+
+To switch the experiment off, remove `NEXT_PUBLIC_ACCOUNT_TOP_RIGHT` (or set it to `0`) for the affected Vercel
+environment and redeploy. The existing deployment keeps its built-in value until the new deployment is ready. To
+remove the experiment from code entirely, revert the MW-75 merge through the normal factory release process.
+
 ## 3. OpenAI: cap reached, key revoked, or model gone
 - **Symptoms:**
   - The chat says "The chat can't reach its AI right now."
