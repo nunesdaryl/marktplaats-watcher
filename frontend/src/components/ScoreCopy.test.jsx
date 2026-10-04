@@ -1,0 +1,24 @@
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, test, vi } from "vitest";
+import WatchSentence from "./WatchSentence.jsx";
+import ListingCard from "./ListingCard.jsx";
+
+vi.stubGlobal("React", React);
+
+const schedule = { kind: "interval", everyMinutes: 60 };
+
+test.each([
+  ["great", "great matches only", "listings scoring 8 or higher out of 10"],
+  ["good", "good matches", "listings scoring 6 or higher out of 10"],
+  ["all", "every new listing", "all new listings that fit your filters, each still scored"],
+])("watch sentence explains %s", (notify, label, meaning) => {
+  const html = renderToStaticMarkup(<WatchSentence label="Mac mini" schedule={schedule} notify={notify} />);
+  expect(html).toContain(`<mark>${label}</mark> (${meaning})`);
+});
+
+test.each([[9, "great"], [7, "good"], [3, "low"]])("listing score %i includes %s in text and accessible name", (score, level) => {
+  const html = renderToStaticMarkup(<ListingCard listing={{ title: "Mac mini", url: "https://example.test" }} score={score} />);
+  expect(html).toContain(`${score}<small>/10</small> · ${level}`);
+  expect(html).toContain(`aria-label="Scored ${score} out of 10, ${level}"`);
+});

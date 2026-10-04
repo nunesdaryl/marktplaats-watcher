@@ -5,7 +5,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { MIN_SCORE, NOTIFY_LABEL, describe, nextRun } from "./schedule";
+import { MIN_SCORE, NOTIFY_LABEL, NOTIFY_SHORT, describe, nextRun, scoreLevel, type Notify } from "./schedule";
 import { deleteChat } from "./chats";
 import { deleteAlertEmbedding } from "./embeddings";
 import { ratingToken } from "./ratings";
@@ -140,7 +140,7 @@ export const record = internalMutation({
         const user = await ctx.db.get(watch.userId);
         if (fresh.length && user) emails.push({ watchId: watch._id, alertIds: [], to: user.email, preview: {
           watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule),
-          notify: NOTIFY_LABEL[watch.notify], alerts: fresh.sort((a, b) => b.score - a.score) } });
+          notify: watch.notify, alerts: fresh.sort((a, b) => b.score - a.score) } });
         continue;
       }
       if (!r.ok) {
@@ -200,7 +200,7 @@ export const emailContent = internalQuery({
     if (!watch || !watch.active || watch.archivedAt !== undefined) return null;   // paused since: don't e-mail
     const alerts = (await Promise.all(alertIds.map((id) => ctx.db.get(id)))).filter((a) => a !== null);
     alerts.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-    return watch && { watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: NOTIFY_LABEL[watch.notify], alerts };
+    return watch && { watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: watch.notify, alerts };
   },
 });
 
@@ -252,7 +252,7 @@ const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 type EmailContent = {
-  watchId?: string; label: string; summary: string; notify: string; catchUp?: boolean;
+  watchId?: string; label: string; summary: string; notify: Notify; catchUp?: boolean;
   alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string;
             _id?: string; rateToken?: string | null }[];
 };
@@ -269,11 +269,10 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const subject = c.catchUp ? `Matches we missed for ${c.label}` : `${c.label}: ${n} new match${n === 1 ? "" : "es"}${bestText ? `, ${bestText}` : ""}`;
   const preheader = best ? `Best: ${best.title}. ${best.reason}` : "";
   const facts = (a: (typeof top)[number]) =>
-    [a.score !== undefined ? `Scored ${a.score}/10` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
+    [a.score !== undefined ? `Scored ${a.score}/10 (${scoreLevel(a.score)})` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
       .filter(Boolean).join(", ");
   const manageUrl = c.watchId ? `${appUrl.replace(/\/$/, "")}/watch/?id=${encodeURIComponent(c.watchId)}` : appUrl;
-  const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${c.notify}. ` +
-    "We read each new listing and only e-mail the ones that fit what you asked for. " +
+  const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${NOTIFY_LABEL[c.notify]}: ${NOTIFY_SHORT[c.notify]}. ` +
     "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
   const heading = c.catchUp ? "Matches we missed, sorry" : `Worth a look on Marktplaats: "${c.label}"`;
   const apology = "A bug on 29–30 September kept these from you. It's fixed now; these are still online.";
@@ -295,8 +294,9 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const mono = "ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace";
   const badge = (score?: number) => {
     if (score === undefined) return "";
-    const [kind, bg, ink] = score >= 8 ? ["great", "#157346", "#ffffff"] : score >= 6 ? ["good", "#ddd0ff", "#25124f"] : ["neutral", "#eeebe6", "#5b5751"];
-    return `<td width="48" valign="top" style="padding:16px 0 16px 16px;"><div class="mw-${kind}" style="width:48px;height:40px;line-height:40px;border-radius:8px;background:${bg};color:${ink};font-family:${mono};font-size:15px;font-weight:600;text-align:center;letter-spacing:-0.3px;">${score}/10</div></td>`;
+    const level = scoreLevel(score);
+    const [kind, bg, ink] = level === "great" ? ["great", "#157346", "#ffffff"] : level === "good" ? ["good", "#ddd0ff", "#25124f"] : ["neutral", "#eeebe6", "#5b5751"];
+    return `<td width="64" valign="top" style="padding:16px 0 16px 16px;"><div class="mw-${kind}" style="width:64px;padding:5px 0;border-radius:8px;background:${bg};color:${ink};font-family:${mono};font-size:13px;line-height:17px;font-weight:600;text-align:center;">${score}/10<br>${level}</div></td>`;
   };
   const base = appUrl.replace(/\/$/, "");
   const card = (a: (typeof top)[number]) => `<tr><td style="padding:0 0 12px 0;">

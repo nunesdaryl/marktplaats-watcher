@@ -1,8 +1,9 @@
 import { expect, test } from "vitest";
 import { renderEmail } from "./checker";
+import { MIN_SCORE, NOTIFY_LABEL, NOTIFY_SHORT, type Notify } from "./schedule";
 
 const content = {
-  watchId: "w123", label: "mac mini, 16GB, under €500", summary: "every 3 hours", notify: "great matches only",
+  watchId: "w123", label: "mac mini, 16GB, under €500", summary: "every 3 hours", notify: "great" as const,
   alerts: [
     { title: "Mac mini i5 16GB", priceEur: 230, city: "Utrecht", url: "https://www.marktplaats.nl/v/a1", score: 9, reason: "Good price." },
     { title: '<img src=x onerror="alert(1)">', priceEur: 400, url: "https://www.marktplaats.nl/v/a2", score: 8, reason: "Fine." },
@@ -23,12 +24,32 @@ test("listing titles from strangers are escaped, never rendered as HTML", () => 
 test("every listing links to Marktplaats and the footer says why you got it", () => {
   const { text, html } = renderEmail(content, "https://app.test");
   expect(text).toContain("Open on Marktplaats: https://www.marktplaats.nl/v/a1");
-  expect(text).toContain("Scored 9/10, €230, Utrecht");
+  expect(text).toContain("Scored 9/10 (great), €230, Utrecht");
   expect(html.match(/Open on Marktplaats/g)).toHaveLength(2);
   expect(text).toContain("not affiliated with Marktplaats");
   expect(text).toContain("Manage or pause this watch: https://app.test/watch/?id=w123");
   expect(text).toContain("Replies to this address aren't read.");
   expect(html).toContain("Best: Mac mini i5 16GB. Good price.");   // hidden inbox preview line
+});
+
+test.each(["great", "good", "all"] as Notify[])("%s footer explains the level in normal and catch-up e-mails", (notify) => {
+  for (const catchUp of [false, true]) {
+    const { text, html } = renderEmail({ ...content, notify, catchUp }, "https://app.test");
+    const explanation = `asked for ${NOTIFY_LABEL[notify]}: ${NOTIFY_SHORT[notify]}`;
+    expect(text).toContain(explanation);
+    expect(html).toContain(explanation);
+  }
+});
+
+test("score words appear with numbers in both e-mail parts", () => {
+  const { text, html } = renderEmail({ ...content, notify: "all", alerts: [
+    ...content.alerts, { ...content.alerts[0], score: MIN_SCORE.good, title: "Decent listing" },
+    { ...content.alerts[0], score: 0, title: "Accessory" },
+  ] }, "https://app.test");
+  for (const [score, level] of [[9, "great"], [MIN_SCORE.good, "good"], [0, "low"]] as const) {
+    expect(text).toContain(`Scored ${score}/10 (${level})`);
+    expect(html).toContain(`${score}/10<br>${level}`);
+  }
 });
 
 test("each alert has 'Good match?' links that open the app's rate page with that alert's code", () => {

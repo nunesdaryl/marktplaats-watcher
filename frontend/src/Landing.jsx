@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import Logo from "./components/Logo.jsx";
 import { SIGNING_IN_FLAG } from "./lib/boot.js";
 import { linkTo } from "./lib/router.js";
+import { MIN_SCORE, NOTIFY_LABEL, NOTIFY_SHORT } from "../convex/schedule";
 
 // Remember in this tab that sign-in started, so the page after signing in doesn't flash the landing page (boot.js)
 const signingIn = () => { try { sessionStorage.setItem(SIGNING_IN_FLAG, "1"); } catch {} };
 
 // The product in one sentence: the same sentence you fill in when you set up a watch.
 const EXAMPLES = [
-  ["Mac mini with 16GB under €500", "every morning at 8", "good matches"],
-  ["Gazelle bike within 10 km of 3511", "every evening at 7", "good matches"],
-  ["Nintendo Switch OLED under €200", "on Fridays at 18:00", "great matches only"],
+  ["Mac mini with 16GB under €500", "every morning at 8", "good"],
+  ["Gazelle bike within 10 km of 3511", "every evening at 7", "good"],
+  ["Nintendo Switch OLED under €200", "on Fridays at 18:00", "great"],
 ];
 
 function useCycle(length, ms) {
@@ -45,32 +46,34 @@ export default function Landing({ SignIn = Plain }) {
         <h1 className="sentence">
           Check Marktplaats for a <span className="tag" key={what}>{what}</span>{" "}
           <span className="tag" key={when}>{when}</span> and <span className="nowrap">e-mail</span> me{" "}
-          <span className="tag" key={which}>{which}</span><span className="sentence-tail">, with the reason.</span>
+          <span className="tag" key={which}>{NOTIFY_LABEL[which]}</span><span className="sentence-tail">, with the reason.</span>
         </h1>
+        <p className="hint">{NOTIFY_LABEL[which]} means {NOTIFY_SHORT[which]}.</p>
         <p className="lede">
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
-          say why. Only the ones worth a look reach your inbox. Free, up to 5 watches.
+          say why. You choose which ones reach your inbox. Free, up to 5 watches.
         </p>
         <SignIn mode="modal"><button className="button primary large" onClick={signingIn}>Set up a free watch</button></SignIn>
         <p className="cta-note">No card, no app to install. Sign in with your e-mail or Google.</p>
 
         <section className="sample" aria-labelledby="sample-title">
           <h2 id="sample-title">From a real check for "Mac mini, 16GB, under €500"</h2>
+          <p className="hint">How scores work: every listing gets a score from 0 to 10 and a reason. {MIN_SCORE.great}+ is great, {MIN_SCORE.good}+ is good. You choose which ones reach your inbox.</p>
           <ul>
             <li className="good">
-              <span className="score">9/10</span>
+              <span className="score">9/10<br />great</span>
               <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, <span className="sample-price">€230</span><br />
                 A Mac mini with 16GB and a price well under €500. E-mailed.</span>
             </li>
             <li className="skip">
-              <span className="score">0/10</span>
+              <span className="score">0/10<br />low</span>
               <span><strong>Mac Mini M4 Docking Station 1TB</strong>, <span className="sample-price">€74</span><br />
-                A docking station, not a Mac mini. You never hear about it.</span>
+                A docking station, not a Mac mini. With good matches selected, it stays out of your inbox.</span>
             </li>
             <li className="skip">
-              <span className="score">0/10</span>
+              <span className="score">0/10<br />low</span>
               <span><strong>Also found: SSDs, a tracker and a Cisco switch</strong><br />
-                All scored 0/10. None e-mailed.</span>
+                All scored 0/10. None e-mailed with good matches selected.</span>
             </li>
           </ul>
         </section>
@@ -92,7 +95,7 @@ export default function Landing({ SignIn = Plain }) {
               <ul>
                 <li>Understands what you asked for, in plain words</li>
                 <li>Reads every new listing and scores it 0 to 10, with the reason</li>
-                <li>E-mails only the ones worth a look, when you choose</li>
+                <li>E-mails the scores you choose, when you choose</li>
               </ul>
             </div>
           </div>
@@ -101,7 +104,7 @@ export default function Landing({ SignIn = Plain }) {
 
         <ol className="steps">
           <li><strong>Tell the chat what you want.</strong> "A Mac mini with 16GB, under €500, near Utrecht."</li>
-          <li><strong>Pick when to check.</strong> Every 15 minutes, every morning at 8, or only on weekends. One e-mail with the good ones, not a ping per listing.</li>
+          <li><strong>Pick when to check.</strong> Every 15 minutes, every morning at 8, or only on weekends. One e-mail with the listings you chose, rather than a ping per listing.</li>
           <li><strong>Get an e-mail when a good one appears, with the reason.</strong> The first check only notes what's listed now, so you only hear about new ones. Rate each alert, so the scores keep getting checked.</li>
         </ol>
 

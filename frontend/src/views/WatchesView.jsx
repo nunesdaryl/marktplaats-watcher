@@ -3,6 +3,7 @@ import { api } from "../../convex/_generated/api";
 import Icon from "../components/Icon.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import { go } from "../lib/router.js";
+import { scoreLevel } from "../../convex/schedule";
 
 /** The phone's Watches tab: inset grouped lists like iOS Settings, pinned first, folders, and the archive. */
 export default function WatchesView({ watches: watchesOrLoading, actions, onNew }) {
@@ -18,7 +19,7 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
             <span className="primary-text">{w.title}</span>
             <span className="secondary-text">{w.active ? w.summary : "Paused"}</span>
           </span>
-          {best?.score !== undefined && <span className={`pill score-pill ${best.score >= 8 ? "great" : best.score >= 6 ? "good" : ""}`}>{best.score}/10</span>}
+          {best?.score !== undefined && <span className={`pill score-pill ${scoreLevel(best.score)}`}>{best.score}/10 · {scoreLevel(best.score)}</span>}
         </button>
         <RowMenu items={actions.watchItems(w)} label={`Options for ${w.title}`} />
       </li>

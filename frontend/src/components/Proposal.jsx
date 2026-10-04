@@ -1,7 +1,7 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
-import { NOTIFY_LABEL, describe } from "../../convex/schedule";
+import { NOTIFY_LABEL, NOTIFY_SHORT, describe } from "../../convex/schedule";
 import { scheduleKind, track } from "../lib/track.js";
 
 const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
@@ -14,7 +14,7 @@ function searchText(p) {
 }
 
 function changeText(p) {
-  return [p.schedule && `check it ${describe(p.schedule)}`, p.notify && `e-mail you ${NOTIFY_LABEL[p.notify]}`,
+  return [p.schedule && `check it ${describe(p.schedule)}`, p.notify && `e-mail you ${NOTIFY_LABEL[p.notify]} (${NOTIFY_SHORT[p.notify]})`,
     p.maxPriceEur && `set the max price to €${p.maxPriceEur}`, p.active === false && "pause it",
     p.active === true && "resume it"].filter(Boolean).join(", ");
 }
@@ -45,7 +45,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
   return (
     <div className="proposal">
       {p.type === "create" ? (
-        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[p.notify]}.</p>
+        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[p.notify]} ({NOTIFY_SHORT[p.notify]}).</p>
       ) : (
         <p>For <strong>{p.label}</strong>: {changeText(p)}.</p>
       )}
