@@ -150,6 +150,9 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
   you can ask your alert history. Max at €14.95: WhatsApp, Telegram or SMS, a preference profile and your own AI
   assistant. But first ten conversations and three paying users, and a permitted data source." (Monetization deck:
   https://claude.ai/artifact/5YPCxivTPUQLZwCnzaBdsX)
+- **"Have you talked to Marktplaats?"** "That is the next step: a pitch for a 30-minute conversation, official access and
+  a six-week pilot with agreed success criteria." (Pitch deck: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma; source
+  `docs/marketing/MARKTPLAATS-PITCH-PACK.md`.)
 - **"Why is there a red line on your dashboard?"** "Because it tells the truth. Every morning it re-checks every
   watch; today it found four listings a user may have missed. I review them and decide whether to send a catch-up.
   A dashboard that is always green is one nobody believes."

@@ -1436,6 +1436,26 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   things must be true (the marketing pack's offer-validation rule): ten conversations and three paying users, a
   permitted data source (MW-14), and the paid basics (Stripe, plan limits, a production sign-in, terms, registration).
   Beta users keep their current plan free. These prices are a proposal, untested.</p>
+<p><b>Sign-in, account menu and match levels (4 October).</b> Four factory issues merged and live. MW-74 hides Clerk's
+  "Development mode" label with Clerk's own appearance option; the app is still on a Clerk development instance (dev
+  limits, Google's consent screen says "Clerk"), and MW-76 (backlog: own domain, Clerk production instance, own Google
+  sign-in) is the real fix. MW-75 puts the account menu also at the top right on desktop, next to the theme toggle,
+  behind the build-time switch <code>NEXT_PUBLIC_ACCOUNT_TOP_RIGHT</code> (on in Preview and Production); the sidebar
+  row stays, and removing the variable and redeploying restores the sidebar-only layout (an experiment, recorded in
+  the design system). MW-77 is a UI/UX benchmark of the course community site (linked in §22), whose top five ideas
+  are filed as MW-78, 79, 81, 82 and 83. MW-84 makes the three notify levels self-explanatory everywhere they appear,
+  from one shared source in <code>convex/schedule.ts</code>: "great matches" are scores 8–10, "good matches" 6–10,
+  "every new listing" is everything new, still scored. The watch page, the chat's watch proposal, the alert e-mail
+  footer ("asked for good matches: listings scoring 6 or higher out of 10"), score badges ("9/10 · great") and the
+  landing page ("How scores work") all say so; the thresholds did not change.</p>
+<p><b>Pitch to Marktplaats (4 October).</b> A 14-slide deck in the product's design system
+  (<a href="https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma">claude.ai artifact</a>, private to Daryl), built from
+  <code>docs/marketing/MARKTPLAATS-PITCH-PACK.md</code> and shaped by an audit of the course skills (the FDE skill's
+  pilot, success-criteria, discovery and three-value-bucket templates; the marketing pack's proof rules). It shows the
+  live demo early, states the honest limit (one personal signed-in session today) as the reason for the meeting, and
+  asks for one thing: a 30-minute conversation, followed by sandbox access, a six-week pilot with agreed criteria and a
+  go / pivot / stop date. Proof numbers come from <code>evals/report.md</code> (94% great-match precision on 53 listings,
+  20/20 chat cases, €0.005 per 20-listing check).</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
