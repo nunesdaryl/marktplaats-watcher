@@ -1,11 +1,12 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
 import { track } from "../lib/track.js";
+import { scoreLevel } from "../../convex/schedule";
 
 function ScoreBadge({ score }) {
   if (score === undefined || score === null) return null;
-  const tone = score >= 8 ? "great" : score >= 6 ? "good" : "low";
-  return <span className={`score ${tone}`} aria-label={`Scored ${score} out of 10`}>{score}<small>/10</small></span>;
+  const tone = scoreLevel(score);
+  return <span className={`score ${tone}`} aria-label={`Scored ${score} out of 10, ${tone}`}>{score}<small>/10</small> · {tone}</span>;
 }
 
 /** One listing as a card: photo, title, price, place, and (for alerts) the score and its reason. */

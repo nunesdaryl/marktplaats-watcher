@@ -3,7 +3,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useContext, useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
-import { NOTIFY_LABEL } from "../../../convex/schedule";
+import { NOTIFY_LABEL, NOTIFY_SHORT, scoreLevel } from "../../../convex/schedule";
 import Icon from "../../components/Icon.jsx";
 import ListingCard from "../../components/ListingCard.jsx";
 import RichText from "../../lib/text.jsx";
@@ -29,7 +29,8 @@ export function receivedTimestamp(day, now = Date.now()) {
 export const adminError = (error) => error instanceof ConvexError && typeof error.data === "string"
   ? error.data : "That didn't work. Try again.";
 const STAGES = { signed_up: "Signed up", setup: "Finished setup", chatted: "Chatted", watch: "Saved a watch", alert: "Got an alert" };
-const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
+const NOTIFY = Object.fromEntries(Object.entries(NOTIFY_LABEL).map(([level, text]) =>
+  [level, `${text[0].toUpperCase()}${text.slice(1)} (${NOTIFY_SHORT[level]})`]));
 
 export function CopyEmail({ email }) {
   const [done, setDone] = useState(false);
@@ -42,7 +43,7 @@ export function CopyEmail({ email }) {
 }
 
 const Score = ({ s }) => (s === undefined || s === null ? "–"
-  : <span className={`score-pill ${s >= 8 ? "great" : s >= 6 ? "good" : "low"}`}>{s}<small>/10</small></span>);
+  : <span className={`score-pill ${scoreLevel(s)}`}>{s}<small>/10</small> · {scoreLevel(s)}</span>);
 const Status = ({ s }) => <span className={`status-pill ${s}`}>{s}</span>;
 const Person = ({ email }) => <span className="person">{email}</span>;
 
@@ -382,7 +383,7 @@ export function Watch({ params, open }) {
     <div className="stack">
       <div className="record-head">
         <p className="sentence small">
-          Checking Marktplaats for <mark>{w.label}</mark> <mark>{w.schedule}</mark>, e-mailing <mark>{NOTIFY_LABEL[w.notify] ?? w.notify}</mark>.
+          Checking Marktplaats for <mark>{w.label}</mark> <mark>{w.schedule}</mark>, e-mailing <mark>{NOTIFY_LABEL[w.notify] ?? w.notify}</mark>{NOTIFY_SHORT[w.notify] && ` (${NOTIFY_SHORT[w.notify]})`}.
         </p>
         <Facts items={[
           ["Account", <button className="link-button" onClick={() => open({ view: "user", title: w.email, params: { id: w.userId } })}>{w.email}</button>],

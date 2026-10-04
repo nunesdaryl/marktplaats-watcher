@@ -19,6 +19,13 @@ test("a broad proposal shows the warning with enabled Save and Adjust", () => {
   expect(html).toContain(">Adjust</button>");
 });
 
+test("create and edit proposals explain the chosen alert level", () => {
+  const create = renderToStaticMarkup(<Proposal p={{ type: "create", query: "iphone", schedule, notify: "good" }} />);
+  const edit = renderToStaticMarkup(<Proposal p={{ type: "update", label: "iphone", watchId: "w1", notify: "great" }} />);
+  expect(create).toContain("good matches (listings scoring 6 or higher out of 10)");
+  expect(edit).toContain("great matches only (listings scoring 8 or higher out of 10)");
+});
+
 test("the edit sheet shows the same warning and leaves Save available", () => {
   const html = renderToStaticMarkup(<WatchSheet mode="edit" watchId="w1"
     initial={{ query: "iphone", schedule, volumeNote: note }} onClose={() => {}} />);

@@ -1,7 +1,7 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
-import { NOTIFY_LABEL, describe } from "../../convex/schedule";
+import { NOTIFY_LABEL, NOTIFY_SHORT, describe } from "../../convex/schedule";
 import ScheduleEditor from "../components/ScheduleEditor.jsx";
 import Sheet from "../components/Sheet.jsx";
 import { scheduleKind, track } from "../lib/track.js";
@@ -41,7 +41,7 @@ export default function Onboarding({ email, onDone }) {
   const steps = [
     <div key="what" className="stack">
       <p className="lead">What should we keep an eye on?</p>
-      <p className="hint">We'll read every new listing for it and only e-mail the ones that fit, with the reason.</p>
+      <p className="hint">We'll read and score every new listing for it. You choose which ones we e-mail, with the reason.</p>
       <input className="field big" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus maxLength={80}
              placeholder="e.g. Mac mini" aria-label="Item to watch" />
       <div className="suggestions left">{IDEAS.map((i) => <button key={i} type="button" className="chip" onClick={() => setQuery(i)}>{i}</button>)}</div>
@@ -55,7 +55,7 @@ export default function Onboarding({ email, onDone }) {
     <div key="where" className="stack">
       <p className="lead">Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
       <p className="sentence small">Checking Marktplaats for <mark>{query}{maxPrice ? ` under €${maxPrice}` : ""}</mark>{" "}
-        <mark>{describe(plan.schedule)}</mark>, e-mailing you <mark>{NOTIFY_LABEL[plan.notify]}</mark>.</p>
+        <mark>{describe(plan.schedule)}</mark>, e-mailing you <mark>{NOTIFY_LABEL[plan.notify]}</mark> ({NOTIFY_SHORT[plan.notify]}).</p>
       <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>
       {error && <p className="error" role="alert">{error}</p>}
     </div>,

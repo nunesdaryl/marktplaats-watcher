@@ -1,7 +1,16 @@
 import { describe as group, expect, test } from "vitest";
-import { checkSchedule, describe, describeWhen, nextRun } from "./schedule";
+import { MIN_SCORE, NOTIFY_HELP, NOTIFY_SHORT, checkSchedule, describe, describeWhen, nextRun, scoreLevel } from "./schedule";
 
 const at = (iso: string) => Date.parse(iso);
+
+test("notification wording uses the scoring thresholds", () => {
+  expect(NOTIFY_SHORT.great).toContain(`${MIN_SCORE.great} or higher out of 10`);
+  expect(NOTIFY_SHORT.good).toContain(`${MIN_SCORE.good} or higher out of 10`);
+  expect(NOTIFY_SHORT.all).toContain("all new listings that fit your filters, each still scored");
+  expect(NOTIFY_HELP.great).toContain(`Scores ${MIN_SCORE.great}–10`);
+  expect(NOTIFY_HELP.good).toContain(`Scores ${MIN_SCORE.good}–10`);
+  expect([0, 5, 6, 7, 8, 10].map(scoreLevel)).toEqual(["low", "low", "good", "good", "great", "great"]);
+});
 
 group("nextRun", () => {
   test("interval: the next check is one interval later", () => {

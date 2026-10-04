@@ -20,8 +20,8 @@ export type Notify = Infer<typeof notifyValidator>;
 export const MIN_SCORE: Record<Notify, number> = { great: 8, good: 6, all: 0 };
 /** What each notify level means, in plain words: shown right under the choice. Each listing is scored 0–10. */
 export const NOTIFY_HELP: Record<Notify, string> = {
-  great: "Scores 8–10: exactly what you asked for, at a good price. Fewest e-mails; a so-so deal won't reach you.",
-  good: "Scores 6–10: also decent options, like an older model or a price near your limit. Catches the most real matches.",
+  great: `Scores ${MIN_SCORE.great}–10: exactly what you asked for, at a good price. Fewest e-mails; a so-so deal won't reach you.`,
+  good: `Scores ${MIN_SCORE.good}–10: also decent options, like an older model or a price near your limit. Catches the most real matches.`,
   all: "Every new listing that fits your filters, still scored with the reason, including accessories and look-alikes. Most e-mails, like Marktplaats' own saved search.",
 };
 
@@ -30,6 +30,17 @@ export const NOTIFY_LABEL: Record<Notify, string> = {
   good: "good matches",
   all: "every new listing",
 };
+
+/** Short wording for places where the full picker help would be too long. */
+export const NOTIFY_SHORT: Record<Notify, string> = {
+  great: `listings scoring ${MIN_SCORE.great} or higher out of 10`,
+  good: `listings scoring ${MIN_SCORE.good} or higher out of 10`,
+  all: "all new listings that fit your filters, each still scored",
+};
+
+export function scoreLevel(score: number): "great" | "good" | "low" {
+  return score >= MIN_SCORE.great ? "great" : score >= MIN_SCORE.good ? "good" : "low";
+}
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
