@@ -209,6 +209,8 @@ a set.
 
 - **Desktop (≥ 900px):** `.shell` = sidebar (`--sidebar-w` 272px) + scrolling `.main`. Pages max 960px wide
   (`.page`, `:477`); chat thread 760px; composer 720px.
+- **Experiment (4 Oct 2026):** account menu also top right on desktop, behind `NEXT_PUBLIC_ACCOUNT_TOP_RIGHT`.
+  The default rule stays sidebar bottom; the extra button appears beside the theme toggle only when the flag is `1`.
 - **Phone (< 900px):** `.shell.phone` = sticky glass top bar + content + fixed glass tab bar (Chat, Watches, Alerts,
   and Dashboard for the owner). Breakpoint rules at `:632` and `:849`; JS uses the same `(max-width: 899px)`.
   Listing grid becomes 2 columns; sheets become bottom sheets (`--radius-sheet` top corners).

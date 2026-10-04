@@ -1,3 +1,5 @@
+import AccountButton from "./AccountButton.jsx";
+import { ACCOUNT_TOP_RIGHT } from "../lib/flags.js";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 /** The slim strip at the top of every signed-in page: feedback is always one tap away, wherever something goes wrong.
@@ -11,6 +13,7 @@ export default function BetaBanner({ onFeedback, busy, withToggle }) {
         <span aria-hidden="true" className="beta-arrow">→</span>
       </button>
       {withToggle && <ThemeToggle className="icon-button small" />}
+      {withToggle && ACCOUNT_TOP_RIGHT && <div className="beta-account" role="group" aria-label="Account"><AccountButton /></div>}
     </div>
   );
 }
