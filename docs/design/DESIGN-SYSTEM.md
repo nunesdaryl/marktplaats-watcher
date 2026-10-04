@@ -7,6 +7,8 @@ Where it comes from: the "Sieve" direction (Claude Design, 28 Sep, `docs/design/
 `references/current-app-design-inventory.md`, `docs/design/sieve/README.md`, `docs/design/claude-design-brief.md`.
 `references/marktplaats-design-language.md` is not ours: it records Marktplaats' look so we stay clear of it.
 
+Benchmarks: [Vinod's Academy community UI/UX audit (4 October 2026)](benchmark/databag-2026-10-04/README.md).
+
 When this file and `styles.css` disagree, `styles.css` is what users see: fix whichever is wrong, then re-run the check in
 §12.
 
