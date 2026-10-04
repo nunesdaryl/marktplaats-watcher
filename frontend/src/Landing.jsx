@@ -48,7 +48,7 @@ export default function Landing({ SignIn = Plain }) {
           <span className="tag" key={when}>{when}</span> and <span className="nowrap">e-mail</span> me{" "}
           <span className="tag" key={which}>{NOTIFY_LABEL[which]}</span><span className="sentence-tail">, with the reason.</span>
         </h1>
-        <p className="hint">{NOTIFY_LABEL[which]} means {NOTIFY_SHORT[which]}.</p>
+        <p className="hint">{NOTIFY_LABEL[which][0].toUpperCase() + NOTIFY_LABEL[which].slice(1)} means {NOTIFY_SHORT[which]}.</p>
         <p className="lede">
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
           say why. You choose which ones reach your inbox. Free, up to 5 watches.
