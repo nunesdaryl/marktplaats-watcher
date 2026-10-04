@@ -143,6 +143,13 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - **"What's next?"** "Real users' ratings into the eval set, the official API if Marktplaats offers it, and fixing
   what today's audit found on the Mac mini watch."
 
+- **"How do you evaluate it?"** "Code checks for anything with a right answer, twenty chat cases, nineteen must pass;
+  a stronger model as judge with my own spot-check for the scoring, ninety percent precision on great matches; and real
+  users' ratings on top. Retrieval quality is the next thing we measure."
+- **"How would you make money?"** "Free stays useful: two watches, hourly. Pro at €7.95: ten watches every 15 minutes and
+  you can ask your alert history. Max at €14.95: WhatsApp, Telegram or SMS, a preference profile and your own AI
+  assistant. But first ten conversations and three paying users, and a permitted data source." (Monetization deck:
+  https://claude.ai/artifact/5YPCxivTPUQLZwCnzaBdsX)
 - **"Why is there a red line on your dashboard?"** "Because it tells the truth. Every morning it re-checks every
   watch; today it found four listings a user may have missed. I review them and decide whether to send a catch-up.
   A dashboard that is always green is one nobody believes."

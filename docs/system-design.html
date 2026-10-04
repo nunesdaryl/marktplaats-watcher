@@ -390,6 +390,17 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     <td>A recipient says an alert scored 8 was not a good match.</td>
     <td>Report only; no current merge bar.</td><td>After ratings are pulled and the report is rerun; confirmed cases are scored in later scorer runs.</td></tr>
 </table>
+<h3>How each suite is judged: code checks, model as judge, people</h3>
+<p>We use three kinds of evaluation, each where it fits best. Model-as-judge is one of them, not the main bar.</p>
+<table>
+  <tr><th>Kind</th><th>Used for</th><th>How</th><th>Why this kind</th></tr>
+  <tr><td><b>Code-based checks</b> (deterministic assertions)</td><td>The 20 chat cases; the RAG suite</td><td>Each case has a written pass condition that code checks: the right tool (<code>search_marktplaats</code>, <code>propose_watch</code>, …), the right arguments (price, schedule, notify level), refusing off-topic questions, never revealing the system prompt. Bar: at least 19 of 20.</td><td>These questions have one right answer, so plain code is cheaper, faster and never wrong about it.</td></tr>
+  <tr><td><b>Model as judge, corrected by a human</b></td><td>The alert scorer (the 0–10 scores)</td><td>A stronger model (GPT-5.5, <code>JUDGE_MODEL</code> in <code>evals/label.py</code>) labelled 53 real listings as a good or bad match for their watch; Daryl spot-checked a sample and corrected disputed labels (<code>evals/data/spotcheck.md</code>). The production scorer (<code>gpt-5.4-mini</code>) is measured against those corrected labels: three runs, median "great" precision at least 90%.</td><td>"Is this listing a good match?" is a judgement call: a stronger model judges at scale, a human keeps the judge honest.</td></tr>
+  <tr><td><b>Human feedback from real users</b></td><td>Every alert ("Good match? Yes / Not right")</td><td>The dashboard shows agreement per score band; "not right" ratings become candidate test cases once the owner confirms them (MW-49).</td><td>The only signal from the people who actually received the alert.</td></tr>
+</table>
+<p>Not yet: a model judge for RAG faithfulness (is every claim in an answer backed by a retrieved alert?); planned in MW-68.
+  In one line: <i>code checks for anything with a right answer, a stronger model as judge with a human spot-check for
+  the scoring, and real users' ratings on top.</i></p>
 <h3>What we measure, against the course's three kinds of system</h3>
 <p>✅ measured · 🟡 partly measured · ❌ not measured yet.</p>
 <h4>LLM</h4>
@@ -1412,6 +1423,17 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <code>alerts_vec</code> in the Atlas UI on Daryl's request ("bring your own embeddings", 1,536 dimensions, cosine, filter
   <code>userId</code>; Atlas's default automated-embedding option was declined: extra cost, US region): READY, queryable,
   1,131 of 1,131 indexed. Lesson: a mirror that swallows errors costs an hour; one that names the error costs minutes.</p>
+<p><b>Monetization proposal (3 October, evening).</b> A three-slide deck in the product's design system
+  (<a href="https://claude.ai/artifact/5YPCxivTPUQLZwCnzaBdsX">claude.ai artifact</a>, private to Daryl) proposes Free €0
+  (2 watches, hourly checks, scored and explained alerts, no trial clock), Pro €7.95 a month (10 watches, every 15
+  minutes, ask your alert history in chat, rate to tune scores, catch-up e-mails) and Max €14.95 a month (30 watches
+  with broad searches, alerts on WhatsApp, Telegram or SMS, a personal preference profile learned from ratings, your own
+  AI assistant through MCP, everything in Pro). Prices sit between keyword-only alerts (MarktAlert €6.95–10.95) and AI
+  alerts (MPAlerts €19.95–39.95); cost grows with listings scored (about €0.35 a month for a typical hourly watch, up to
+  €14.73 for the busiest 15-minute watch), so broad searches carry a volume cap and sit in Max. Before charging, three
+  things must be true (the marketing pack's offer-validation rule): ten conversations and three paying users, a
+  permitted data source (MW-14), and the paid basics (Stripe, plan limits, a production sign-in, terms, registration).
+  Beta users keep their current plan free. These prices are a proposal, untested.</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
