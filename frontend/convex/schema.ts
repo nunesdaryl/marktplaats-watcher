@@ -76,6 +76,15 @@ export default defineSchema({
     lookingFor: v.optional(v.string()),
   }).index("by_clerkId", ["clerkId"]).index("by_createdAt", ["createdAt"]),
 
+  foundingRounds: defineTable({
+    userId: v.id("users"), freeUntil: v.number(),
+    disappointed: v.optional(v.union(v.literal("very"), v.literal("somewhat"), v.literal("not"), v.literal("unused"))),
+    benefit: v.optional(v.string()),
+    wouldPay: v.optional(v.union(v.literal("no"), v.literal("up_to_5"), v.literal("5_to_10"), v.literal("over_10"))),
+    dismissedAt: v.optional(v.number()), surveyEmailAt: v.optional(v.number()),
+    noticeEmailAt: v.optional(v.number()), extendedAt: v.optional(v.number()),
+  }).index("by_user_round", ["userId", "freeUntil"]).index("by_extended", ["extendedAt"]),
+
   usage: defineTable({
     userId: v.string(),             // verified Clerk id; a user row may not exist yet
     day: v.string(),                // Europe/Amsterdam calendar day

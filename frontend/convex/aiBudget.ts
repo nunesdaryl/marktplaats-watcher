@@ -6,6 +6,7 @@ import type { Doc } from "./_generated/dataModel";
 import { ownerMatches } from "./admin";
 import { sendEmail } from "./checker";
 import { currentUser } from "./users";
+import { hasEnded } from "./founding";
 import { addToMonthly } from "./spendRollup";
 
 const PERIOD = 30 * 86_400_000;
@@ -40,6 +41,7 @@ export const mine = query({ args: {}, handler: async (ctx) => {
 export const check = internalQuery({ args: { clerkId: v.string() }, handler: async (ctx, { clerkId }) => {
   const user = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique();
   if (!user) return { allowed: false, reason: "admission" };
+  if (hasEnded(user)) return { allowed: false, reason: "founding_ended" };
   const budget = await budgetFor(ctx, user, Date.now());
   return budget.allowed ? { allowed: true } : { allowed: false, reason: "budget", resetsAt: budget.resetsAt };
 } });
