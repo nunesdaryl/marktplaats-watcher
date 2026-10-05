@@ -147,7 +147,7 @@ function Workspace() {
 
   let content;
   if (route.section === "w") content = <WatchView watch={watch} actions={actions} onEdit={(w) => setSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id })} />;
-  else if (route.section === "alerts") content = <AlertsView actions={actions} />;
+  else if (route.section === "alerts") content = <AlertsView actions={actions} watches={watchesOrLoading} onNewWatch={() => newWatch()} />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
   else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
   else if (route.section === "watches") content = <WatchesView watches={watchesOrLoading} actions={actions} onNew={() => newWatch()} />;
@@ -170,7 +170,7 @@ function Workspace() {
   if (desktop) {
     return (
       <div className="shell">
-        <Sidebar route={route} watches={watches} chats={chats} email={me?.email} budget={budget} actions={actions} renaming={renaming}
+        <Sidebar route={route} watches={watches} watchesLoaded={watchesOrLoading !== undefined} chats={chats} email={me?.email} budget={budget} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">

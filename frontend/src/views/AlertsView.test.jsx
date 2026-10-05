@@ -47,6 +47,22 @@ test("creation time is the first-visit fallback", () => {
   expect(html.match(/class="alert-item is-new"/g)).toHaveLength(1);
 });
 
+test("first-use alerts explain when they appear and offer a watch action", () => {
+  responses[0] = [];
+  const onNewWatch = vi.fn();
+  const html = renderToStaticMarkup(<AlertsView actions={{}} watches={[]} onNewWatch={onNewWatch} />);
+  expect(html).toContain("When a watch finds a good new listing, its alert appears here and in your inbox.");
+  expect(html.match(/Create a watch/g)).toHaveLength(1);
+  expect(html).not.toContain("Archive all");
+});
+
+test("alerts without results do not offer another watch action when watches exist", () => {
+  responses[0] = [];
+  const html = renderToStaticMarkup(<AlertsView actions={{}} watches={[{ _id: "w1" }]} onNewWatch={vi.fn()} />);
+  expect(html).toContain("When a watch finds a good new listing");
+  expect(html).not.toContain("Create a watch");
+});
+
 test("archive all asks on the first tap and runs only on the second", async () => {
   vi.useFakeTimers();
   const archiveAllAlerts = vi.fn(() => Promise.resolve());
