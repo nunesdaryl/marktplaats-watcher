@@ -183,6 +183,10 @@ export const deleteMyData = mutation({
       await deleteChat(ctx, chat._id);
     for (const row of await ctx.db.query("usage").withIndex("by_user_day", (q) => q.eq("userId", user.clerkId)).collect())
       await ctx.db.delete(row._id);
+    for (const row of await ctx.db.query("aiSpend").withIndex("by_user_window", (q) => q.eq("userId", user._id)).collect())
+      await ctx.db.delete(row._id);
+    for (const row of await ctx.db.query("aiBudgets").withIndex("by_user_window", (q) => q.eq("userId", user._id)).collect())
+      await ctx.db.delete(row._id);
     for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect()) {
       if (row.screenshotId) await ctx.storage.delete(row.screenshotId);
       for (const event of await ctx.db.query("feedbackEvents").withIndex("by_feedback", (q) => q.eq("feedbackId", row._id)).collect())

@@ -66,6 +66,7 @@ export default defineSchema({
     createdAt: v.number(),
     admittedAt: v.optional(v.number()),
     freeUntil: v.optional(v.number()),
+    aiBudgetEur: v.optional(v.number()),
     onboardedAt: v.optional(v.number()),   // set when the first-run setup is finished or skipped
     alertsSeenAt: v.optional(v.number()),  // last time the Alerts page was open: newer alerts count as new
   }).index("by_clerkId", ["clerkId"]),
@@ -80,6 +81,15 @@ export default defineSchema({
     day: v.string(),                // Europe/Amsterdam calendar day
     chats: v.number(),
   }).index("by_user_day", ["userId", "day"]).index("by_day", ["day"]),
+
+  aiSpend: defineTable({
+    userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("chat")),
+    watchId: v.optional(v.id("watches")), inputTokens: v.number(), outputTokens: v.number(),
+    costEur: v.number(), at: v.number(), callId: v.string(),
+  }).index("by_user_window", ["userId", "windowStart"]).index("by_call", ["callId"]),
+  aiBudgets: defineTable({
+    userId: v.id("users"), windowStart: v.number(), totalEur: v.number(), notifiedAt: v.optional(v.number()),
+  }).index("by_user_window", ["userId", "windowStart"]),
 
   // Folders group chats and watches, like ChatGPT Projects. Deleting a folder never deletes what's in it.
   folders: defineTable({

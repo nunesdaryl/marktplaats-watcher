@@ -12,6 +12,7 @@ import { activePatch } from "./watches";
 import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
 import { usageDay } from "./usage";
+import { budgetFor } from "./aiBudget";
 import { readRows, readSummaries, windowSummaries, summarizeEvents, summarizeAlerts,
   sentAlertsSince, insertTracked, patchTracked } from "./totals";
 
@@ -329,11 +330,12 @@ export const users = query({
     const devices = new Map<string, Set<string>>();
     events.forEach((e) => { if (!devices.has(e.userId)) devices.set(e.userId, new Set()); devices.get(e.userId)!.add(e.device); });
     const q = search?.trim().toLowerCase();
-    const rows = users.map((u) => {
+    const rows = (await Promise.all(users.map(async (u) => {
       const reached = reachedSteps(u, has);
       const mine = watches.filter((w) => w.userId === u._id);
       return {
         _id: u._id, email: u.email, createdAt: u.createdAt, onboardedAt: u.onboardedAt, lastActive: lastActive.get(u._id) ?? null,
+        aiBudget: await budgetFor(ctx, u, Date.now()),
         devices: [...(devices.get(u._id) ?? [])], reached,
         furthest: FUNNEL[reached.lastIndexOf(true)],
         watchesActive: mine.filter((w) => watchStatus(w) === "active").length,
@@ -343,7 +345,7 @@ export const users = query({
         alerts: alerts.filter((a) => a.userId === u._id).length,
         feedback: feedback.filter((f) => f.userId === u._id).length,
       };
-    }).filter((u) => {
+    }))).filter((u) => {
       if (userId && u._id !== userId) return false;
       if (!inRange(u.createdAt, since, until)) return false;
       if (q && !u.email.toLowerCase().includes(q)) return false;
@@ -375,6 +377,7 @@ export const user = query({
     const events = await ctx.db.query("events").withIndex("by_user_at", (q) => q.eq("userId", userId)).order("desc").take(300);
     return {
       _id: u._id, email: u.email, createdAt: u.createdAt, onboardedAt: u.onboardedAt,
+      aiBudget: await budgetFor(ctx, u, now),
       watches: await Promise.all(watches.map(async (w) =>
         watchRow(w, u.email, (await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).take(1000)).length, now))),
       alerts: alerts.map((a) => alertRow(a, u.email, titles.get(a.watchId))),

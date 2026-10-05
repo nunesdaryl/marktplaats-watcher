@@ -22,6 +22,7 @@ load_dotenv()  # before importing agent: it reads the environment at import time
 
 from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
 from convex_api import convex_post  # noqa: E402
+from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
 
 
@@ -222,11 +223,26 @@ def limit_answer(limit):
 
 
 def allowance_answer(allowance):
+    if allowance.get("reason") == "budget":
+        reset = datetime.fromtimestamp(allowance["resetsAt"] / 1000, ZoneInfo("Europe/Amsterdam")).strftime("%-d %B %Y")
+        return f"Your free AI budget for these 30 days is used up. It resets on {reset}."
     if allowance.get("reason") == "admission":
         return "All free places are taken. You're on the waitlist."
     if allowance.get("reason") == "unavailable":
         return "We couldn't check access right now. Try again in a few minutes."
     return limit_answer(allowance["limit"])
+
+
+def ai_cost(usage):
+    return cost_usd(os.environ["OPENAI_MODEL"], usage["input_tokens"], usage["output_tokens"]) * USD_TO_EUR
+
+
+def record_chat_spend(user, usage, ident):
+    if usage and usage.get("model_calls", 0):
+        for index, call in enumerate(usage.get("calls") or [usage]):
+            convex_post("/api/ai-spend", {"clerkId": user, "kind": "chat", "callId": f"{ident}.{index}",
+                        "inputTokens": call["input_tokens"], "outputTokens": call["output_tokens"],
+                        "costEur": ai_cost(call)})
 
 
 def save_assistant(request, user, event, ident=None):
@@ -277,6 +293,7 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
         identity = mcp_user.set(user)
         try:
             answer = chat(*chat_args(request))
+            record_chat_spend(user, answer.get("usage"), request_id.get())
         finally:
             mcp_user.reset(identity)
         return {**answer, "saved": save_assistant(request, user, answer)}
@@ -324,6 +341,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
+                    record_chat_spend(user, event["usage"], ident)
                     event["saved"] = save_assistant(request, user, event, ident)
                     final_sent = True
                 elif event["type"] == "error":
@@ -426,6 +444,9 @@ def embed_route(request: EmbedRequest):
 def check_route(request: CheckRequest):
     started = time.time()
     results = check_query(request.query, [w.model_dump() for w in request.watches])
+    for result in results:
+        if "usage" in result:
+            result["usage"]["calls"] = [{**call, "cost_eur": ai_cost(call)} for call in result["usage"]["calls"]]
     log("check", watches=len(results), failed=sum(not r["ok"] for r in results),
         new_listings=sum(len(r.get("listings") or []) for r in results), ms=round((time.time() - started) * 1000),
         errors=sorted({r["error"] for r in results if not r["ok"]}))

@@ -10,6 +10,7 @@ import { deleteChat } from "./chats";
 import { deleteAlertEmbedding } from "./embeddings";
 import { ratingToken } from "./ratings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
+import { budgetFor } from "./aiBudget";
 
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
@@ -73,6 +74,8 @@ export const claimDue = internalMutation({
     const byQuery = new Map<string, typeof due>();
     for (const w of due) {
       if (w.leaseUntil !== undefined && w.leaseUntil > now) continue;   // a check for it is still running
+      const owner = await ctx.db.get(w.userId);
+      if (!owner || !(await budgetFor(ctx, owner, now)).allowed) continue;
       const key = w.query.toLowerCase();
       if (!byQuery.has(key) && byQuery.size >= MAX_QUERIES_PER_RUN) continue;
       byQuery.set(key, [...(byQuery.get(key) ?? []), w]);
@@ -85,7 +88,7 @@ export const claimDue = internalMutation({
         const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
           .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
         payload.push({
-          id: w._id, description: w.label, max_price_eur: w.maxPriceEur ?? null,
+          id: w._id, clerkId: (await ctx.db.get(w.userId))!.clerkId, description: w.label, max_price_eur: w.maxPriceEur ?? null,
           must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId), seeded: w.seeded,
           watermark: w.seeded ? w.watermark ?? null : null, last_checked_at: w.seeded ? w.lastReadAt ?? null : null,
@@ -109,6 +112,8 @@ const result = v.object({
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
+  usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(),
+    calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number() })) })),
 });
 
 /** Store what a check found. Returns the e-mails to send: one per watch with good new listings.
@@ -424,6 +429,20 @@ export const checkDue = internalAction({
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
       checked += group.watches.length;
+      if (!dryRun) for (const r of results) {
+        const source = group.watches.find((w) => w.id === r.watchId);
+        if (!source || !r.usage) continue;
+        try {
+          for (const [callIndex, call] of r.usage.calls.entries())
+            await ctx.runMutation(internal.aiBudget.record, { clerkId: source.clerkId, watchId: source.id,
+              kind: "watch", inputTokens: call.input_tokens, outputTokens: call.output_tokens,
+              costEur: call.cost_eur, callId: `${groupId}.${r.watchId}.${callIndex}` });
+          // The check that crosses the budget still delivers (its cost is already paid); the next checks are skipped
+          // when watches are picked (budgetFor above).
+        } catch (e) {
+          console.error("AI usage record failed:", e);   // keep the paid-for results; dropping them would re-score
+        }
+      }
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       for (const mail of toSend) {

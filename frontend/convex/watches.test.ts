@@ -120,6 +120,36 @@ const item = (id: string, score: number | null) => ({
   score, reason: "fair price",
 });
 
+test("the checker does not claim watches after their owner uses the AI budget", async () => {
+  const { t, alice } = setup();
+  const id = await alice.mutation(api.watches.create, macMini);
+  await t.mutation(internal.aiBudget.record, { clerkId: "user_alice", kind: "chat", callId: "spent",
+    inputTokens: 100, outputTokens: 100, costEur: 1 });
+  vi.setSystemTime(Date.now() + 60 * 60_000);
+  expect(await t.mutation(internal.checker.claimDue, { now: Date.now() })).toEqual([]);
+  expect((await t.run((ctx) => ctx.db.get(id)))?.leaseUntil).toBeUndefined();
+});
+
+test("a ranking call is recorded; the check that crosses the budget still alerts, the next one is skipped", async () => {
+  const { t, alice } = setup();
+  const id = await alice.mutation(api.watches.create, macMini);
+  await t.run((ctx) => ctx.db.patch(id, { seeded: true, watermark: 1 }));
+  const calls = fakeSearchService((body) => body.watches.map((w: any) => ({
+    watchId: w.id, ok: true, currentIds: ["new"], newestId: 2, listings: [item("new", 9)],
+    usage: { input_tokens: 100, output_tokens: 50,
+      calls: [{ input_tokens: 100, output_tokens: 50, cost_eur: 1 }] },
+  })));
+  await t.action(internal.checker.checkDue, {});
+  expect(calls).toHaveLength(1);
+  expect(await t.run((ctx) => ctx.db.query("aiSpend").collect())).toMatchObject([
+    { watchId: id, kind: "watch", inputTokens: 100, outputTokens: 50, costEur: 1 },
+  ]);
+  expect((await alice.query(api.watches.list, {}))[0].alerts).toHaveLength(1);   // already paid for: delivered
+  vi.setSystemTime(new Date(Date.now() + 2 * 3_600_000));                             // next check is due
+  await t.action(internal.checker.checkDue, {});
+  expect(calls).toHaveLength(1);                                                       // over budget: no model call
+});
+
 test("first check only remembers what is there; later checks alert on good new listings once", async () => {
   const { t, alice } = setup();
   const id = await alice.mutation(api.watches.create, macMini);
