@@ -310,7 +310,13 @@ export default function Overview({ open, onSearch, ask }) {
       {ask}
       <p className="hint admin-tip">Click any number, bar or row to see the exact records behind it.</p>
 
-      <div className={`health ${h.issues.length ? "bad" : "ok"}`}>
+      <div className={`health ${h.issues.length || data.openaiFailureKind ? "bad" : "ok"}`}>
+        {data.openaiFailureKind && <p className="health-openai" role="alert">
+          {({ credit_exhausted: "OpenAI credit is empty — checks and chat can't score until credit is added",
+              spend_cap: "OpenAI spending limit was reached — checks and chat can't score until it is raised",
+              auth: "OpenAI account access failed — checks and chat can't score until the key is fixed" })[data.openaiFailureKind]}
+          {" · "}<a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">OpenAI billing</a>
+        </p>}
         <div className="health-stats" aria-label="Last 24 hours">
           {[["Runs", h.stats.runs, "runs", { since: now - DAY }], ["Checks failed", h.stats.checksFailed, "runs", { since: now - DAY, status: "failed" }],
             ["E-mails sent", h.stats.emailsSent, "alerts", { since: now - DAY, emailStatus: "sent" }],
@@ -318,7 +324,7 @@ export default function Overview({ open, onSearch, ask }) {
             <button key={name} onClick={() => go(view, name, params)}><strong>{value}</strong><span>{name}</span></button>)}
         </div>
         {h.issues.length ? <div className="health-issues">{h.issues.map((issue) => <HealthIssue key={issue.kind} issue={issue} go={go} />)}</div>
-          : <p className="health-good">All good</p>}
+          : !data.openaiFailureKind && <p className="health-good">All good</p>}
       </div>
 
       <div className="stats">

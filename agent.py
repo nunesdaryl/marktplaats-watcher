@@ -19,6 +19,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import BaseModel, Field
+from openai_failure import classify_openai_failure
 from prompts import (ADMIN_INTENT_PROMPT, ADMIN_INTENT_TEMPLATE, CHAT_PROMPT, PROMPT_VERSION, RAG_RULE,
                      RANK_PROMPT, RANK_PROMPT_TEMPLATE, SYSTEM_PROMPT, WATCH_MODE)
 
@@ -799,23 +800,27 @@ def check_query(query, watches, now=None):
         token = _rank_usage_for_check.set(usage)
         try:
             return rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True), usage
-        except Exception:
-            return None, usage
+        except Exception as e:
+            return classify_openai_failure(e), usage
         finally:
             _rank_usage_for_check.reset(token)
 
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = list(pool.map(rank, to_rank))
-    for (w, listings, _, newest, waiting, capped), (fresh, usage) in zip(to_rank, ranked):
+    for (w, listings, fresh_candidates, newest, waiting, capped), (fresh, usage) in zip(to_rank, ranked):
         tokens = {"input_tokens": sum(x[0] for x in usage), "output_tokens": sum(x[1] for x in usage),
                   "calls": [{"input_tokens": x[0], "output_tokens": x[1]} for x in usage]}
-        if fresh is None:
-            results.append({"watchId": w["id"], "ok": False, **({"usage": tokens} if usage else {}), "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."})
+        if isinstance(fresh, str):
+            messages = {"credit_exhausted": "Paused: the AI account has run out of credit. The owner has been told; nothing is sent unscored.",
+                        "spend_cap": "Paused: the AI account's spending limit has been reached. The owner has been told; nothing is sent unscored.",
+                        "auth": "Paused: the AI account needs attention. The owner has been told; nothing is sent unscored."}
+            results.append({"watchId": w["id"], "ok": False, "failureKind": fresh,
+                            **({"usage": tokens} if usage else {}), "error": messages.get(fresh, "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored.")})
             continue
         for item in fresh:
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
-        results.append({"watchId": w["id"], "ok": True, "currentIds": [i["id"] for i in listings if i["id"]],
+        results.append({"watchId": w["id"], "ok": True, **({"aiCall": True} if fresh_candidates else {}), "currentIds": [i["id"] for i in listings if i["id"]],
                         "listings": [{k: v for k, v in item.items() if k != "price_type"}
                                      for item in fresh if item["score"] is not None], "newestId": newest,
                         "waiting": waiting, "capped": capped, **({"usage": tokens} if usage else {})})

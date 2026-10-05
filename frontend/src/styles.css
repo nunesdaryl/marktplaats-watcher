@@ -783,6 +783,8 @@ textarea.field { resize: vertical; min-height: 110px; line-height: 1.45; }
 .health.ok { background: color-mix(in srgb, var(--great) 12%, transparent); }
 .health.ok strong { color: var(--great); }
 .health.bad { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.health-openai { margin: 0 0 var(--space-2); color: var(--danger); font-weight: 600; }
+.health-openai a { color: inherit; text-decoration: underline; }
 .health.bad strong { color: var(--danger); }
 .health-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:var(--space-2); padding-bottom:var(--space-2); }
 .health-stats button { display: flex; flex-direction: column; min-width: 0; padding:0; border:0; background:none; text-align:left; cursor:pointer; }

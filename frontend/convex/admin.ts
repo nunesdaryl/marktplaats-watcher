@@ -206,6 +206,7 @@ export const dashboard = query({
       wouldPay: (Object.keys(WOULD_PAY) as (keyof typeof WOULD_PAY)[])
         .map((key) => ({ key, name: WOULD_PAY[key], count: feedback.filter((f) => f.wouldPay === key).length })),
       health: await healthReport(ctx, now),
+      openaiFailureKind: (await ctx.db.query("openaiIncident").withIndex("by_key", (q) => q.eq("key", "account")).unique())?.failureKind ?? null,
       deliveryAudit: { checked: latestAudit.length, misses: latestAudit.reduce((n, a) => n + a.missCount, 0),
         lastRunAt: latestAuditAt ?? null, latestMisses },
       errors24h: { chat: errors.filter((e) => e.kind === "chat").length,

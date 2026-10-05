@@ -467,12 +467,14 @@ def test_chat_saves_final_answer_once_and_reports_failure(client, monkeypatch, c
     result = json.loads(response.text.splitlines()[-1]) if path.endswith("stream") else response.json()
     assert result["answer"] == "A useful answer."
     assert result["saved"] is not fails
-    assert len(sent) == 2
+    assert len(sent) == 3
     assert sent[0][0] == ("https://deployment.convex.site/api/ai-spend",)
     assert sent[0][1]["json"]["inputTokens"] == 1
     assert sent[1][0] == ("https://deployment.convex.site/api/chats/assistant",)
     assert sent[1][1]["json"] == {"clerkId": "alice", "chatId": "chat-id", "content": "A useful answer.",
                                    "listings": [], "proposals": []}
+    assert sent[2][0] == ("https://deployment.convex.site/api/ai-status",)
+    assert sent[2][1]["json"]["failureKind"] is None
     assert ('"event": "assistant_save_failed"' in capsys.readouterr().out) is fails
 
 
@@ -513,7 +515,7 @@ def test_offline_model_gives_a_clear_message(client, monkeypatch, error):
     headers = {"Authorization": f"Bearer {client.token()}"}
     res = client.post("/api/chat", json={"message": "hi"}, headers=headers)
     assert res.status_code == 503                       # monitoring sees it; the body stays user-friendly
-    assert "can't reach its AI" in res.json()["answer"]
+    assert "assistant is unavailable" in res.json()["answer"]
 
 
 def test_internal_check_needs_the_cron_secret(client, monkeypatch):
@@ -1125,7 +1127,7 @@ def test_stream_endpoint_needs_login_and_turns_failures_into_an_error_event(clie
     res = client.post("/api/chat/stream", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
     assert res.headers["content-type"].startswith("application/x-ndjson")
     events = [json.loads(line) for line in res.text.splitlines()]
-    assert [e["type"] for e in events] == ["status", "error"] and "can't reach its AI" in events[1]["text"]
+    assert [e["type"] for e in events] == ["status", "error"] and "assistant is unavailable" in events[1]["text"]
 
 
 def test_watch_mode_tells_the_agent_to_propose_a_watch_instead_of_searching(monkeypatch):
@@ -1169,7 +1171,20 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
             raise RuntimeError("model down")
     monkeypatch.setattr(agent, "ranker", DownRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
-    assert result == {"watchId": "w1", "ok": False, "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
+    assert result == {"watchId": "w1", "ok": False, "failureKind": "other", "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
+
+
+def test_check_query_labels_empty_openai_credit_without_sending_unscored_listings(monkeypatch):
+    monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
+
+    class EmptyCreditRanker:
+        def invoke(self, messages):
+            raise RuntimeError("Error code: 429 - {'code': 'credit_balance_exhausted', 'message': 'You have no credits remaining'}")
+
+    monkeypatch.setattr(agent, "ranker", EmptyCreditRanker())
+    [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
+    assert result == {"watchId": "w1", "ok": False, "failureKind": "credit_exhausted",
+                      "error": "Paused: the AI account has run out of credit. The owner has been told; nothing is sent unscored."}
 
 
 def test_truncated_ranker_reply_fails_watch_without_sending_unscored_listings(monkeypatch):
@@ -1181,7 +1196,7 @@ def test_truncated_ranker_reply_fails_watch_without_sending_unscored_listings(mo
 
     monkeypatch.setattr(agent, "ranker", TruncatedRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
-    assert result == {"watchId": "w1", "ok": False,
+    assert result == {"watchId": "w1", "ok": False, "failureKind": "other",
                       "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
@@ -1241,7 +1256,7 @@ def test_check_query_fails_if_retry_raises(monkeypatch):
     [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100,
                                                 "last_checked_at": EARLIER_TODAY}], now=NOW)
     assert calls == [["m5000", "m4999"], ["m4999"]]
-    assert result == {"watchId": "w1", "ok": False,
+    assert result == {"watchId": "w1", "ok": False, "failureKind": "other",
                       "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
@@ -1539,9 +1554,11 @@ def test_chat_failure_records_error_without_breaking_answer(client, monkeypatch,
     answer = json.loads(response.text)["text"] if path.endswith("stream") else response.json()["answer"]
     assert answer == "Something went wrong on our side. Try again."
     assert response.headers["X-Request-Id"] == "chat-123"
-    assert len(posts) == 1
+    assert len(posts) == 2
     assert posts[0][0] == ("https://deployment.convex.site/api/errors",)
     assert posts[0][1]["json"] == {"kind": "chat", "requestId": "chat-123", "message": f"RuntimeError: {answer}"}
+    assert posts[1][0] == ("https://deployment.convex.site/api/ai-status",)
+    assert posts[1][1]["json"] == {"failureKind": "other", "requestId": "chat-123"}
     logs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     assert all(line["requestId"] == "chat-123" for line in logs)
     if path.endswith("stream"):

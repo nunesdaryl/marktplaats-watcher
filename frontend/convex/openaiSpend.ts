@@ -163,6 +163,39 @@ export const sendCapAlert = internalAction({ args: { spentUsd: v.number(), capUs
   await sendEmail(email, { subject: "OpenAI spend reached 80% of your monthly cap", text, html: `<p>${text}</p>` });
 } });
 
+const accountFailure = v.union(v.literal("credit_exhausted"), v.literal("spend_cap"), v.literal("auth"));
+export const incident = query({ args: {}, handler: async (ctx) => {
+  if (!(await isOwner(ctx))) return null;
+  const row = await ctx.db.query("openaiIncident").withIndex("by_key", (q) => q.eq("key", "account")).unique();
+  return row?.failureKind ?? null;
+} });
+
+export const recordAiStatus = internalMutation({ args: { failureKind: v.optional(accountFailure) },
+  handler: async (ctx, { failureKind }) => {
+    const row = await ctx.db.query("openaiIncident").withIndex("by_key", (q) => q.eq("key", "account")).unique();
+    const previous = row?.failureKind;
+    if (failureKind) {
+      if (row) await ctx.db.patch(row._id, { failureKind, updatedAt: Date.now() });
+      else await ctx.db.insert("openaiIncident", { key: "account", failureKind, updatedAt: Date.now() });
+      if (!previous) await ctx.scheduler.runAfter(0, internal.openaiSpend.sendIncidentEmail, { recovered: false, failureKind });
+    } else if (previous) {
+      await ctx.db.patch(row!._id, { failureKind: undefined, updatedAt: Date.now() });
+      await ctx.scheduler.runAfter(0, internal.openaiSpend.sendIncidentEmail, { recovered: true, failureKind: previous as "credit_exhausted" | "spend_cap" | "auth" });
+    }
+  } });
+
+export const sendIncidentEmail = internalAction({ args: { recovered: v.boolean(), failureKind: accountFailure },
+  handler: async (_ctx, { recovered, failureKind }) => {
+    const email = process.env.OWNER_EMAIL?.trim();
+    if (!email) return;
+    const cause = { credit_exhausted: "OpenAI credit is empty", spend_cap: "OpenAI spending limit was reached",
+      auth: "OpenAI account authentication failed" }[failureKind];
+    const text = recovered ? `OpenAI is working again. Checks and chat can score normally. Previous issue: ${cause}.`
+      : `${cause}. Checks and chat cannot score until the account is fixed. Check https://platform.openai.com/settings/organization/billing/overview`;
+    await sendEmail(email, { subject: recovered ? "OpenAI recovered" : `Action needed: ${cause}`,
+      text, html: `<p>${text}</p>` });
+  } });
+
 export const refreshCosts = internalAction({ args: {}, handler: async (ctx) => {
   await ctx.runAction(internal.spendRollup.backfill, {});
   const key = process.env.OPENAI_ADMIN_API_KEY?.trim();

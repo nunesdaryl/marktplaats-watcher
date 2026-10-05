@@ -6,6 +6,20 @@ import schema from "./schema";
 import { parseCostsPage, summarizeSpend } from "./openaiSpend";
 
 const modules = import.meta.glob("./**/*.ts");
+
+test("one account incident and one recovery are scheduled across repeated reports", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.openaiSpend.recordAiStatus, { failureKind: "credit_exhausted" });
+  await t.mutation(internal.openaiSpend.recordAiStatus, { failureKind: "credit_exhausted" });
+  expect(await t.withIdentity({ subject: "owner", email: "owner@example.com" }).query(api.openaiSpend.incident, {}))
+    .toBe("credit_exhausted");
+  await t.mutation(internal.openaiSpend.recordAiStatus, {});
+  await t.mutation(internal.openaiSpend.recordAiStatus, {});
+  expect(await t.withIdentity({ subject: "owner", email: "owner@example.com" }).query(api.openaiSpend.incident, {}))
+    .toBeNull();
+  const jobs = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
+  expect(jobs.filter((job) => job.name === "openaiSpend:sendIncidentEmail")).toHaveLength(2);
+});
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-20T12:00:00Z"));
