@@ -12,6 +12,7 @@ import { FeedbackItem } from "./Overview.jsx";
 import { DAY, dateFilters, dayLabel, euro, label, when } from "./nav.js";
 import FilterBar, { AdminOptionsContext } from "./FilterBar.jsx";
 import Table from "./Table.jsx";
+import { OpenAiSpendView } from "./OpenAiSpend.jsx";
 
 const num = (v) => (v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v));
 const amsterdamDay = (at) => {
@@ -509,4 +510,4 @@ export function Day({ params, open }) {
 
 export const VIEWS = { users: Users, user: User, waitlist: Waitlist, watches: Watches, watch: Watch, alerts: Alerts, alert: Alert, chats: Chats,
   chat: Chat, events: Events, feedback: Feedback, day: Day, ratings: Ratings, runs: Runs, errors: Errors,
-  audits: Audits, catchups: CatchUps, run: Operation, error: Operation };
+  audits: Audits, catchups: CatchUps, run: Operation, error: Operation, spend: OpenAiSpendView };

@@ -83,10 +83,23 @@ export default defineSchema({
   }).index("by_user_day", ["userId", "day"]).index("by_day", ["day"]),
 
   aiSpend: defineTable({
-    userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("chat")),
-    watchId: v.optional(v.id("watches")), inputTokens: v.number(), outputTokens: v.number(),
-    costEur: v.number(), at: v.number(), callId: v.string(),
-  }).index("by_user_window", ["userId", "windowStart"]).index("by_call", ["callId"]),
+    userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("chat"),
+      v.literal("estimate"), v.literal("owner"), v.literal("embedding")),
+    watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")),
+    model: v.optional(v.string()), checkId: v.optional(v.string()),
+    alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),
+    inputTokens: v.number(), outputTokens: v.number(),
+    costEur: v.number(), at: v.number(), callId: v.string(), rolledUp: v.optional(v.boolean()),
+  }).index("by_user_window", ["userId", "windowStart"]).index("by_call", ["callId"]).index("by_at", ["at"])
+    .index("by_user_at", ["userId", "at"]),
+  aiSpendMonthly: defineTable({ monthStart: v.number(), userId: v.id("users"), totalEur: v.number(),
+    kinds: v.any(), days: v.any(), dailyKinds: v.any(),
+  }).index("by_month", ["monthStart"]).index("by_user_month", ["userId", "monthStart"]),
+  aiSpendBackfills: defineTable({ monthStart: v.number(), completedAt: v.number() }).index("by_month", ["monthStart"]),
+  openaiCosts: defineTable({
+    monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
+  }).index("by_month", ["monthStart"]),
+  openaiCapAlerts: defineTable({ monthStart: v.number(), alertedAt: v.number() }).index("by_month", ["monthStart"]),
   aiBudgets: defineTable({
     userId: v.id("users"), windowStart: v.number(), totalEur: v.number(), notifiedAt: v.optional(v.number()),
   }).index("by_user_window", ["userId", "windowStart"]),

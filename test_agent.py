@@ -201,7 +201,7 @@ def test_admin_ask_requires_owner_and_uses_structured_model(client, monkeypatch)
             assert kwargs == {"max_tokens": 500}
             return self
 
-        def with_structured_output(self, schema):
+        def with_structured_output(self, schema, **kwargs):
             assert schema is agent.AdminIntent
             return FakeStructured()
 
@@ -244,7 +244,7 @@ def test_admin_intent_prompt_limits_text_to_explicit_search_terms(monkeypatch):
         def bind(self, **kwargs):
             return self
 
-        def with_structured_output(self, schema):
+        def with_structured_output(self, schema, **kwargs):
             return self
 
         def invoke(self, messages):
@@ -271,7 +271,7 @@ def test_admin_ask_fills_owner_email_only_for_owner_intent(client, monkeypatch):
         def bind(self, **kwargs):
             return self
 
-        def with_structured_output(self, schema):
+        def with_structured_output(self, schema, **kwargs):
             assert schema is agent.AdminIntent
             return self
 
@@ -297,7 +297,7 @@ def test_admin_intent_unknown_has_only_overview_and_title(monkeypatch):
         def bind(self, **kwargs):
             return self
 
-        def with_structured_output(self, schema):
+        def with_structured_output(self, schema, **kwargs):
             return self
 
         def invoke(self, messages):
@@ -306,6 +306,50 @@ def test_admin_intent_unknown_has_only_overview_and_title(monkeypatch):
     monkeypatch.setattr(agent, "base_model", FakeModel())
     assert agent.admin_intent("unclear", {"today": "2026-09-30"}) == {
         "view": "overview", "title": "I couldn't tell what to show"}
+
+
+def test_admin_intent_exposes_raw_token_usage_for_owner_ledger(monkeypatch):
+    class FakeModel:
+        def bind(self, **kwargs):
+            return self
+
+        def with_structured_output(self, schema, **kwargs):
+            assert kwargs == {"include_raw": True}
+            return self
+
+        def invoke(self, messages):
+            return {"parsed": agent.AdminIntent(view="overview", title="Overview"),
+                    "raw": type("Raw", (), {"usage_metadata": {"input_tokens": 120, "output_tokens": 20}})()}
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    assert agent.admin_intent("overview", {"today": "2026-09-30"}) == {"view": "overview", "title": "Overview"}
+    assert agent.admin_usage.get() == {"input_tokens": 120, "output_tokens": 20}
+
+
+def test_admin_ask_records_priced_owner_usage(client, monkeypatch):
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner_1")
+    monkeypatch.setenv("OWNER_EMAIL", "owner@example.com")
+    calls = []
+    monkeypatch.setattr(client.main, "convex_post", lambda path, body: calls.append((path, body)))
+
+    class FakeModel:
+        def bind(self, **kwargs):
+            return self
+
+        def with_structured_output(self, schema, **kwargs):
+            return self
+
+        def invoke(self, messages):
+            return {"parsed": agent.AdminIntent(view="overview", title="Overview"),
+                    "raw": type("Raw", (), {"usage_metadata": {"input_tokens": 120, "output_tokens": 20}})()}
+
+    monkeypatch.setattr(agent, "base_model", FakeModel())
+    response = client.post("/api/admin/ask", json={"question": "overview"},
+                           headers={"Authorization": f"Bearer {client.token('owner_1')}"})
+    assert response.status_code == 200
+    assert calls[0][0] == "/api/ai-spend"
+    assert calls[0][1]["kind"] == "owner"
+    assert calls[0][1]["costEur"] == client.main.ai_cost({"input_tokens": 120, "output_tokens": 20})
 
 
 def test_rate_limit_is_per_user(client, monkeypatch):

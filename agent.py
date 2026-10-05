@@ -5,6 +5,7 @@ import os
 import re
 import time
 import threading
+from contextvars import ContextVar
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor
@@ -340,11 +341,19 @@ class AdminIntent(BaseModel):
 
 
 
+admin_usage = ContextVar("admin_usage", default=None)
+
+
 def admin_intent(question, context):
-    result = base_model.bind(max_tokens=500).with_structured_output(AdminIntent).invoke([
+    admin_usage.set(None)
+    output = base_model.bind(max_tokens=500).with_structured_output(AdminIntent, include_raw=True).invoke([
         *ADMIN_INTENT_TEMPLATE.format_messages(),
         {"role": "user", "content": json.dumps({"question": question, "context": context})},
     ])
+    result = output["parsed"] if isinstance(output, dict) else output
+    raw = output.get("raw") if isinstance(output, dict) else None
+    if raw is not None:
+        admin_usage.set(getattr(raw, "usage_metadata", None))
     return result.model_dump(exclude_none=True, exclude_defaults=True)
 
 def status_for(call):
@@ -499,7 +508,6 @@ ranker = ChatOpenAI(model=required_env("OPENAI_MODEL"), timeout=20, max_retries=
                     max_tokens=RANK_MAX_TOKENS).with_structured_output(
     Ranking, include_raw=True)   # raw response kept for token usage (cost), see RANK_USAGE
 RANK_USAGE = []                  # (input_tokens, output_tokens) per ranking call, read by evals/
-from contextvars import ContextVar
 _rank_usage_for_check = ContextVar("rank_usage_for_check", default=None)
 RANK_WORKERS = 6
 RANK_BATCH = 10

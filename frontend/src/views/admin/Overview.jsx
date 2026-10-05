@@ -4,6 +4,7 @@ import { useAction, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../../components/Icon.jsx";
+import { OpenAiSpendCard } from "./OpenAiSpend.jsx";
 import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
 
 const shortDay = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -340,6 +341,7 @@ export default function Overview({ open, onSearch, ask }) {
           onOpen={() => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })} />
         <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
+      <OpenAiSpendCard open={go} />
 
       <nav className="admin-list-nav" aria-label="Dashboard lists">
         {[["Runs", "runs"], ["Errors", "errors"], ["Delivery audit", "audits"], ["Catch-ups", "catchups"]].map(([title, view]) =>

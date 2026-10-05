@@ -18,7 +18,9 @@ export const pending = internalQuery({
     for (const id of alertIds) {
       const alert = await ctx.db.get(id);
       if (!alert || await ctx.db.query("alertEmbeddings").withIndex("by_alert", (q) => q.eq("alertId", id)).first()) continue;
-      rows.push({ alertId: id, userId: alert.userId,
+      const user = await ctx.db.get(alert.userId);
+      if (!user) continue;
+      rows.push({ alertId: id, userId: alert.userId, clerkId: user.clerkId,
         text: `${alert.title} · €${alert.priceEur ?? "?"} · ${alert.score ?? "?"}/10 · ${alert.reason}` });
     }
     return rows;
@@ -97,10 +99,19 @@ export const embedAlerts = internalAction({
         if (!response.ok) throw new Error(`Embedding service returned ${response.status}`);
         const payload = await response.json();
         if (!Array.isArray(payload.vectors) || payload.vectors.length !== rows.length) throw new Error("Invalid embedding response");
+        if (payload.usage && (!Array.isArray(payload.usage) || payload.usage.length !== rows.length)) throw new Error("Invalid embedding usage");
         await ctx.runMutation(internal.embeddings.save, { rows: rows.map((row, index) => ({
           alertId: row.alertId, text: row.text, embedding: payload.vectors[index],
           model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small",
         })) });
+        if (!payload.usage) continue; // Older API responses have vectors but no priced usage.
+        for (const [index, row] of rows.entries()) {
+          // The embedding client does not expose token usage here; the API reports estimated tokens and prices them with the shared table.
+          const usage = payload.usage[index];
+          await ctx.runMutation(internal.aiBudget.record, { clerkId: row.clerkId, kind: "embedding",
+            model: payload.model, inputTokens: usage.inputTokens, outputTokens: 0, costEur: usage.costEur,
+            callId: `embedding.${row.alertId}` });
+        }
       }
     } catch (error) { console.error("Alert embedding failed; backfill can retry", error); }
   },

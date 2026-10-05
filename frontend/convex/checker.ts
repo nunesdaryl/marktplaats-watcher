@@ -112,7 +112,7 @@ const result = v.object({
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
-  usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(),
+  usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(), model: v.optional(v.string()),
     calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number() })) })),
 });
 
@@ -429,13 +429,18 @@ export const checkDue = internalAction({
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, error: "Our search service didn't answer. We'll try again soon." }));
       }
       checked += group.watches.length;
+      failed += results.filter((r: { ok: boolean }) => !r.ok).length;
+      const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       if (!dryRun) for (const r of results) {
         const source = group.watches.find((w) => w.id === r.watchId);
         if (!source || !r.usage) continue;
         try {
           for (const [callIndex, call] of r.usage.calls.entries())
             await ctx.runMutation(internal.aiBudget.record, { clerkId: source.clerkId, watchId: source.id,
-              kind: "watch", inputTokens: call.input_tokens, outputTokens: call.output_tokens,
+              kind: "watch", model: r.usage.model, checkId: `${groupId}.${r.watchId}`,
+              alertsSent: callIndex === 0 ? toSend.find((mail) => mail.watchId === source.id)?.alertIds.length ?? 0 : 0,
+              listingsScored: callIndex === 0 ? r.listings?.length ?? 0 : 0,
+              inputTokens: call.input_tokens, outputTokens: call.output_tokens,
               costEur: call.cost_eur, callId: `${groupId}.${r.watchId}.${callIndex}` });
           // The check that crosses the budget still delivers (its cost is already paid); the next checks are skipped
           // when watches are picked (budgetFor above).
@@ -443,8 +448,6 @@ export const checkDue = internalAction({
           console.error("AI usage record failed:", e);   // keep the paid-for results; dropping them would re-score
         }
       }
-      failed += results.filter((r: { ok: boolean }) => !r.ok).length;
-      const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       for (const mail of toSend) {
         if (mail.preview) {
           const email = renderEmail(mail.preview, appUrl);

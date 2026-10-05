@@ -106,6 +106,9 @@ def test_embed_route_requires_secret_and_batches(monkeypatch):
     assert response.status_code == 200
     assert len(response.json()["vectors"]) == 101
     assert [len(batch) for batch in batches] == [100, 1]
+    assert response.json()["model"] == "text-embedding-3-small"
+    assert response.json()["usage"][0] == {"inputTokens": 2, "outputTokens": 0,
+                                           "costEur": main.cost_usd("text-embedding-3-small", 2, 0) * main.USD_TO_EUR}
 
 
 def test_search_helper_is_disabled_by_default(monkeypatch):

@@ -10,4 +10,5 @@ crons.daily("dashboard totals recount", { hourUTC: 4, minuteUTC: 40 }, internal.
 // 05:00 UTC = 07:00 Amsterdam in summer, 06:00 in winter: before the owner's day starts
 crons.daily("owner health digest", { hourUTC: 5, minuteUTC: 0 }, internal.health.digest, {});
 crons.daily("forget usage events older than 90 days", { hourUTC: 3, minuteUTC: 30 }, internal.events.purge, {});
+crons.interval("OpenAI monthly costs", { hours: 1 }, internal.openaiSpend.refreshCosts, {});
 export default crons;
