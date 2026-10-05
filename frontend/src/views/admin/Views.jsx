@@ -50,6 +50,7 @@ const Person = ({ email }) => <span className="person">{email}</span>;
 // ---------- Column sets, shared between lists ----------
 const userCols = [
   { key: "email", label: "Account", render: (u) => <span className="cell-with-action"><Person email={u.email} /><CopyEmail email={u.email} /></span> },
+  { key: "aiBudget", label: "AI budget", render: (u) => u.aiBudget ? `€${u.aiBudget.spentEur.toFixed(2)} / €${u.aiBudget.limitEur.toFixed(2)}${u.aiBudget.allowed ? u.aiBudget.spentEur >= u.aiBudget.limitEur * 0.8 ? " · Near" : "" : " · Paused"}` : "–" },
   { key: "furthest", label: "Got to", render: (u) => STAGES[u.furthest] ?? u.furthest },
   { key: "createdAt", label: "Signed up", render: (u) => when(u.createdAt), mono: true },
   { key: "lastActive", label: "Last active", render: (u) => when(u.lastActive), mono: true },
@@ -342,6 +343,8 @@ function Facts({ items }) {
 
 export function User({ params, open }) {
   const u = useQuery(api.admin.user, { userId: params.id });
+  const setBudget = useMutation(api.aiBudget.setUserBudget);
+  const [budgetError, setBudgetError] = useState("");
   const [tab, setTab] = useState("watches");
   if (u === undefined) return <p className="hint">Loading…</p>;
   if (u === null) return <p className="hint">This account no longer exists.</p>;
@@ -352,8 +355,15 @@ export function User({ params, open }) {
       <div className="record-head">
         <h3><Person email={u.email} /> <CopyEmail email={u.email} /></h3>
         <Facts items={[["Signed up", when(u.createdAt)], ["Finished setup", u.onboardedAt ? when(u.onboardedAt) : "not yet"],
-          ["Last active", when(u.events[0]?.at ?? u.chats[0]?.updatedAt)]]} />
+          ["Last active", when(u.events[0]?.at ?? u.chats[0]?.updatedAt)],
+          ["AI budget", `€${u.aiBudget.spentEur.toFixed(2)} / €${u.aiBudget.limitEur.toFixed(2)} · resets ${when(u.aiBudget.resetsAt)}`]]} />
       </div>
+      <form className="admin-budget-form" onSubmit={async (e) => { e.preventDefault(); setBudgetError(""); const value = Number(new FormData(e.currentTarget).get("limit"));
+        try { await setBudget({ userId: u._id, limitEur: value }); } catch (error) { setBudgetError(adminError(error)); } }}>
+        <label>AI budget for this account (€) <input name="limit" type="number" min="0.01" max="100" step="0.01" defaultValue={u.aiBudget.limitEur} /></label>
+        <button className="button tinted" type="submit">Save budget</button>
+        {budgetError && <p role="alert">{budgetError}</p>}
+      </form>
       <div className="segmented" role="tablist">
         {tabs.map(([k, t]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>{t}</button>)}
       </div>

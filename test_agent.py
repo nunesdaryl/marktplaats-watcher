@@ -11,11 +11,27 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 os.environ.setdefault("OPENAI_API_KEY", "dummy")
-os.environ.setdefault("OPENAI_MODEL", "dummy")
+os.environ.setdefault("OPENAI_MODEL", "gpt-5.4-mini")
 
 import agent  # noqa: E402
 
 PAGE = (Path(__file__).parent / "tests" / "search_page.html").read_text()  # sanitised, synthetic sellers
+
+
+def test_ai_cost_uses_the_shared_price_table(monkeypatch):
+    import main
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    assert main.ai_cost({"input_tokens": 1_000_000, "output_tokens": 1_000_000}) == pytest.approx(4.83)
+
+
+def test_budget_refuses_chat_before_model_call(client, monkeypatch):
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": False, "reason": "budget",
+        "resetsAt": 1793750400000, "limit": 40})
+    monkeypatch.setattr(client.main, "chat", lambda *a: pytest.fail("model called"))
+    response = client.post("/api/chat", json={"message": "hi"},
+        headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.status_code == 429
+    assert "free AI budget" in response.json()["answer"]
 
 
 @pytest.fixture(autouse=True)
@@ -391,22 +407,27 @@ def test_chat_saves_final_answer_once_and_reports_failure(client, monkeypatch, c
     sent = []
 
     class Response:
+        def __init__(self, url):
+            self.url = url
+
         def raise_for_status(self):
-            if fails:
+            if fails and self.url.endswith("/api/chats/assistant"):
                 raise RuntimeError("write failed")
 
         def json(self):
             return {"id": "message"}
 
-    monkeypatch.setattr(convex_api.httpx, "post", lambda *a, **kw: sent.append((a, kw)) or Response())
+    monkeypatch.setattr(convex_api.httpx, "post", lambda *a, **kw: sent.append((a, kw)) or Response(a[0]))
     response = client.post(path, json={"message": "hi", "chatId": "chat-id"},
                            headers={"Authorization": f"Bearer {client.token('alice')}"})
     result = json.loads(response.text.splitlines()[-1]) if path.endswith("stream") else response.json()
     assert result["answer"] == "A useful answer."
     assert result["saved"] is not fails
-    assert len(sent) == 1
-    assert sent[0][0] == ("https://deployment.convex.site/api/chats/assistant",)
-    assert sent[0][1]["json"] == {"clerkId": "alice", "chatId": "chat-id", "content": "A useful answer.",
+    assert len(sent) == 2
+    assert sent[0][0] == ("https://deployment.convex.site/api/ai-spend",)
+    assert sent[0][1]["json"]["inputTokens"] == 1
+    assert sent[1][0] == ("https://deployment.convex.site/api/chats/assistant",)
+    assert sent[1][1]["json"] == {"clerkId": "alice", "chatId": "chat-id", "content": "A useful answer.",
                                    "listings": [], "proposals": []}
     assert ('"event": "assistant_save_failed"' in capsys.readouterr().out) is fails
 

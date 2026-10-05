@@ -4,6 +4,23 @@ import { internal } from "./_generated/api";
 
 const http = httpRouter();
 
+http.route({ path: "/api/ai-spend", method: "POST", handler: httpAction(async (ctx, request) => {
+  const secret = process.env.API_TO_CONVEX_SECRET;
+  if (!secret) return new Response("AI usage is not configured.", { status: 503 });
+  if (!sameSecret(request.headers.get("X-Api-Secret") ?? "", secret)) return new Response("Wrong API secret.", { status: 401 });
+  let body: any;
+  try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
+  if (!body || typeof body.clerkId !== "string" || typeof body.callId !== "string"
+    || !["watch", "chat"].includes(body.kind) || typeof body.inputTokens !== "number"
+    || typeof body.outputTokens !== "number" || typeof body.costEur !== "number") return new Response("Invalid request.", { status: 400 });
+  try {
+    await ctx.runMutation(internal.aiBudget.record, { clerkId: body.clerkId, callId: body.callId,
+      kind: body.kind, watchId: body.watchId, inputTokens: body.inputTokens,
+      outputTokens: body.outputTokens, costEur: body.costEur });
+    return Response.json({ ok: true });
+  } catch { return new Response("AI usage could not be recorded.", { status: 400 }); }
+}) });
+
 function sameSecret(given: string, expected: string) {
   const encoder = new TextEncoder();
   const a = encoder.encode(given), b = encoder.encode(expected);

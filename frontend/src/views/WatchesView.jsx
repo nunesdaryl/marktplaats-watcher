@@ -9,6 +9,7 @@ import { scoreLevel } from "../../convex/schedule";
 export default function WatchesView({ watches: watchesOrLoading, actions, onNew }) {
   const watches = watchesOrLoading ?? [];
   const folders = useQuery(api.folders.list) ?? [];
+  const budget = useQuery(api.aiBudget.mine);
   const row = (w) => {
     const best = w.alerts[0];
     return (
@@ -32,6 +33,7 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
         <h1 id="watches-title">Watches</h1>
         <button className="button tinted" onClick={onNew}><Icon name="plus" size={18} />New</button>
       </header>
+      {budget && !budget.allowed && <p className="empty-note" role="status">Your free AI budget for these 30 days is used up. Your watches and chat resume on {new Date(budget.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" })}.</p>}
       {watchesOrLoading === undefined ? <p className="muted" role="status">Loading…</p> : watches.length === 0 ? (
         <p className="empty-note">Nothing watched yet. Ask the chat to keep an eye on something, or tap New.</p>
       ) : (

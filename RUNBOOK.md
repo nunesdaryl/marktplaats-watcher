@@ -60,7 +60,7 @@ cd frontend && npx convex env remove --prod CHECKS_PAUSED     # resume
 ```
 Chat keeps working. The next digest says "Checks are paused".
 
-To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment variables and redeploy the API. Chat then returns 503 with the maintenance message; scheduled watches keep running. Remove the variable and redeploy to resume. `CHAT_DAILY_LIMIT` in Convex defaults to 40; set it to 2 to verify that a third message is refused, then remove it. The allowance needs `CONVEX_SITE_URL` and `API_TO_CONVEX_SECRET` in Vercel and the same `API_TO_CONVEX_SECRET` in Convex. If the usage check is unavailable, chat stays open and Vercel logs `usage_check_failed`.
+To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment variables and redeploy the API. Chat then returns 503 with the maintenance message; scheduled watches keep running. Remove the variable and redeploy to resume. `CHAT_DAILY_LIMIT` in Convex defaults to 40, and `USER_AI_BUDGET_EUR` defaults to €1.00 per 30 days. The allowance needs `CONVEX_SITE_URL` and `API_TO_CONVEX_SECRET` in Vercel and the same `API_TO_CONVEX_SECRET` in Convex. If the usage check is unavailable, chat refuses new questions and Vercel logs `usage_check_failed`.
 
 ## 2. Roll back a bad release
 1. **UI or API:** Vercel dashboard → Deployments → the last good one → **Promote to Production**. This takes seconds.

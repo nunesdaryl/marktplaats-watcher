@@ -38,6 +38,7 @@ chat or the repo.
 | `CRON_SECRET` | same as in Vercel |
 | `API_TO_CONVEX_SECRET` | same random string as in Vercel |
 | `CHAT_DAILY_LIMIT` | optional, defaults to 40 questions per Amsterdam day |
+| `USER_AI_BUDGET_EUR` | optional, defaults to €1.00 per admitted user per 30 days |
 | `AGENTMAIL_API_KEY` | your key |
 | `AGENTMAIL_INBOX_ID` | `marktplaats-watcher@agentmail.to` |
 | `APP_URL` | `https://marktplaats-watcher.vercel.app` |

@@ -18,6 +18,28 @@ afterEach(() => {
   delete process.env.OWNER_EMAIL;
 });
 
+test("AI ledger accumulates calls, pauses chat and watches, resets after 30 days, and exempts the owner", async () => {
+  const t = convexTest(schema, modules);
+  vi.setSystemTime(new Date("2026-10-05T12:00:00Z"));
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  await alice.mutation(api.users.store, {});
+  await owner.mutation(api.users.store, {});
+  const record = (clerkId: string, callId: string, costEur: number) => t.mutation(internal.aiBudget.record,
+    { clerkId, callId, kind: "chat", inputTokens: 100, outputTokens: 50, costEur });
+  await record("alice", "call-1", 0.6);
+  await record("alice", "call-2", 0.4);
+  await record("alice", "call-2", 0.4);
+  expect((await t.run((ctx) => ctx.db.query("aiSpend").collect())).filter((r) => r.kind === "chat")).toHaveLength(2);
+  expect(await alice.query(api.aiBudget.mine, {})).toMatchObject({ allowed: false, spentEur: 1, limitEur: 1 });
+  expect(await t.mutation(internal.usage.consume, { clerkId: "alice" })).toMatchObject({ allowed: false, reason: "budget" });
+  expect(await t.query(internal.usage.check, { clerkId: "alice" })).toEqual({ allowed: false });
+  await record("owner", "owner-call", 2);
+  expect((await owner.query(api.aiBudget.mine, {}))?.allowed).toBe(true);
+  vi.setSystemTime(new Date("2026-11-04T12:00:00Z"));
+  expect(await alice.query(api.aiBudget.mine, {})).toMatchObject({ allowed: true, spentEur: 0 });
+});
+
 test("40 chats are allowed, the 41st is denied, and Amsterdam midnight resets the count", async () => {
   const t = convexTest(schema, modules);
   await t.withIdentity({ subject: "alice", email: "alice@example.com" }).mutation(api.users.store, {});

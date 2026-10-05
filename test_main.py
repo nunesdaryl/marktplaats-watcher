@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("OPENAI_API_KEY", "dummy")
-os.environ.setdefault("OPENAI_MODEL", "dummy")
+os.environ.setdefault("OPENAI_MODEL", "gpt-5.4-mini")
 
 import agent
 import main
