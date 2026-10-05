@@ -7,7 +7,7 @@ import ListingCard from "../components/ListingCard.jsx";
 import RateAlert from "../components/RateAlert.jsx";
 import { useNow } from "../lib/router.js";
 
-export default function AlertsView({ actions }) {
+export default function AlertsView({ actions, watches, onNewWatch }) {
   const alerts = useQuery(api.watches.alerts);
   const ratings = useQuery(api.ratings.mine) ?? {};
   const me = useQuery(api.users.me);
@@ -51,7 +51,10 @@ export default function AlertsView({ actions }) {
           it was a good match: every rating is read to check and improve the scores.</p>
       </header>
       {alerts === undefined || seenAt.current === null ? <Skeleton /> : alerts.length === 0 ? (
-        <p className="empty-note">No alerts yet. When a watch finds a good new listing, it shows up here and in your inbox.</p>
+        <div className="empty-state">
+          <p className="empty-note">When a watch finds a good new listing, its alert appears here and in your inbox.</p>
+          {watches?.length === 0 && <button className="button tinted" onClick={onNewWatch}>Create a watch</button>}
+        </div>
       ) : (
         <div className="cards grid">
           {alerts.map((a) => {

@@ -37,3 +37,25 @@ test("clicking the email or chevron forwards to Clerk's button once", () => {
   forwardAccountClick({ target: { closest: () => button } }, trigger);
   expect(click).toHaveBeenCalledTimes(1);
 });
+
+test("first-use sidebar explains watches and offers one create action", () => {
+  const onNewWatch = vi.fn();
+  const props = { route: { section: "" }, watches: [], watchesLoaded: true, chats: [], email: "a@example.com",
+    actions: {}, renaming: null, setRenaming: vi.fn(), onNewWatch, onPrivacy: vi.fn(),
+    onFeedback: vi.fn(), openSheet: vi.fn(), toast: vi.fn(), isOwner: false, newAlerts: 0 };
+  const html = renderToStaticMarkup(<Sidebar {...props} />);
+  expect(html).toContain("Your watches appear here after you create them.");
+  expect(html.match(/Create a watch/g)).toHaveLength(1);
+  expect(html).not.toContain('aria-label="New watch"');
+});
+
+test("populated sidebar keeps its existing new-watch control", () => {
+  const html = renderToStaticMarkup(<Sidebar
+    route={{ section: "" }} watches={[{ _id: "w1", title: "Mac mini", active: true, summary: "Under €300" }]}
+    watchesLoaded chats={[]} email="a@example.com" actions={{ watchItems: () => [] }}
+    renaming={null} setRenaming={vi.fn()} onNewWatch={vi.fn()} onPrivacy={vi.fn()}
+    onFeedback={vi.fn()} openSheet={vi.fn()} toast={vi.fn()} isOwner={false} newAlerts={0}
+  />);
+  expect(html).toContain('aria-label="New watch"');
+  expect(html).not.toContain("Create a watch");
+});

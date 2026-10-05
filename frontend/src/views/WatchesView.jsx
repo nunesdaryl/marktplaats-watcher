@@ -31,11 +31,14 @@ export default function WatchesView({ watches: watchesOrLoading, actions, onNew 
     <section className="page" aria-labelledby="watches-title">
       <header className="page-head row-head">
         <h1 id="watches-title">Watches</h1>
-        <button className="button tinted" onClick={onNew}><Icon name="plus" size={18} />New</button>
+        {(watchesOrLoading === undefined || watches.length > 0) && <button className="button tinted" onClick={onNew}><Icon name="plus" size={18} />New</button>}
       </header>
       {budget && !budget.allowed && <p className="empty-note" role="status">Your free AI budget for these 30 days is used up. Your watches and chat resume on {new Date(budget.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" })}.</p>}
       {watchesOrLoading === undefined ? <p className="muted" role="status">Loading…</p> : watches.length === 0 ? (
-        <p className="empty-note">Nothing watched yet. Ask the chat to keep an eye on something, or tap New.</p>
+        <div className="empty-state">
+          <p className="empty-note">Your watches appear here after you create them.</p>
+          <button className="button tinted" onClick={onNew}>Create a watch</button>
+        </div>
       ) : (
         <>
           {loose.length > 0 && <ul className="grouped">{loose.map(row)}</ul>}

@@ -14,7 +14,7 @@ export function forwardAccountClick(event, trigger) {
 }
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
+export default function Sidebar({ route, watches, watchesLoaded, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -173,10 +173,13 @@ export default function Sidebar({ route, watches, chats, email, budget, actions,
 
       <div className="nav-section">
         <span>Watches</span>
-        <button className="icon-button small" onClick={onNewWatch} aria-label="New watch"><Icon name="plus" size={16} /></button>
+        {(watches.length > 0 || !watchesLoaded) && <button className="icon-button small" onClick={onNewWatch} aria-label="New watch"><Icon name="plus" size={16} /></button>}
       </div>
       {watches.filter(loose).map(watchRow)}
-      {watches.length === 0 && <p className="nav-empty">None yet</p>}
+      {watchesLoaded && watches.length === 0 && <div className="sidebar-empty empty-state">
+        <p className="empty-note">Your watches appear here after you create them.</p>
+        <button className="button tinted" onClick={onNewWatch}>Create a watch</button>
+      </div>}
 
       {groupByDate(chats.filter(loose)).map(([name, list]) => (
         <div key={name} className="date-group">

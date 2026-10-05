@@ -188,6 +188,9 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .setup h1 { color: var(--text); margin-bottom:var(--space-2); }
 .banner { margin:12px auto; /* off-scale: layout */ max-width: 720px; padding:10px 16px; /* off-scale: layout */ border-radius:var(--radius-lg); background: var(--accent-soft); }
 .empty-note { color: var(--text-2); padding:28px 0; /* off-scale: layout */ max-width: 46ch; }
+.empty-state { display: flex; flex-direction: column; align-items: flex-start; gap:var(--space-3); padding:28px 0; /* off-scale: layout */ }
+.empty-state .empty-note { padding:0; }
+.sidebar-empty { padding:var(--space-2) 10px; /* off-scale: layout */ font-size:var(--text-sm); }
 .logo { display: inline-block; flex: none; line-height: 0; }
 .logo svg { width: 100%; height: 100%; display: block; }
 
