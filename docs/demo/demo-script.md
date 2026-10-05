@@ -150,6 +150,9 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
   you can ask your alert history. Max at €14.95: WhatsApp, Telegram or SMS, a preference profile and your own AI
   assistant. But first ten conversations and three paying users, and a permitted data source." (Monetization deck:
   https://claude.ai/artifact/5YPCxivTPUQLZwCnzaBdsX)
+- **"How do you keep costs under control?"** "The first 100 users are free for 30 days; after that there's a waitlist.
+  Each person has an AI budget of one euro per 30 days, the OpenAI project is capped at 110 dollars with alerts, and the
+  dashboard shows where every cent goes, per user, per watch and per chat."
 - **"Have you talked to Marktplaats?"** "That is the next step: a pitch for a 30-minute conversation, official access and
   a six-week pilot with agreed success criteria." (Pitch deck: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma; source
   `docs/marketing/MARKTPLAATS-PITCH-PACK.md`.)

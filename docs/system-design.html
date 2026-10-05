@@ -1456,6 +1456,34 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   asks for one thing: a 30-minute conversation, followed by sandbox access, a six-week pilot with agreed criteria and a
   go / pivot / stop date. Proof numbers come from <code>evals/report.md</code> (94% great-match precision on 53 listings,
   20/20 chat cases, €0.005 per 20-listing check).</p>
+<p><b>Founding 100 and cost controls (5 October).</b> Daryl's LinkedIn post (4 October) promised the first 100 users a
+  free month. Five factory issues made that promise exact and cheap. MW-85 admits only the first 100 accounts
+  (<code>MAX_USERS</code>, a counter that never goes down, so deleting an account doesn't reopen a place; the owner is
+  never counted); each founding user is free for 30 days from admission (existing accounts from 5 October, so until
+  4 November); number 101 and later see a waitlist screen ("You're #N on the waitlist", optional "What are you hunting
+  for?") and cannot reach the AI, not even through the API or MCP. Chat now fails closed when the access check can't
+  run (ADR-0012 amended, Daryl's decision). MW-86 gives each person an AI budget of €1.00 per 30 days
+  (<code>USER_AI_BUDGET_EUR</code>): every AI call is written to a ledger with its cost; at the limit the checker skips
+  that person's watches before any model call, chat says when it resets, one e-mail tells them, and the owner can
+  raise one person's budget; the check that crosses the limit still delivers what it already paid for. MW-87 shows the
+  real count on the landing page ("Free for 30 days for the first 100 users · 97 of 100 places left", switching to a
+  waitlist when full), "Founding user · free until 4 Nov" and "€x of €1.00 used" in the app, and places plus the
+  waitlist on the owner dashboard. MW-88 adds the owner's OpenAI card ("$X of $110 · $Y left", amber at 80%, red at 95%,
+  an 80% e-mail) and where the money goes: by kind, day, user, watch (with € per alert) and chat; an optional hourly
+  "billed by OpenAI" figure needs a read-only admin key Daryl may add (filtered to this project,
+  <code>OPENAI_PROJECT_ID</code>; cap in <code>OPENAI_MONTHLY_CAP_USD=110</code>). On the OpenAI side Daryl set the
+  project cap to $110, spend alerts at $55 and $88, and auto-reload ($5 → $20, at most $100 a month).</p>
+<p><b>Incident: OpenAI credit ran out (5 October, 15:34–17:34).</b> Two watches failed with "the AI that scores listings
+  didn't answer"; the timing looked like the MW-86 deploy, but the production logs showed OpenAI's
+  <code>429 insufficient_quota / credit_balance_exhausted</code>: the prepaid credit was at $0 (the $110 is a ceiling,
+  not money). Nothing unscored was sent. Daryl added $25 and turned on auto-reload; the 17:34 check recovered every
+  watch. MW-91 makes the app say this plainly next time: OpenAI failures are classified (credit empty, spend cap, wrong
+  key, rate limit, other); users see a plain message; the owner dashboard shows "OpenAI credit is empty" with a billing
+  link; one e-mail when it starts and one when it recovers. Lesson: a failure the dashboard can't name costs two hours;
+  one it names costs two minutes.</p>
+<p><b>Still open:</b> MW-89 (what happens after a founding user's 30 days; decide before about 4 November, with a
+  day-14 "how disappointed would you be" survey), MW-90 (bidding and negotiation help, Vinod's request), MW-76 (Clerk
+  production instance).</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
