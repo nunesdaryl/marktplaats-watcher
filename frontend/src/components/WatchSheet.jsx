@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import ScheduleEditor from "./ScheduleEditor.jsx";
 import Sheet from "./Sheet.jsx";
+import WatchLifecycle from "./WatchLifecycle.jsx";
 import { scheduleKind, track } from "../lib/track.js";
 
 const HOURLY = { kind: "interval", everyMinutes: 60 };
@@ -103,7 +104,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           if (s.schedule !== f.schedule) { hasChanged.current = true; setVolumeNote(null); setEstimateDelay(800); }
         }} />
         {volumeNote && <p className="hint" role="status">{volumeNote}</p>}
-        {mode === "create" && <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>}
+        {mode === "create" && <WatchLifecycle schedule={f.schedule} notify={f.notify} />}
         {error && <p className="error" role="alert">{error}</p>}
         <button type="submit" className="button primary wide" disabled={busy || weeklyWithoutDays}>
           {busy ? "Saving…" : mode === "create" ? "Save watch" : "Save changes"}

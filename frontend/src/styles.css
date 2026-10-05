@@ -573,6 +573,12 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .link { border: 0; background: none; color: var(--accent); padding:4px 6px; /* off-scale: layout */ font-size:var(--text-sm); }
 .summary { font-size:var(--text-sm); color: var(--text-2); }
 .notify-help { margin:calc(-1 * var(--space-1)) 0 0; font-size:var(--text-sm); line-height: 1.45; color: var(--text); padding:8px 12px; /* off-scale: layout */ border-radius:var(--radius); background: var(--elevated); }
+.watch-lifecycle { border:1px solid var(--line); border-radius:var(--radius); font-size:var(--text-sm); line-height:var(--text-sm-lh); }
+.watch-lifecycle summary { display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); min-height:var(--touch); padding:var(--space-2) var(--space-3); cursor:pointer; list-style:none; color:var(--text); }
+.watch-lifecycle summary::-webkit-details-marker { display:none; }
+.watch-lifecycle summary svg { flex:none; color:var(--text-3); transition:transform var(--dur-fast); }
+.watch-lifecycle[open] summary svg { transform:rotate(90deg); }
+.watch-lifecycle-body { display:flex; flex-direction:column; gap:var(--space-2); padding:0 var(--space-3) var(--space-3); color:var(--text-2); }
 
 /* ---------- Boot: shown until the app has loaded ---------- */
 .boot-wait { display: none; place-items: center; height: 100dvh; }

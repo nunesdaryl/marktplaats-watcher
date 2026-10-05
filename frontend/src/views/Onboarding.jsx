@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { NOTIFY_LABEL, NOTIFY_SHORT, describe } from "../../convex/schedule";
 import ScheduleEditor from "../components/ScheduleEditor.jsx";
 import Sheet from "../components/Sheet.jsx";
+import WatchLifecycle from "../components/WatchLifecycle.jsx";
 import { scheduleKind, track } from "../lib/track.js";
 
 const IDEAS = ["Mac mini", "Gazelle bike", "Nintendo Switch OLED", "IKEA Pello chair"];
@@ -42,6 +43,7 @@ export default function Onboarding({ email, onDone }) {
     <div key="what" className="stack">
       <p className="lead">What should we keep an eye on?</p>
       <p className="hint">We'll read and score every new listing for it. You choose which ones we e-mail, with the reason.</p>
+      <WatchLifecycle schedule={plan.schedule} notify={plan.notify} />
       <input className="field big" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus maxLength={80}
              placeholder="e.g. Mac mini" aria-label="Item to watch" />
       <div className="suggestions left">{IDEAS.map((i) => <button key={i} type="button" className="chip" onClick={() => setQuery(i)}>{i}</button>)}</div>
