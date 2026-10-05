@@ -1,6 +1,7 @@
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { ConvexError } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+import { ownerMatches } from "./admin";
 import { deleteChat } from "./chats";
 import { deleteAlertEmbedding } from "./embeddings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
@@ -12,8 +13,42 @@ export async function currentUser(ctx: QueryCtx) {
   return await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
 }
 
-/** The signed-in user's row, created on first use. Throws when nobody is signed in. */
-export async function requireUser(ctx: MutationCtx) {
+const DAY = 86_400_000;
+const OFFER_AT = Date.parse("2026-10-05T00:00:00Z");
+const FREE_PERIOD = 30 * DAY;
+const ADMISSIONS_KEY = "founding-admissions";
+
+export function maxUsers() {
+  const value = Number(process.env.MAX_USERS ?? "100");
+  return Number.isSafeInteger(value) && value > 0 ? value : 100;
+}
+
+async function admissionTotal(ctx: QueryCtx) {
+  return ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", ADMISSIONS_KEY)).unique();
+}
+
+// Initialize once from live accounts. Thereafter this total never falls when an account is deleted.
+async function initializeAdmissions(ctx: MutationCtx) {
+  const total = await admissionTotal(ctx);
+  if (total) return total;
+  let admitted = 0;
+  for await (const user of ctx.db.query("users")) {
+    const owner = user.clerkId === process.env.OWNER_CLERK_ID?.trim()
+      && user.email.trim().toLowerCase() === process.env.OWNER_EMAIL?.trim().toLowerCase();
+    if (!owner) admitted++;
+    if (user.admittedAt === undefined)
+      await patchTracked(ctx, "users", user._id, { admittedAt: OFFER_AT, freeUntil: OFFER_AT + FREE_PERIOD });
+  }
+  const id = await ctx.db.insert("dashboardTotals", { key: ADMISSIONS_KEY, rows: [], admitted });
+  return (await ctx.db.get(id))!;
+}
+
+async function position(ctx: QueryCtx, createdAt: number, id: Id<"waitlist">) {
+  const earlier = await ctx.db.query("waitlist").withIndex("by_createdAt", (q) => q.lte("createdAt", createdAt)).collect();
+  return earlier.filter((row) => row.createdAt < createdAt || row._id <= id).length;
+}
+
+async function admit(ctx: MutationCtx, lookingFor?: string) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new ConvexError("Please sign in first.");
   const existing = await currentUser(ctx);
@@ -21,24 +56,78 @@ export async function requireUser(ctx: MutationCtx) {
   if (!email) throw new ConvexError("Your account has no e-mail address, so we can't send alerts. Add one under your account (top right).");
   if (existing) {
     if (existing.email !== email) await patchTracked(ctx, "users", existing._id, { email });
-    return { ...existing, email };
+    // Existing accounts stay admitted even before the one-time counter initialization.
+    if (existing.admittedAt === undefined) await initializeAdmissions(ctx);
+    return { status: "admitted" as const, user: (await ctx.db.get(existing._id))! };
   }
-  const id = await insertTracked(ctx, "users", { clerkId: identity.subject, email, createdAt: Date.now() });
-  return (await ctx.db.get(id))!;
+  const total = await initializeAdmissions(ctx);
+  const waiting = await ctx.db.query("waitlist").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
+  const first = await ctx.db.query("waitlist").withIndex("by_createdAt").first();
+  if (!ownerMatches(identity) && (total.admitted! >= maxUsers() || first && first._id !== waiting?._id)) {
+    const id = waiting?._id ?? await ctx.db.insert("waitlist", { clerkId: identity.subject, email, createdAt: Date.now(), ...(lookingFor ? { lookingFor } : {}) });
+    if (waiting && (waiting.email !== email || lookingFor !== undefined))
+      await ctx.db.patch(id, { email, ...(lookingFor !== undefined ? { lookingFor } : {}) });
+    const row = (await ctx.db.get(id))!;
+    return { status: "waitlisted" as const, position: await position(ctx, row.createdAt, id) };
+  }
+  const now = Date.now();
+  const id = await insertTracked(ctx, "users", { clerkId: identity.subject, email, createdAt: now,
+    admittedAt: now, freeUntil: now + FREE_PERIOD });
+  if (!ownerMatches(identity)) await ctx.db.patch(total._id, { admitted: total.admitted! + 1 });
+  if (waiting) await ctx.db.delete(waiting._id);
+  return { status: "admitted" as const, user: (await ctx.db.get(id))! };
+}
+
+/** The signed-in user's admitted row, created on first use. */
+export async function requireUser(ctx: MutationCtx) {
+  const result = await admit(ctx);
+  if (result.status === "waitlisted") throw new ConvexError("All free places are taken. You're on the waitlist.");
+  return result.user;
 }
 
 /** Called by the app after sign-in, so the e-mail address is on file before the first watch. */
 export const store = mutation({
   args: {},
-  handler: async (ctx) => (await requireUser(ctx))._id,
+  handler: async (ctx) => {
+    const result = await admit(ctx);
+    return result.status === "admitted" ? { status: result.status, id: result.user._id }
+      : { status: result.status, position: result.position };
+  },
 });
+
+export const setLookingFor = mutation({
+  args: { lookingFor: v.string() },
+  handler: async (ctx, { lookingFor }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError("Please sign in first.");
+    const row = await ctx.db.query("waitlist").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
+    if (!row) throw new ConvexError("You're not on the waitlist.");
+    await ctx.db.patch(row._id, { lookingFor: lookingFor.trim().slice(0, 200) });
+  },
+});
+
+export const placesLeft = query({ args: {}, handler: async (ctx) => {
+  const total = await admissionTotal(ctx);
+  if (total) return { left: Math.max(0, maxUsers() - (total.admitted ?? 0)), capacity: maxUsers() };
+  const users = await ctx.db.query("users").collect();
+  const ownerId = process.env.OWNER_CLERK_ID?.trim();
+  const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  return { left: Math.max(0, maxUsers() - users.filter((u) => u.clerkId !== ownerId || u.email.trim().toLowerCase() !== ownerEmail).length), capacity: maxUsers() };
+} });
+
+export const myWaitlist = query({ args: {}, handler: async (ctx) => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  const row = await ctx.db.query("waitlist").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
+  return row && { position: await position(ctx, row.createdAt, row._id), lookingFor: row.lookingFor };
+} });
 
 export const me = query({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     return user && { email: user.email, onboarded: user.onboardedAt !== undefined,
-      alertsSeenAt: user.alertsSeenAt, createdAt: user.createdAt };
+      alertsSeenAt: user.alertsSeenAt, createdAt: user.createdAt, freeUntil: user.freeUntil };
   },
 });
 
@@ -80,7 +169,14 @@ export const deleteMyData = mutation({
   args: {},
   handler: async (ctx) => {
     const user = await currentUser(ctx);
-    if (!user) return;
+    if (!user) {
+      const identity = await ctx.auth.getUserIdentity();
+      if (identity) {
+        const waiting = await ctx.db.query("waitlist").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
+        if (waiting) await ctx.db.delete(waiting._id);
+      }
+      return;
+    }
     for (const watch of await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await deleteWatchData(ctx, watch._id);
     for (const chat of await ctx.db.query("chats").withIndex("by_user_updated", (q) => q.eq("userId", user._id)).collect())

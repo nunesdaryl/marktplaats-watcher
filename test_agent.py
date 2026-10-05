@@ -115,13 +115,36 @@ def client(monkeypatch):
 
     monkeypatch.setattr(main, "_jwks", Keys())
     monkeypatch.setattr(main, "CLERK_ISSUER", "https://clerk.test")
+    real_chat_allowance = main.chat_allowance
+    monkeypatch.setattr(main, "chat_allowance", lambda user: {"allowed": True})
+    monkeypatch.setattr(main, "admission_check", lambda user: True)
     monkeypatch.setenv("CRON_SECRET", "s3cret")
     main._recent.clear()
     c = TestClient(main.app)
     c.token = lambda sub="user_1", issuer="https://clerk.test", aud="convex": jwt.encode(
         {"sub": sub, "iss": issuer, "aud": aud, "exp": int(time.time()) + 60}, private, algorithm="RS256")
     c.main = main
+    c.real_chat_allowance = real_chat_allowance
     return c
+
+
+def test_admission_refuses_chat_estimate_and_mcp(client, monkeypatch):
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": False, "limit": 40, "reason": "admission"})
+    monkeypatch.setattr(client.main, "admission_check", lambda user: False)
+    headers = {"Authorization": f"Bearer {client.token()}"}
+    assert client.post("/api/chat", json={"message": "hi"}, headers=headers).status_code == 403
+    response = client.post("/api/chat/stream", json={"message": "hi"}, headers=headers)
+    assert "waitlist" in response.text
+    assert client.post("/api/watch/estimate", json={"query": "bike", "schedule": {}}, headers=headers).status_code == 403
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    assert client.post("/api/mcp/", headers=headers).status_code == 403
+
+
+def test_admission_check_fails_closed(monkeypatch):
+    import main
+    monkeypatch.setattr(main, "convex_post", lambda *args: (_ for _ in ()).throw(RuntimeError("offline")))
+    assert main.admission_check("someone") is False
+    assert main.chat_allowance("someone")["allowed"] is False
 
 
 def test_health_is_hidden_without_the_owner_key(client, monkeypatch):
@@ -310,11 +333,13 @@ def test_daily_limit_stops_model(client, monkeypatch, path):
     assert calls == []
 
 
-def test_usage_check_fails_open(client, monkeypatch, capsys):
+def test_usage_check_fails_closed(client, monkeypatch, capsys):
     monkeypatch.delenv("CONVEX_SITE_URL", raising=False)
-    monkeypatch.setattr(client.main, "chat", lambda *a: {"answer": "ok"})
+    monkeypatch.setattr(client.main, "chat_allowance", client.real_chat_allowance)
+    monkeypatch.setattr(client.main, "chat", lambda *a: pytest.fail("model was called"))
     response = client.post("/api/chat", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token()}"})
-    assert response.json() == {"answer": "ok", "saved": False}
+    assert response.status_code == 429
+    assert "couldn't check access" in response.json()["answer"]
     assert '"event": "usage_check_failed"' in capsys.readouterr().out
 
 
@@ -342,6 +367,7 @@ def test_usage_check_sends_verified_clerk_id_with_shared_secret(client, monkeypa
             return {"allowed": False, "used": 2, "limit": 2}
 
     monkeypatch.setattr(convex_api.httpx, "post", lambda *a, **kw: sent.append((a, kw)) or Response())
+    monkeypatch.setattr(client.main, "chat_allowance", client.real_chat_allowance)
     monkeypatch.setattr(client.main, "chat", lambda *a: pytest.fail("model was called"))
     response = client.post("/api/chat", json={"message": "hi"}, headers={"Authorization": f"Bearer {client.token('alice')}"})
     assert response.status_code == 429

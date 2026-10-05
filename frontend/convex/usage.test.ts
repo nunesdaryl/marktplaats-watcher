@@ -20,6 +20,7 @@ afterEach(() => {
 
 test("40 chats are allowed, the 41st is denied, and Amsterdam midnight resets the count", async () => {
   const t = convexTest(schema, modules);
+  await t.withIdentity({ subject: "alice", email: "alice@example.com" }).mutation(api.users.store, {});
   for (let i = 1; i <= 40; i++)
     expect(await t.mutation(internal.usage.consume, { clerkId: "alice" })).toEqual({ allowed: true, used: i, limit: 40 });
   expect(await t.mutation(internal.usage.consume, { clerkId: "alice" })).toEqual({ allowed: false, used: 40, limit: 40 });
@@ -46,6 +47,7 @@ test("owner needs both the Clerk id and stored email, and remains counted", asyn
 
 test("concurrent consumption never allows more than the limit", async () => {
   const t = convexTest(schema, modules);
+  await t.withIdentity({ subject: "alice", email: "alice@example.com" }).mutation(api.users.store, {});
   process.env.CHAT_DAILY_LIMIT = "2";
   const results = await Promise.all(Array.from({ length: 8 }, () => t.mutation(internal.usage.consume, { clerkId: "alice" })));
   expect(results.filter((r) => r.allowed)).toHaveLength(2);
@@ -63,6 +65,8 @@ test("HTTP usage check requires the shared secret and a Clerk id", async () => {
   process.env.API_TO_CONVEX_SECRET = "secret";
   expect((await send("alice", "wrong")).status).toBe(401);
   expect((await send(42, "secret")).status).toBe(400);
+  expect(await (await send("alice", "secret")).json()).toMatchObject({ allowed: false, reason: "admission" });
+  await t.withIdentity({ subject: "alice", email: "alice@example.com" }).mutation(api.users.store, {});
   expect(await (await send("alice", "secret")).json()).toEqual({ allowed: true, used: 1, limit: 40 });
   delete process.env.API_TO_CONVEX_SECRET;
 });

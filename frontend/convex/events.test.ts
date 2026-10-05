@@ -42,7 +42,7 @@ test("at most 20 per call and 500 a day per person; deleted with the account dat
 test("events older than 90 days are forgotten", async () => {
   const t = convexTest(schema, modules);
   const carol = t.withIdentity({ subject: "c", email: "c@example.com" });
-  const userId = await carol.mutation(api.users.store, {});
+  const userId = (await carol.mutation(api.users.store, {})).id!;
   await t.run(async (ctx) => {
     await ctx.db.insert("events", { userId, name: "page_view", device: "desktop", at: Date.now() - 91 * 86_400_000 });
     await ctx.db.insert("events", { userId, name: "page_view", device: "desktop", at: Date.now() - 89 * 86_400_000 });

@@ -27,7 +27,7 @@ function useCycle(length, ms) {
 // Before Clerk has loaded (the prerendered page), the sign-in buttons are plain buttons.
 const Plain = ({ children }) => children;
 
-export default function Landing({ SignIn = Plain }) {
+export default function Landing({ SignIn = Plain, placesLeft }) {
   const [what, when, which] = EXAMPLES[useCycle(EXAMPLES.length, 3200)];
   return (
     <div className="landing">
@@ -51,8 +51,9 @@ export default function Landing({ SignIn = Plain }) {
         <p className="hint">{NOTIFY_LABEL[which][0].toUpperCase() + NOTIFY_LABEL[which].slice(1)} means {NOTIFY_SHORT[which]}.</p>
         <p className="lede">
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
-          say why. You choose which ones reach your inbox. Free, up to 5 watches.
+          say why. You choose which ones reach your inbox. The first 100 people get 30 days free, with up to 5 watches.
         </p>
+        {placesLeft && <p className="places-left" role="status">{placesLeft.left} of {placesLeft.capacity} free places left</p>}
         <SignIn mode="modal"><button className="button primary large" onClick={signingIn}>Set up a free watch</button></SignIn>
         <p className="cta-note">No card, no app to install. Sign in with your e-mail or Google.</p>
 
@@ -117,6 +118,7 @@ export default function Landing({ SignIn = Plain }) {
             the app (OpenAI, Convex, Clerk, AgentMail, Vercel). "Delete my data" removes everything we store at once;
             your login account is closed separately, under your account menu.
           </p>
+          <p>Waitlist e-mail addresses and what people are hunting for are kept until they are admitted or deleted.</p>
           <p>
             Up to 5 watches per person, checked at most every 15 minutes. Each check reads every listing placed since
             the last one, with your price and distance applied by Marktplaats. A search in the chat shows the first

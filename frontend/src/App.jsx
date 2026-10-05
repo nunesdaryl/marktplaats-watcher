@@ -82,7 +82,6 @@ function Toast({ message, onDone }) {
 }
 
 function Workspace() {
-  const storeUser = useMutation(api.users.store);
   const me = useQuery(api.users.me);
   const watchesOrLoading = useQuery(api.watches.list);
   const chats = useQuery(api.chats.list) ?? [];
@@ -96,18 +95,12 @@ function Workspace() {
   const [sheet, setSheet] = useState(null);   // { type: "watch" | "privacy" | "history" | "rename" | "move", ... }
   const [renaming, setRenaming] = useState(null);   // "chat:<id>" | "watch:<id>" while renaming in the sidebar
   const [skippedOnboarding, setSkippedOnboarding] = useState(false);
-  const [userError, setUserError] = useState("");
   const [toast, setToast] = useState("");
   const watches = watchesOrLoading ?? [];
   const newAlertCount = useQuery(api.watches.newAlertCount) ?? 0;
   const newAlerts = newAlertCount >= 10 ? "9+" : newAlertCount || null;   // on the Alerts tab and sidebar row
   const desktopRef = useRef(desktop);
   desktopRef.current = desktop;
-
-  useEffect(() => {
-    storeUser().catch((e) => setUserError(e.data ?? "We couldn't load your account. Refresh to try again."));
-    try { localStorage.setItem(SIGNED_IN_FLAG, "1"); sessionStorage.removeItem(SIGNING_IN_FLAG); } catch {}   // next visit: skip the landing-page flash
-  }, [storeUser]);
 
   // Keyboard: ⌘K search, ⌘⇧O new chat (Esc is handled by menus and sheets themselves)
   useEffect(() => {
@@ -181,7 +174,7 @@ function Workspace() {
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
           <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle />
-          {userError && <p className="banner" role="alert">{userError}</p>}{content}
+          {content}
         </main>
         {sheets}
       </div>
@@ -212,7 +205,7 @@ function Workspace() {
       </header>
       <main className="main">
         <BetaBanner onFeedback={openFeedback} busy={capturing} />
-        {userError && <p className="banner" role="alert">{userError}</p>}{content}
+        {content}
       </main>
       <TabBar route={route} newAlerts={newAlerts} isOwner={isOwner} />
       {sheets}
@@ -220,9 +213,53 @@ function Workspace() {
   );
 }
 
+function WaitlistScreen({ position }) {
+  const update = useMutation(api.users.setLookingFor);
+  const waiting = useQuery(api.users.myWaitlist);
+  const [lookingFor, setLookingFor] = useState(waiting?.lookingFor ?? "");
+  const [message, setMessage] = useState("");
+  const [privacy, setPrivacy] = useState(false);
+  useEffect(() => { if (waiting?.lookingFor) setLookingFor(waiting.lookingFor); }, [waiting?.lookingFor]);
+  const save = async (event) => {
+    event.preventDefault();
+    try { await update({ lookingFor }); setMessage("Saved. Thank you."); }
+    catch { setMessage("We couldn't save that. Please try again."); }
+  };
+  return <div className="waitlist-page">
+    <header className="waitlist-bar"><Logo size={40} /><span className="name wordmark">Marktplaats <b>Watcher</b></span><ThemeToggle /><AccountButton /></header>
+    <main className="waitlist-card">
+      <p className="waitlist-eyebrow">Founding 100</p>
+      <h1>All 100 free places are taken.</h1>
+      <p>You're #{waiting?.position ?? position} on the waitlist. We'll e-mail you when a place opens.</p>
+      <form onSubmit={save} className="stack">
+        <label htmlFor="looking-for">What are you hunting for? <span className="muted">Optional</span></label>
+        <input id="looking-for" className="field" maxLength={200} value={lookingFor} onChange={(e) => setLookingFor(e.target.value)} />
+        <button className="button primary" type="submit">Save</button>
+        {message && <p role="status">{message}</p>}
+      </form>
+      <button className="button plain" onClick={() => setPrivacy(true)}>Privacy and your data</button>
+    </main>
+    {privacy && <PrivacySheet waitlisted onClose={() => setPrivacy(false)} />}
+  </div>;
+}
+
+function AdmissionGate() {
+  const store = useMutation(api.users.store);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    store().then(setResult).catch(() => setError("We couldn't load your account. Refresh to try again."));
+    try { localStorage.setItem(SIGNED_IN_FLAG, "1"); sessionStorage.removeItem(SIGNING_IN_FLAG); } catch {}
+  }, [store]);
+  if (error) return <p className="banner" role="alert">{error}</p>;
+  if (!result) return <Boot />;
+  return result.status === "waitlisted" ? <WaitlistScreen position={result.position} /> : <Workspace />;
+}
+
 function SignedOut() {
+  const placesLeft = useQuery(api.users.placesLeft);
   useEffect(() => { try { localStorage.removeItem(SIGNED_IN_FLAG); } catch {} }, []);
-  return <Landing SignIn={SignInButton} />;
+  return <Landing SignIn={SignInButton} placesLeft={placesLeft} />;
 }
 
 export default function App() {
@@ -233,7 +270,7 @@ export default function App() {
     <>
       <AuthLoading><Boot landing={route.section === ""} /></AuthLoading>
       <Unauthenticated><SignedOut /></Unauthenticated>
-      <Authenticated><Workspace /></Authenticated>
+      <Authenticated><AdmissionGate /></Authenticated>
     </>
   );
 }
