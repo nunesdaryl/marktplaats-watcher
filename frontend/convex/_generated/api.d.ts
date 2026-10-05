@@ -10,6 +10,8 @@
 
 import type * as admin from "../admin.js";
 import type * as aiBudget from "../aiBudget.js";
+import type * as openaiSpend from "../openaiSpend.js";
+import type * as spendRollup from "../spendRollup.js";
 import type * as beta from "../beta.js";
 import type * as alerts from "../alerts.js";
 import type * as audit from "../audit.js";
@@ -39,6 +41,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   aiBudget: typeof aiBudget;
+  openaiSpend: typeof openaiSpend;
+  spendRollup: typeof spendRollup;
   beta: typeof beta;
   alerts: typeof alerts;
   audit: typeof audit;

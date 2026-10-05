@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
-from agent import admin_intent, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
+from agent import admin_intent, admin_usage, audit_watch, chat, chat_events, check_query, estimate_volume_note, embed_texts  # noqa: E402
 from convex_api import convex_post  # noqa: E402
 from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
@@ -237,10 +237,11 @@ def ai_cost(usage):
     return cost_usd(os.environ["OPENAI_MODEL"], usage["input_tokens"], usage["output_tokens"]) * USD_TO_EUR
 
 
-def record_chat_spend(user, usage, ident):
+def record_chat_spend(user, usage, ident, chat_id=None):
     if usage and usage.get("model_calls", 0):
         for index, call in enumerate(usage.get("calls") or [usage]):
             convex_post("/api/ai-spend", {"clerkId": user, "kind": "chat", "callId": f"{ident}.{index}",
+                        "chatId": chat_id, "model": os.environ["OPENAI_MODEL"],
                         "inputTokens": call["input_tokens"], "outputTokens": call["output_tokens"],
                         "costEur": ai_cost(call)})
 
@@ -275,6 +276,11 @@ def admin_ask_route(request: AdminAskRequest, user: str = Depends(current_user))
     context = {"today": datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat(),
                "users": request.users, "watches": request.watches}
     intent = admin_intent(request.question, context)
+    usage = admin_usage.get()
+    if usage:
+        convex_post("/api/ai-spend", {"clerkId": user, "kind": "owner", "callId": f"{request_id.get()}.owner",
+                    "model": os.environ["OPENAI_MODEL"], "inputTokens": usage["input_tokens"],
+                    "outputTokens": usage["output_tokens"], "costEur": ai_cost(usage)})
     if intent.pop("forOwner", False) and owner_email:
         intent["userEmail"] = owner_email
     return intent
@@ -293,7 +299,7 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
         identity = mcp_user.set(user)
         try:
             answer = chat(*chat_args(request))
-            record_chat_spend(user, answer.get("usage"), request_id.get())
+            record_chat_spend(user, answer.get("usage"), request_id.get(), request.chatId)
         finally:
             mcp_user.reset(identity)
         return {**answer, "saved": save_assistant(request, user, answer)}
@@ -341,7 +347,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
-                    record_chat_spend(user, event["usage"], ident)
+                    record_chat_spend(user, event["usage"], ident, request.chatId)
                     event["saved"] = save_assistant(request, user, event, ident)
                     final_sent = True
                 elif event["type"] == "error":
@@ -437,7 +443,10 @@ def mirror_route(request: MirrorRequest):
 
 @app.post("/api/internal/embed", dependencies=[Depends(cron_caller)])
 def embed_route(request: EmbedRequest):
-    return {"vectors": embed_texts(request.texts)}
+    model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    usage = [{"inputTokens": (len(text) + 3) // 4, "outputTokens": 0} for text in request.texts]
+    return {"vectors": embed_texts(request.texts), "model": model,
+            "usage": [{**row, "costEur": cost_usd(model, row["inputTokens"], 0) * USD_TO_EUR} for row in usage]}
 
 
 @app.post("/api/internal/check", dependencies=[Depends(cron_caller)])
@@ -446,6 +455,7 @@ def check_route(request: CheckRequest):
     results = check_query(request.query, [w.model_dump() for w in request.watches])
     for result in results:
         if "usage" in result:
+            result["usage"]["model"] = os.environ["OPENAI_MODEL"]
             result["usage"]["calls"] = [{**call, "cost_eur": ai_cost(call)} for call in result["usage"]["calls"]]
     log("check", watches=len(results), failed=sum(not r["ok"] for r in results),
         new_listings=sum(len(r.get("listings") or []) for r in results), ms=round((time.time() - started) * 1000),

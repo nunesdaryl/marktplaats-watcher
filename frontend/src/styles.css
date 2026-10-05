@@ -762,6 +762,14 @@ textarea.field { resize: vertical; min-height: 110px; line-height: 1.45; }
 .admin-budget-form label { display:flex; flex-direction:column; gap:var(--space-1); color:var(--text-2); font-size:var(--text-sm); }
 .admin-budget-form input { width:9rem; padding:var(--space-2); border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--elevated); color:var(--text); font:inherit; }
 .admin-budget-form [role="alert"] { width:100%; color:var(--danger); }
+.openai-spend { display:grid; gap:var(--space-2); }
+.openai-spend.warning { border-color:var(--warn); }
+.openai-spend.danger { border-color:var(--danger); }
+.spend-value { font:500 var(--text-xl)/1.3 var(--font-mono); margin:0; overflow-wrap:anywhere; }
+.spend-track { height:8px; border-radius:var(--radius-sm); background:var(--fill-strong); overflow:hidden; }
+.spend-track span { display:block; height:100%; border-radius:inherit; background:var(--accent); }
+.openai-spend.warning .spend-track span { background:var(--warn); }
+.openai-spend.danger .spend-track span { background:var(--danger); }
 .segmented { display: inline-flex; padding:2px; /* off-scale: layout */ border-radius:var(--radius); background: var(--fill); }
 .segmented button {
   border: 0; background: none; padding:5px 12px; /* off-scale: layout */ border-radius:var(--radius); font-size:var(--text-sm); font-weight: 500; color: var(--text-2);

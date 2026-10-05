@@ -6,6 +6,7 @@ import type { Doc } from "./_generated/dataModel";
 import { ownerMatches } from "./admin";
 import { sendEmail } from "./checker";
 import { currentUser } from "./users";
+import { addToMonthly } from "./spendRollup";
 
 const PERIOD = 30 * 86_400_000;
 const OFFER_AT = Date.parse("2026-10-05T00:00:00Z");
@@ -44,21 +45,35 @@ export const check = internalQuery({ args: { clerkId: v.string() }, handler: asy
 } });
 
 export const record = internalMutation({
-  args: { clerkId: v.string(), kind: v.union(v.literal("watch"), v.literal("chat")),
-    watchId: v.optional(v.id("watches")), inputTokens: v.number(), outputTokens: v.number(), costEur: v.number(), callId: v.string() },
+  args: { clerkId: v.string(), kind: v.union(v.literal("watch"), v.literal("chat"), v.literal("estimate"),
+      v.literal("owner"), v.literal("embedding")),
+    watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")), model: v.optional(v.string()),
+    checkId: v.optional(v.string()),
+    alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),
+    inputTokens: v.number(), outputTokens: v.number(), costEur: v.number(), callId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId)).unique();
     if (!user) throw new ConvexError("An admitted account is required.");
     if (args.kind === "watch" && (!args.watchId || (await ctx.db.get(args.watchId))?.userId !== user._id))
       throw new ConvexError("The watch does not belong to this account.");
+    const chatId = args.chatId && (await ctx.db.get(args.chatId))?.userId === user._id ? args.chatId : undefined;
     if (!Number.isSafeInteger(args.inputTokens) || args.inputTokens < 0 || !Number.isSafeInteger(args.outputTokens) || args.outputTokens < 0
       || !Number.isFinite(args.costEur) || args.costEur < 0) throw new ConvexError("Invalid AI usage.");
+    if ((args.alertsSent !== undefined && (!Number.isSafeInteger(args.alertsSent) || args.alertsSent < 0))
+      || (args.listingsScored !== undefined && (!Number.isSafeInteger(args.listingsScored) || args.listingsScored < 0)))
+      throw new ConvexError("Invalid AI usage.");
     if (await ctx.db.query("aiSpend").withIndex("by_call", (q) => q.eq("callId", args.callId)).unique()) return;
     const now = Date.now();
     const budget = await budgetFor(ctx, user, now);
-    await ctx.db.insert("aiSpend", { userId: user._id, windowStart: budget.windowStart, kind: args.kind,
-      ...(args.watchId ? { watchId: args.watchId } : {}), inputTokens: args.inputTokens,
-      outputTokens: args.outputTokens, costEur: args.costEur, at: now, callId: args.callId });
+    const spendId = await ctx.db.insert("aiSpend", { userId: user._id, windowStart: budget.windowStart, kind: args.kind,
+      ...(args.watchId ? { watchId: args.watchId } : {}), ...(chatId ? { chatId } : {}),
+      ...(args.model ? { model: args.model } : {}),
+      ...(args.checkId ? { checkId: args.checkId } : {}),
+      ...(args.alertsSent !== undefined ? { alertsSent: args.alertsSent } : {}),
+      ...(args.listingsScored !== undefined ? { listingsScored: args.listingsScored } : {}),
+      inputTokens: args.inputTokens,
+      outputTokens: args.outputTokens, costEur: args.costEur, at: now, callId: args.callId, rolledUp: true });
+    await addToMonthly(ctx, (await ctx.db.get(spendId))!);
     const row = await ctx.db.query("aiBudgets").withIndex("by_user_window", (q) => q.eq("userId", user._id).eq("windowStart", budget.windowStart)).unique();
     const totalEur = budget.spentEur + args.costEur;
     const notify = !budget.owner && totalEur >= budget.limitEur && !row?.notifiedAt;
