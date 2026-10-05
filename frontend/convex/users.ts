@@ -2,6 +2,7 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { ownerMatches } from "./admin";
+import { maxUsers } from "./beta";
 import { deleteChat } from "./chats";
 import { deleteAlertEmbedding } from "./embeddings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
@@ -17,11 +18,6 @@ const DAY = 86_400_000;
 const OFFER_AT = Date.parse("2026-10-05T00:00:00Z");
 const FREE_PERIOD = 30 * DAY;
 const ADMISSIONS_KEY = "founding-admissions";
-
-export function maxUsers() {
-  const value = Number(process.env.MAX_USERS ?? "100");
-  return Number.isSafeInteger(value) && value > 0 ? value : 100;
-}
 
 async function admissionTotal(ctx: QueryCtx) {
   return ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", ADMISSIONS_KEY)).unique();

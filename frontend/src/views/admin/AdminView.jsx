@@ -11,7 +11,7 @@ import { VIEWS } from "./Views.jsx";
 import { intentToDrill } from "./ask.js";
 import { AdminOptionsContext } from "./FilterBar.jsx";
 
-const KIND = { users: "Accounts", user: "Account", watches: "Watches", watch: "Watch", alerts: "Alerts", alert: "Alert",
+const KIND = { users: "Accounts", user: "Account", waitlist: "Waitlist", watches: "Watches", watch: "Watch", alerts: "Alerts", alert: "Alert",
   chats: "Chats", chat: "Chat", events: "Activity", feedback: "Feedback", day: "Day", ratings: "Ratings",
   runs: "Runs", run: "Run", errors: "Errors", error: "Error", audits: "Delivery audit", catchups: "Catch-ups" };
 

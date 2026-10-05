@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as aiBudget from "../aiBudget.js";
+import type * as beta from "../beta.js";
 import type * as alerts from "../alerts.js";
 import type * as audit from "../audit.js";
 import type * as catchup from "../catchup.js";
@@ -38,6 +39,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   aiBudget: typeof aiBudget;
+  beta: typeof beta;
   alerts: typeof alerts;
   audit: typeof audit;
   catchup: typeof catchup;

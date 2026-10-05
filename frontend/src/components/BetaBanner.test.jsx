@@ -55,3 +55,11 @@ test("flag 1 leaves the phone banner without an account button", async () => {
   expect(html).not.toContain("beta-account");
   expect(html).not.toContain("Open user menu");
 });
+
+test("admitted member sees the free-until date and AI spend on the banner", async () => {
+  const { default: BetaBanner } = await import("./BetaBanner.jsx");
+  const html = renderToStaticMarkup(<BetaBanner onFeedback={vi.fn()} busy={false}
+    freeUntil={Date.parse("2026-11-04T00:00:00Z")} budget={{ spentEur: 0.32, limitEur: 1 }} />);
+  expect(html).toContain("Founding user · free until 4 Nov");
+  expect(html).toContain("€0.32 of €1.00 used");
+});

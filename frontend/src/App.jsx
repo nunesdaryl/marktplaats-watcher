@@ -83,6 +83,7 @@ function Toast({ message, onDone }) {
 
 function Workspace() {
   const me = useQuery(api.users.me);
+  const budget = useQuery(api.aiBudget.mine);
   const watchesOrLoading = useQuery(api.watches.list);
   const chats = useQuery(api.chats.list) ?? [];
   const archivedWatches = useQuery(api.watches.archived) ?? [];
@@ -169,11 +170,11 @@ function Workspace() {
   if (desktop) {
     return (
       <div className="shell">
-        <Sidebar route={route} watches={watches} chats={chats} email={me?.email} actions={actions} renaming={renaming}
+        <Sidebar route={route} watches={watches} chats={chats} email={me?.email} budget={budget} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
-          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle />
+          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} />
           {content}
         </main>
         {sheets}
@@ -204,7 +205,7 @@ function Workspace() {
           : <AccountButton />}
       </header>
       <main className="main">
-        <BetaBanner onFeedback={openFeedback} busy={capturing} />
+        <BetaBanner onFeedback={openFeedback} busy={capturing} freeUntil={me?.freeUntil} budget={budget} />
         {content}
       </main>
       <TabBar route={route} newAlerts={newAlerts} isOwner={isOwner} />
@@ -257,7 +258,7 @@ function AdmissionGate() {
 }
 
 function SignedOut() {
-  const placesLeft = useQuery(api.users.placesLeft);
+  const placesLeft = useQuery(api.beta.capacity);
   useEffect(() => { try { localStorage.removeItem(SIGNED_IN_FLAG); } catch {} }, []);
   return <Landing SignIn={SignInButton} placesLeft={placesLeft} />;
 }

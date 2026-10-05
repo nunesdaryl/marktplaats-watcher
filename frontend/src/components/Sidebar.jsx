@@ -14,7 +14,7 @@ export function forwardAccountClick(event, trigger) {
 }
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, chats, email, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
+export default function Sidebar({ route, watches, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -191,7 +191,8 @@ export default function Sidebar({ route, watches, chats, email, actions, renamin
       <div className="account">
         <div className="account-trigger" ref={accountTriggerRef} onClick={(e) => forwardAccountClick(e, accountTriggerRef.current)}>
           <AccountButton />
-          <span className="email" data-private aria-hidden="true">{email}</span>
+          <span className="account-details"><span className="email" data-private aria-hidden="true">{email}</span>
+            {budget && !budget.owner && <small>AI budget: €{budget.spentEur.toFixed(2)} of €{budget.limitEur.toFixed(2)} used</small>}</span>
           <span className="account-chevron" aria-hidden="true"><Icon name="chevron" size={16} /></span>
         </div>
         <button className="icon-button small" onClick={() => go("/archived")} aria-label="Archived" title="Archived">

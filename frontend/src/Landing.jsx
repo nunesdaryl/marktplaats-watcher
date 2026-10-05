@@ -51,10 +51,12 @@ export default function Landing({ SignIn = Plain, placesLeft }) {
         <p className="hint">{NOTIFY_LABEL[which][0].toUpperCase() + NOTIFY_LABEL[which].slice(1)} means {NOTIFY_SHORT[which]}.</p>
         <p className="lede">
           Say what you want in plain words. Pick when to check. We read every new listing, score it 0 to 10 and
-          say why. You choose which ones reach your inbox. The first 100 people get 30 days free, with up to 5 watches.
+          say why. You choose which ones reach your inbox. You can set up to 5 watches.
         </p>
-        {placesLeft && <p className="places-left" role="status">{placesLeft.left} of {placesLeft.capacity} free places left</p>}
-        <SignIn mode="modal"><button className="button primary large" onClick={signingIn}>Set up a free watch</button></SignIn>
+        {placesLeft && <p className="places-left" role="status">{placesLeft.left > 0
+          ? `Free for 30 days for the first ${placesLeft.cap} users · ${placesLeft.left} of ${placesLeft.cap} places left`
+          : `All ${placesLeft.cap} places taken · join the waitlist`}</p>}
+        <SignIn mode="modal"><button className="button primary large" onClick={signingIn}>{placesLeft?.left === 0 ? "Join the waitlist" : "Set up a free watch"}</button></SignIn>
         <p className="cta-note">No card, no app to install. Sign in with your e-mail or Google.</p>
 
         <section className="sample" aria-labelledby="sample-title">

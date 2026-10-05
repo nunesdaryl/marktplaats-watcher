@@ -80,6 +80,15 @@ test("the refresh icon reruns all three queries and keeps old figures until all 
   vi.restoreAllMocks();
 });
 
+test("owner overview shows admitted places and the waitlist", () => {
+  responses[0].totals.places = { cap: 100, taken: 37, left: 63 };
+  responses[0].totals.waitlistCount = 4;
+  const { html } = render();
+  expect(html).toContain('class="stat-value">37/100</span>');
+  expect(html).toContain('class="stat-name">Places');
+  expect(html).toContain('class="stat-value">4</span><span class="stat-name">Waitlist');
+});
+
 test("delivery misses explain why each match was missed without showing request IDs", () => {
   const data = dashboard(oldNow, 3);
   const misses = [

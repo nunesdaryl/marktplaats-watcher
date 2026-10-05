@@ -112,6 +112,15 @@ export function Users({ params, open, update }) {
                 onOpen={(u) => open({ view: "user", title: u.email, params: { id: u._id } })} empty="No accounts match." />;
 }
 
+export function Waitlist() {
+  const rows = useQuery(api.admin.waitlist);
+  return <Table name="waitlist" columns={[
+    { key: "email", label: "E-mail" },
+    { key: "lookingFor", label: "Looking for", render: (row) => row.lookingFor || "–" },
+    { key: "createdAt", label: "Joined", render: (row) => when(row.createdAt), mono: true },
+  ]} rows={rows?.rows} more={rows?.more} empty="Nobody is waiting." />;
+}
+
 export function Watches({ params, open, update }) {
   const rows = useQuery(api.admin.watches, { status: params.status, scheduleKey: params.scheduleKey, notify: params.notify,
     userId: params.userId, watchId: params.watchId, createdSince: num(params.createdSince), createdUntil: num(params.createdUntil), behind: params.behind === "yes" || undefined, ...dateFilters(params), search: params.q });
@@ -498,6 +507,6 @@ export function Day({ params, open }) {
   );
 }
 
-export const VIEWS = { users: Users, user: User, watches: Watches, watch: Watch, alerts: Alerts, alert: Alert, chats: Chats,
+export const VIEWS = { users: Users, user: User, waitlist: Waitlist, watches: Watches, watch: Watch, alerts: Alerts, alert: Alert, chats: Chats,
   chat: Chat, events: Events, feedback: Feedback, day: Day, ratings: Ratings, runs: Runs, errors: Errors,
   audits: Audits, catchups: CatchUps, run: Operation, error: Operation };

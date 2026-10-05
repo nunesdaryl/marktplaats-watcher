@@ -13,6 +13,7 @@ import { WOULD_PAY } from "./feedback";
 import { healthReport } from "./health";
 import { usageDay } from "./usage";
 import { budgetFor } from "./aiBudget";
+import { capacityFor } from "./beta";
 import { readRows, readSummaries, windowSummaries, summarizeEvents, summarizeAlerts,
   sentAlertsSince, insertTracked, patchTracked } from "./totals";
 
@@ -48,6 +49,12 @@ async function requireOwner(ctx: Pick<QueryCtx, "auth">) {
 
 export const amOwner = query({ args: {}, handler: async (ctx) => isOwner(ctx) });
 
+export const waitlist = query({ args: {}, handler: async (ctx) => {
+  if (!(await isOwner(ctx))) return null;
+  const page = await listPage(ctx.db.query("waitlist").withIndex("by_createdAt"), () => true);
+  return { rows: page.rows.map(({ _id, email, lookingFor, createdAt }) => ({ _id, email, lookingFor, createdAt })), more: page.more };
+} });
+
 const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);   // UTC day, "2026-09-29"
 /** A schedule as a short label ("every 15 min", "daily", "weekly"); the same key filters the watch list. */
 const scheduleKey = (s: Doc<"watches">["schedule"]) => s.kind === "interval"
@@ -81,6 +88,9 @@ export const dashboard = query({
     const since = now - days * DAY;
 
     const users = (await readRows(ctx, "users") ?? await ctx.db.query("users").take(LIMIT)).slice(0, LIMIT);
+    const places = await capacityFor(ctx);
+    let waitlistCount = 0;
+    for await (const _row of ctx.db.query("waitlist")) waitlistCount++;
     const watches = (await readRows(ctx, "watches") ?? await ctx.db.query("watches").take(LIMIT)).slice(0, LIMIT);
     const chats = (await readRows(ctx, "chats") ?? await ctx.db.query("chats").withIndex("by_updated").order("desc").take(LIMIT))
       .sort(newest((c) => c.updatedAt)).slice(0, LIMIT);
@@ -164,6 +174,7 @@ export const dashboard = query({
       now, days,
       totals: {
         users: users.length,
+        places, waitlistCount,
         newUsers7d: users.filter((u) => u.createdAt >= now - 7 * DAY).length,
         active1d: await activeSince(now - DAY), active7d: await activeSince(now - 7 * DAY), active30d: await activeSince(now - 30 * DAY),
         watchesActive: watches.filter((w) => w.active && live(w)).length,
