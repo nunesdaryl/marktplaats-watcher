@@ -100,6 +100,8 @@ export default defineSchema({
     monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
   }).index("by_month", ["monthStart"]),
   openaiCapAlerts: defineTable({ monthStart: v.number(), alertedAt: v.number() }).index("by_month", ["monthStart"]),
+  openaiIncident: defineTable({ key: v.string(), failureKind: v.optional(v.string()), updatedAt: v.number() })
+    .index("by_key", ["key"]),
   aiBudgets: defineTable({
     userId: v.id("users"), windowStart: v.number(), totalEur: v.number(), notifiedAt: v.optional(v.number()),
   }).index("by_user_window", ["userId", "windowStart"]),

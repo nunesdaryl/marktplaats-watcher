@@ -65,7 +65,7 @@ def post_check(monkeypatch, watches):
     assert len(results) == len(watches)
     for result, sent in zip(results, watches):
         assert result == {
-            "watchId": sent["id"], "ok": True, "currentIds": [LISTING_ID],
+            "watchId": sent["id"], "ok": True, "aiCall": True, "currentIds": [LISTING_ID],
             "listings": [{
                 "id": LISTING_ID, "title": "Mac mini M2", "price_eur": 400,
                 "city": None, "distance_km": None, "date": "Vandaag",

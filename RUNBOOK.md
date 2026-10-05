@@ -98,6 +98,9 @@ environment and redeploy. The existing deployment keeps its built-in value until
 remove the experiment from code entirely, revert the MW-75 merge through the normal factory release process.
 
 ## 3. OpenAI: cap reached, key revoked, or model gone
+
+### OpenAI credit ran out
+The owner dashboard says OpenAI credit is empty, watches show a paused scoring message, and chat is unavailable. The owner gets one incident e-mail, then a recovery e-mail after a successful AI call. Add prepaid credit at [OpenAI billing](https://platform.openai.com/settings/organization/billing/overview). Check that auto-reload is enabled with an appropriate threshold and monthly limit; it prevents a future empty balance but does not restore credit by itself. After adding credit, run a normal chat or wait for the next watch check and confirm the dashboard line clears. Do not test by exhausting real credit.
 - **Symptoms:**
   - The chat says "The chat can't reach its AI right now."
   - Watches show "The AI that scores listings didn't answer…".

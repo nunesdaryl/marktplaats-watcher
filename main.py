@@ -24,6 +24,7 @@ from agent import admin_intent, admin_usage, audit_watch, chat, chat_events, che
 from convex_api import convex_post  # noqa: E402
 from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
+from openai_failure import classify_openai_failure  # noqa: E402
 
 
 app = FastAPI()
@@ -161,13 +162,15 @@ def log(event, **fields):
 
 def friendly_error(e, ident=None):
     """An exception from the model or a tool -> (message a user can act on, HTTP status). Details stay in the log."""
-    log("chat_failed", requestId=ident or request_id.get(), error=type(e).__name__, detail=str(e))
+    failure_kind = classify_openai_failure(e)
+    log("chat_failed", requestId=ident or request_id.get(), error=type(e).__name__, failureKind=failure_kind, detail=str(e))
     if "model_not_found" in str(e) or "does not exist" in str(e):  # never log the key, only the model
         log("openai_config", requestId=ident or request_id.get(), model=os.getenv("OPENAI_MODEL"))
     if "content_policy" in str(e) or "content management policy" in str(e):
         return "I can only help with Marktplaats searches and watches.", 200   # a refusal is a normal answer
-    if any(code in str(e) for code in ("401", "invalid_api_key", "model_not_found", "insufficient_quota",
-                                       "credit_balance_exhausted")):
+    if failure_kind in ("credit_exhausted", "spend_cap", "auth"):
+        return "The assistant is unavailable right now; please try again later.", 503
+    if failure_kind == "rate_limited" or "model_not_found" in str(e):
         return "The chat can't reach its AI right now. Try again in a few minutes.", 503
     return "Something went wrong on our side. Try again.", 500
 
@@ -178,6 +181,14 @@ def record_chat_error(error, answer, ident):
                                     "message": f"{type(error).__name__}: {answer}"})
     except Exception as e:
         log("error_record_failed", requestId=ident, error=type(e).__name__)
+    record_ai_status(classify_openai_failure(error), ident)
+
+
+def record_ai_status(kind, ident):
+    try:
+        convex_post("/api/ai-status", {"failureKind": kind, "requestId": ident})
+    except Exception as e:
+        log("ai_status_record_failed", requestId=ident, error=type(e).__name__)
 
 
 def chat_args(request):
@@ -300,6 +311,8 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
         try:
             answer = chat(*chat_args(request))
             record_chat_spend(user, answer.get("usage"), request_id.get(), request.chatId)
+            if answer.get("usage", {}).get("model_calls", 0):
+                background_tasks.add_task(record_ai_status, None, request_id.get())
         finally:
             mcp_user.reset(identity)
         return {**answer, "saved": save_assistant(request, user, answer)}
@@ -348,6 +361,8 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
                     record_chat_spend(user, event["usage"], ident, request.chatId)
+                    if event["usage"].get("model_calls", 0):
+                        background_tasks.add_task(record_ai_status, None, ident)
                     event["saved"] = save_assistant(request, user, event, ident)
                     final_sent = True
                 elif event["type"] == "error":

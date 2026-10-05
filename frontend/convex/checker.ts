@@ -109,6 +109,8 @@ const listing = v.object({
 });
 const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
+  failureKind: v.optional(v.union(v.literal("credit_exhausted"), v.literal("spend_cap"),
+    v.literal("rate_limited"), v.literal("auth"), v.literal("other"))), aiCall: v.optional(v.boolean()),
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
@@ -431,6 +433,13 @@ export const checkDue = internalAction({
       checked += group.watches.length;
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
+      if (!dryRun) {
+        const accountFailure = results.find((r: { failureKind?: string }) =>
+          ["credit_exhausted", "spend_cap", "auth"].includes(r.failureKind ?? ""))?.failureKind;
+        if (accountFailure) await ctx.runMutation(internal.openaiSpend.recordAiStatus, { failureKind: accountFailure });
+        else if (results.some((r: { aiCall?: boolean }) => r.aiCall))
+          await ctx.runMutation(internal.openaiSpend.recordAiStatus, {});
+      }
       if (!dryRun) for (const r of results) {
         const source = group.watches.find((w) => w.id === r.watchId);
         if (!source || !r.usage) continue;

@@ -83,6 +83,31 @@ function fakeServices(page: () => string[], failures = 0) {
 }
 const alerts = (t: any) => t.run((ctx: any) => ctx.db.query("alerts").collect());
 
+test("checker records account failure once and clears it after a scored check", async () => {
+  const { t, id } = await seededWatch();
+  let recovered = false;
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    if (url.includes("agentmail")) return new Response("{}");
+    const body = JSON.parse(init.body as string);
+    return new Response(JSON.stringify({ results: body.watches.map((w: any) => recovered
+      ? { ...found(w.id, ["a1"]), aiCall: true }
+      : { watchId: w.id, ok: false, failureKind: "credit_exhausted",
+          error: "Paused: the AI account has run out of credit. The owner has been told; nothing is sent unscored." }) }));
+  }));
+  await t.action(internal.checker.checkDue, {});
+  expect((await t.run((ctx) => ctx.db.get(id)))?.lastError).toContain("run out of credit");
+  expect(await t.run((ctx) => ctx.db.query("openaiIncident").first())).toMatchObject({ failureKind: "credit_exhausted" });
+  vi.advanceTimersByTime(30 * 60_000);
+  await t.action(internal.checker.checkDue, {});
+  recovered = true;
+  vi.advanceTimersByTime(30 * 60_000);
+  await t.action(internal.checker.checkDue, {});
+  expect((await t.run((ctx) => ctx.db.get(id)))?.lastError).toBeUndefined();
+  expect((await t.run((ctx) => ctx.db.query("openaiIncident").first()))?.failureKind).toBeUndefined();
+  const jobs = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
+  expect(jobs.filter((job) => job.name === "openaiSpend:sendIncidentEmail")).toHaveLength(2);
+});
+
 test("the hourly canary reads without creating user watches or alerts", async () => {
   delete process.env.CANARY_DISABLED;
   const t = convexTest(schema, modules);

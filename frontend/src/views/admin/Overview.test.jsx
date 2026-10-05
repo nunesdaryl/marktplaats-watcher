@@ -89,6 +89,18 @@ test("owner overview shows admitted places and the waitlist", () => {
   expect(html).toContain('class="stat-value">4</span><span class="stat-name">Waitlist');
 });
 
+test("OpenAI account warning appears with billing link and clears on recovery", () => {
+  responses[0].openaiFailureKind = "credit_exhausted";
+  const failed = render().html;
+  expect(failed).toContain("OpenAI credit is empty");
+  expect(failed).toContain("https://platform.openai.com/settings/organization/billing/overview");
+  expect(failed).not.toContain("All good");
+  responses[0].openaiFailureKind = null;
+  const recovered = render().html;
+  expect(recovered).not.toContain("OpenAI credit is empty");
+  expect(recovered).toContain("All good");
+});
+
 test("delivery misses explain why each match was missed without showing request IDs", () => {
   const data = dashboard(oldNow, 3);
   const misses = [
@@ -122,7 +134,7 @@ test("the health issue copy icon copies the request ID and briefly confirms it",
   const { tree, html } = render();
   expect(html).not.toContain("check-123");
   expect(html).toContain('title="Copy request ID" aria-label="Copy request ID"');
-  const issueElement = tree.props.children[3].props.children[1].props.children[0];
+  const issueElement = tree.props.children[3].props.children[2].props.children[0];
   const issueTree = issueElement.type(issueElement.props);
   const copyElement = issueTree.props.children[1].props.children[0].props.children.at(-1);
   renderCount = 2;
