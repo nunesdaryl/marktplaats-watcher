@@ -3,11 +3,12 @@ import { api } from "../../convex/_generated/api";
 import Sheet from "../components/Sheet.jsx";
 import { ConfirmButton } from "./WatchView.jsx";
 
-export default function PrivacySheet({ email, onClose }) {
+export default function PrivacySheet({ email, waitlisted = false, onClose }) {
   const deleteMyData = useMutation(api.users.deleteMyData);
   return (
     <Sheet title="Privacy and your data" onClose={onClose}>
       <div className="stack prose">
+        {waitlisted ? <p>We keep your waitlist e-mail address and what you're hunting for until you're admitted or delete your data. We use your e-mail to tell you when a place opens.</p> : <>
         <p>Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
         <p>We keep your e-mail address and your watches until you delete them. Chats and checked listings are deleted
           30 days after they were last used. Your messages, searches and listing details (titles, prices, places)
@@ -20,6 +21,7 @@ export default function PrivacySheet({ email, onClose }) {
           rate an alert ("good match" or "not right, because…"), that answer is kept for 12 months to improve the scores, and is deleted with the watch or with Delete my data. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
           Clerk, AgentMail, Vercel). Delete my data removes everything we store; close your login account separately
           under your account menu.</p>
+        </>}
         <p className="muted">A free portfolio project by Daryl Nunes, not affiliated with Marktplaats.</p>
         <ConfirmButton icon="trash" label="Delete my data" confirmLabel="Delete everything? This can't be undone."
                        onConfirm={async () => { await deleteMyData(); onClose(); window.location.hash = "/"; }} />

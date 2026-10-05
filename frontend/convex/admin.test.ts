@@ -192,7 +192,7 @@ test("the dashboard counts usage, the funnel and feedback with what happened bef
 test("drilldown: every list and detail is owner-only, and the actions refuse everyone else", async () => {
   const t = convexTest(schema, modules);
   const someone = t.withIdentity({ subject: "s", email: "someone@example.com" });
-  const userId = await someone.mutation(api.users.store, {});
+  const userId = (await someone.mutation(api.users.store, {})).id!;
   const watchId = await someone.mutation(api.watches.create,
     { query: "gazelle fiets", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
   for (const [fn, args] of [
@@ -211,7 +211,7 @@ test("drilldown: accounts, their watches and chats, filters, and the funnel's 's
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
   const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
   const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
-  const aliceId = await alice.mutation(api.users.store, {});
+  const aliceId = (await alice.mutation(api.users.store, {})).id!;
   await bob.mutation(api.users.store, {});
   const watchId = await alice.mutation(api.watches.create,
     { query: "gazelle fiets", maxPriceEur: 400, schedule: { kind: "interval", everyMinutes: 15 }, notify: "great" });
@@ -283,8 +283,8 @@ test("owner lists filter operational records, catch-ups, and existing records by
   const other = t.withIdentity({ subject: "x", email: "x@example.com" });
   const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
   const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
-  const aliceId = await alice.mutation(api.users.store, {});
-  const bobId = await bob.mutation(api.users.store, {});
+  const aliceId = (await alice.mutation(api.users.store, {})).id!;
+  const bobId = (await bob.mutation(api.users.store, {})).id!;
   const aliceWatch = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
   const bobWatch = await bob.mutation(api.watches.create, { query: "car", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
   const now = Date.now();
@@ -324,8 +324,8 @@ test("catch-up alerts use their index and combine date, user, watch, and search 
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
   const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
   const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
-  const aliceId = await alice.mutation(api.users.store, {});
-  const bobId = await bob.mutation(api.users.store, {});
+  const aliceId = (await alice.mutation(api.users.store, {})).id!;
+  const bobId = (await bob.mutation(api.users.store, {})).id!;
   const bike = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
   const chair = await alice.mutation(api.watches.create, { query: "chair", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });
   const car = await bob.mutation(api.watches.create, { query: "car", schedule: { kind: "daily", times: ["08:00"] }, notify: "good" });

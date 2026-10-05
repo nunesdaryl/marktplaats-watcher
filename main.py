@@ -53,6 +53,8 @@ async def identify_request(request: Request, call_next):
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)
             if too_many(user):
                 return JSONResponse({"detail": "Too many requests"}, status_code=429)
+            if not admission_check(user):
+                return JSONResponse({"detail": "A free place is required to use the API."}, status_code=403)
             mcp_token = mcp_user.set(user)
         try:
             response = await call_next(request)
@@ -203,11 +205,28 @@ def chat_allowance(user):
         return result
     except Exception:
         log("usage_check_failed")
-        return {"allowed": True}
+        return {"allowed": False, "reason": "unavailable", "limit": 0}
+
+
+def admission_check(user):
+    try:
+        result = convex_post("/api/usage/check", {"clerkId": user})
+        return result.get("allowed") is True
+    except Exception:
+        log("admission_check_failed")
+        return False
 
 
 def limit_answer(limit):
     return f"You've reached today's limit of {limit} questions. It resets at midnight."
+
+
+def allowance_answer(allowance):
+    if allowance.get("reason") == "admission":
+        return "All free places are taken. You're on the waitlist."
+    if allowance.get("reason") == "unavailable":
+        return "We couldn't check access right now. Try again in a few minutes."
+    return limit_answer(allowance["limit"])
 
 
 def save_assistant(request, user, event, ident=None):
@@ -253,7 +272,7 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
         return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     allowance = chat_allowance(user)
     if not allowance["allowed"]:
-        return JSONResponse({"answer": limit_answer(allowance["limit"])}, status_code=429)
+        return JSONResponse({"answer": allowance_answer(allowance)}, status_code=403 if allowance.get("reason") == "admission" else 429)
     try:
         identity = mcp_user.set(user)
         try:
@@ -270,6 +289,8 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
 
 @app.post("/api/watch/estimate")
 def watch_estimate_route(request: WatchEstimate, user: str = Depends(current_user)):
+    if not admission_check(user):
+        return JSONResponse({"volumeNote": None, "error": "A free place is required."}, status_code=403)
     if too_many(user):
         return JSONResponse({"volumeNote": None}, status_code=429)
     return {"volumeNote": estimate_volume_note(request.model_dump())}
@@ -284,9 +305,9 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
         return JSONResponse({"answer": "That's a lot of messages in one minute. Wait a moment, then try again."}, status_code=429)
     allowance = chat_allowance(user)
     if not allowance["allowed"]:
-        event = {"type": "done", "answer": limit_answer(allowance["limit"]), "listings": [], "searches": [],
+        event = {"type": "done", "answer": allowance_answer(allowance), "listings": [], "searches": [],
                  "proposals": [], "usage": {"input_tokens": 0, "output_tokens": 0, "model_calls": 0, "tool_calls": 0}}
-        event["saved"] = save_assistant(request, user, event)
+        event["saved"] = False if allowance.get("reason") == "admission" else save_assistant(request, user, event)
         return StreamingResponse(iter([json.dumps(event) + "\n"]), media_type="application/x-ndjson")
 
     ident = request_id.get()

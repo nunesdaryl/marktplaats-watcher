@@ -56,6 +56,7 @@ export default defineSchema({
     drift: v.optional(v.array(v.string())),
     checkedAt: v.optional(v.number()),
     sent: v.optional(v.number()),
+    admitted: v.optional(v.number()),
     summary: v.optional(v.any()),
   }).index("by_key", ["key"]),
   // Only what alerts need: the Clerk id and the e-mail address to send them to.
@@ -63,9 +64,16 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     createdAt: v.number(),
+    admittedAt: v.optional(v.number()),
+    freeUntil: v.optional(v.number()),
     onboardedAt: v.optional(v.number()),   // set when the first-run setup is finished or skipped
     alertsSeenAt: v.optional(v.number()),  // last time the Alerts page was open: newer alerts count as new
   }).index("by_clerkId", ["clerkId"]),
+
+  waitlist: defineTable({
+    clerkId: v.string(), email: v.string(), createdAt: v.number(),
+    lookingFor: v.optional(v.string()),
+  }).index("by_clerkId", ["clerkId"]).index("by_createdAt", ["createdAt"]),
 
   usage: defineTable({
     userId: v.string(),             // verified Clerk id; a user row may not exist yet

@@ -21,7 +21,7 @@ test("backfilled overview matches the original across every window and health de
   const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
   const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
   const bob = t.withIdentity({ subject: "bob", email: "bob@example.com" });
-  const aliceId = await alice.mutation(api.users.store, {});
+  const aliceId = (await alice.mutation(api.users.store, {})).id!;
   await bob.mutation(api.users.store, {});
   await alice.mutation(api.users.finishOnboarding, {});
   const watchId = await alice.mutation(api.watches.create, {
@@ -55,7 +55,7 @@ test("backfilled overview matches the original across every window and health de
   const old = await Promise.all([7, 30, 90].map((days) => owner.query(api.admin.dashboard, { days })));
   const oldRatings = await owner.query(api.admin.ratingStats, { days: 30 });
   expect((await t.mutation(internal.totals.backfill, { dryRun: true })).drift.length).toBeGreaterThan(0);
-  expect(await t.run((ctx) => ctx.db.query("dashboardTotals").collect())).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.query("dashboardTotals").collect())).toMatchObject([{ key: "founding-admissions", admitted: 2 }]);
   await t.mutation(internal.totals.backfill, { dryRun: false });
   const current = await Promise.all([7, 30, 90].map((days) => owner.query(api.admin.dashboard, { days })));
   expect(current).toEqual(old);

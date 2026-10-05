@@ -29,6 +29,7 @@ def test_mcp_works_without_asgi_lifespan(monkeypatch):
     monkeypatch.setenv("MCP_ENABLED", "1")
     monkeypatch.setenv("MCP_OWNER_TOKEN", "owner-secret")
     monkeypatch.setenv("OWNER_CLERK_ID", "owner")
+    monkeypatch.setattr(main, "admission_check", lambda user: True)   # MW-85: callers need a founding place
     client = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app")  # no lifespan
     initialized = rpc(client, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
                                              "clientInfo": {"name": "test", "version": "1"}}, "owner-secret")
@@ -39,6 +40,15 @@ def test_mcp_works_without_asgi_lifespan(monkeypatch):
     assert len(listed.json()["result"]["tools"]) == 6
 
 
+def test_mcp_refuses_callers_without_a_founding_place(monkeypatch):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setattr(main, "current_user", lambda authorization: "carol")
+    monkeypatch.setattr(main, "admission_check", lambda user: False)
+    client = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app")
+    response = rpc(client, "tools/list", token="carol")
+    assert response.status_code == 403
+
+
 def test_mcp_auth_tools_and_user_scope(monkeypatch):
     verify_clerk = main.current_user
     monkeypatch.setenv("MCP_ENABLED", "1")
@@ -46,6 +56,7 @@ def test_mcp_auth_tools_and_user_scope(monkeypatch):
     monkeypatch.setenv("OWNER_CLERK_ID", "owner")
     monkeypatch.setattr(main, "current_user", lambda authorization: authorization.removeprefix("Bearer ")
                         if authorization in ("Bearer alice", "Bearer bob") else (_ for _ in ()).throw(main.HTTPException(401)))
+    monkeypatch.setattr(main, "admission_check", lambda user: True)   # MW-85: callers need a founding place
     seen = []
     def convex(path, payload):
         seen.append((path, payload))
