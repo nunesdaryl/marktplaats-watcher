@@ -277,6 +277,8 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .account-trigger:has(button[aria-expanded="true"]) { background: var(--fill-strong); }
 .account-trigger:has(button:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
 .account-trigger .email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-details { display:flex; flex:1; min-width:0; flex-direction:column; }
+.account-details small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--text-xs); color:var(--text-2); }
 .account-chevron { display: flex; flex: none; color: var(--text-3); transform: rotate(-90deg); }
 
 /* Rows with a "…" menu (sidebar, grouped lists) */
@@ -722,6 +724,8 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
   font: 500 var(--text-xs)/var(--text-xs-lh) var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase;
 }
 .beta-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.beta-spend { flex:none; color:var(--text-2); font-size:var(--text-xs); font-variant-numeric:tabular-nums; }
+@media (max-width: 600px) { .beta-strip { flex-wrap:wrap; padding-bottom:var(--space-1); } .beta-spend { width:100%; text-align:center; } }
 .beta-arrow { transition: transform var(--dur-fast) var(--ease); }
 .beta-banner:hover:not(:disabled) .beta-arrow { transform: translateX(3px); }
 .beta-strip .theme-toggle { flex: none; }

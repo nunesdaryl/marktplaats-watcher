@@ -64,6 +64,25 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("owner dashboard counts places and lists only the owner's waitlist", async () => {
+  process.env.MAX_USERS = "1";
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const member = t.withIdentity({ subject: "m", email: "m@example.com" });
+  const waiting = t.withIdentity({ subject: "w", email: "w@example.com" });
+  await member.mutation(api.users.store, {});
+  await waiting.mutation(api.users.store, {});
+  await waiting.mutation(api.users.setLookingFor, { lookingFor: "A bike" });
+  expect((await owner.query(api.admin.dashboard, {}))?.totals).toMatchObject({
+    places: { cap: 1, taken: 1, left: 0 }, waitlistCount: 1,
+  });
+  expect(await member.query(api.admin.waitlist, {})).toBeNull();
+  expect((await owner.query(api.admin.waitlist, {}))?.rows).toMatchObject([
+    { email: "w@example.com", lookingFor: "A bike" },
+  ]);
+  delete process.env.MAX_USERS;
+});
+
 test("outside feedback tracks owner decisions, release and a manually recorded reply", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });

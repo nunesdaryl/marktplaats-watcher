@@ -321,6 +321,8 @@ export default function Overview({ open, onSearch, ask }) {
       </div>
 
       <div className="stats">
+        {t.places && <Stat value={`${t.places.taken}/${t.places.cap}`} name="Places" note={`${t.places.left} left`} onOpen={() => go("users", "Founding users")} />}
+        {t.waitlistCount !== undefined && <Stat value={t.waitlistCount} name="Waitlist" note="People waiting for a place" onOpen={() => go("waitlist", "Waitlist")} />}
         <Stat value={t.users} name="Accounts" note={`+${t.newUsers7d} this week`} onOpen={() => go("users", "Accounts")} />
         <Stat value={t.active1d} name="Active today" note={`${t.active7d} this week · ${t.active30d} in 30 days`}
               onOpen={() => go("users", "Active in the last 24 hours", { activeSince: now - DAY })} />
