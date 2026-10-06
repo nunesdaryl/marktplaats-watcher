@@ -402,6 +402,7 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
     messages = [*CHAT_PROMPT.format_messages(rag_rule=rag_rule, watch_mode=watch_mode, watches=watch_data),
                 *history, {"role": "user", "content": message}]
     listings, text, tool_calls, usage = [], "", 0, {"input_tokens": 0, "output_tokens": 0, "model_calls": 0, "calls": []}
+    rag_cards_pending = False
     timed_out = False
     for _ in range(5):                          # cap: 5 model calls
         if clock() >= deadline:
@@ -468,9 +469,11 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
                     if call["name"] == "search_my_alerts":
                         from mcp_server import alert_card
                         listings = [alert_card(item) for item in found]
+                        rag_cards_pending = True
                     else:
                         listings = [{k: v for k, v in item.items() if k != "price_type"} for item in found]
-                    yield {"type": "listings", "listings": listings}
+                        rag_cards_pending = False
+                        yield {"type": "listings", "listings": listings}
             messages.append(ToolMessage(result, tool_call_id=call["id"]))
         if timed_out:
             break
@@ -481,6 +484,14 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
         text = CHAT_DEADLINE_MESSAGE
         yield {"type": "reset"}
         yield {"type": "delta", "text": text}
+    if rag_cards_pending:
+        if re.search(r"\b(?:no relevant alerts?|no matching alerts?|no alerts? (?:were )?found|none found|"
+                     r"none of (?:my|your|the) alerts?|"
+                     r"no\b.{0,80}\balerts?\b.{0,20}\bfound|"
+                     r"(?:couldn['’]t|didn['’]t) (?:find|see) any\b.{0,80}\balerts?)\b", text, re.I):
+            listings = []
+        if listings:
+            yield {"type": "listings", "listings": listings}
     yield {"type": "done", "answer": text, "listings": listings, "searches": ctx.searches,
            "proposals": ctx.proposals, "usage": {**usage, "tool_calls": tool_calls}}
 
