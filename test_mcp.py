@@ -77,6 +77,7 @@ def test_mcp_auth_tools_and_user_scope(monkeypatch):
         names = {t["name"] for t in rpc(client, "tools/list", token="alice").json()["result"]["tools"]}
         assert names == {"list_my_watches", "get_watch_activity", "get_alert_evidence",
                          "search_my_alerts", "search_marktplaats", "compare_vector_stores"}
+        assert len(names - {"compare_vector_stores"}) == 5  # five general read-only tools; owner comparison is extra
         prompts = rpc(client, "prompts/list", token="alice").json()["result"]["prompts"]
         assert [prompt["name"] for prompt in prompts] == ["review_my_alerts"]
         for token, expected in (("alice", "alice"), ("bob", "bob"), ("owner-secret", "owner")):
@@ -244,3 +245,69 @@ def test_rag_eval_fixture_covers_duplicates_weak_hits_count_and_security():
     assert fake_search_alerts("alice", "PlayStation 6", 5)[0]["score"] < 0.35
     assert len(fake_search_alerts("alice", "Mac mini", 5)) == 2
     assert min(row["score"] for row in fake_search_alerts("alice", "Mac mini or Gazelle bike", 5)) >= 0.35
+
+
+def test_mcp_disabled_returns_404(monkeypatch):
+    monkeypatch.setenv("MCP_ENABLED", "0")
+    client = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app")
+    assert rpc(client, "tools/list", token="anything").status_code == 404
+
+
+def test_forged_alert_id_cannot_read_another_users_evidence(monkeypatch):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setattr(main, "current_user", lambda authorization: "alice")
+    monkeypatch.setattr(main, "admission_check", lambda user: True)
+    seen = []
+    def convex(path, payload):
+        seen.append((path, payload))
+        return None if payload["alertId"] == "bob-private-alert" else {"alertId": payload["alertId"]}
+    monkeypatch.setattr(mcp_server, "convex_post", convex)
+    client = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app")
+    result = rpc(client, "tools/call", {"name": "get_alert_evidence", "arguments": {
+        "alert_id": "bob-private-alert", "clerkId": "bob"}}, "alice")
+    assert result.status_code == 200
+    assert seen == [("/api/alerts/evidence", {"clerkId": "alice", "alertId": "bob-private-alert"})]
+    assert "bob-private-alert" not in result.text or '"data": null' in result.text
+
+
+def test_mcp_timeout_falls_back_and_logs_without_500(monkeypatch, capsys):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setenv("RAG_ENABLED", "1")
+    monkeypatch.setattr(mcp_server, "chat_tools", lambda: (_ for _ in ()).throw(TimeoutError("Convex timed out")))
+    class Model:
+        def stream(self, messages):
+            yield AIMessageChunk(content="I can still answer your question.")
+    monkeypatch.setattr(agent, "model", Model())
+    identity = mcp_server.mcp_user.set("alice")
+    try:
+        result = agent.chat("Can you help?", [])
+    finally:
+        mcp_server.mcp_user.reset(identity)
+    assert "still answer" in result["answer"]
+    assert '"event": "mcp_chat_fallback"' in capsys.readouterr().out
+
+
+def test_convex_tool_timeout_keeps_chat_answer_and_logs(monkeypatch, capsys):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setenv("RAG_ENABLED", "1")
+    monkeypatch.setattr(mcp_server, "convex_post", lambda path, payload: (_ for _ in ()).throw(TimeoutError("Convex")))
+    class Model:
+        def __init__(self): self.calls = 0
+        def stream(self, messages):
+            self.calls += 1
+            if self.calls == 1:
+                yield AIMessageChunk(content="", tool_call_chunks=[{
+                    "name": "list_my_watches", "args": "{}", "id": "timeout", "index": 0}])
+            else:
+                yield AIMessageChunk(content="The watch service is unavailable right now.")
+    class Base:
+        def bind_tools(self, tools): return model
+    model = Model()
+    monkeypatch.setattr(agent, "base_model", Base())
+    identity = mcp_server.mcp_user.set("alice")
+    try:
+        result = agent.chat("List my watches", [])
+    finally:
+        mcp_server.mcp_user.reset(identity)
+    assert "unavailable" in result["answer"]
+    assert '"event": "mcp_tool_failed"' in capsys.readouterr().out

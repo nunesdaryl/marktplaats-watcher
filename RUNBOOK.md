@@ -355,5 +355,14 @@ maps to `OWNER_CLERK_ID`; it does not grant write tools. Try
 the owner. Direct calls use the per-minute limiter. Set `MCP_ENABLED=0` to
 disable external MCP and return chat to its existing tools.
 
-The separate RAG evaluation is `python -m evals.run_rag` with model credentials;
-it has a 7/7 pass bar and does not alter the 20-case chat gate.
+To refresh the frozen RAG snapshot, obtain a **read-only** Convex export ZIP
+containing `users`, `watches`, `alerts`, and `alertEmbeddings`. Run
+`python -m evals.export_rag_snapshot <export.zip>` in this worktree. Review
+`evals/data/rag_snapshot/snapshot.json` for seller or personal data and write
+about 15 manually labelled owner-scoped questions in `cases.json` (see its
+README). Never commit the source ZIP. The snapshot runner does not write to
+Convex: `python -m evals.run_rag` needs model credentials and reports
+keyword/vector/hybrid recall and precision@5, judged faithfulness and relevance,
+and steps, tokens and cost. It requires hybrid recall@5 ≥ 0.8,
+faithfulness ≥ 0.9, and 4/4 live MCP cases. CI runs it alongside `test_mcp.py`.
+The 20-case chat gate remains independent.
