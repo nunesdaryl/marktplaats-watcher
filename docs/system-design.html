@@ -1481,9 +1481,22 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   key, rate limit, other); users see a plain message; the owner dashboard shows "OpenAI credit is empty" with a billing
   link; one e-mail when it starts and one when it recovers. Lesson: a failure the dashboard can't name costs two hours;
   one it names costs two minutes.</p>
-<p><b>Still open:</b> MW-89 (what happens after a founding user's 30 days; decide before about 4 November, with a
-  day-14 "how disappointed would you be" survey), MW-90 (bidding and negotiation help, Vinod's request), MW-76 (Clerk
-  production instance).</p>
+<p><b>First-use help and the founding month (5–6 October).</b> MW-79 replaced "None yet" with first-use states that
+  say what will appear and offer one "Create a watch" button (sidebar, Watches, Alerts); populated screens are unchanged.
+  MW-81 adds a collapsed "What happens after I start watching?" in first-watch setup and when creating a watch: the quiet
+  first check, the schedule, and which scores get e-mailed. MW-89 implements Daryl's decision "extend by asking": on day 14
+  of a founding month the app (a card and one e-mail) asks the Sean Ellis question "How would you feel if you could no
+  longer use Marktplaats Watcher?"; on day 25 one e-mail says when the month ends; on day 30 watches and chat pause until
+  the person clicks "Keep my watches" and answers two questions (how disappointed; would you pay: no, up to €5, €5–10, more
+  than €10), which gives another 30 days and restarts the watches at once. The founding place is kept while paused; the
+  owner is exempt. The owner dashboard shows the share "very disappointed" with N (the test needs 40% or more, and enough
+  answers), the would-pay split, and how many are paused or extended. Answers are kept 12 months. Review found that the
+  daily delivery audit and the "matches we missed" e-mails ignored both the pause and the €1 budget; both now skip paused
+  and over-budget people. Current founding users are all free until 4 November (first survey 19 October, notice
+  30 October).</p>
+<p><b>Still open:</b> MW-92 (a flaky test that once stopped the merge gate although all tests passed), MW-90 (bidding
+  and negotiation help, Vinod's request), MW-78/82/83 (benchmark ideas), MW-69/70/71/68/65, MW-76 (Clerk production
+  instance, Daryl's steps first).</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
