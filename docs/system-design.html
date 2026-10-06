@@ -1523,9 +1523,15 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   is not optional. A station mistake also surfaced: commits made with <code>core.autocrlf=false</code> on this Mac stored
   two files with Windows line endings, which caused a false whole-file conflict (MW-97 adds a rule so text files are
   always stored with LF).</p>
-<p><b>Still open:</b> MW-78 (account menu with descriptions; reviewed, awaiting a fresh merge OK after a line-ending
-  fix), MW-97 (line endings), MW-83 (blocked: an unprompted find-Feedback test with 2–3 new users), MW-95 (Daryl: export,
-  sanitise and label the RAG snapshot), MW-9, MW-14 and MW-76 (Daryl's steps).</p>
+<p><b>Factory backlog finished (6 October).</b> MW-78 (an account menu with a one-line description under each choice,
+  top right and in the sidebar) and MW-97 (a <code>.gitattributes</code> rule that stores every text file with LF line
+  endings, so a computer's git setting can no longer cause false whole-file conflicts) are merged too; CI on
+  <code>main</code> is green and no factory branches or worktrees remain. Every buildable issue is live.</p>
+<p><b>Still open (Daryl's steps):</b> MW-83 (an unprompted find-Feedback test with 2–3 new users; build one more entry
+  point only if they can't find it), MW-95 (export, sanitise and hand-label the RAG snapshot so the MW-68 retrieval evals
+  have real data), the two Vercel Preview variables from MW-70 (<code>CONVEX_SITE_URL</code> and
+  <code>API_TO_CONVEX_SECRET</code>, entered by Daryl), MW-9 (accept the ADRs), MW-14 (apply for official Marktplaats API
+  access) and MW-76 (Clerk production instance).</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
