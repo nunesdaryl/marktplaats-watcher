@@ -128,6 +128,10 @@ Repeated runs: C3 passed 15 of 15 (prompt chat-2026-09-30.2)
 ```
 Rerun after any prompt, model or tool change, and weekly (providers change models underneath you).
 
+## RAG and MCP
+
+The real-data snapshot run has not been recorded on this branch yet. The new gate requires hybrid recall@5 ≥ 0.8, judged faithfulness ≥ 0.9, and all four live MCP cases. Keyword/vector precision, relevance, steps, tokens and cost are reported.
+
 ## 4. Running cost per watch (measured)
 
 Each check reads every listing placed since the last check and scores at most 20 new listings per watch. A check with no new listings makes no model call.

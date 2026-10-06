@@ -6,11 +6,17 @@ on:
     paths:
       - agent.py
       - prompts.py
+      - mcp_server.py
+      - test_mcp.py
+      - frontend/convex/embeddings.ts
       - evals/**
   pull_request:
     paths:
       - agent.py
       - prompts.py
+      - mcp_server.py
+      - test_mcp.py
+      - frontend/convex/embeddings.ts
       - evals/**
   schedule:
     - cron: "0 6 * * 1"
@@ -38,7 +44,7 @@ jobs:
       - name: Install Python dependencies
         if: steps.key.outputs.available == 'true'
         run: uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt
-      - name: Run evaluations and report
+      - name: Run chat and scorer evaluations
         if: steps.key.outputs.available == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
@@ -46,7 +52,23 @@ jobs:
         run: |
           .venv/bin/python -m evals.run_chat
           .venv/bin/python -m evals.run_scorer --runs 3
-          .venv/bin/python -m evals.report
+      - name: Run RAG and MCP gate
+        if: steps.key.outputs.available == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
+        run: |
+          .venv/bin/python -m pytest -q test_mcp.py
+          if [ -f evals/data/rag_snapshot/snapshot.json ] && [ -f evals/data/rag_snapshot/cases.json ]; then
+            .venv/bin/python -m evals.run_rag
+          else
+            echo "RAG eval skipped: no reviewed snapshot yet (see evals/data/rag_snapshot/README.md)"
+          fi
+      - name: Write evaluation report
+        if: steps.key.outputs.available == 'true' && always()
+        env:
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
+        run: .venv/bin/python -m evals.report
       - name: Check evaluation gate
         if: steps.key.outputs.available == 'true'
         run: .venv/bin/python -m evals.gate
@@ -58,3 +80,4 @@ jobs:
           path: |
             evals/report.md
             evals/data/*results.json
+            evals/data/rag_results.json

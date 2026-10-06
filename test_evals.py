@@ -16,6 +16,7 @@ def eval_files(monkeypatch, tmp_path):
         "SPOTCHECK": "spotcheck.md",
         "USER_RATINGS": "user_ratings.json",
         "REPORT": "report.md",
+        "RAG_RESULTS": "rag_results.json",
     }.items()}
     for module in (common, report, gate):
         for name, path in paths.items():
