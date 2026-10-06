@@ -47,6 +47,8 @@ Live today: **https://marktplaats-watcher.vercel.app** · Free, up to 5 watches 
 
 ## 7. Outreach drafts (Daryl voice, gated)
 
+_Updated drafts for the founding-user push and the API-access request (6 Oct 2026): [outreach-drafts-2026-10-06.md](outreach-drafts-2026-10-06.md)._
+
 ### 7a. E-mail / LinkedIn message (warm or semi-warm, ±120 words)
 
 > Subject: Smart alerts for Marktplaats buyers — working demo

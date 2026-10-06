@@ -159,6 +159,8 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - **"Can it help me buy?"** "On any listing worth a look, 'Help me make an offer' suggests an opening price and a
   walk-away price with the reason, and writes a polite Dutch message you copy and send yourself. The app never contacts
   sellers."
+- **"What's next?"** "People, not code: fill the 100 founding places, interview the first users, and ask Marktplaats
+  for official API access. The product is ready for that."
 - **"Have you talked to Marktplaats?"** "That is the next step: a pitch for a 30-minute conversation, official access and
   a six-week pilot with agreed success criteria." (Pitch deck: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma; source
   `docs/marketing/MARKTPLAATS-PITCH-PACK.md`.)
