@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import { internalAction, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
@@ -7,9 +7,23 @@ import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
 const watch = { query: "mac mini", schedule: { kind: "interval" as const, everyMinutes: 60 }, notify: "good" as const };
+const scheduledTests: ReturnType<typeof convexTest>[] = [];
+
+afterEach(async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json({ results: [] })));
+  try {
+    for (const t of scheduledTests) await t.finishAllScheduledFunctions(vi.runAllTimers);
+  } finally {
+    scheduledTests.length = 0;
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  }
+});
 
 async function fixture() {
   const t = convexTest(schema, modules);
+  scheduledTests.push(t);
   const alice = t.withIdentity({ subject: "alice", email: "a@example.com" });
   const bob = t.withIdentity({ subject: "bob", email: "b@example.com" });
   const a = await alice.mutation(api.watches.create, watch);
@@ -178,6 +192,7 @@ test("backfill keeps its cutoff across two pages in dry-run and real mode", asyn
       },
     }) };
   } });
+  scheduledTests.push(t);
   const alice = t.withIdentity({ subject: "alice", email: "a@example.com" });
   const watchId = await alice.mutation(api.watches.create, watch);
   await t.run(async (ctx) => {
