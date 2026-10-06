@@ -19,8 +19,10 @@ def test_not_modified_response_has_no_body_or_content_length():
     async def accidental_body(request):
         return Response(b"unexpected", status_code=304, headers={"ETag": '"version-1"', "Content-Length": "10"})
 
-    main.app.router.add_route("/api/test-not-modified", accidental_body)
-    route = main.app.router.routes[-1]
+    # Insert first: when frontend/out exists, a catch-all static mount would otherwise answer 404 before this route
+    from starlette.routing import Route
+    route = Route("/api/test-not-modified", accidental_body)
+    main.app.router.routes.insert(0, route)
     try:
         response = TestClient(main.app).get("/api/test-not-modified")
     finally:
