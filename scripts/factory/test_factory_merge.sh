@@ -110,8 +110,8 @@ echo 'PASS build and deploy generated files restored'
 git reset -q --hard main
 git checkout -q main
 refuse deploy-other-change 'Convex deploy changed tracked or untracked files' env MOCK_OTHER_CHANGE=1 REAL_GIT="$real_git" PATH="$repo/mockbin:$PATH" bash scripts/factory-merge.sh MW-999 "$sha"
-[[ -z $(git status --porcelain -- frontend/convex/_generated) && $(cat file.txt) == 'changed by deploy' ]] || {
-    echo 'FAIL deploy restoration affected unexpected files' >&2
+[[ -z $(git status --porcelain -- frontend/convex/_generated) && -z $(git status --porcelain -- file.txt) && $(git branch --show-current) == main && $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]] || {
+    echo 'FAIL deploy failure did not restore the checkout' >&2
     exit 1
 }
-echo 'PASS deploy keeps other changes visible to the gate'
+echo 'PASS deploy failure restores the checkout'
