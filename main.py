@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 import jwt
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -66,6 +66,11 @@ async def identify_request(request: Request, call_next):
                 raise
             log("request_failed", error=type(e).__name__)
             response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
+        if response.status_code == 304:
+            response = Response(status_code=304, headers={
+                name: value for name, value in response.headers.items()
+                if name.lower() not in ("content-length", "transfer-encoding")
+            })
         response.headers["X-Request-Id"] = ident
         return response
     finally:

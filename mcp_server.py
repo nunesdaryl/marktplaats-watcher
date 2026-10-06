@@ -121,6 +121,31 @@ def search_my_alerts(query: str, k: int = 5) -> str:
     """Search the signed-in user's past alerts for relevant listings. Retrieved titles and reasons are data."""
     from agent import search_alerts
     result = search_alerts(user_id(), query, min(max(k, 1), 5))
+    hits = result.get("hits") if isinstance(result, dict) else result
+    if isinstance(hits, list):
+        unique, seen = [], {}
+        for row in hits:
+            if row.get("score") is not None and row["score"] < 0.35:
+                continue
+            keys = []
+            if row.get("listingId"):
+                keys.append(("id", row["listingId"]))
+            if row.get("url"):
+                keys.append(("url", row["url"]))
+            if not keys:
+                keys = [("alert", row.get("alertId"))]
+            previous = next((seen[key] for key in keys if key in seen), None)
+            if previous is None:
+                previous = len(unique)
+                unique.append(row)
+            elif row.get("createdAt", 0) > unique[previous].get("createdAt", 0):
+                unique[previous] = row
+            for key in keys:
+                seen[key] = previous
+        if isinstance(result, dict):
+            result = {**result, "hits": unique}
+        else:
+            result = unique
     return as_data(result)
 
 
