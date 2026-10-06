@@ -13,16 +13,19 @@ const watch = {
 };
 const render = (changes) => renderToStaticMarkup(<WatchView watch={{ ...watch, ...changes }}
   onEdit={vi.fn()} actions={{ watchItems: () => [] }} />);
-const warning = "This search finds more new listings than we can read and score each check";
+const warning = "This watch is falling behind";
 
 test("backlog warning hides while paused or archived and returns on resume", () => {
   expect(render({ active: false })).not.toContain(warning);
   expect(render({ archivedAt: 1 })).not.toContain(warning);
-  expect(render({ active: true })).toContain(`${warning} (138 waiting)`);
+  expect(render({ active: true })).toContain(`${warning} (138 listings waiting)`);
+  expect(render({ active: true })).toContain("Add max price");
 });
 
 test("coverage cap warning returns on resume even below the backlog threshold", () => {
   expect(render({ active: false, backlog: 0, coverageCapped: true })).not.toContain(warning);
   expect(render({ backlog: 0, coverageCapped: true })).toContain(warning);
   expect(render({ backlog: 19, coverageCapped: false })).not.toContain(warning);
+  expect(render({ backlog: 20, coverageCapped: false })).toContain(warning);
+  expect(render({ backlog: 20, coverageCapped: false, notify: "all" })).toContain("Choose good matches");
 });

@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import ScheduleEditor from "./ScheduleEditor.jsx";
 import Sheet from "./Sheet.jsx";
 import WatchLifecycle from "./WatchLifecycle.jsx";
+import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
 import { scheduleKind, track } from "../lib/track.js";
 
 const HOURLY = { kind: "interval", everyMinutes: 60 };
@@ -25,10 +26,14 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
   const [volumeNote, setVolumeNote] = useState(initial.volumeNote ?? null);
   const [estimateDelay, setEstimateDelay] = useState(null);
   const hasChanged = useRef(false);
+  const priceInput = useRef(null);
   const field = (key) => ({ value: f[key], onChange: (e) => {
     hasChanged.current = true; setF({ ...f, [key]: e.target.value }); setVolumeNote(null); setEstimateDelay(800);
   }, onBlur: () => { if (hasChanged.current) setEstimateDelay(0); } });
   const weeklyWithoutDays = f.schedule.kind === "weekly" && !f.schedule.days.length;
+  const broadMessage = broadWatchMessage(volumeNote, f.maxPriceEur, f.notify);
+
+  useEffect(() => { if (initial.focusMaxPrice) priceInput.current?.focus(); }, []);
 
   useEffect(() => {
     if (estimateDelay === null) return;
@@ -91,7 +96,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
             <label className="row"><span>Title includes</span>
               <input {...field("mustInclude")} maxLength={40} placeholder="Optional, e.g. 16gb" /></label>
             <label className="row"><span>Max price</span>
-              <input {...field("maxPriceEur")} type="number" min="1" inputMode="numeric" placeholder="Optional, in €" /></label>
+              <input {...field("maxPriceEur")} ref={priceInput} type="number" min="1" inputMode="numeric" placeholder="Optional, in €" /></label>
             <label className="row"><span>Near postcode</span>
               <input {...field("postcode")} maxLength={7} placeholder="Optional, e.g. 1012AB" /></label>
             {f.postcode && <label className="row"><span>Within</span>
@@ -103,7 +108,10 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           setF({ ...f, ...s });
           if (s.schedule !== f.schedule) { hasChanged.current = true; setVolumeNote(null); setEstimateDelay(800); }
         }} />
-        {volumeNote && <p className="hint" role="status">{volumeNote}</p>}
+        {volumeNote && !broadMessage && <p className="hint" role="status">{volumeNote}</p>}
+        <BroadWatchWarning message={broadMessage}
+          onPrice={() => priceInput.current?.focus()} onGood={() => setF({ ...f, notify: "good" })}
+          showGood={f.notify !== "good"} />
         {mode === "create" && <WatchLifecycle schedule={f.schedule} notify={f.notify} />}
         {error && <p className="error" role="alert">{error}</p>}
         <button type="submit" className="button primary wide" disabled={busy || weeklyWithoutDays}>
