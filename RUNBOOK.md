@@ -301,7 +301,7 @@ reviewing its items. The audit does not e-mail users.
 
 ## Running the factory
 
-Shell and Python files use LF line endings in every checkout, including with `core.autocrlf=true`.
+All text files use LF line endings in every checkout, including with `core.autocrlf=true`. Do not commit with `-c core.autocrlf=false`; `.gitattributes` keeps LF in the index and worktree.
 
 Use `scripts/factory/dispatch.sh MW-<number>` from the repo for a single `agent-ready` issue. Review the branch and record the verdict in Linear. From a clean main checkout, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` only after the issue has `ready-to-merge` and an `Operator merge approval:` comment later than the PASS verdict. The gate runs tests, builds, deploy checks and smoke checks, then records the merge in `docs/factory/merges.md`. For UI changes, the reviewer also records a preview walk and screenshots. See [AGENTS.md](AGENTS.md) for the environment-file and production-data limits.
 
