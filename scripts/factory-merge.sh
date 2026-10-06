@@ -19,9 +19,26 @@ approval=$(python3 scripts/factory/lin.py ready "$issue" "$reviewed_sha" | pytho
 git checkout wave1-demo-ready
 before=$(git rev-parse HEAD)
 git merge --no-ff "factory/$issue" -m "Merge $issue: reviewed $reviewed_sha via factory gate"
+restore_on_failure() {
+    local status=$1
+    if (( status != 0 )); then
+        set +e
+        if git checkout -f wave1-demo-ready; then
+            git reset --hard origin/wave1-demo-ready
+            git clean -fd -- frontend/convex/_generated
+        else
+            echo "factory: could not restore wave1-demo-ready after failure" >&2
+        fi
+        git checkout -f main
+    fi
+}
+trap 'restore_on_failure $?' EXIT
 merge_sha=$(git rev-parse HEAD)
 python=.venv/bin/python
 [[ -x $python ]] || fail "missing .venv/bin/python in main checkout"
+if ! git diff --quiet "$before" "$merge_sha" -- requirements.txt; then
+    "$python" -m pip install -q -r requirements.txt
+fi
 "$python" -m pytest -q
 (
     cd frontend
@@ -48,15 +65,24 @@ git push origin main
 wait_production() {
     local sha=$1 deployment state
     for (( attempt=0; attempt<40; attempt++ )); do
-        deployment=$(gh api "repos/{owner}/{repo}/deployments?sha=$sha&environment=Production" --jq '.[0].id // empty') || fail "cannot query Vercel Production deployment"
+        deployment=$(gh_api_retry "repos/{owner}/{repo}/deployments?sha=$sha&environment=Production" --jq '.[0].id // empty') || fail "cannot query Vercel Production deployment"
         if [[ -n $deployment ]]; then
-            state=$(gh api "repos/{owner}/{repo}/deployments/$deployment/statuses" --jq '.[0].state // empty') || fail "cannot query deployment status"
+            state=$(gh_api_retry "repos/{owner}/{repo}/deployments/$deployment/statuses" --jq '.[0].state // empty') || fail "cannot query deployment status"
             [[ $state == success ]] && return 0
             [[ $state == failure || $state == error ]] && fail "Vercel Production deployment $deployment: $state"
         fi
         sleep 15
     done
     fail "Vercel Production did not report success for $sha"
+}
+gh_api_retry() {
+    local attempt
+    for (( attempt=0; attempt<3; attempt++ )); do
+        gh api "$@" && return 0
+        (( attempt == 2 )) && break
+        sleep "$((2 ** (attempt + 1)))"
+    done
+    return 1
 }
 wait_production "$merge_sha"
 for page in / /chat/ /watches/ /alerts/ /rate/; do
@@ -87,8 +113,12 @@ worktree="$repo/.factory-worktrees/$issue"
 if git worktree list --porcelain | grep -Fqx "worktree $worktree"; then
     git worktree remove --force "$worktree"
 fi
-git branch -d "factory/$issue"
+git merge-base --is-ancestor "factory/$issue" main || fail "factory/$issue is not merged into main"
 if git ls-remote --exit-code --heads origin "factory/$issue" >/dev/null 2>&1; then
     git push origin --delete "factory/$issue"
+else
+    remote_status=$?
+    [[ $remote_status == 2 ]] || fail "cannot query remote factory/$issue branch"
 fi
+git branch -D "factory/$issue"
 echo "factory: $issue merged as $merge_sha and recorded in $log"
