@@ -119,6 +119,24 @@ fi
 [[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]]
 echo 'PASS failed checks reset local wave branch and return to main'
 
+setup_repo merge_conflict file.txt
+git checkout -q wave1-demo-ready
+printf 'conflicting wave change\n' > file.txt
+git add file.txt
+git commit -qm 'conflicting wave change'
+git push -q origin wave1-demo-ready
+git checkout -q main
+if run_gate > "$test_root/merge_conflict.output" 2>&1; then
+    echo 'FAIL conflicting merge passed the gate' >&2
+    exit 1
+fi
+grep -Fq 'factory: MW-999 conflicts with main in file.txt; merge origin/main into the branch, re-review, then re-run' "$test_root/merge_conflict.output"
+[[ $(git branch --show-current) == main ]]
+[[ -z $(git status --porcelain) ]]
+[[ -z $(git rev-parse -q --verify MERGE_HEAD 2>/dev/null) ]]
+[[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]]
+echo 'PASS conflicting merge aborts and restores a clean main checkout'
+
 setup_repo api_failure
 if run_gate FAIL_GH_ALWAYS=1; then
     echo 'FAIL persistent GitHub API failure passed the gate' >&2

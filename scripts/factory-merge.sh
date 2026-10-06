@@ -18,11 +18,13 @@ approval=$(python3 scripts/factory/lin.py ready "$issue" "$reviewed_sha" | pytho
 [[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]] || fail "wave1-demo-ready is not at origin"
 git checkout wave1-demo-ready
 before=$(git rev-parse HEAD)
-git merge --no-ff "factory/$issue" -m "Merge $issue: reviewed $reviewed_sha via factory gate"
 restore_on_failure() {
     local status=$1
     if (( status != 0 )); then
         set +e
+        if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            git merge --abort || git reset --merge
+        fi
         if git checkout -f wave1-demo-ready; then
             git reset --hard origin/wave1-demo-ready
             git clean -fd -- frontend/convex/_generated
@@ -33,6 +35,13 @@ restore_on_failure() {
     fi
 }
 trap 'restore_on_failure $?' EXIT
+if ! git merge --no-ff "factory/$issue" -m "Merge $issue: reviewed $reviewed_sha via factory gate"; then
+    conflicts=$(git diff --name-only --diff-filter=U | paste -sd, -)
+    if [[ -n $conflicts ]]; then
+        echo "factory: $issue conflicts with main in $conflicts; merge origin/main into the branch, re-review, then re-run" >&2
+    fi
+    exit 1
+fi
 merge_sha=$(git rev-parse HEAD)
 python=.venv/bin/python
 [[ -x $python ]] || fail "missing .venv/bin/python in main checkout"
