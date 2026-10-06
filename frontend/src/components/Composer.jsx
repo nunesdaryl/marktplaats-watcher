@@ -11,6 +11,7 @@ const PLACEHOLDER = {
 export default function Composer({ onSend, busy, autoFocus, mode = "search", onModeChange }) {
   const [text, setText] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPlace, setPickerPlace] = useState(null);   // open towards the side with more room, capped to it
   const ref = useRef(null);
   const root = useRef(null);
   const highlight = useRef(null);
@@ -59,9 +60,17 @@ export default function Composer({ onSend, busy, autoFocus, mode = "search", onM
       )}
       <div className="template-toolbar">
         <button type="button" className="template-trigger" ref={trigger} aria-expanded={pickerOpen}
-                aria-controls={pickerId} onClick={() => setPickerOpen((open) => !open)}>Templates</button>
+                aria-controls={pickerId} onClick={() => {
+                  if (!pickerOpen && trigger.current) {
+                    const r = trigger.current.getBoundingClientRect();
+                    const above = r.top - 64, below = window.innerHeight - r.bottom - 16;   // 64: top bar + gap
+                    setPickerPlace(above >= below ? { side: "above", max: Math.max(160, above) } : { side: "below", max: Math.max(160, below) });
+                  }
+                  setPickerOpen((open) => !open);
+                }}>Templates</button>
         {pickerOpen && (
-          <div className="template-picker" id={pickerId} role="group" aria-label="Prompt templates">
+          <div className={`template-picker ${pickerPlace?.side === "below" ? "below" : ""}`} id={pickerId} role="group"
+               aria-label="Prompt templates" style={pickerPlace ? { maxHeight: `min(360px, ${Math.round(pickerPlace.max)}px)` } : undefined}>
             <p>Choose a starting point, then replace the highlighted words.</p>
             <div className="template-options">
               {TEMPLATES.map((template) => (

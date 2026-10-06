@@ -430,6 +430,7 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
   padding:var(--space-2); background:var(--elevated); border:1px solid var(--line);
   border-radius:var(--radius-lg); box-shadow:var(--shadow);
 }
+.template-picker.below { bottom:auto; top:calc(100% + var(--space-2)); }
 .template-picker p { color:var(--text-2); font-size:var(--text-sm); padding:var(--space-2); }
 .template-options { display:grid; gap:var(--space-1); }
 .template-options button { display:flex; justify-content:space-between; align-items:baseline; gap:var(--space-2); width:100%; text-align:left; border:0; border-radius:var(--radius-sm); padding:var(--space-2); background:none; color:var(--text); }
