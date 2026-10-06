@@ -177,6 +177,8 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .muted { color: var(--text-2); }
 .warn { color: var(--warn); font-size:var(--text-md); }
+.broad-watch-warning { display:flex; flex-direction:column; align-items:flex-start; gap:var(--space-2); }
+.broad-watch-warning .suggestions { max-width:100%; }
 .error { color: var(--danger); font-size:var(--text-md); }
 .hint { color: var(--text-2); font-size:var(--text-sm); }
 .done { color: var(--great); font-weight: 600; }
