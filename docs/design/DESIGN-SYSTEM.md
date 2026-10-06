@@ -187,7 +187,7 @@ a set.
 | Sidebar | `.sidebar` (`:236`), `.nav-item` (`:249`), `.nav-row`, `.dot` (`:260`) | `Sidebar.jsx` | active row `--fill-strong`; watch dot: filled = active, ring = paused; whole account row opens the menu, with an up chevron and `--fill` hover | — |
 | Row menu | `.row-menu`, `.row-menu-trigger` (`:280`), `.menu` (`:290`) | `RowMenu.jsx`, `lib/actions.js` | destructive items need a second tap ("Delete for good?"); iOS action sheet on touch (`:663`) | one-tap delete |
 | Proposal | `.proposal` (`:470`) | `Proposal.jsx` | lilac inset top bar = "the model proposes" | — |
-| Composer | `.composer` (`:402`), `.mode-switch` (`:411`) | `Composer.jsx` | Watch mode turns the switch and send lilac | — |
+| Composer | `.composer`, `.mode-switch`, `.template-picker` | `Composer.jsx` | Watch mode turns the switch and send lilac; Templates opens an editable prompt picker above the composer and highlights bracketed fields | choosing a template must never send it |
 | Field | `.field` (`:524`) | sheets | focus: accent border + 25% halo (`:530`) | — |
 | Page header | `.page` (`:477`), `.page-head` (`:478`) | every page | h1 in `--display-s`, one intro line in `--text-2` | — |
 | Empty state | `.empty-note` (`:190`) | lists | one plain sentence on what will appear and when | illustrations |
