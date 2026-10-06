@@ -7,6 +7,7 @@ os.environ.setdefault("OPENAI_API_KEY", "dummy")
 os.environ.setdefault("OPENAI_MODEL", "dummy")
 
 import jwt
+import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessageChunk
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -148,6 +149,57 @@ def test_mcp_chat_rag_cards_and_fallback(monkeypatch):
         mcp_server.mcp_user.reset(identity)
 
 
+def test_rag_filters_weak_hits_and_keeps_newest_listing_alert(monkeypatch):
+    monkeypatch.setattr(agent, "search_alerts", lambda user, query, k: {"hits": [
+        {"alertId": "old", "listingId": "listing-1", "url": "https://example.test/old",
+         "createdAt": 1, "score": 0.9},
+        {"alertId": "new", "listingId": "listing-1", "url": "https://example.test/new",
+         "createdAt": 2, "score": 0.8},
+        {"alertId": "same-url", "listingId": "listing-2", "url": "https://example.test/new",
+         "createdAt": 1, "score": 1},
+        {"alertId": "weak", "url": "https://example.test/weak", "createdAt": 3, "score": 0.34},
+        {"alertId": "keyword", "url": "https://example.test/keyword", "createdAt": 4, "score": 1},
+    ]})
+    identity = mcp_server.mcp_user.set("alice")
+    try:
+        hits = json.loads(mcp_server.search_my_alerts("Mac"))["data"]["hits"]
+        assert [row["alertId"] for row in hits] == ["new", "keyword"]
+    finally:
+        mcp_server.mcp_user.reset(identity)
+
+
+@pytest.mark.parametrize("answer", ["No relevant alerts found.", "None found.",
+                                    "I couldn't find any M5 Pro alerts."])
+def test_rag_no_match_answer_emits_no_cards(monkeypatch, answer):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setenv("RAG_ENABLED", "1")
+    monkeypatch.setattr(agent, "search_alerts", lambda user, query, k: [{
+        "alertId": "unrelated", "title": "iPhone", "url": "https://example.test/iphone",
+    }])
+
+    class Model:
+        def __init__(self): self.calls = 0
+        def stream(self, messages):
+            self.calls += 1
+            if self.calls == 1:
+                yield AIMessageChunk(content="", tool_call_chunks=[{"name": "search_my_alerts",
+                    "args": '{"query":"M5 Pro"}', "id": "c1", "index": 0}])
+            else:
+                yield AIMessageChunk(content=answer)
+
+    class Base:
+        def bind_tools(self, tools): return Model()
+
+    monkeypatch.setattr(agent, "base_model", Base())
+    identity = mcp_server.mcp_user.set("alice")
+    try:
+        events = list(agent.chat_events("Which alerts mention M5 Pro?", []))
+        assert not any(event["type"] == "listings" for event in events)
+        assert events[-1]["listings"] == []
+    finally:
+        mcp_server.mcp_user.reset(identity)
+
+
 def test_mcp_activity_evidence_and_rag_use_request_identity(monkeypatch):
     monkeypatch.setenv("RAG_ENABLED", "1")
     seen = []
@@ -185,8 +237,10 @@ def test_mcp_activity_evidence_and_rag_use_request_identity(monkeypatch):
         mcp_server.mcp_user.reset(identity)
 
 
-def test_rag_eval_fixture_covers_five_questions_and_security():
-    assert len(CASES) == 5 and PASS_BAR == 7
+def test_rag_eval_fixture_covers_duplicates_weak_hits_count_and_security():
+    assert len(CASES) == 6 and PASS_BAR == 9
     assert INJECTION[2] in fake_search_alerts("alice", "Switch", 5)[0]["title"]
     assert fake_search_alerts("bob", FORGED_ID[1], 5) == []
-    assert fake_search_alerts("alice", "PlayStation 6", 5) == []
+    assert fake_search_alerts("alice", "PlayStation 6", 5)[0]["score"] < 0.35
+    assert len(fake_search_alerts("alice", "Mac mini", 5)) == 2
+    assert min(row["score"] for row in fake_search_alerts("alice", "Mac mini or Gazelle bike", 5)) >= 0.35

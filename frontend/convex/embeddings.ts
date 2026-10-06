@@ -186,19 +186,31 @@ export const hydrate = internalQuery({
   args: { userId: v.id("users"), ids: v.array(v.object({ id: v.id("alertEmbeddings"), score: v.number() })) },
   handler: async (ctx, { userId, ids }) => {
     const results = [];
-    const seen = new Set<Id<"alerts">>();
+    const seen = new Map<string, number>();
     for (const { id, score } of ids) {
       const embedding = await ctx.db.get(id);
       if (!embedding || embedding.userId !== userId) continue;
       const alert = await ctx.db.get(embedding.alertId);
-      if (!alert || alert.userId !== userId || seen.has(alert._id)) continue;
-      seen.add(alert._id);
+      if (!alert || alert.userId !== userId) continue;
+      const listingId = `id:${alert.listingId}`;
+      const listingUrl = `url:${alert.url}`;
+      const previous = seen.get(listingId) ?? seen.get(listingUrl);
+      if (previous !== undefined && results[previous].createdAt >= alert.createdAt) {
+        seen.set(listingId, previous);
+        seen.set(listingUrl, previous);
+        continue;
+      }
       const watch = await ctx.db.get(alert.watchId);
       const rating = await ctx.db.query("ratings").withIndex("by_alert", (q) => q.eq("alertId", alert._id)).first();
-      results.push({ alertId: alert._id, score, title: alert.title, priceEur: alert.priceEur ?? null,
+      const result = { alertId: alert._id, score, title: alert.title, priceEur: alert.priceEur ?? null,
         score10: alert.score ?? null, reason: alert.reason, url: alert.url, image: alert.image ?? null,
         createdAt: alert.createdAt, watchLabel: watch?.name ?? watch?.label ?? null,
-        rating: rating && rating.userId === userId ? { verdict: rating.verdict, reasons: rating.reasons ?? [] } : null });
+        rating: rating && rating.userId === userId ? { verdict: rating.verdict, reasons: rating.reasons ?? [] } : null };
+      const position = previous ?? results.length;
+      seen.set(listingId, position);
+      seen.set(listingUrl, position);
+      if (previous === undefined) results.push(result);
+      else results[previous] = result;
     }
     return results;
   },
@@ -219,7 +231,8 @@ export const search = internalAction({
     ]);
     const ranked = new Map<Id<"alertEmbeddings">, number>();
     for (const id of exact) ranked.set(id, 1);
-    for (const row of similar) if (!ranked.has(row._id)) ranked.set(row._id, row._score);
+    // Keyword hits are kept regardless of vector score; 0.35 is the frozen RAG fixture floor.
+    for (const row of similar) if (row._score >= 0.35 && !ranked.has(row._id)) ranked.set(row._id, row._score);
     return (await ctx.runQuery(internal.embeddings.hydrate, { userId,
       ids: [...ranked].map(([id, score]) => ({ id, score })) })).slice(0, limit);
   },
