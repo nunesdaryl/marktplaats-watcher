@@ -1494,6 +1494,16 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   daily delivery audit and the "matches we missed" e-mails ignored both the pause and the €1 budget; both now skip paused
   and over-budget people. Current founding users are all free until 4 November (first survey 19 October, notice
   30 October).</p>
+<p><b>Security advisories (6 October).</b> CI turned red on <code>main</code> without a code change: four new advisories
+  for <code>pymongo</code> 4.15.4 (the Atlas mirror's MongoDB driver) and, found while fixing that, a high-severity
+  advisory for <code>source-map-js</code> 1.2.1 (a build-time dependency several layers down). MW-93 upgraded pymongo to
+  4.18.2 (its 4.15–4.18 changes, dropping MongoDB 4.2 support and restricting some aggregate options, do not touch
+  <code>MongoStore</code>) and moved source-map-js to 1.2.2 in the lockfile only; all tests passed and CI on
+  <code>main</code> is green again. The same day the first MW-89 merge attempt stopped although all 292 tests passed: an
+  older test (<code>embeddings.test.ts</code>) sometimes logs after Vitest shuts down; the gate was re-run on the same
+  reviewed version, and MW-92 fixes the test properly. Lesson: the dependency audit on every push catches advisories the
+  day they are published; the gate's strictness also catches test-hygiene flakes, which deserve their own fix rather than
+  repeated retries.</p>
 <p><b>Still open:</b> MW-92 (a flaky test that once stopped the merge gate although all tests passed), MW-90 (bidding
   and negotiation help, Vinod's request), MW-78/82/83 (benchmark ideas), MW-69/70/71/68/65, MW-76 (Clerk production
   instance, Daryl's steps first).</p>
