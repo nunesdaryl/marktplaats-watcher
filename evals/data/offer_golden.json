@@ -1,0 +1,7 @@
+[
+  {"title":"Mac mini M1, used", "priceEur":230, "watchMaxEur":250, "similarScoredPricesEur":[220,240], "description":"Used for three years"},
+  {"title":"Gazelle city bike", "priceEur":175, "watchMaxEur":150, "similarScoredPricesEur":[140,160], "description":"Some wear on frame"},
+  {"title":"IKEA office chair", "priceEur":45, "watchMaxEur":null, "similarScoredPricesEur":[], "description":"Good condition"},
+  {"title":"Nintendo Switch OLED", "priceEur":205, "watchMaxEur":200, "similarScoredPricesEur":[185,195], "description":"Two years old"},
+  {"title":"iPhone 13 128GB", "priceEur":279, "watchMaxEur":350, "similarScoredPricesEur":[260,290], "description":"Battery condition unknown"}
+]

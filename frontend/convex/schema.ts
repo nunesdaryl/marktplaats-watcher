@@ -6,6 +6,7 @@ import { notifyValidator, scheduleValidator } from "./schedule";
 export const listingCard = v.object({
   id: v.union(v.string(), v.null()),
   title: v.string(),
+  description: v.optional(v.string()),
   price_eur: v.union(v.number(), v.null()),
   city: v.union(v.string(), v.null()),
   distance_km: v.union(v.number(), v.null()),
@@ -93,7 +94,7 @@ export default defineSchema({
 
   aiSpend: defineTable({
     userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("chat"),
-      v.literal("estimate"), v.literal("owner"), v.literal("embedding")),
+      v.literal("estimate"), v.literal("owner"), v.literal("embedding"), v.literal("offer help")),
     watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")),
     model: v.optional(v.string()), checkId: v.optional(v.string()),
     alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),
@@ -332,6 +333,7 @@ export default defineSchema({
     watchId: v.id("watches"),
     listingId: v.string(),
     title: v.string(),
+    description: v.optional(v.string()),
     priceEur: v.optional(v.number()),
     city: v.optional(v.string()),
     url: v.string(),
@@ -348,6 +350,7 @@ export default defineSchema({
   })
     .index("by_emailStatus", ["emailStatus", "createdAt"])
     .index("by_watch", ["watchId"])
+    .index("by_watch_url", ["watchId", "url"])
     .index("by_user", ["userId"])
     .index("by_user_archivedAt", ["userId", "archivedAt"])
     .index("by_watch_createdAt", ["watchId", "createdAt"])

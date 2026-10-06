@@ -130,6 +130,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         results.append({
             "id": item.get("itemId"),
             "title": item.get("title", "")[:100],
+            "description": (item.get("description") or "")[:500],
             "price_eur": round(cents / 100) if cents else None,
             "price_type": {
                 "FIXED": "fixed price", "MIN_BID": "bidding from",

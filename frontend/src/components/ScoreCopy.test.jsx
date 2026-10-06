@@ -22,3 +22,10 @@ test.each([[9, "great"], [7, "good"], [3, "low"]])("listing score %i includes %s
   expect(html).toContain(`${score}<small>/10</small> · ${level}`);
   expect(html).toContain(`aria-label="Scored ${score} out of 10, ${level}"`);
 });
+
+test("offer action appears only for a priced listing and stays outside the listing link", () => {
+  const priced = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", price_eur: 100 }} />);
+  const unpriced = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test" }} />);
+  expect(priced).toMatch(/<\/a><button[^>]*>Help me make an offer<\/button>/);
+  expect(unpriced).not.toContain("Help me make an offer");
+});

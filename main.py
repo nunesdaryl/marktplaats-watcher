@@ -25,6 +25,7 @@ from convex_api import convex_post  # noqa: E402
 from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
 from openai_failure import classify_openai_failure  # noqa: E402
+from offer import draft_offer  # noqa: E402
 
 
 app = FastAPI()
@@ -121,6 +122,14 @@ class AdminAskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=300)
     users: list[str] = Field(default=[], max_length=2000)
     watches: list[str] = Field(default=[], max_length=2000)
+
+
+class OfferRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    url: str = Field(min_length=1, max_length=500)
+    priceEur: float = Field(ge=5, le=1_000_000)
+    description: str = Field(default="", max_length=500)
+    watchId: str | None = Field(default=None, max_length=64)
 
 
 # Login: the browser sends its Clerk session token; we check its signature against Clerk's public keys.
@@ -302,6 +311,44 @@ def admin_ask_route(request: AdminAskRequest, user: str = Depends(current_user))
     if intent.pop("forOwner", False) and owner_email:
         intent["userEmail"] = owner_email
     return intent
+
+
+@app.post("/api/offer/help")
+def offer_help_route(request: OfferRequest, user: str = Depends(current_user)):
+    if os.getenv("CHAT_PAUSED") == "1":
+        return JSONResponse({"answer": "Offer help is paused for maintenance. Try again later."}, status_code=503)
+    if too_many(user):
+        return JSONResponse({"answer": "Please wait a moment before asking again."}, status_code=429)
+    allowance = chat_allowance(user)
+    if not allowance["allowed"]:
+        return JSONResponse({"answer": allowance_answer(allowance)},
+                            status_code=403 if allowance.get("reason") == "admission" else 429)
+    context = {"maxPriceEur": None, "similarPricesEur": []}
+    if request.watchId:
+        try:
+            context = convex_post("/api/offer/context", {"clerkId": user, "watchId": request.watchId,
+                                                          "url": request.url})
+        except Exception:
+            return JSONResponse({"answer": "We couldn't check this watch listing. Try again."}, status_code=503)
+    actual_price = context.get("priceEur", request.priceEur)
+    if actual_price is None or min(actual_price, context["maxPriceEur"] if context["maxPriceEur"] is not None else actual_price) < 5:
+        return JSONResponse({"answer": "This price is too low for a €5-step offer."}, status_code=422)
+    try:
+        listing = request.model_dump(include={"title", "url", "priceEur", "description"})
+        if request.watchId:
+            listing.update({key: context[key] for key in ("title", "priceEur", "description") if key in context})
+        result = draft_offer(listing,
+                             context["maxPriceEur"], context["similarPricesEur"])
+        usage = result.pop("usage")
+        if usage:
+            convex_post("/api/ai-spend", {"clerkId": user, "kind": "offer help", "callId": f"{request_id.get()}.offer",
+                        "watchId": request.watchId, "model": os.environ["OPENAI_MODEL"],
+                        "inputTokens": usage["input_tokens"], "outputTokens": usage["output_tokens"],
+                        "costEur": ai_cost(usage)})
+        return result
+    except Exception as e:
+        answer, status = friendly_error(e)
+        return JSONResponse({"answer": answer}, status_code=status)
 
 
 @app.post("/api/chat")
