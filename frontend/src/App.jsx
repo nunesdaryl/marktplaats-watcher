@@ -182,7 +182,7 @@ function Workspace() {
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
-          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
+          <BetaBanner onFeedback={openFeedback} onPrivacy={() => setSheet({ type: "privacy" })} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
           {foundingCard}
           {content}
         </main>
@@ -211,7 +211,7 @@ function Workspace() {
         <ThemeToggle />
         {inChat && route.section === "c"
           ? <button className="icon-button" onClick={() => go("/")} aria-label="New chat"><Icon name="compose" size={24} /></button>
-          : <AccountButton />}
+          : <AccountButton onPrivacy={() => setSheet({ type: "privacy" })} />}
       </header>
       <main className="main">
         <BetaBanner onFeedback={openFeedback} busy={capturing} freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
@@ -237,7 +237,7 @@ function WaitlistScreen({ position }) {
     catch { setMessage("We couldn't save that. Please try again."); }
   };
   return <div className="waitlist-page">
-    <header className="waitlist-bar"><Logo size={40} /><span className="name wordmark">Marktplaats <b>Watcher</b></span><ThemeToggle /><AccountButton /></header>
+    <header className="waitlist-bar"><Logo size={40} /><span className="name wordmark">Marktplaats <b>Watcher</b></span><ThemeToggle /><AccountButton onPrivacy={() => setPrivacy(true)} showArchive={false} /></header>
     <main className="waitlist-card">
       <p className="waitlist-eyebrow">Founding 100</p>
       <h1>All 100 free places are taken.</h1>
