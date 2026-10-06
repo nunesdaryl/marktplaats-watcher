@@ -771,6 +771,12 @@ textarea.field { resize: vertical; min-height: 110px; line-height: 1.45; }
 .admin-head { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap:var(--space-3); }
 .admin-refresh { display:flex; flex-direction:column; align-items:center; gap:var(--space-1); margin-left:auto; }
 .admin-refresh .hint { font-size:var(--text-xs); }
+.attention { display:flex; flex-direction:column; gap:var(--space-2); }
+.attention h2 { margin:0; font-size:var(--text-md); }
+.attention-stats { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:var(--space-2); }
+.attention .stat { gap:var(--space-1); padding:var(--space-2) var(--space-3); }
+.attention .stat-value { font:500 var(--text-xl)/var(--text-xl-lh) var(--font-mono); }
+@media (max-width: 640px) { .attention-stats { grid-template-columns:1fr; } }
 .admin-ask form { display:flex; gap:var(--space-2); }
 .admin-ask input { flex:1; min-width:0; padding:var(--space-2) var(--space-3); border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--elevated); color:var(--text); font:inherit; }
 .admin-ask .hint { margin-top:var(--space-2); }
