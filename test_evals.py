@@ -1,3 +1,4 @@
+from prompts import PROMPT_VERSION
 import pytest
 
 from evals import common, gate, repeat, report, run_chat, run_scorer
@@ -15,6 +16,7 @@ def eval_files(monkeypatch, tmp_path):
         "SPOTCHECK": "spotcheck.md",
         "USER_RATINGS": "user_ratings.json",
         "REPORT": "report.md",
+        "RAG_RESULTS": "rag_results.json",
     }.items()}
     for module in (common, report, gate):
         for name, path in paths.items():
@@ -105,7 +107,7 @@ def test_repeat_counts_golden_case_and_replaces_saved_entry(monkeypatch, eval_fi
     assert len(saved) == 2 and saved[0]["case"] == "C2"
     assert saved[1]["case"] == "C3"
     assert {key: saved[1][key] for key in ("runs", "passed", "prompt_version", "model")} == {
-        "runs": 3, "passed": 2, "prompt_version": "chat-2026-10-03.1", "model": "gpt-5.4-mini"}
+        "runs": 3, "passed": 2, "prompt_version": PROMPT_VERSION["chat"], "model": "gpt-5.4-mini"}
     assert saved[1]["at"]
 
 

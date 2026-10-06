@@ -48,7 +48,7 @@ export const check = internalQuery({ args: { clerkId: v.string() }, handler: asy
 
 export const record = internalMutation({
   args: { clerkId: v.string(), kind: v.union(v.literal("watch"), v.literal("chat"), v.literal("estimate"),
-      v.literal("owner"), v.literal("embedding")),
+      v.literal("owner"), v.literal("embedding"), v.literal("offer help")),
     watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")), model: v.optional(v.string()),
     checkId: v.optional(v.string()),
     alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),

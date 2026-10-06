@@ -381,10 +381,10 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
     <td>Checks that a starting bid is not treated as a fixed price.</td>
     <td>Four Switch OLED listings with “bidding from €200” must score no more than 7; a fixed-price €160 control must score at least 8.</td>
     <td>All five cases in all three runs; the bidding reasons must mention the bid.</td><td>With each scorer run in the GitHub eval job.</td></tr>
-  <tr><td><b>RAG</b> (added with MW-62; manual run, CI in MW-68)<br><code>evals/rag_cases.py</code><br><code>evals/run_rag.py</code></td>
-    <td>Five past-alert questions use fake search results. Two more cases check prompt injection and forged user ids. Real vector search is outside this suite.</td>
-    <td>“Which Mac mini alert was best value this week?” must return the saved Mac mini card. A question about an absent PlayStation 6 alert must return no card.</td>
-    <td>All 7 cases pass.</td><td>Run by hand with model credentials; not in the GitHub eval job yet.</td></tr>
+  <tr><td><b>RAG and MCP</b> (MW-68)<br><code>evals/run_rag.py</code><br><code>test_mcp.py</code></td>
+    <td>Configured for a sanitized, frozen export of real alert embeddings and alerts with about 15 owner-scoped questions and reviewed expected alert ids. Offline keyword, vector and hybrid retrieval are compared; a judge scores answer claims and relevance. Ten MCP cases cover protocol, identity, behaviour and timeout fallback. The first real export and credentialed run are pending.</td>
+    <td>“M5 Pro” must find the €1,750 Mac mini only for its owner; a retrieved title's injected instruction must not be followed.</td>
+    <td>Hybrid recall@5 ≥ 0.8; faithfulness ≥ 0.9; live MCP 4/4. Other metrics reported.</td><td>In the GitHub eval job.</td></tr>
   <tr><td><b>Users' ratings</b> (MW-49)<br><code>evals/feedback_cases.py</code><br><code>evals/pull_ratings.py</code></td>
     <td>“Not right” ratings become candidate scorer cases. The owner must confirm them before they join the saved set. The report shows agreement by score band when ratings exist.</td>
     <td>A recipient says an alert scored 8 was not a good match.</td>
@@ -419,7 +419,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
   <tr><td>Faithfulness</td><td>🟡</td><td>The answer must include the expected alert card, or say nothing was found when there is no card. Claims are not checked one by one against the source.</td></tr>
   <tr><td>Answer relevance</td><td>🟡</td><td>Five saved questions get pass/fail checks for the returned card or empty result.</td></tr>
 </table>
-<p>The RAG suite runs by hand; the GitHub workflow does not run it yet.</p>
+<p>The RAG and MCP suite runs in the GitHub eval job.</p>
 <h4>Agent</h4>
 <table>
   <tr><th>Measure</th><th>Status</th><th>How, exactly</th></tr>
@@ -428,7 +428,7 @@ User ◄── React UI ◄── {"answer": …} ◄┘                      (2
   <tr><td>Efficiency</td><td>🟡</td><td>The logs put a chat run near $0.04. The agent loop allows at most 5 model calls and 6 tool calls per question. There is no per-case cost bar.</td></tr>
   <tr><td>Safety and permissions</td><td>✅</td><td>Chat writes are proposals for the user to save. MCP tools are read-only and take the user from sign-in. Tests cover missing or wrong tokens and forged user ids.</td></tr>
 </table>
-<p><b>Next:</b> MW-68 adds real retrieval metrics (recall/precision@5, faithfulness, cost) and 10 MCP cases to CI.</p>
+<p>MW-68 adds the frozen retrieval and MCP gate to CI. Its numeric results appear in <code>evals/report.md</code> after the first credentialed run.</p>
 <h3>When it runs</h3>
 <p><code>.github/workflows/evals.yml</code> runs on pushes to <code>main</code> and pull requests that touch
   <code>agent.py</code>, <code>prompts.py</code>, or <code>evals/**</code>. It also runs Mondays at 06:00 UTC and by manual dispatch.

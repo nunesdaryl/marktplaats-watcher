@@ -29,9 +29,10 @@ let queryCount;
 
 function render() {
   renderCount = 0;
-  const tree = Overview({ open: vi.fn(), onSearch: vi.fn() });
+  const open = vi.fn();
+  const tree = Overview({ open, onSearch: vi.fn() });
   const html = renderToStaticMarkup(tree);
-  return { tree, html };
+  return { tree, html, open };
 }
 
 beforeEach(() => {
@@ -45,6 +46,43 @@ beforeEach(() => {
   responses = [dashboard(oldNow, 3), ratings, { rows: [] }];
   queryCount = 0;
   vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0 ? undefined : responses[(queryCount++) % 3]);
+});
+
+test("the first dashboard row opens the matching review lists", () => {
+  const data = responses[0];
+  data.health.stats.checksFailed = 2;
+  data.totals.watchesFallingBehind = 3;
+  data.deliveryAudit = { ...data.deliveryAudit, misses: 4, lastRunAt: oldNow - 1000 };
+  const { tree, html, open } = render();
+  expect(html).toContain("Needs your attention");
+  expect(html.indexOf("Needs your attention")).toBeLessThan(html.indexOf('class="health '));
+  const row = html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
+  expect(row).toContain('class="stat-value">2</span>');
+  expect(row).toContain('class="stat-value">3</span>');
+  expect(row).toContain('class="stat-value">4</span>');
+  const summary = tree.props.children.find((child) => child?.props?.className === "attention");
+  const buttons = summary.props.children[1].props.children;
+  expect(buttons).toHaveLength(3);
+  buttons.forEach((button) => button.props.onClick());
+  expect(open.mock.calls).toEqual([
+    [{ view: "runs", title: "Checks failed", params: { since: oldNow - 24 * 60 * 60 * 1000, status: "failed" } }, { fresh: true }],
+    [{ view: "watches", title: "Watches falling behind", params: { status: "active", behind: "yes" } }, { fresh: true }],
+    [{ view: "audits", title: "Delivery audit", params: { since: oldNow - 1000 } }, { fresh: true }],
+  ]);
+});
+
+test("the attention row names every zero state without adding a query", () => {
+  const { html } = render();
+  const row = html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
+  expect(row).toBeDefined();
+  expect(row).toContain("0</span>");
+  expect(row.match(/Nothing to review/g)).toHaveLength(2);
+  expect(row).toContain("No audit run yet");
+  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(5);
+  responses[0].deliveryAudit.lastRunAt = oldNow - 1000;
+  const audited = render().html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
+  expect(audited.match(/Nothing to review/g)).toHaveLength(3);
+  expect(audited).not.toContain("No audit run yet");
 });
 
 test("the refresh icon reruns all three queries and keeps old figures until all return", () => {
@@ -134,7 +172,8 @@ test("the health issue copy icon copies the request ID and briefly confirms it",
   const { tree, html } = render();
   expect(html).not.toContain("check-123");
   expect(html).toContain('title="Copy request ID" aria-label="Copy request ID"');
-  const issueElement = tree.props.children[3].props.children[2].props.children[0];
+  const health = tree.props.children.find((child) => child?.props?.className === "health bad");
+  const issueElement = health.props.children[2].props.children[0];
   const issueTree = issueElement.type(issueElement.props);
   const copyElement = issueTree.props.children[1].props.children[0].props.children.at(-1);
   renderCount = 2;

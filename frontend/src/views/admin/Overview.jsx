@@ -308,6 +308,22 @@ export default function Overview({ open, onSearch, ask }) {
           <span className="hint" aria-live="polite">{refreshing ? "Refreshing…" : `Updated ${updatedTime}`}</span>
         </div>
       </div>
+      <section className="attention" aria-labelledby="attention-title">
+        <h2 id="attention-title">Needs your attention</h2>
+        <div className="attention-stats">
+          {[
+            ["Checks failed", h.stats.checksFailed, "Last 24 hours", () => go("runs", "Checks failed", { since: now - DAY, status: "failed" })],
+            ["Watches falling behind", t.watchesFallingBehind, "Active watches", () => go("watches", "Watches falling behind", { status: "active", behind: "yes" })],
+            ["Delivery misses", data.deliveryAudit.misses, "Latest audit", () => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })],
+          ].map(([name, value, note, onOpen]) => (
+            <button className="stat door" key={name} onClick={onOpen} title={`Show ${name.toLowerCase()}`}>
+              <span className="stat-value">{value}</span>
+              <span className="stat-name">{name}<Icon name="chevron" size={14} /></span>
+              <span className="stat-note">{name === "Delivery misses" && !data.deliveryAudit.lastRunAt ? "No audit run yet" : value === 0 ? "Nothing to review" : note}</span>
+            </button>
+          ))}
+        </div>
+      </section>
       {ask}
       <p className="hint admin-tip">Click any number, bar or row to see the exact records behind it.</p>
 

@@ -14,7 +14,8 @@ const note = "This search gets about 25 new listings per check; one check can re
 test("a broad proposal shows the warning with enabled Save and Adjust", () => {
   const html = renderToStaticMarkup(<Proposal p={{ type: "create", query: "iphone", maxPriceEur: null,
     schedule, notify: "good", volumeNote: note }} onAdjust={() => {}} />);
-  expect(html).toContain(note);
+  expect(html).toContain("This search is broad: about 25 new listings per check");
+  expect(html).toContain("Add max price");
   expect(html).toMatch(/<button[^>]*>Save watch<\/button>/);
   expect(html).toContain(">Adjust</button>");
 });
@@ -29,6 +30,6 @@ test("create and edit proposals explain the chosen alert level", () => {
 test("the edit sheet shows the same warning and leaves Save available", () => {
   const html = renderToStaticMarkup(<WatchSheet mode="edit" watchId="w1"
     initial={{ query: "iphone", schedule, volumeNote: note }} onClose={() => {}} />);
-  expect(html).toContain(note);
+  expect(html).toContain("This search is broad: about 25 new listings per check");
   expect(html).toMatch(/<button[^>]*>Save changes<\/button>/);
 });

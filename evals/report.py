@@ -2,7 +2,7 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
+from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -215,7 +215,22 @@ def main():
     # Keep the measured running cost (§4, written by evals.cost with real model calls): regenerating must not lose it
     marker = "## 4. Running cost per watch (measured)"
     cost = old[old.index(marker):].rstrip() if marker in old else ""
-    REPORT.write_text("\n".join(lines) + ("\n\n" + cost if cost else "") + "\n\n")
+    rag = "## RAG and MCP\n\nNo real-data snapshot evaluation has been recorded yet.\n"
+    if RAG_RESULTS.exists():
+        result = read(RAG_RESULTS)
+        rows = ["## RAG and MCP", "", f"Snapshot: {result['snapshot']}; run: {result['run_at']}.", "",
+                "| Retrieval | Recall@5 | Precision@5 |", "|---|---:|---:|"]
+        for mode, metrics in result["retrieval"].items():
+            rows.append(f"| {mode} | {metrics['recall_at_5']:.3f} | {metrics['precision_at_5']:.3f} |")
+        answers = result["answers"]
+        rows += ["", f"Faithfulness: {result['faithfulness']:.3f} (bar 0.9); "
+                 f"mean answer relevance: {sum(row['relevance'] for row in answers) / len(answers):.2f}/5; "
+                 f"live MCP: {sum(row['passed'] for row in result['live_mcp'])}/4 (bar 4/4).",
+                 f"Mean steps: {sum(row['steps'] for row in answers) / len(answers):.2f}; "
+                 f"mean tokens: {sum(row['tokens']['input'] + row['tokens']['output'] for row in answers) / len(answers):.0f}; "
+                 f"mean cost: ${sum(row['cost_usd'] for row in answers) / len(answers):.5f} per answer.", ""]
+        rag = "\n".join(rows)
+    REPORT.write_text("\n".join(lines) + "\n\n" + rag + ("\n\n" + cost if cost else "") + "\n\n")
     print(f"wrote {REPORT}")
 
 

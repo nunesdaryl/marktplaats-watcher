@@ -7,6 +7,7 @@ import Skeleton from "../components/Skeleton.jsx";
 import ListingCard from "../components/ListingCard.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import WatchSentence from "../components/WatchSentence.jsx";
+import BroadWatchWarning from "../components/BroadWatchWarning.jsx";
 import { go, useNow } from "../lib/router.js";
 import { track } from "../lib/track.js";
 
@@ -55,7 +56,10 @@ export default function WatchView({ watch, onEdit, actions }) {
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
         <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
-        {watch.active && !watch.archivedAt && (watch.backlog >= 20 || watch.coverageCapped) && <p className="warn">This search finds more new listings than we can read and score each check{watch.backlog > 0 ? ` (${watch.backlog} waiting)` : ""}. Narrow it with a word or a max price so nothing is missed.</p>}
+        {watch.active && !watch.archivedAt && ((watch.backlog ?? 0) >= 20 || watch.coverageCapped) &&
+          <BroadWatchWarning message={`This watch is falling behind${watch.backlog > 0 ? ` (${watch.backlog} listings waiting)` : ""}. Add a brand, model or price limit, or choose 'good matches'.`}
+            onPrice={() => onEdit({ ...watch, focusMaxPrice: true })}
+            onGood={() => run(() => update({ id: watch._id, notify: "good" }))} showGood={watch.notify !== "good"} />}
         <div className="actions">
           <button className="button" onClick={() => onEdit(watch)}><Icon name="edit" size={18} />Edit</button>
           {!watch.archivedAt && (
@@ -76,7 +80,7 @@ export default function WatchView({ watch, onEdit, actions }) {
       {watch.alerts.length ? (
         <div className="cards grid">
           {watch.alerts.map((a) => (
-            <ListingCard key={a._id} listing={{ ...a, price_eur: a.priceEur }} score={a.score} reason={a.reason}
+            <ListingCard key={a._id} listing={{ ...a, price_eur: a.priceEur, watchId: watch._id }} score={a.score} reason={a.reason}
                          meta={describeWhen(a.createdAt, now)} />
           ))}
         </div>

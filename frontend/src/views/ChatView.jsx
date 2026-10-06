@@ -139,7 +139,7 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
                        onProposalSaved={(i) => markSaved({ messageId: m._id, index: i })} />)}
         {showLiveUser && <div className="msg user"><p>{live.user}</p></div>}
         {live && <Assistant text={live.text} status={live.status} listings={live.listings} />}
-        {unsaved?.chatId === chatId && <Assistant text={unsaved.final.answer} listings={unsaved.final.listings}
+        {unsaved && chatId != null && unsaved.chatId === chatId && <Assistant text={unsaved.final.answer} listings={unsaved.final.listings}
           proposals={unsaved.final.proposals} search={unsaved.final.searches?.at(-1)}
           onWatch={onWatch} onAdjust={onAdjust} unsaved />}
         <div ref={end} />

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { NOTIFY_LABEL, NOTIFY_SHORT, describe } from "../../convex/schedule";
 import { scheduleKind, track } from "../lib/track.js";
+import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
 
 const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 export const watchFields = (p) => defined({ query: p.query, mustInclude: p.mustInclude, maxPriceEur: p.maxPriceEur,
@@ -25,16 +26,18 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
   const update = useMutation(api.watches.update);
   const [state, setState] = useState(saved ? "saved" : "open");
   const [error, setError] = useState("");
+  const [notify, setNotify] = useState(p.notify);
+  const broadMessage = p.type === "create" ? broadWatchMessage(p.volumeNote, p.maxPriceEur, notify) : null;
   if (state === "dismissed") return null;
 
   async function save() {
     setState("saving");
     setError("");
     try {
-      if (p.type === "create") await create({ ...watchFields(p), schedule: p.schedule, notify: p.notify });
+      if (p.type === "create") await create({ ...watchFields(p), schedule: p.schedule, notify });
       else await update(defined({ id: p.watchId, schedule: p.schedule, notify: p.notify, active: p.active, maxPriceEur: p.maxPriceEur }));
       setState("saved");
-      if (p.type === "create") track("watch_saved", { kind: scheduleKind(p.schedule), value: p.notify, mode: "from chat" });
+      if (p.type === "create") track("watch_saved", { kind: scheduleKind(p.schedule), value: notify, mode: "from chat" });
       onSaved?.();
     } catch (e) {
       setError(e.data ?? "Saving didn't work. Try again.");
@@ -45,11 +48,15 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
   return (
     <div className="proposal">
       {p.type === "create" ? (
-        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[p.notify]} ({NOTIFY_SHORT[p.notify]}).</p>
+        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[notify]} ({NOTIFY_SHORT[notify]}).</p>
       ) : (
         <p>For <strong>{p.label}</strong>: {changeText(p)}.</p>
       )}
-      {p.volumeNote && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
+      {state !== "saved" && p.type === "create" && <BroadWatchWarning
+        message={broadMessage}
+        onPrice={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify, volumeNote: p.volumeNote, focusMaxPrice: true })}
+        onGood={() => setNotify("good")} showGood={notify !== "good"} />}
+      {p.volumeNote && !broadMessage && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {state === "saved" ? (
         <p className="done">{p.type === "create" ? "Watch saved. The first check only notes what's listed now; after that, new ones that fit are e-mailed with the reason." : "Change saved."}</p>
@@ -59,7 +66,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
             {p.type === "create" ? "Save watch" : "Save change"}
           </button>
           {p.type === "create"
-            ? <button className="button" onClick={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify: p.notify,
+            ? <button className="button" onClick={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify,
               volumeNote: p.volumeNote })}>Adjust</button>
             : <button className="button" onClick={() => setState("dismissed")}>Dismiss</button>}
         </div>

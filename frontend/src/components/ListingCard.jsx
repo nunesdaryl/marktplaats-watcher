@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
+import OfferSheet from "./OfferSheet.jsx";
 import { track } from "../lib/track.js";
 import { scoreLevel } from "../../convex/schedule";
 
@@ -12,10 +13,12 @@ function ScoreBadge({ score }) {
 /** One listing as a card: photo, title, price, place, and (for alerts) the score and its reason. */
 export default function ListingCard({ listing, score, reason, meta, isNew = false }) {
   const [broken, setBroken] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
   const price = listing.price_eur ?? listing.priceEur;
   const city = listing.city;
   const distance = listing.distance_km != null ? `${listing.distance_km} km` : null;
   return (
+    <div className="listing-unit">
     <a className={`listing ${score === 0 ? "skipped" : ""}`} href={listing.url} target="_blank" rel="noopener noreferrer"
        onClick={() => track(reason ? "alert_opened" : "listing_opened", { value: score ?? undefined })}>
       <div className="photo">
@@ -37,5 +40,9 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
       </div>
       {isNew && <span className="visually-hidden">, new</span>}
     </a>
+    {Number.isFinite(Number(price)) && Number(price) >= 5 && <button type="button" className="link-button offer-action"
+      onClick={() => setOfferOpen(true)}>Help me make an offer</button>}
+    {offerOpen && <OfferSheet listing={listing} watchId={listing.watchId} onClose={() => setOfferOpen(false)} />}
+    </div>
   );
 }

@@ -1,15 +1,30 @@
 import { convexTest } from "convex-test";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import { internalAction, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import schema from "./schema";
+import { search } from "./embeddings";
 
 const modules = import.meta.glob("./**/*.ts");
 const watch = { query: "mac mini", schedule: { kind: "interval" as const, everyMinutes: 60 }, notify: "good" as const };
+const scheduledTests: ReturnType<typeof convexTest>[] = [];
+
+afterEach(async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json({ results: [] })));
+  try {
+    for (const t of scheduledTests) await t.finishAllScheduledFunctions(vi.runAllTimers);
+  } finally {
+    scheduledTests.length = 0;
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  }
+});
 
 async function fixture() {
   const t = convexTest(schema, modules);
+  scheduledTests.push(t);
   const alice = t.withIdentity({ subject: "alice", email: "a@example.com" });
   const bob = t.withIdentity({ subject: "bob", email: "b@example.com" });
   const a = await alice.mutation(api.watches.create, watch);
@@ -178,6 +193,7 @@ test("backfill keeps its cutoff across two pages in dry-run and real mode", asyn
       },
     }) };
   } });
+  scheduledTests.push(t);
   const alice = t.withIdentity({ subject: "alice", email: "a@example.com" });
   const watchId = await alice.mutation(api.watches.create, watch);
   await t.run(async (ctx) => {
@@ -232,4 +248,62 @@ test("a newly recorded alert is embedded by its scheduled action", async () => {
     const row = await t.run((ctx) => ctx.db.query("alertEmbeddings").first());
     expect(row?.text).toBe("Mac mini M5 Pro · €500 · 9/10 · Good");
   } finally { vi.unstubAllGlobals(); vi.useRealTimers(); }
+});
+
+
+test("search keeps keyword hits and drops vector-only scores below 0.35", async () => {
+  const { t, ids } = await fixture();
+  const rowIds = await t.run(async (ctx) => {
+    const alert = (await ctx.db.get(ids[0]))!;
+    const first = await ctx.db.insert("alertEmbeddings", { alertId: ids[0], userId: alert.userId,
+      text: alert.title, embedding: Array(1536).fill(0.1), model: "test", createdAt: Date.now() });
+    const second = await ctx.db.insert("alertEmbeddings", { alertId: ids[0], userId: alert.userId,
+      text: alert.title, embedding: Array(1536).fill(0.1), model: "test", createdAt: Date.now() });
+    const third = await ctx.db.insert("alertEmbeddings", { alertId: ids[0], userId: alert.userId,
+      text: alert.title, embedding: Array(1536).fill(0.1), model: "test", createdAt: Date.now() });
+    return { userId: alert.userId, first, second, third };
+  });
+  const handler = Reflect.get(search, "_handler") as
+    (ctx: unknown, args: unknown) => Promise<Array<{ alertId: string }>>;
+  let hydrated: Array<{ id: string; score: number }> = [];
+  let queryCount = 0;
+  await handler({
+    runQuery: async (_query: unknown, args: { ids?: typeof hydrated }) => {
+      queryCount++;
+      if (queryCount === 1) return rowIds.userId;
+      if (queryCount === 2) return [rowIds.first];
+      hydrated = args.ids ?? [];
+      return [];
+    },
+    vectorSearch: async () => [
+      { _id: rowIds.first, _score: 0.1 },
+      { _id: rowIds.second, _score: 0.34 },
+      { _id: rowIds.third, _score: 0.35 },
+    ],
+  }, { clerkId: "alice", vector: Array(1536).fill(0.1), query: "Mac", limit: 5 });
+  expect(hydrated).toEqual([{ id: rowIds.first, score: 1 }, { id: rowIds.third, score: 0.35 }]);
+});
+
+test("hydrate keeps the newest alert for a listing id or URL", async () => {
+  const { t, ids, a } = await fixture();
+  const rows = await t.run(async (ctx) => {
+    const first = (await ctx.db.get(ids[0]))!;
+    await ctx.db.patch(ids[0], { createdAt: 1 });
+    const fields = { userId: first.userId, watchId: a, title: first.title,
+      reason: first.reason, score: first.score, channel: first.channel, emailStatus: first.emailStatus };
+    const newer = await ctx.db.insert("alerts", { ...fields, listingId: first.listingId,
+      url: "https://example.test/new-url", createdAt: 2 });
+    const sameUrl = await ctx.db.insert("alerts", { ...fields, listingId: "different-id",
+      url: "https://example.test/new-url", createdAt: 1 });
+    const alertIds = [ids[0], newer, sameUrl];
+    const embeddingIds = [];
+    for (const alertId of alertIds) embeddingIds.push(await ctx.db.insert("alertEmbeddings", {
+      alertId, userId: first.userId, text: "Mac mini", embedding: Array(1536).fill(0.1),
+      model: "test", createdAt: Date.now(),
+    }));
+    return { userId: first.userId, embeddingIds, newer };
+  });
+  const hits = await t.query(internal.embeddings.hydrate, { userId: rows.userId,
+    ids: rows.embeddingIds.map((id) => ({ id, score: 0.9 })) });
+  expect(hits.map((hit) => hit.alertId)).toEqual([rows.newer]);
 });
