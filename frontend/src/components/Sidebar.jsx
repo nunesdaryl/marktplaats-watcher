@@ -9,10 +9,6 @@ import InlineRename from "./InlineRename.jsx";
 import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
-export function forwardAccountClick(event, trigger) {
-  if (!event.target.closest("button")) trigger?.querySelector("button")?.click();
-}
-
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
 export default function Sidebar({ route, watches, watchesLoaded, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
@@ -25,7 +21,6 @@ export default function Sidebar({ route, watches, watchesLoaded, chats, email, b
   const [openFolders, setOpenFolders] = useState({});
   const [newFolder, setNewFolder] = useState(false);
   const searchRef = useRef(null);
-  const accountTriggerRef = useRef(null);
 
   // ⌘K (from App) opens search
   useEffect(() => {
@@ -192,18 +187,7 @@ export default function Sidebar({ route, watches, watchesLoaded, chats, email, b
         <Icon name="feedback" size={18} />Feedback &amp; suggestions
       </button>
       <div className="account">
-        <div className="account-trigger" ref={accountTriggerRef} onClick={(e) => forwardAccountClick(e, accountTriggerRef.current)}>
-          <AccountButton />
-          <span className="account-details"><span className="email" data-private aria-hidden="true">{email}</span>
-            {budget && !budget.owner && <small>AI budget: €{budget.spentEur.toFixed(2)} of €{budget.limitEur.toFixed(2)} used</small>}</span>
-          <span className="account-chevron" aria-hidden="true"><Icon name="chevron" size={16} /></span>
-        </div>
-        <button className="icon-button small" onClick={() => go("/archived")} aria-label="Archived" title="Archived">
-          <Icon name="archive" size={18} />
-        </button>
-        <button className="icon-button small" onClick={onPrivacy} aria-label="Privacy and your data" title="Privacy and your data">
-          <Icon name="shield" size={18} />
-        </button>
+        <AccountButton sidebar email={email} budget={budget} onPrivacy={onPrivacy} />
       </div>
       <p className="shortcuts" aria-label="Keyboard shortcuts">⌘K search · ⌘⇧O new chat · Esc close</p>
     </nav>

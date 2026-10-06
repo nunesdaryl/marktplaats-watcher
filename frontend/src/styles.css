@@ -272,17 +272,27 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
   margin-top:auto; display: flex; align-items: center; gap:10px; /* off-scale: layout */ padding:12px 8px 4px; /* off-scale: layout */
   border-top: 1px solid var(--line); font-size:var(--text-sm); color: var(--text-2);
 }
-.account-trigger {
-  flex: 1; min-width: 0; min-height: 36px; /* off-scale: layout */ display: flex; align-items: center; gap:var(--space-2);
-  padding:var(--space-1) var(--space-2); border-radius:var(--radius); cursor: pointer;
-}
-.account-trigger:hover { background: var(--fill); }
-.account-trigger:has(button[aria-expanded="true"]) { background: var(--fill-strong); }
-.account-trigger:has(button:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
-.account-trigger .email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-details { display:flex; flex:1; min-width:0; flex-direction:column; }
-.account-details small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--text-xs); color:var(--text-2); }
-.account-chevron { display: flex; flex: none; color: var(--text-3); transform: rotate(-90deg); }
+.account-control { position: relative; flex: none; }
+.account-control-sidebar { flex: 1; min-width: 0; }
+.account-button { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius); background: none; color: var(--text); cursor: pointer; }
+.account-button:hover, .account-button[aria-expanded="true"] { background: var(--fill); }
+.account-button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.account-button-row { width: 100%; min-height: 44px; height: auto; justify-content: flex-start; gap: var(--space-2); padding: var(--space-1) var(--space-2); text-align: left; }
+.account-avatar { display: block; width: 28px; height: 28px; flex: none; border-radius: 50%; object-fit: cover; }
+.account-avatar-empty { display: grid; place-items: center; background: var(--fill-strong); color: var(--text); font-weight: 600; }
+.account-button-row .email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-details { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.account-details small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); color: var(--text-2); }
+.account-chevron { display: flex; flex: none; color: var(--text-2); transform: rotate(-90deg); }
+.account-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: var(--z-menu); width: min(300px, calc(100vw - 16px)); padding: var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--elevated); box-shadow: var(--shadow); }
+.account-control-sidebar .account-menu { top: auto; bottom: calc(100% + 8px); right: 0; }
+.account-menu button { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 52px; padding: var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.account-menu button:hover { background: var(--fill); }
+.account-menu button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.account-menu button svg { flex: none; color: var(--text-2); }
+.account-menu-text { display: flex; flex-direction: column; min-width: 0; }
+.account-menu-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: var(--text-xs); line-height: var(--text-xs-lh); }
+.account-menu button:last-child { border-top: 1px solid var(--line); border-radius: 0; }
 
 /* Rows with a "…" menu (sidebar, grouped lists) */
 .nav-row { position: relative; display: flex; align-items: center; border-radius:var(--radius); }
