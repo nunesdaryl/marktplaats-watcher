@@ -2,6 +2,7 @@
 import json
 import os
 import time
+from pathlib import Path
 
 os.environ.setdefault("OPENAI_API_KEY", "dummy")
 os.environ.setdefault("OPENAI_MODEL", "dummy")
@@ -78,7 +79,12 @@ def test_mcp_auth_tools_and_user_scope(monkeypatch):
         assert names == {"list_my_watches", "get_watch_activity", "get_alert_evidence",
                          "search_my_alerts", "search_marktplaats", "compare_vector_stores"}
         prompts = rpc(client, "prompts/list", token="alice").json()["result"]["prompts"]
-        assert [prompt["name"] for prompt in prompts] == ["review_my_alerts"]
+        catalog = json.loads((Path(__file__).parent / "frontend/src/lib/templates.json").read_text())
+        assert {prompt["name"] for prompt in prompts} == {"review_my_alerts"} | {
+            template["id"] for template in catalog["templates"]}
+        chosen = rpc(client, "prompts/get", {"name": "dutch-watch"}, token="alice")
+        assert chosen.json()["result"]["messages"][0]["content"]["text"] == next(
+            template["text"] for template in catalog["templates"] if template["id"] == "dutch-watch")
         for token, expected in (("alice", "alice"), ("bob", "bob"), ("owner-secret", "owner")):
             result = rpc(client, "tools/call", {"name": "list_my_watches",
                                                  "arguments": {"clerkId": "forged"}}, token)

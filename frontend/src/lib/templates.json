@@ -1,0 +1,17 @@
+{
+  "version": "2026-10-06.1",
+  "templates": [
+    { "id": "search-constraints", "purpose": "Search with clear constraints", "language": "en", "mode": "search", "variables": ["product", "title phrase", "budget", "distance", "postcode"], "text": "Find [product] listings with [title phrase] in the title, maximum €[budget], within [distance] km of [postcode]." },
+    { "id": "selective-watch", "purpose": "Set a selective watch", "language": "en", "mode": "watch", "variables": ["product", "title phrase", "budget"], "text": "Watch [product] listings with [title phrase] in the title, maximum €[budget]. Check every 3 hours. Only email great matches (score 8 or higher). Show the proposal for me to review." },
+    { "id": "twice-daily", "purpose": "Check twice daily", "language": "en", "mode": "watch", "variables": ["product", "budget", "distance", "postcode"], "text": "Watch [product], maximum €[budget], within [distance] km of [postcode]. Check every day at 08:00 and 18:00 Amsterdam time. Email good matches (score 6 or higher). Show the proposal for me to review." },
+    { "id": "weekdays", "purpose": "Check on selected weekdays", "language": "en", "mode": "watch", "variables": ["product", "budget"], "text": "Watch [product], maximum €[budget]. Check Monday and Friday at 18:00 Amsterdam time. Email good matches (score 6 or higher). Show the proposal for me to review." },
+    { "id": "dutch-watch", "purpose": "Een selectie in het Nederlands", "language": "nl", "mode": "watch", "variables": ["product", "titelwoord", "budget"], "text": "Houd [product] met [titelwoord] in de titel in de gaten, maximaal €[budget]. Controleer elk uur en mail alleen uitstekende matches (score 8 of hoger). Laat eerst het voorstel zien." },
+    { "id": "reduce-volume", "purpose": "Reduce alert volume", "language": "en", "mode": "search", "variables": ["watch name"], "text": "For my [watch name] watch, only email great matches (score 8 or higher). Show the proposed change." },
+    { "id": "change-budget", "purpose": "Change a watch budget", "language": "en", "mode": "search", "variables": ["watch name", "budget"], "text": "Change the maximum price of my [watch name] watch to €[budget]. Keep the other settings. Show the proposed change." },
+    { "id": "change-schedule", "purpose": "Change a watch schedule", "language": "en", "mode": "search", "variables": ["watch name"], "text": "Change my [watch name] watch to check every day at 08:00 and 18:00 Amsterdam time. Show the proposed change." },
+    { "id": "pause-watch", "purpose": "Pause a watch", "language": "en", "mode": "search", "variables": ["watch name"], "text": "Pause my [watch name] watch. Show the proposed change." },
+    { "id": "resume-watch", "purpose": "Resume a watch", "language": "en", "mode": "search", "variables": ["watch name"], "text": "Resume my [watch name] watch. Show the proposed change." },
+    { "id": "best-value-alerts", "purpose": "Review this week's best value alerts", "language": "en", "mode": "search", "variables": ["watch name"], "text": "Which alerts for my [watch name] watch were the best value this week? Use my past alerts and ratings, cite the listings, and explain the evidence." },
+    { "id": "similar-alerts", "purpose": "Find similar past alerts", "language": "en", "mode": "search", "variables": ["description"], "text": "Find my past alerts like [description]. Show the matching listings and explain what is similar using recorded evidence." }
+  ]
+}
