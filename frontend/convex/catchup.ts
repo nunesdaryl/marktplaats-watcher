@@ -6,6 +6,8 @@ import type { Id } from "./_generated/dataModel";
 import { renderEmail, sendEmail } from "./checker";
 import { ratingToken } from "./ratings";
 import { catchupItem } from "./schema";
+import { hasEnded } from "./founding";
+import { budgetFor } from "./aiBudget";
 
 const BASELINE_MS = 2 * 60_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -28,7 +30,8 @@ export const groups = internalQuery({
     for (const w of watches) {
       if (!w.seeded || w.archivedAt !== undefined) continue;
       const user = await ctx.db.get(w.userId);
-      if (!user) continue;
+      // No catch-up e-mails (or AI cost) for paused founding users or users over their AI budget
+      if (!user || hasEnded(user) || !(await budgetFor(ctx, user, Date.now())).allowed) continue;
       const seen = await ctx.db.query("seenListings").withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).collect();
       const alerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).collect();
       const first = seen.reduce((earliest, s) => Math.min(earliest, s._creationTime), Infinity);

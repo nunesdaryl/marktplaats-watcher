@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import AccountButton from "./components/AccountButton.jsx";
 import BetaBanner from "./components/BetaBanner.jsx";
+import FoundingPrompt from "./components/FoundingPrompt.jsx";
 import Icon from "./components/Icon.jsx";
 import Logo from "./components/Logo.jsx";
 import MoveSheet from "./components/MoveSheet.jsx";
@@ -19,7 +20,7 @@ import { useItemActions } from "./lib/actions.js";
 import { SIGNED_IN_FLAG, SIGNING_IN_FLAG } from "./lib/boot.js";
 import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
-import { go, useMediaQuery, useRoute, linkTo } from "./lib/router.js";
+import { go, useMediaQuery, useRoute, linkTo, useNow } from "./lib/router.js";
 import { capturePage } from "./lib/screenshot.js";
 import { useTheme } from "./lib/theme.js";
 import { Tracker, track } from "./lib/track.js";
@@ -83,6 +84,8 @@ function Toast({ message, onDone }) {
 
 function Workspace() {
   const me = useQuery(api.users.me);
+  const founding = useQuery(api.founding.mine);
+  const foundingNow = useNow(60_000);
   const budget = useQuery(api.aiBudget.mine);
   const watchesOrLoading = useQuery(api.watches.list);
   const chats = useQuery(api.chats.list) ?? [];
@@ -97,6 +100,7 @@ function Workspace() {
   const [renaming, setRenaming] = useState(null);   // "chat:<id>" | "watch:<id>" while renaming in the sidebar
   const [skippedOnboarding, setSkippedOnboarding] = useState(false);
   const [toast, setToast] = useState("");
+  const [foundingOpen, setFoundingOpen] = useState(false);
   const watches = watchesOrLoading ?? [];
   const newAlertCount = useQuery(api.watches.newAlertCount) ?? 0;
   const newAlerts = newAlertCount >= 10 ? "9+" : newAlertCount || null;   // on the Alerts tab and sidebar row
@@ -167,6 +171,10 @@ function Workspace() {
     </>
   );
 
+  if (founding && foundingNow >= founding.freeUntil) return <FoundingPrompt key={founding.freeUntil} state={{ ...founding, ended: true }} />;
+  const survey = founding && (founding.showSurvey || foundingNow >= founding.freeUntil - 16 * 86_400_000 && !founding.disappointed && !founding.dismissed) || foundingOpen;
+  const foundingCard = survey && founding && <FoundingPrompt key={founding.freeUntil} state={founding} keepOpen={foundingOpen} onClose={() => setFoundingOpen(false)} />;
+
   if (desktop) {
     return (
       <div className="shell">
@@ -174,7 +182,8 @@ function Workspace() {
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
-          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} />
+          <BetaBanner onFeedback={openFeedback} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
+          {foundingCard}
           {content}
         </main>
         {sheets}
@@ -205,7 +214,8 @@ function Workspace() {
           : <AccountButton />}
       </header>
       <main className="main">
-        <BetaBanner onFeedback={openFeedback} busy={capturing} freeUntil={me?.freeUntil} budget={budget} />
+        <BetaBanner onFeedback={openFeedback} busy={capturing} freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
+        {foundingCard}
         {content}
       </main>
       <TabBar route={route} newAlerts={newAlerts} isOwner={isOwner} />

@@ -619,6 +619,13 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .waitlist-card { width: min(560px, calc(100% - 32px)); margin: clamp(32px, 12vh, 120px) auto; padding: var(--space-5); background: var(--elevated); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
 .waitlist-card h1 { margin: var(--space-2) 0 var(--space-3); font-size: var(--display-s); line-height: var(--display-s-lh); }
 .waitlist-card > p { color: var(--text-2); }
+.founding-card-wrap { padding: var(--space-4); }
+.founding-card { max-width: 560px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--elevated); }
+.founding-card fieldset, .waitlist-card fieldset { border: 0; padding: 0; margin: var(--space-3) 0; }
+.founding-card legend, .waitlist-card legend { font-weight: 600; margin-bottom: var(--space-2); }
+.founding-choice { display: block; margin: var(--space-2) 0; }
+.founding-card textarea { display: block; width: 100%; min-height: 72px; }
+.beta-keep { white-space: nowrap; }
 .waitlist-eyebrow { color: var(--accent) !important; font-weight: 600; }
 .waitlist-card form { margin: var(--space-5) 0 var(--space-3); }
 .waitlist-card form .button { align-self: flex-start; }

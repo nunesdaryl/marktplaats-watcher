@@ -11,6 +11,7 @@ import { deleteAlertEmbedding } from "./embeddings";
 import { ratingToken } from "./ratings";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
 import { budgetFor } from "./aiBudget";
+import { hasEnded } from "./founding";
 
 const MAX_WATCHES_PER_RUN = 100;
 const MAX_QUERIES_PER_RUN = 25;           // the rest stay due and go in the next run
@@ -75,7 +76,7 @@ export const claimDue = internalMutation({
     for (const w of due) {
       if (w.leaseUntil !== undefined && w.leaseUntil > now) continue;   // a check for it is still running
       const owner = await ctx.db.get(w.userId);
-      if (!owner || !(await budgetFor(ctx, owner, now)).allowed) continue;
+      if (!owner || hasEnded(owner, now) || !(await budgetFor(ctx, owner, now)).allowed) continue;
       const key = w.query.toLowerCase();
       if (!byQuery.has(key) && byQuery.size >= MAX_QUERIES_PER_RUN) continue;
       byQuery.set(key, [...(byQuery.get(key) ?? []), w]);
@@ -128,9 +129,11 @@ export const record = internalMutation({
       const watchId = ctx.db.normalizeId("watches", r.watchId);
       const watch = watchId && await ctx.db.get(watchId);
       if (!watch) continue;                                   // deleted while it was being checked
-      const ids = [...new Set(r.currentIds ?? [])];
-      // This run's lease ends now, whatever the result (a newer claim's lease is left alone)
+      // Release a pre-expiry claim even when its result must be discarded.
       if (!dryRun && watch.leaseUntil === now + LEASE_MS) await patchTracked(ctx, "watches", watch._id, { leaseUntil: undefined });
+      const account = await ctx.db.get(watch.userId);
+      if (!account || hasEnded(account)) continue;
+      const ids = [...new Set(r.currentIds ?? [])];
       // Paused, archived or given a different search while it was being checked: this result is stale
       if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
       if (dryRun) {
@@ -205,6 +208,8 @@ export const emailContent = internalQuery({
   handler: async (ctx, { watchId, alertIds }) => {
     const watch = await ctx.db.get(watchId);
     if (!watch || !watch.active || watch.archivedAt !== undefined) return null;   // paused since: don't e-mail
+    const account = await ctx.db.get(watch.userId);
+    if (!account || hasEnded(account)) return null;
     const alerts = (await Promise.all(alertIds.map((id) => ctx.db.get(id)))).filter((a) => a !== null);
     alerts.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
     return watch && { watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule), notify: watch.notify, alerts };

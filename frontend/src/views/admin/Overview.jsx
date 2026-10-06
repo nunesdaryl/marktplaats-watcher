@@ -268,6 +268,7 @@ export default function Overview({ open, onSearch, ask }) {
   const dashboardResult = useQuery(api.admin.dashboard, { days, at });
   const ratingResult = useQuery(api.admin.ratingStats, { days, at });
   const feedbackResult = useQuery(api.admin.feedback, { limit: 5, at });
+  const founding = useQuery(api.founding.ownerSummary, {});
   const previous = useRef(null);
   const refreshing = at !== undefined && (dashboardResult === undefined || ratingResult === undefined || feedbackResult === undefined);
   if (!refreshing) {
@@ -348,6 +349,21 @@ export default function Overview({ open, onSearch, ask }) {
         <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
       <OpenAiSpendCard open={go} />
+      {founding && <section className="panel">
+        <h2>Would they be disappointed?</h2>
+        <p><strong>{founding.percentVery}% very disappointed</strong> ({founding.very} of {founding.n} answers)</p>
+        {founding.n < 40 && <p className="hint">Too few answers to judge; aim for 40%+ very disappointed.</p>}
+        <p>{founding.paused} paused founding users · {founding.extended} extended founding users</p>
+        <h3>Would you pay?</h3>
+        <ul><li>No: {founding.prices.no}</li><li>Up to €5 a month: {founding.prices.up_to_5}</li>
+          <li>€5–10: {founding.prices["5_to_10"]}</li><li>More than €10: {founding.prices.over_10}</li></ul>
+        <details><summary>See founding answers</summary>
+          <ul>{founding.answers.map((answer, index) => <li key={`${answer.email}-${answer.freeUntil}-${index}`}>
+            {answer.email} · round ending {new Date(answer.freeUntil).toLocaleDateString("en-GB")} · {answer.disappointed ?? "No survey answer"}
+            {answer.benefit ? ` · ${answer.benefit}` : ""} · {answer.wouldPay ?? "No pay answer"}
+          </li>)}</ul>
+        </details>
+      </section>}
 
       <nav className="admin-list-nav" aria-label="Dashboard lists">
         {[["Runs", "runs"], ["Errors", "errors"], ["Delivery audit", "audits"], ["Catch-ups", "catchups"]].map(([title, view]) =>

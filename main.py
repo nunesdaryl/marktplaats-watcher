@@ -234,6 +234,8 @@ def limit_answer(limit):
 
 
 def allowance_answer(allowance):
+    if allowance.get("reason") == "founding_ended":
+        return "Your free month has ended. Click 'Keep my watches' to continue free for another 30 days."
     if allowance.get("reason") == "budget":
         reset = datetime.fromtimestamp(allowance["resetsAt"] / 1000, ZoneInfo("Europe/Amsterdam")).strftime("%-d %B %Y")
         return f"Your free AI budget for these 30 days is used up. It resets on {reset}."

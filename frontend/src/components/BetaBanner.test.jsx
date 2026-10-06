@@ -63,3 +63,16 @@ test("admitted member sees the free-until date and AI spend on the banner", asyn
   expect(html).toContain("Founding user · free until 4 Nov");
   expect(html).toContain("€0.32 of €1.00 used");
 });
+
+test("Keep my watches appears five days before the current free-until date", async () => {
+  vi.useFakeTimers();
+  try {
+    const { default: BetaBanner } = await import("./BetaBanner.jsx");
+    const freeUntil = Date.parse("2026-11-04T00:00:00Z");
+    vi.setSystemTime(freeUntil - 6 * 86_400_000);
+    expect(renderToStaticMarkup(<BetaBanner onFeedback={vi.fn()} onKeep={vi.fn()} freeUntil={freeUntil} />)).not.toContain("Keep my watches");
+    vi.setSystemTime(freeUntil - 5 * 86_400_000);
+    expect(renderToStaticMarkup(<BetaBanner onFeedback={vi.fn()} onKeep={vi.fn()} freeUntil={freeUntil} />)).toContain("Keep my watches");
+    expect(renderToStaticMarkup(<BetaBanner onFeedback={vi.fn()} onKeep={vi.fn()} freeUntil={freeUntil + 30 * 86_400_000} />)).toContain("free until 4 Dec");
+  } finally { vi.useRealTimers(); }
+});

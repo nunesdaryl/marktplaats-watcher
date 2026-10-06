@@ -4,6 +4,8 @@ import { internalAction, internalMutation, internalQuery } from "./_generated/se
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
 import { insertTracked } from "./totals";
+import { hasEnded } from "./founding";
+import { budgetFor } from "./aiBudget";
 
 const DAY = 86_400_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -28,6 +30,9 @@ export const groups = internalQuery({
     const byQuery = new Map<string, { watches: Record<string, unknown>[] }>();
     for (const w of watches) {
       if (!w.seeded || w.archivedAt !== undefined) continue;
+      // Paused founding users and users over their AI budget are not checked, so there is nothing to audit (and no AI cost)
+      const owner = await ctx.db.get(w.userId);
+      if (!owner || hasEnded(owner, now) || !(await budgetFor(ctx, owner, now)).allowed) continue;
       const seen = await ctx.db.query("seenListings").withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id))
         .order("desc").collect();
       const alerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).collect();

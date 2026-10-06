@@ -34,6 +34,15 @@ def test_budget_refuses_chat_before_model_call(client, monkeypatch):
     assert "free AI budget" in response.json()["answer"]
 
 
+def test_ended_founding_month_refuses_chat_before_model_call(client, monkeypatch):
+    monkeypatch.setattr(client.main, "chat_allowance", lambda user: {"allowed": False, "reason": "founding_ended", "limit": 40})
+    monkeypatch.setattr(client.main, "chat", lambda *a: pytest.fail("model called"))
+    response = client.post("/api/chat", json={"message": "hi"},
+        headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.status_code == 429
+    assert response.json()["answer"] == "Your free month has ended. Click 'Keep my watches' to continue free for another 30 days."
+
+
 @pytest.fixture(autouse=True)
 def search_from_fake_page(monkeypatch):
     """Scheduled checks read the date-sorted search (fetch_search). Tests that fake a search page with fetch_page
