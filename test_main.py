@@ -5,12 +5,49 @@ import re
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 
 os.environ.setdefault("OPENAI_API_KEY", "dummy")
 os.environ.setdefault("OPENAI_MODEL", "gpt-5.4-mini")
 
 import agent
 import main
+
+
+def test_not_modified_response_has_no_body_or_content_length():
+    async def accidental_body(request):
+        return Response(b"unexpected", status_code=304, headers={"ETag": '"version-1"', "Content-Length": "10"})
+
+    main.app.router.add_route("/api/test-not-modified", accidental_body)
+    route = main.app.router.routes[-1]
+    try:
+        response = TestClient(main.app).get("/api/test-not-modified")
+    finally:
+        main.app.router.routes.remove(route)
+    assert response.status_code == 304
+    assert response.content == b""
+    assert "content-length" not in response.headers
+    assert response.headers["etag"] == '"version-1"'
+
+
+def test_static_not_modified_response_has_no_body(tmp_path):
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "app.js").write_text("console.log('ready')")
+    main.app.mount("/test-static", StaticFiles(directory=static), name="test-static")
+    route = main.app.router.routes.pop()
+    main.app.router.routes.insert(0, route)  # ahead of the optional catch-all built UI mount
+    try:
+        client = TestClient(main.app)
+        first = client.get("/test-static/app.js")
+        assert first.status_code == 200
+        response = client.get("/test-static/app.js", headers={"If-None-Match": first.headers["etag"]})
+    finally:
+        main.app.router.routes.remove(route)
+    assert response.status_code == 304
+    assert response.content == b""
+    assert "content-length" not in response.headers
 
 
 CHECKER = Path(__file__).parent / "frontend" / "convex" / "checker.ts"

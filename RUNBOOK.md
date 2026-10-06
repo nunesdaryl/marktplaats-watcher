@@ -24,6 +24,19 @@ repo root unless they start with `cd frontend`.
 | Feedback e-mail "Feedback from …" | `OWNER_EMAIL` inbox | Someone used the feedback strip; the screenshot and context are on the dashboard |
 | Logs | Vercel → Logs; Convex dashboard → Logs | JSON lines: `check`, `chat_turn`, `csp_violation` (Vercel); `check_run`, `health_digest`, `checks_paused` (Convex) |
 
+## Previews
+
+Vercel Preview deployments need `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NEXT_PUBLIC_CONVEX_URL` for the browser to sign in and read alerts. The Python API also needs `CLERK_ISSUER`, `CONVEX_SITE_URL`, and `API_TO_CONVEX_SECRET` to check access and save chat answers. Set `CONVEX_SITE_URL` to the site URL for the same Convex deployment as `NEXT_PUBLIC_CONVEX_URL`; the secret must match `API_TO_CONVEX_SECRET` in that Convex deployment. The last two API variables currently exist only for Vercel Production, so add them for Preview too.
+
+The operator adds each variable to Vercel's Preview environment from the repo root (the CLI prompts for its value; do not put values in the command or this file):
+
+```bash
+npx vercel env add CONVEX_SITE_URL preview
+npx vercel env add API_TO_CONVEX_SECRET preview
+```
+
+Redeploy the preview after adding them. If the preview uses a separate Convex deployment, configure the matching `API_TO_CONVEX_SECRET` there as well.
+
 ---
 
 ## Weekly listening loop
