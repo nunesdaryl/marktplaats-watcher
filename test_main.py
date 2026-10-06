@@ -67,7 +67,7 @@ def post_check(monkeypatch, watches):
         assert result == {
             "watchId": sent["id"], "ok": True, "aiCall": True, "currentIds": [LISTING_ID],
             "listings": [{
-                "id": LISTING_ID, "title": "Mac mini M2", "price_eur": 400,
+                "id": LISTING_ID, "title": "Mac mini M2", "description": "", "price_eur": 400,
                 "city": None, "distance_km": None, "date": "Vandaag",
                 "url": "https://www.marktplaats.nl/v/mac-mini-m2", "image": None,
                 "score": 8, "reason": "Matches the watch.",

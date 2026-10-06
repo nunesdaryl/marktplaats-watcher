@@ -448,6 +448,14 @@ code { font: 0.9em var(--font-mono); background: var(--fill); padding:1px 5px; /
 .cards .listing { flex: 0 0 248px; scroll-snap-align: start; }
 .cards.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); overflow: visible; }
 .cards.grid .listing { flex: none; }
+.listing-unit { display: flex; flex-direction: column; min-width: 0; }
+.cards .listing-unit { flex: 0 0 248px; scroll-snap-align: start; }
+.cards.grid .listing-unit { flex: none; }
+.listing-unit .listing { flex: 1; }
+.offer-action { align-self: flex-start; padding: 8px 4px; font-size: var(--text-sm); }
+.offer-help { display: flex; flex-direction: column; gap: var(--space-2); }
+.offer-help p { margin: 4px 0 0; color: var(--text-2); }
+.offer-help textarea { width: 100%; resize: vertical; }
 .listing {
   display: flex; flex-direction: column; border-radius:var(--radius); background: var(--elevated);
   border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden; color: var(--text); transition: transform var(--dur) var(--ease), box-shadow var(--dur);

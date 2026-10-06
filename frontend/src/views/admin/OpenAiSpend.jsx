@@ -5,7 +5,7 @@ import FilterBar from "./FilterBar.jsx";
 import Table from "./Table.jsx";
 
 const money = (n, symbol = "€") => `${symbol}${n.toFixed(2)}`;
-const kinds = { watch: "Watch checks", chat: "Chat questions", estimate: "Watch estimates", owner: "Owner admin and audit", embedding: "Embeddings" };
+const kinds = { watch: "Watch checks", chat: "Chat questions", estimate: "Watch estimates", owner: "Owner admin and audit", embedding: "Embeddings", "offer help": "Offer help" };
 export function spendState(usd, cap) {
   if (!cap) return "uncapped";
   return usd / cap >= 0.95 ? "danger" : usd / cap >= 0.8 ? "warning" : "normal";

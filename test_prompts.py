@@ -94,4 +94,5 @@ def test_prompt_versions_are_central_and_reexported():
         "chat": "chat-2026-10-03.1",
         "rank": "rank-2026-10-03.1",
         "admin": "admin-2026-10-03.1",
+        "offer": "offer-2026-10-06.1",
     }

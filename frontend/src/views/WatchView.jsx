@@ -76,7 +76,7 @@ export default function WatchView({ watch, onEdit, actions }) {
       {watch.alerts.length ? (
         <div className="cards grid">
           {watch.alerts.map((a) => (
-            <ListingCard key={a._id} listing={{ ...a, price_eur: a.priceEur }} score={a.score} reason={a.reason}
+            <ListingCard key={a._id} listing={{ ...a, price_eur: a.priceEur, watchId: watch._id }} score={a.score} reason={a.reason}
                          meta={describeWhen(a.createdAt, now)} />
           ))}
         </div>

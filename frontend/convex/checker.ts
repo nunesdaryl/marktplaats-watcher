@@ -103,7 +103,7 @@ export const claimDue = internalMutation({
 });
 
 const listing = v.object({
-  id: v.string(), title: v.string(), price_eur: v.union(v.number(), v.null()), city: v.union(v.string(), v.null()),
+  id: v.string(), title: v.string(), description: v.optional(v.string()), price_eur: v.union(v.number(), v.null()), city: v.union(v.string(), v.null()),
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
   image: v.optional(v.union(v.string(), v.null())),
   score: v.union(v.number(), v.null()), reason: v.string(),
@@ -177,6 +177,7 @@ export const record = internalMutation({
         if (!watch.seeded || !item || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
         newAlerts.push(await insertTracked(ctx, "alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
+          description: item.description,
           priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,
           image: item.image ?? undefined,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
