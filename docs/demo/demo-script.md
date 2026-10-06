@@ -156,6 +156,9 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - **"What happens after the free month?"** "On day 30 the watches pause until you click 'Keep my watches' and answer two
   questions: how disappointed you'd be without it, and whether you'd pay. That gives another 30 days, and it tells me if
   this is worth charging for."
+- **"Can it help me buy?"** "On any listing worth a look, 'Help me make an offer' suggests an opening price and a
+  walk-away price with the reason, and writes a polite Dutch message you copy and send yourself. The app never contacts
+  sellers."
 - **"Have you talked to Marktplaats?"** "That is the next step: a pitch for a 30-minute conversation, official access and
   a six-week pilot with agreed success criteria." (Pitch deck: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma; source
   `docs/marketing/MARKTPLAATS-PITCH-PACK.md`.)

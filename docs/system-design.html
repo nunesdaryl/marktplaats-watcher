@@ -1505,9 +1505,27 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   reviewed version, and MW-92 fixes the test properly. Lesson: the dependency audit on every push catches advisories the
   day they are published; the gate's strictness also catches test-hygiene flakes, which deserve their own fix rather than
   repeated retries.</p>
-<p><b>Still open:</b> MW-92 (a flaky test that once stopped the merge gate although all tests passed), MW-90 (bidding
-  and negotiation help, Vinod's request), MW-78/82/83 (benchmark ideas), MW-69/70/71/68/65, MW-76 (Clerk production
-  instance, Daryl's steps first).</p>
+<p><b>Backlog completed (6 October).</b> While Daryl worked on sign-ups, the factory built and the station reviewed the
+  remaining backlog; each merge had Daryl's per-issue OK. Live: MW-69 (answers about your alerts: no duplicate cards, weak
+  vector hits dropped, no cards when nothing was found; chat prompt chat-2026-10-06.1, chat evals 20/20), MW-70 (no chat
+  crash on an unsaved answer; 304 responses without a body; a runbook section on Preview variables, which only Daryl
+  enters), MW-90 ("Help me make an offer": a suggested opening and walk-away price, clamped on the server to €5 steps and
+  never above the asking price or the watch limit, and a polite Dutch or English message to copy; the app never contacts
+  sellers; the cost counts against the €1 budget), MW-94 (a warning before saving a very broad watch, and on watches that
+  fall behind, with one-tap "Add max price" and "Choose good matches"), MW-65 (a Templates picker in the chat box and the
+  same templates as MCP prompts), MW-82 ("Needs your attention" at the top of the owner dashboard), MW-68 (tooling for
+  real retrieval evals on a pseudonymised snapshot; CI skips them until Daryl provides one, MW-95), MW-92 (the flaky test),
+  MW-71 and MW-96 (the merge gate now restores the checkout after a failed test or a merge conflict, retries GitHub
+  calls, installs new Python dependencies and deletes branches only after checking they are merged). Review fixes by the
+  station: tests that hard-coded prompt versions or a route order, a sidebar account menu that opened off-screen, a
+  template picker cut off on short windows, and CI that would have gone red without the RAG snapshot. Lesson: every
+  review found at least one thing the builder's partial test run missed; running the full suites and walking the screen
+  is not optional. A station mistake also surfaced: commits made with <code>core.autocrlf=false</code> on this Mac stored
+  two files with Windows line endings, which caused a false whole-file conflict (MW-97 adds a rule so text files are
+  always stored with LF).</p>
+<p><b>Still open:</b> MW-78 (account menu with descriptions; reviewed, awaiting a fresh merge OK after a line-ending
+  fix), MW-97 (line endings), MW-83 (blocked: an unprompted find-Feedback test with 2–3 new users), MW-95 (Daryl: export,
+  sanitise and label the RAG snapshot), MW-9, MW-14 and MW-76 (Daryl's steps).</p>
 <p>Open in Linear: MW-9 and MW-14 only.</p>
 <p><b>Re-check on the fixed scoring (3 October 09:29).</b> To check the fix before the demo, the delivery audit was run
   again on Daryl's OK (<code>audit:run</code>, read-only replay; writes audit rows, may e-mail the owner, never users).
