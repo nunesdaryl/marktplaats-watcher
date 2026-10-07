@@ -2,14 +2,21 @@
 "good" ≥ 6), a listing counts as e-mailed when its score reaches it. Reports precision, recall, the misses by
 category, tokens, cost and time."""
 import argparse
+import re
 import sys
 import time
 
 import agent
-from evals.common import LABELS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
+from evals.common import AUDIT_MISSES, LABELS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
 
 THRESHOLDS = {"great": 8, "good": 6}
 
+
+
+def watch_max_price(description):
+    """The frozen cases keep the watch as text ('…, under €200'); the check passes the number."""
+    m = re.search(r"under\s*€\s*(\d+)", description or "")
+    return int(m.group(1)) if m else None
 
 def median_run(runs):
     def value(run, metric):
@@ -62,13 +69,25 @@ def score_once(data, labels, model):
     }
     price_type_cases = []
     for case in read(PRICE_TYPE_CASES):
-        listing = agent.rank_listings(case["watch_description"], [dict(case["listing"])], raise_on_failure=True)[0]
+        listing = agent.cap_bidding_scores(agent.rank_listings(case["watch_description"], [dict(case["listing"])], raise_on_failure=True),
+                                           watch_max_price(case["watch_description"]))[0]
         price_type_cases.append({"id": case["id"], "label": case["label"],
                                  "score": listing["score"], "reason": listing["reason"]})
     case_usage = agent.RANK_USAGE[result["tokens"]["calls"]:]
     result["price_type_cases"] = price_type_cases
     result["price_type_cost_usd"] = round(cost_usd(model, sum(u[0] for u in case_usage),
                                                    sum(u[1] for u in case_usage)), 5)
+    audit_usage_start = len(agent.RANK_USAGE)
+    audit_cases = []
+    for case in read(AUDIT_MISSES)["cases"]:
+        listing = {key: value for key, value in case["listing"].items() if value is not None}
+        ranked = agent.cap_bidding_scores(agent.rank_listings(case["watch_description"], [listing]),
+                                          watch_max_price(case["watch_description"]))[0]
+        audit_cases.append({"id": case["id"], "score": ranked["score"], "reason": ranked["reason"]})
+    result["audit_misses"] = audit_cases
+    audit_usage = agent.RANK_USAGE[audit_usage_start:]
+    result["audit_misses_cost_usd"] = round(cost_usd(model, sum(u[0] for u in audit_usage),
+                                                     sum(u[1] for u in audit_usage)), 5)
     for name, m in metrics.items():
         print(f"{name:5} ≥{m['threshold']}: precision {m['precision']}  recall {m['recall']}  (tp {m['tp']} fp {m['fp']} fn {m['fn']})")
     print(f"cost ${usd:.5f} for {len(scored)} listings")
@@ -100,7 +119,8 @@ def main(argv=None):
         return
     runs = [{"great": result["metrics"]["great"], "good": result["metrics"]["good"],
              "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"],
-             "price_type_cases": result["price_type_cases"], "price_type_cost_usd": result["price_type_cost_usd"]}
+             "price_type_cases": result["price_type_cases"], "price_type_cost_usd": result["price_type_cost_usd"],
+             "audit_misses": result["audit_misses"], "audit_misses_cost_usd": result["audit_misses_cost_usd"]}
             for result in results]
     selected = median_run(runs)
     write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored})

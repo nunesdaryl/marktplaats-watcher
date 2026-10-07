@@ -1,6 +1,6 @@
 """Fail CI when the saved evaluation results miss the release thresholds."""
 
-from evals.common import CHAT_RESULTS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, SPOTCHECK, USER_CASES_GOLDEN, read
+from evals.common import AUDIT_MISSES, CHAT_RESULTS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, SPOTCHECK, USER_CASES_GOLDEN, read
 from evals.report import scorer_metrics, spotcheck_overrides, user_precision
 
 
@@ -15,6 +15,32 @@ def corrected_great_precisions(scorer, listings, spotcheck):
 def corrected_great_precision(scorer, listings, spotcheck):
     values = corrected_great_precisions(scorer, listings, spotcheck)
     return sorted(values, key=lambda value: -1 if value is None else value)[len(values) // 2]
+
+
+def corrected_great_recall(scorer, listings, spotcheck):
+    overrides, _, _ = spotcheck_overrides(listings, spotcheck)
+    values = [scorer_metrics(run["scored"], overrides,
+                             {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["recall"]
+              for run in scorer.get("runs", [scorer])]
+    return sorted(values, key=lambda value: -1 if value is None else value)[len(values) // 2]
+
+
+def audit_misses_pass(scorer):
+    cases = {case["id"]: case for case in read(AUDIT_MISSES)["cases"]}
+    runs = scorer.get("runs", [scorer])
+    if len(runs) != 3 or len(cases) != 5:
+        return False
+    for run in runs:
+        rows = {row["id"]: row for row in run.get("audit_misses", [])}
+        if rows.keys() != cases.keys():
+            return False
+        def correct(id, case):
+            score = rows[id]["score"]
+            alerts = score is not None and score >= case["notify_threshold"]
+            return alerts == case.get("should_alert", True)
+        if sum(correct(id, case) for id, case in cases.items()) < 4:
+            return False
+    return True
 
 
 def price_type_cases_pass(scorer):
@@ -41,8 +67,10 @@ def price_type_cases_pass(scorer):
 
 def check(chat, scorer, listings, spotcheck):
     precision = corrected_great_precision(scorer, listings, spotcheck)
+    recall = corrected_great_recall(scorer, listings, spotcheck)
     return (chat["total"] == 20 and chat["passed"] >= 19 and precision is not None and precision >= 0.9
-            and price_type_cases_pass(scorer))
+            and recall is not None and recall >= 17 / 23 and price_type_cases_pass(scorer)
+            and audit_misses_pass(scorer))
 
 
 def main():
@@ -56,6 +84,8 @@ def main():
     cases = scorer.get("runs", [scorer])
     print(f"Price type cases: {sum(len(run.get('price_type_cases', [])) for run in cases)} scored across {len(cases)} runs; "
           f"{'pass' if price_type_cases_pass(scorer) else 'fail'}")
+    print(f"Corrected great recall: {corrected_great_recall(scorer, listings, spotcheck)}; "
+          f"audit misses: {'pass' if audit_misses_pass(scorer) else 'fail'}")
     confirmed = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
     if len(confirmed) >= 20:
         scored = scorer.get("user_scored", [])
@@ -63,7 +93,7 @@ def main():
         print(f"Confirmed user cases: {len(confirmed)}; great precision {value if value is not None else 'n/a'} (report only)")
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
-                         "and all price type cases passing in 3 runs")
+                         "great recall at least 17/23, all price type cases, and 4/5 audit misses in each of 3 runs")
 
 
 if __name__ == "__main__":

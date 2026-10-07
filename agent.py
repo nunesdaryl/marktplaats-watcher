@@ -116,7 +116,9 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             continue
         price_info = item.get("priceInfo") or {}
         cents = price_info.get("priceCents") or 0
-        if max_price_eur is not None and (cents == 0 or cents > max_price_eur * 100):
+        price_type = price_info.get("priceType")
+        if max_price_eur is not None and ((cents == 0 and price_type != "FREE")
+                                      or cents > max_price_eur * 100):
             continue
         stats["price_ok"] += 1
         loc = item.get("location") or {}
@@ -131,12 +133,12 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             "id": item.get("itemId"),
             "title": item.get("title", "")[:100],
             "description": (item.get("description") or "")[:500],
-            "price_eur": round(cents / 100) if cents else None,
+            "price_eur": 0 if price_type == "FREE" else round(cents / 100) if cents else None,
             "price_type": {
                 "FIXED": "fixed price", "MIN_BID": "bidding from",
                 "FAST_BID": "make an offer", "BID": "make an offer",
                 "SEE_DESCRIPTION": "see description", "FREE": "free", "SWAP": "swap",
-            }.get(price_info.get("priceType"), price_info.get("priceType")),
+            }.get(price_type, price_type),
             "city": loc.get("cityName"),
             "distance_km": km,
             "date": item.get("date"),
@@ -525,6 +527,22 @@ _rank_usage_for_check = ContextVar("rank_usage_for_check", default=None)
 RANK_WORKERS = 6
 RANK_BATCH = 10
 
+BIDDING_NEAR_MAX = 0.85   # a 'bidding from' price at 85% or more of the watch's maximum is likely to end over budget
+
+
+def cap_bidding_scores(listings, max_price_eur):
+    """The MW-58 rule, enforced in code: a starting bid at or near the watch's maximum is never a great match (7 or less).
+    The prompt states the rule too, but the model sometimes says 'at your ceiling' and still scores 8."""
+    if not max_price_eur:
+        return listings
+    for item in listings:
+        price, score = item.get("price_eur"), item.get("score")
+        if (item.get("price_type") == "bidding from" and price is not None and score is not None
+                and price >= BIDDING_NEAR_MAX * max_price_eur and score > 7):
+            item["score"] = 7
+    return listings
+
+
 def rank_listings(description, listings, raise_on_failure=False):
     """Adds scores, retrying omitted ids once. Model failures leave scores empty unless requested to raise."""
     if not listings:
@@ -811,7 +829,8 @@ def check_query(query, watches, now=None):
         usage = []
         token = _rank_usage_for_check.set(usage)
         try:
-            return rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True), usage
+            return cap_bidding_scores(rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True),
+                                      job[0].get("max_price_eur")), usage
         except Exception as e:
             return classify_openai_failure(e), usage
         finally:
@@ -879,8 +898,9 @@ def audit_watch(w, now=None):
         result["candidates"] = len(candidates)
         chosen = candidates[:40]
         if chosen:
-            ranked = rank_listings(w.get("description") or w["query"],
-                                   [item for item, _ in chosen], raise_on_failure=True)
+            ranked = cap_bidding_scores(rank_listings(w.get("description") or w["query"],
+                                                      [item for item, _ in chosen], raise_on_failure=True),
+                                        w.get("max_price_eur"))
             if len(ranked) != len(chosen):
                 raise ValueError("The AI did not return every candidate.")
             result["unscored"] = sum(item.get("score") is None for item in ranked)
