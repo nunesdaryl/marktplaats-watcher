@@ -71,6 +71,13 @@ export const dateFilters = (params, now = Date.now()) => {
     until: params.until === undefined || !Number.isFinite(Number(params.until)) ? undefined : Number(params.until) };
 };
 
+/** Keep relative query windows fixed while a drilldown is open, including through parent clock ticks. */
+export function useDateFilters(params) {
+  const today = params.when === "today"
+    ? new Date(Date.now()).toLocaleDateString("en-CA", { timeZone: TZ }) : undefined;
+  return useMemo(() => dateFilters(params), [params.when, params.since, params.until, today]);
+}
+
 // Small shared formatters (Amsterdam time, as in the rest of the app)
 const TZ = "Europe/Amsterdam";
 export const when = (t) => (t ? new Date(t).toLocaleString("en-GB", { timeZone: TZ, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "–");

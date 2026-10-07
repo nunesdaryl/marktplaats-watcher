@@ -23,6 +23,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^22.20.4",
     "convex-test": "^0.0.60",
+    "jsdom": "^30.1.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   }

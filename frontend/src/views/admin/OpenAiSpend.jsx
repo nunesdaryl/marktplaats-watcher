@@ -1,6 +1,6 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { dateFilters, when } from "./nav.js";
+import { useDateFilters, when } from "./nav.js";
 import FilterBar from "./FilterBar.jsx";
 import Table from "./Table.jsx";
 
@@ -30,7 +30,7 @@ export function OpenAiSpendCard({ open }) {
 }
 
 export function OpenAiSpendView({ params, update, open }) {
-  const dates = dateFilters(params);
+  const dates = useDateFilters(params);
   const data = useQuery(api.openaiSpend.month, { userId: params.userId, watchId: params.watchId, kind: params.kind,
     since: dates.since, until: dates.until });
   if (data === undefined) return <p className="hint">Loading…</p>;
