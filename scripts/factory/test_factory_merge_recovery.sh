@@ -25,6 +25,7 @@ if sys.argv[1] == "ready":
 PY
     printf 'base\n' > requirements.txt
     printf 'base\n' > file.txt
+    printf 'base\n' > frontend/package-lock.json
     printf 'base\n' > frontend/convex/_generated/api.d.ts
     printf '| date | issue | reviewed | merge | approver | checks |\n' > docs/factory/merges.md
     cat > .venv/bin/python <<'SH'
@@ -69,6 +70,10 @@ exit 0
 SH
     cat > mockbin/npm <<'SH'
 #!/usr/bin/env bash
+if [[ $1 == ci ]]; then
+    printf 'npm ci\n' >> "$TEST_EVENTS"
+    if [[ ${FAIL_NPM_CI:-} == 1 ]]; then exit 1; fi
+fi
 exit 0
 SH
     chmod +x .venv/bin/python mockbin/*
@@ -109,6 +114,37 @@ setup_repo unchanged_requirements file.txt
 run_gate
 [[ $(sed -n '1p' "$events") == '-m pytest -q' ]]
 echo 'PASS unchanged requirements skip dependency install'
+
+setup_repo changed_lockfile frontend/package-lock.json
+run_gate
+if [[ $(sed -n '1p' "$events") != 'npm ci' || $(sed -n '2p' "$events") != '-m pytest -q' ]]; then
+    echo 'FAIL changed lockfile did not install npm packages before tests' >&2
+    exit 1
+fi
+echo 'PASS changed lockfile installs npm packages before tests'
+
+setup_repo unchanged_lockfile file.txt
+run_gate
+if grep -Fxq 'npm ci' "$events"; then
+    echo 'FAIL unchanged lockfile triggered npm ci' >&2
+    exit 1
+fi
+echo 'PASS unchanged lockfile skips npm ci'
+
+setup_repo npm_ci_failure frontend/package-lock.json
+if run_gate FAIL_NPM_CI=1 > "$test_root/npm_ci_failure.output" 2>&1; then
+    echo 'FAIL npm ci failure passed the gate' >&2
+    exit 1
+fi
+grep -Fq 'factory: npm ci failed in frontend' "$test_root/npm_ci_failure.output"
+if grep -Fxq -- '-m pytest -q' "$events"; then
+    echo 'FAIL tests ran after npm ci failed' >&2
+    exit 1
+fi
+[[ $(git branch --show-current) == main ]]
+[[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]]
+[[ -z $(git status --porcelain) ]]
+echo 'PASS failed npm ci stops tests and restores the checkout'
 
 setup_repo pytest_failure
 if run_gate FAIL_PYTEST=1; then

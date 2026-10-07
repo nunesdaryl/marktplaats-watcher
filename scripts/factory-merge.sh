@@ -48,6 +48,9 @@ python=.venv/bin/python
 if ! git diff --quiet "$before" "$merge_sha" -- requirements.txt; then
     "$python" -m pip install -q -r requirements.txt
 fi
+if ! git diff --quiet "$before" "$merge_sha" -- frontend/package-lock.json; then
+    (cd frontend && npm ci) || fail "npm ci failed in frontend"
+fi
 "$python" -m pytest -q
 (
     cd frontend

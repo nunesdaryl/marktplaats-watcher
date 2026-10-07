@@ -2,7 +2,8 @@
 import re
 from collections import Counter
 
-from evals.common import CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
+from prompts import PROMPT_VERSION
+from evals.common import AUDIT_MISSES, CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
 
 
 def eur(usd):
@@ -65,7 +66,7 @@ def user_precision(scored, threshold=8):
 
 def user_section(ratings, pending=0, confirmed=0, scored=None):
     """What people said about the alerts they got: a second, real-world check next to the judge (§1)."""
-    head = ["## 1b. What users said about their alerts", "",
+    head = ["## 1c. What users said about their alerts", "",
             f"Review queue: **{pending} pending**, **{confirmed} confirmed** scorer cases.", ""]
     if confirmed >= 20:
         precision = user_precision(scored or []) if scored is not None and len(scored) == confirmed else None
@@ -116,7 +117,7 @@ def main():
                                        {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["precision"]
                         for run in runs]
     scorer_eval_cost = sum(run.get("cost_usd", cost_usd(model, run["tokens"]["input"], run["tokens"]["output"]))
-                           + run.get("price_type_cost_usd", 0)
+                           + run.get("price_type_cost_usd", 0) + run.get("audit_misses_cost_usd", 0)
                            for run in runs)
     measured = [precision for precision in great_precisions if precision is not None]
     run_summary = (f"median of {len(runs)} {'run' if len(runs) == 1 else 'runs'}; "
@@ -140,6 +141,9 @@ def main():
         f"Corrected great precision: {run_summary}.", "",
         "| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |", "|---|---|---|---|---|---|---|---|",
     ]
+    if s.get("prompt_version") != PROMPT_VERSION["rank"]:
+        lines[5:5] = [f"Current rank prompt **{PROMPT_VERSION['rank']}** has no saved scorer run yet; "
+                      "new precision, recall, and audit-miss scores await the credentialed eval.", ""]
     if s["model"] != model or c["model"] != model:
         lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}**, chat **{c['model']}**. "
                       "Rerun those evals to measure the configured model.", ""]
@@ -171,6 +175,23 @@ def main():
             for case in run.get("price_type_cases", []):
                 lines.append(f"| {number} | {case['id']} | {case['label']} | {case['score']} | {case['reason']} |")
         lines.append("")
+    audit = read(AUDIT_MISSES)["cases"]
+    lines += ["## 1b. Delivery audit misses (7 October)", "",
+              "The five frozen cases compare the check score with the daily audit score. "
+              "Unknown listing fields in the audit summary are omitted from scorer input.", ""]
+    if any(run.get("audit_misses") for run in runs):
+        lines += ["| Run | Listing | Check | Audit | New score | Notify bar |",
+                  "|---|---|---:|---:|---:|---:|"]
+        cases_by_id = {case["id"]: case for case in audit}
+        for number, run in enumerate(runs, 1):
+            for row in run.get("audit_misses", []):
+                case = cases_by_id[row["id"]]
+                lines.append(f"| {number} | {case['listing']['title']} | {case['check_score']} | "
+                             f"{case['audit_score']} | {row['score']} | {case['notify_threshold']} |")
+        lines.append("")
+    else:
+        lines += ["New scorer measurements pending the credentialed three-run eval; saved scorer results "
+                  "above are from the earlier prompt.", ""]
     pending = read(USER_CASES_PENDING) if USER_CASES_PENDING.exists() else []
     confirmed = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
     lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [], len(pending), len(confirmed),

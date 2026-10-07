@@ -11,6 +11,7 @@ def eval_files(monkeypatch, tmp_path):
         "REPEAT_RESULTS": "repeat_results.json",
         "SCORER_RESULTS": "scorer_results.json",
         "PRICE_TYPE_CASES": "price_type_cases.json",
+        "AUDIT_MISSES": "audit_misses.json",
         "LABELS": "labels.json",
         "LISTINGS": "listings.json",
         "SPOTCHECK": "spotcheck.md",
@@ -38,6 +39,7 @@ def eval_files(monkeypatch, tmp_path):
     common.write(paths["LISTINGS"], {"listings": listings})
     common.write(paths["LABELS"], {"judge": "gpt-5.5", "cost_usd": 0})
     common.write(paths["PRICE_TYPE_CASES"], [])
+    common.write(paths["AUDIT_MISSES"], {"cases": []})
     common.write(paths["SCORER_RESULTS"], {
         "run_at": "2026-09-30", "model": "gpt-5.4-mini", "tokens": {"input": 0, "output": 0},
         "listings": 4, "judge_matches": 1, "scored": scored,
@@ -153,7 +155,8 @@ def test_human_overrides_change_metrics_and_failure_categories(eval_files):
     assert (uncorrected["tp"], uncorrected["fp"], uncorrected["fn"], uncorrected["tn"]) == (1, 2, 0, 1)
 
 
-def test_gate_thresholds_use_corrected_precision(eval_files):
+def test_gate_thresholds_use_corrected_precision(eval_files, monkeypatch):
+    monkeypatch.setattr(gate, "audit_misses_pass", lambda scorer: True)
     listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(10)]
     scored = [{"id": str(i), "score": 8, "judge": {"match": i != 0, "category": "over_budget"}} for i in range(10)]
     scorer = {"scored": scored, "metrics": {"great": {"threshold": 8}}}
@@ -200,7 +203,51 @@ def test_price_type_gate_requires_each_snapshot_on_every_run(monkeypatch):
     assert not gate.price_type_cases_pass(scorer)
 
 
-def test_scorer_rescores_all_price_type_cases_three_times(monkeypatch):
+def test_audit_miss_gate_requires_four_of_five_each_run(monkeypatch, tmp_path):
+    path = tmp_path / "audit_misses.json"
+    common.write(path, {"cases": [{"id": str(i), "notify_threshold": 8, "should_alert": True} for i in range(5)]})
+    monkeypatch.setattr(gate, "AUDIT_MISSES", path)
+    runs = [{"audit_misses": [{"id": str(i), "score": 8 if i < 4 else 7}
+                             for i in range(5)]} for _ in range(3)]
+    assert gate.audit_misses_pass({"runs": runs})
+    runs[2]["audit_misses"][3]["score"] = 7
+    assert not gate.audit_misses_pass({"runs": runs})
+
+
+def test_gate_rejects_recall_below_previous_seventeen_of_twenty_three(monkeypatch):
+    monkeypatch.setattr(gate, "price_type_cases_pass", lambda scorer: True)
+    monkeypatch.setattr(gate, "audit_misses_pass", lambda scorer: True)
+    listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(23)]
+    scored = [{"id": str(i), "score": 8 if i < 16 else 7,
+               "judge": {"match": True, "category": "match"}} for i in range(23)]
+    scorer = {"scored": scored, "metrics": {"great": {"threshold": 8}}}
+    assert not gate.check({"total": 20, "passed": 20}, scorer, listings, "")
+
+
+def test_scorer_sends_known_audit_fields_without_inventing_missing_values(monkeypatch, tmp_path):
+    path = tmp_path / "audit_misses.json"
+    common.write(path, {"cases": [{"id": "free", "watch_description": "laminate",
+                                    "listing": {"id": "free", "title": "Free laminate",
+                                                "price_eur": 0, "price_type": "free", "distance_km": None}}]})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", path)
+    price_cases = tmp_path / "price_types.json"
+    common.write(price_cases, [])
+    monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", price_cases)
+    seen = []
+    def rank(description, listings):
+        seen.append((description, listings[0].copy()))
+        return [listings[0] | {"score": 8, "reason": "Free match"}]
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", rank)
+    result = run_scorer.score_once({"watches": [], "listings": []}, {}, "gpt-5.4-mini")
+    assert seen == [("laminate", {"id": "free", "title": "Free laminate",
+                                   "price_eur": 0, "price_type": "free"})]
+    assert result["audit_misses"] == [{"id": "free", "score": 8, "reason": "Free match"}]
+
+
+def test_scorer_rescores_all_price_type_cases_three_times(monkeypatch, tmp_path):
+    audit_cases = tmp_path / "audit_misses.json"
+    common.write(audit_cases, {"cases": []})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", audit_cases)
     calls = []
 
     def fake_rank(description, listings, raise_on_failure=False):
@@ -234,6 +281,9 @@ def test_confirmed_user_case_uses_saved_scorer_inputs(monkeypatch):
 
 
 def test_scorer_three_runs_keep_each_result_and_select_median(monkeypatch, tmp_path):
+    audit_cases = tmp_path / "audit_misses.json"
+    common.write(audit_cases, {"cases": []})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", audit_cases)
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     listings = tmp_path / "listings.json"
     labels = tmp_path / "labels.json"
@@ -267,7 +317,8 @@ def test_scorer_three_runs_keep_each_result_and_select_median(monkeypatch, tmp_p
     assert saved["metrics"]["great"]["recall"] == 1
 
 
-def test_gate_uses_median_corrected_precision_and_prints_runs(eval_files, capsys):
+def test_gate_uses_median_corrected_precision_and_prints_runs(eval_files, capsys, monkeypatch):
+    monkeypatch.setattr(gate, "audit_misses_pass", lambda scorer: True)
     scorer = common.read(eval_files["SCORER_RESULTS"])
     listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(10)]
     base = [{"id": str(i), "score": 8, "judge": {"match": i != 0, "category": "match"}} for i in range(10)]
@@ -337,6 +388,10 @@ def test_report_preserves_filled_signoff(monkeypatch, eval_files):
 def test_scorer_results_record_prompt_version(monkeypatch, tmp_path):
     from evals import run_scorer
 
+    audit_cases = tmp_path / "audit_misses.json"
+    common.write(audit_cases, {"cases": []})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", audit_cases)
+
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     listings = tmp_path / "listings.json"
     labels = tmp_path / "labels.json"
@@ -355,3 +410,17 @@ def test_scorer_results_record_prompt_version(monkeypatch, tmp_path):
     saved = common.read(result)
     assert saved["prompt_version"] == run_scorer.agent.PROMPT_VERSION["rank"]
     assert "runs" not in saved
+
+
+def test_audit_miss_gate_counts_expected_non_alerts_as_correct(monkeypatch, tmp_path):
+    path = tmp_path / "audit_misses.json"
+    cases = [{"id": "a", "notify_threshold": 8, "should_alert": True}, {"id": "b", "notify_threshold": 6, "should_alert": True},
+             {"id": "c", "notify_threshold": 8, "should_alert": False}, {"id": "d", "notify_threshold": 8, "should_alert": False},
+             {"id": "e", "notify_threshold": 6, "should_alert": False}]
+    common.write(path, {"cases": cases})
+    monkeypatch.setattr(gate, "AUDIT_MISSES", path)
+    good = {"a": 9, "b": 10, "c": 6, "d": 2, "e": 3}
+    runs = [{"audit_misses": [{"id": k, "score": v} for k, v in good.items()]} for _ in range(3)]
+    assert gate.audit_misses_pass({"runs": runs})
+    runs[1]["audit_misses"] = [{"id": k, "score": {"a": 5, "c": 9}.get(k, v)} for k, v in good.items()]
+    assert not gate.audit_misses_pass({"runs": runs})   # two wrong outcomes in one run

@@ -83,7 +83,6 @@ def test_chat_prompt_adds_grounded_alert_rule_only_with_tools(watch_mode, watche
     assert actual[0].content.encode("utf-8") == expected.encode("utf-8")
 
 @pytest.mark.parametrize("template, expected", [
-    (lambda: prompts.RANK_PROMPT_TEMPLATE, OLD_RANK_PROMPT),
     (lambda: prompts.ADMIN_INTENT_TEMPLATE, OLD_ADMIN_INTENT_PROMPT),
 ])
 def test_other_prompts_preserve_old_system_bytes(template, expected):
@@ -91,11 +90,21 @@ def test_other_prompts_preserve_old_system_bytes(template, expected):
     assert len(messages) == 1
     assert messages[0].content.encode("utf-8") == expected.encode("utf-8")
 
+
+def test_rank_prompt_keeps_safety_rules_and_explains_audit_misses():
+    rank = prompts.RANK_PROMPT_TEMPLATE.format_messages()[0].content
+    assert rank.startswith(OLD_RANK_PROMPT.split("A 'bidding from'")[0].split("A listing that")[0])
+    for rule in ("accessory, part, add-on or kit", "'bidding from' or 'make an offer'",
+                 "price_type 'free'", "price_eur 0", "'swap' or 'see description'",
+                 "'Zo goed als nieuw'", "bundled with controllers", "newer generation",
+                 "condition is unspecified"):
+        assert rule in rank
+
 def test_prompt_versions_are_central_and_reexported():
     assert agent.PROMPT_VERSION is prompts.PROMPT_VERSION
     assert prompts.PROMPT_VERSION == {
         "chat": "chat-2026-10-06.1",
-        "rank": "rank-2026-10-03.1",
+        "rank": "rank-2026-10-07.1",
         "admin": "admin-2026-10-03.1",
         "offer": "offer-2026-10-06.1",
     }
