@@ -1528,6 +1528,21 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   top right and in the sidebar) and MW-97 (a <code>.gitattributes</code> rule that stores every text file with LF line
   endings, so a computer's git setting can no longer cause false whole-file conflicts) are merged too; CI on
   <code>main</code> is green and no factory branches or worktrees remain. Every buildable issue is live.</p>
+<p><b>A fairer scorer and a steadier dashboard (7 October).</b> The 7 October delivery audit listed five good listings the
+  check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
+  fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"
+  is weighed rather than rejected for a "Nieuw" watch, a newer generation can match, unspecified condition is not
+  damage, and a free item's €0 is a real price). Three were not misses: a Switch at €175 "bidding from" against an
+  "under €200, only great" watch is capped by the MW-58 bidding rule, and Daryl decided that a free unbranded laminate and
+  a different IKEA model are not matches for an "IKEA Prarie laminaat" watch. The bidding rule is now also enforced in
+  code (<code>cap_bidding_scores</code>), in the check and the audit, because the model sometimes wrote "at your ceiling"
+  and still scored 8. Evals on the real model, three runs: great-match precision median 100% (90.5–100%), recall 74%
+  (unchanged), good matches 91% precision and 87% recall (was 83% and 83%), bidding cases and audit cases pass, chat
+  19/20. MW-99 found why the owner dashboard froze when left open for hours: relative date filters recalculated "now" on
+  every render, so one drilldown opened 61 live subscriptions an hour; with stable filters it holds 6. MW-100 fixed a new
+  high-severity advisory for <code>sharp</code> (Next.js images) and taught the merge gate to install npm packages when
+  the lockfile changes; its first real use was MW-99. Review again caught test-only flakes (a heap-size limit that varies
+  with garbage collection) and was fixed without changing app code.</p>
 <p><b>Highest-leverage next steps (6 October).</b> The product side is done; what is missing is evidence from real
   users and official data access, so more code has low leverage now. In order: (1) fill the founding places (4 of 100
   taken; goal 20+ before the first day-14 survey on 19 October); (2) start the Marktplaats outreach and apply for

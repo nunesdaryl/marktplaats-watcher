@@ -140,6 +140,9 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
   distance) are still applied by code; the model only judges what code can't."
 - **"What breaks?"** "Marktplaats changing its pages, or the model misjudging. Both are watched: health e-mail every
   morning, a nightly delivery audit, an uptime check every 30 minutes."
+- **"How do you know the scores are right?"** "Every morning an audit re-checks yesterday's listings with a second look.
+  When it found good listings we'd scored too low, we fixed the scorer and proved it on real data: great-match precision
+  stayed at 100%, good-match precision went from 83% to 91%."
 - **"What's next?"** "Real users' ratings into the eval set, the official API if Marktplaats offers it, and fixing
   what today's audit found on the Mac mini watch."
 
