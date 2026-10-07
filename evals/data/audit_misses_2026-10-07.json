@@ -1,0 +1,116 @@
+{
+  "source": "Owner dashboard delivery audit, 2026-10-07 06:30 Europe/Amsterdam",
+  "note": "Only fields present in the issue evidence are filled. Null means the audit summary did not provide that listing field; it is not an inferred listing value. Notify thresholds are inferred from which score counted as a miss. Each case carries an operator-confirmed expected outcome (should_alert); the gate counts correct outcomes, not raw scores.",
+  "cases": [
+    {
+      "id": "switch-oled-white-bundle",
+      "watch_description": "Nintendo Switch OLED, under €200",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "switch-oled-white-bundle",
+        "title": "Nintendo Switch OLED Wit met extra controllers en hoes",
+        "description": null,
+        "price_eur": 175,
+        "price_type": "bidding from",
+        "distance_km": null
+      },
+      "check_score": 6,
+      "audit_score": 9,
+      "diagnosis": "The watched console is included; extra controllers and a case are useful bundle value, not an accessory-only listing.",
+      "should_alert": false,
+      "decision": "Not a miss: listed at EUR 175 'bidding from' against an 'under EUR 200, only great matches' watch; the MW-58 bidding rule scores a starting bid near the maximum 7 or lower by design (price read from the public listing page, 7 Oct)."
+    },
+    {
+      "id": "ps5-nearly-new",
+      "watch_description": "PS5, Nieuw, under €900, within 50 km",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "ps5-nearly-new",
+        "title": "PS5 Zo goed als nieuw",
+        "description": null,
+        "price_eur": null,
+        "price_type": null,
+        "distance_km": null
+      },
+      "check_score": 7,
+      "audit_score": 10,
+      "diagnosis": "Nearly new is a strong condition signal; the summary does not include the listing distance or price.",
+      "should_alert": true,
+      "decision": "Real miss: nearly new PS5 fits the watch."
+    },
+    {
+      "id": "mac-mini-m2-16gb-512gb",
+      "watch_description": "Mac mini",
+      "notify_threshold": 6,
+      "listing": {
+        "id": "mac-mini-m2-16gb-512gb",
+        "title": "Apple Mac Mini M2 16GB 512GB",
+        "description": null,
+        "price_eur": null,
+        "price_type": null,
+        "distance_km": null
+      },
+      "check_score": 5,
+      "audit_score": 7,
+      "diagnosis": "The model and useful specifications match; missing condition should not imply a defect.",
+      "should_alert": true,
+      "decision": "Real miss: Mac mini M2 16GB fits the watch."
+    },
+    {
+      "id": "free-laminate-50m2",
+      "watch_description": "Ikea Prarie laminaat, within 80 km",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "free-laminate-50m2",
+        "title": "GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen)",
+        "description": null,
+        "price_eur": 0,
+        "price_type": "free",
+        "distance_km": null
+      },
+      "check_score": 2,
+      "audit_score": 8,
+      "diagnosis": "Free means a real zero price; the laminate and underlay are useful even though collection requires removal. Brand is not stated.",
+      "should_alert": false,
+      "decision": "Not a match (Daryl, 7 Oct): the watch asks for IKEA Prarie laminate; a free laminate of unknown brand is not that product. The audit was too generous."
+    },
+    {
+      "id": "ikea-slatten-laminate-30m2",
+      "watch_description": "Ikea Prarie laminaat, within 80 km",
+      "notify_threshold": 6,
+      "listing": {
+        "id": "ikea-slatten-laminate-30m2",
+        "title": "IKEA Slätten Laminaatvloer ~30 m²",
+        "description": null,
+        "price_eur": null,
+        "price_type": null,
+        "distance_km": null
+      },
+      "check_score": 4,
+      "audit_score": 7,
+      "diagnosis": "A comparable IKEA laminate model and useful quantity may fit, though the named line differs.",
+      "should_alert": false,
+      "decision": "Not a match (Daryl, 7 Oct): Slätten is a different IKEA laminate model than the Prarie the watch asks for."
+    }
+  ],
+  "earlier_observations": [
+    {
+      "title_pattern": "Nintendo Switch OLED",
+      "check_scores": [
+        4,
+        6,
+        7
+      ],
+      "audit_score_range": [
+        9,
+        10
+      ]
+    },
+    {
+      "title_pattern": "Mac mini M5 Pro 24GB",
+      "check_score": 2,
+      "audit_score": 10,
+      "diagnosis": "A newer model can satisfy a watch naming an older generation when the requested specs and budget fit."
+    }
+  ]
+}

@@ -83,6 +83,29 @@ def test_parse_listings_sends_price_type_but_no_seller_details(raw, expected):
     assert "seller" not in json.dumps(listings[0]).lower()
 
 
+@pytest.mark.parametrize("price_type, expected_price", [
+    ("FREE", 0), ("SWAP", None), ("SEE_DESCRIPTION", None),
+])
+def test_zero_price_types_sent_to_ranker_with_explicit_meaning(monkeypatch, price_type, expected_price):
+    item = {"itemId": "one", "title": "Free flooring", "vipUrl": "/v/one",
+            "priceInfo": {"priceCents": 0, "priceType": price_type}}
+    listings, _ = agent.parse_listings([item], max_price_eur=200)
+    if price_type != "FREE":
+        assert listings == []
+        listings, _ = agent.parse_listings([item])
+    assert listings[0]["price_eur"] == expected_price
+    assert listings[0]["price_type"] == {"FREE": "free", "SWAP": "swap",
+                                           "SEE_DESCRIPTION": "see description"}[price_type]
+    class CaptureRanker:
+        def invoke(self, messages):
+            payload = json.loads(messages[-1]["content"])
+            assert payload["listings"][0]["price_eur"] == expected_price
+            assert payload["listings"][0]["price_type"] == listings[0]["price_type"]
+            return agent.Ranking(ranks=[{"id": "one", "score": 8, "reason": "Match"}])
+    monkeypatch.setattr(agent, "ranker", CaptureRanker())
+    assert agent.rank_listings("flooring", listings)[0]["score"] == 8
+
+
 def test_max_price_drops_expensive_and_unpriced_listings():
     prices = [item["price_eur"] for item in agent.parse_listings(PAGE, max_price_eur=500)[0]]
     assert prices and all(p <= 500 for p in prices)
@@ -1012,7 +1035,7 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
 
 
 def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
-    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-03.1"
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-07.1"
     assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
     assert "0–4" in agent.RANK_PROMPT
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
@@ -1041,6 +1064,9 @@ def test_scorer_loads_and_counts_accessory_cases(monkeypatch, tmp_path):
     cases = tmp_path / "price_type_cases.json"
     write(cases, [])
     monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", cases)
+    audit_cases = tmp_path / "audit_misses.json"
+    write(audit_cases, {"cases": []})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", audit_cases)
     monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda _description, listings:
                         [dict(item, score=8 if expected.get(item["id"], False) else 2, reason="test")
                          for item in listings])
@@ -1765,3 +1791,15 @@ def test_audit_route_accepts_full_seen_history(client, monkeypatch):
     invalid = client.post("/api/internal/audit", headers={"X-Cron-Secret": "s3cret"},
                           json={"watches": [{"id": "w1", "query": "mac mini", "notify": "good", "since_days": 8}]})
     assert invalid.status_code == 422
+
+
+def test_bidding_near_the_watch_maximum_is_capped_below_great():
+    import agent
+    items = [{"id": "a", "price_type": "bidding from", "price_eur": 200, "score": 8},
+             {"id": "b", "price_type": "bidding from", "price_eur": 175, "score": 9},
+             {"id": "c", "price_type": "bidding from", "price_eur": 100, "score": 9},
+             {"id": "d", "price_type": "fixed price", "price_eur": 200, "score": 9},
+             {"id": "e", "price_type": "free", "price_eur": 0, "score": 9}]
+    agent.cap_bidding_scores(items, 200)
+    assert [i["score"] for i in items] == [7, 7, 9, 9, 9]
+    assert agent.cap_bidding_scores([{"price_type": "bidding from", "price_eur": 200, "score": 9}], None)[0]["score"] == 9
