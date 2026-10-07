@@ -9,7 +9,7 @@ import ListingCard from "../../components/ListingCard.jsx";
 import RichText from "../../lib/text.jsx";
 import { ConfirmButton } from "../WatchView.jsx";
 import { FeedbackItem } from "./Overview.jsx";
-import { DAY, dateFilters, dayLabel, euro, label, when } from "./nav.js";
+import { DAY, useDateFilters, dayLabel, euro, label, when } from "./nav.js";
 import FilterBar, { AdminOptionsContext } from "./FilterBar.jsx";
 import Table from "./Table.jsx";
 import { OpenAiSpendView } from "./OpenAiSpend.jsx";
@@ -108,7 +108,7 @@ function ListTable({ params, update, filter, ...table }) {
 }
 
 export function Users({ params, open, update }) {
-  const rows = useQuery(api.admin.users, { stage: params.stage, stuck: params.stuck, activeSince: num(params.activeSince), userId: params.userId, ...dateFilters(params), search: params.q }) ?? undefined;
+  const rows = useQuery(api.admin.users, { stage: params.stage, stuck: params.stuck, activeSince: num(params.activeSince), userId: params.userId, ...useDateFilters(params), search: params.q }) ?? undefined;
   return <ListTable params={params} update={update} filter={{ status: { key: "stage", label: "Stage", options: Object.entries(STAGES) } }} name="accounts" columns={userCols} rows={rows?.rows} more={rows?.more} searchKeys={["email"]}
                 onOpen={(u) => open({ view: "user", title: u.email, params: { id: u._id } })} empty="No accounts match." />;
 }
@@ -124,28 +124,28 @@ export function Waitlist() {
 
 export function Watches({ params, open, update }) {
   const rows = useQuery(api.admin.watches, { status: params.status, scheduleKey: params.scheduleKey, notify: params.notify,
-    userId: params.userId, watchId: params.watchId, createdSince: num(params.createdSince), createdUntil: num(params.createdUntil), behind: params.behind === "yes" || undefined, ...dateFilters(params), search: params.q });
+    userId: params.userId, watchId: params.watchId, createdSince: num(params.createdSince), createdUntil: num(params.createdUntil), behind: params.behind === "yes" || undefined, ...useDateFilters(params), search: params.q });
   return <ListTable params={params} update={update} filter={{ watch: true, status: watchStatusOptions }}
     name="watches" columns={watchCols()} rows={rows?.rows} more={rows?.more} searchKeys={["title", "query", "mustInclude", "email", "postcode"]}
     onOpen={(w) => open({ view: "watch", title: w.title, params: { id: w._id } })} empty="No watches match." />;
 }
 
 export function Alerts({ params, open, update }) {
-  const rows = useQuery(api.admin.alerts, { ...dateFilters(params), minScore: num(params.minScore),
+  const rows = useQuery(api.admin.alerts, { ...useDateFilters(params), minScore: num(params.minScore),
     emailStatus: params.emailStatus, watchId: params.watchId, userId: params.userId, search: params.q });
   return <ListTable params={params} update={update} filter={{ watch: true, score: true, status: emailStatusOptions }} name="alerts" columns={alertCols()} rows={rows?.rows} more={rows?.more} searchKeys={["title", "listingId", "watch", "email", "city"]}
                 onOpen={(a) => open({ view: "alert", title: a.title, params: { id: a._id } })} empty="No alerts in this range." />;
 }
 
 export function Chats({ params, open, update }) {
-  const rows = useQuery(api.admin.chats, { userId: params.userId, status: params.status, ...dateFilters(params), search: params.q });
+  const rows = useQuery(api.admin.chats, { userId: params.userId, status: params.status, ...useDateFilters(params), search: params.q });
   return <ListTable params={params} update={update} filter={{ status: { key: "status", label: "Status", options: [["active", "Active"], ["archived", "Archived"], ["pinned", "Pinned"]] } }} name="chats" columns={chatCols()} rows={rows?.rows} more={rows?.more} searchKeys={["title", "email"]}
                 onOpen={(c) => open({ view: "chat", title: c.title, params: { id: c._id } })} empty="No saved chats." />;
 }
 
 export function Events({ params, open, update }) {
   const rows = useQuery(api.admin.events, { name: params.name, section: params.section, device: params.device, mode: params.mode,
-    value: params.value, userId: params.userId, ...dateFilters(params), search: params.q });
+    value: params.value, userId: params.userId, ...useDateFilters(params), search: params.q });
   return <ListTable params={params} update={update} filter={{ status: { key: "name", label: "Kind", options: [
     ["page_view", "Page view"], ["chat_sent", "Chat sent"], ["watch_saved", "Watch saved"], ["alert_opened", "Alert opened"],
     ["listing_opened", "Listing opened"], ["feedback_sent", "Feedback sent"], ["theme_changed", "Theme changed"],
@@ -155,7 +155,7 @@ export function Events({ params, open, update }) {
 
 export function Feedback({ params, open, update }) {
   const rows = useQuery(api.admin.feedback, { limit: 200, wouldPay: params.wouldPay, userId: params.userId,
-    status: params.status, feedbackSource: params.feedbackSource, search: params.q, ...dateFilters(params) });
+    status: params.status, feedbackSource: params.feedbackSource, search: params.q, ...useDateFilters(params) });
   const [selected, setSelected] = useState(null);
   const [adding, setAdding] = useState(false);
   const shown = rows?.rows;
@@ -282,7 +282,7 @@ export function FeedbackDetail({ f, close, open }) {
 }
 
 export function Ratings({ params, open, update }) {
-  const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId, watchId: params.watchId, minScore: num(params.minScore), ...dateFilters(params), search: params.q });
+  const rows = useQuery(api.admin.ratings, { verdict: params.verdict, reason: params.reason, band: params.band, userId: params.userId, watchId: params.watchId, minScore: num(params.minScore), ...useDateFilters(params), search: params.q });
   const cols = [
     { key: "at", label: "When", render: (r) => when(r.at), mono: true },
     { key: "verdict", label: "Said", render: (r) => (r.verdict === "good" ? "Good match" : "Not right"), sort: (r) => r.verdict },
@@ -299,7 +299,7 @@ export function Ratings({ params, open, update }) {
 }
 
 export function Runs({ params, open, update }) {
-  const rows = useQuery(api.admin.runs, { ...dateFilters(params), requestId: params.requestId, failed: params.status === "failed" ? true : undefined, search: params.q });
+  const rows = useQuery(api.admin.runs, { ...useDateFilters(params), requestId: params.requestId, failed: params.status === "failed" ? true : undefined, search: params.q });
   return <ListTable params={params} update={update} filter={{ user: false, status: { key: "status", label: "Status", options: [["failed", "Failed"]] } }}
     name="runs" rows={rows?.rows} more={rows?.more} searchKeys={["requestId"]} columns={[
       { key: "at", label: "When", render: (r) => when(r.at) }, { key: "requestId", label: "Request ID" },
@@ -310,7 +310,7 @@ export function Runs({ params, open, update }) {
 }
 
 export function Errors({ params, open, update }) {
-  const rows = useQuery(api.admin.errors, { ...dateFilters(params), kind: params.kind, requestId: params.requestId, search: params.q });
+  const rows = useQuery(api.admin.errors, { ...useDateFilters(params), kind: params.kind, requestId: params.requestId, search: params.q });
   return <ListTable params={params} update={update} filter={{ user: false, status: { key: "kind", label: "Kind", options: [["chat", "Chat"], ["check", "Check"]] } }}
     name="errors" rows={rows?.rows} more={rows?.more} searchKeys={["requestId", "message", "kind"]} columns={[
       { key: "at", label: "When", render: (r) => when(r.at) }, { key: "kind", label: "Kind" },
@@ -319,7 +319,7 @@ export function Errors({ params, open, update }) {
 }
 
 export function Audits({ params, open, update }) {
-  const rows = useQuery(api.admin.audits, { ...dateFilters(params), userId: params.userId, watchId: params.watchId,
+  const rows = useQuery(api.admin.audits, { ...useDateFilters(params), userId: params.userId, watchId: params.watchId,
     kind: params.kind, minScore: num(params.minScore), requestId: params.requestId, search: params.q });
   return <ListTable params={params} update={update} filter={{ watch: true, score: true,
     status: { key: "kind", label: "Kind", options: [["handled", "Handled"], ["never_read", "Never read"], ["rescored", "Rescored"], ["never_scored", "Never scored"]] } }}
@@ -331,7 +331,7 @@ export function Audits({ params, open, update }) {
 }
 
 export function CatchUps({ params, open, update }) {
-  const rows = useQuery(api.admin.alerts, { ...dateFilters(params), userId: params.userId, watchId: params.watchId,
+  const rows = useQuery(api.admin.alerts, { ...useDateFilters(params), userId: params.userId, watchId: params.watchId,
     minScore: num(params.minScore), emailStatus: params.emailStatus, catchUp: true, search: params.q });
   return <ListTable params={params} update={update} filter={{ watch: true, score: true, status: emailStatusOptions }}
     name="catch-ups" columns={alertCols()} rows={rows?.rows} more={rows?.more} searchKeys={["title", "listingId", "watch", "email"]}
