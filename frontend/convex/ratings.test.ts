@@ -108,10 +108,11 @@ test("in the app: rate your own alert; 'good match' needs no why, 'not right' ca
 });
 
 test("from the e-mail: the link's code rates only its own alert; a wrong or missing code is refused", async () => {
-  const { t, alertId, rows } = await withAlert();
+  const { t, watchId, alertId, rows } = await withAlert();
+  await t.run((ctx) => ctx.db.patch(watchId, { mustInclude: "Orange" }));
   const token = (await ratingToken(alertId))!;
   expect(token).toHaveLength(32);
-  expect(await t.mutation(api.ratings.rateWithToken, { alertId, token, verdict: "not_right" })).toMatchObject({ title: "Gazelle Orange C7", score: 9, query: "gazelle fiets", priceEur: 350 });
+  expect(await t.mutation(api.ratings.rateWithToken, { alertId, token, verdict: "not_right" })).toMatchObject({ title: "Gazelle Orange C7", score: 9, query: "gazelle fiets", mustInclude: "Orange", priceEur: 350 });
   await t.mutation(api.ratings.explainWithToken, { alertId, token, reasons: ["not_asked"] });
   expect((await rows())[0]).toMatchObject({ verdict: "not_right", reasons: ["not_asked"], source: "email" });
   await expect(t.mutation(api.ratings.rateWithToken, { alertId, token: token.replace(/.$/, (c) => (c === "A" ? "B" : "A")), verdict: "good" }))
