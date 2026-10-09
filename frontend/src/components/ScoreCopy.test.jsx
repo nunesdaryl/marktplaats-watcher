@@ -29,3 +29,13 @@ test("offer action appears only for a priced listing and stays outside the listi
   expect(priced).toMatch(/<\/a><button[^>]*>Help me make an offer<\/button>/);
   expect(unpriced).not.toContain("Help me make an offer");
 });
+
+test.each(["MIN_BID", "BID", "FAST_BID", "FIXED", "bidding from", "make an offer", "fixed price"])("%s listings offer help", (price_type) => {
+  const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", price_eur: 100, price_type }} score={8} />);
+  expect(html).toContain("Help me make an offer");
+});
+
+test.each(["FREE", "SWAP", "SEE_DESCRIPTION", "free", "swap", "see description"])("%s listings do not offer help", (price_type) => {
+  const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", price_eur: 100, price_type }} score={8} />);
+  expect(html).not.toContain("Help me make an offer");
+});

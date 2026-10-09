@@ -57,7 +57,9 @@ def as_data(value):
 
 def alert_card(row):
     return {"id": row.get("alertId"), "title": row.get("title"), "price_eur": row.get("priceEur"),
-            "city": None, "distance_km": None, "url": row.get("url"), "image": row.get("image")}
+            **({"price_type": row["priceType"]} if isinstance(row.get("priceType"), str) else {}),
+            "city": None, "distance_km": None,
+            "url": row.get("url"), "image": row.get("image")}
 
 
 @server.tool()

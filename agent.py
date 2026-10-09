@@ -476,7 +476,7 @@ def chat_events(message, history, watches=None, mode="search", clock=time.monoto
                         listings = [alert_card(item) for item in found]
                         rag_cards_pending = True
                     else:
-                        listings = [{k: v for k, v in item.items() if k != "price_type"} for item in found]
+                        listings = [{k: v for k, v in item.items() if k != "price_type" or isinstance(v, str)} for item in found]
                         rag_cards_pending = False
                         yield {"type": "listings", "listings": listings}
             messages.append(ToolMessage(result, tool_call_id=call["id"]))
@@ -863,7 +863,7 @@ def check_query(query, watches, now=None):
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
         results.append({"watchId": w["id"], "ok": True, **({"aiCall": True} if fresh_candidates else {}), "currentIds": [i["id"] for i in listings if i["id"]],
-                        "listings": [{k: v for k, v in item.items() if k != "price_type"}
+                        "listings": [{k: v for k, v in item.items() if k != "price_type" or isinstance(v, str)}
                                      for item in fresh if item["score"] is not None], "newestId": newest,
                         "waiting": waiting, "capped": capped, **({"usage": tokens} if usage else {})})
     return results

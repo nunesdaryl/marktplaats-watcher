@@ -16,7 +16,7 @@ const PER_DAY = 500;
 export const EVENT_NAMES = [
   "page_view", "chat_sent", "chip_clicked", "watch_saved", "watch_paused", "watch_resumed", "watch_deleted",
   "watch_archived", "alert_opened", "listing_opened", "feedback_opened", "feedback_sent", "theme_changed", "onboarding_done",
-  "history_opened", "alert_rated",
+  "history_opened", "alert_rated", "bid_handoff",
 ] as const;
 const ALLOWED = new Set<string>(EVENT_NAMES);
 

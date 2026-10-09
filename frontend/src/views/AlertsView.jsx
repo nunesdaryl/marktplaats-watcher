@@ -8,7 +8,7 @@ import RateAlert from "../components/RateAlert.jsx";
 import RatingNudge from "../components/RatingNudge.jsx";
 import { useNow } from "../lib/router.js";
 
-export default function AlertsView({ actions, watches, onNewWatch }) {
+export default function AlertsView({ actions, watches, onNewWatch, offerId }) {
   const alerts = useQuery(api.watches.alerts);
   const ratings = useQuery(api.ratings.mine) ?? {};
   const me = useQuery(api.users.me);
@@ -63,6 +63,7 @@ export default function AlertsView({ actions, watches, onNewWatch }) {
             const isNew = a.createdAt > seenAt.current;
             return <div key={a._id} className={`alert-item${isNew ? " is-new" : ""}`}>
               <ListingCard listing={{ ...a, price_eur: a.priceEur }} score={a.score} reason={a.reason} isNew={isNew}
+                           initialOfferOpen={offerId === a._id}
                            meta={`${a.watchLabel} · ${describeWhen(a.createdAt, now)}`} />
               <RateAlert alertId={a._id} rating={ratings[a._id]}
                 alert={{ ...a, query: watches?.find((w) => w._id === a.watchId)?.query ?? "",

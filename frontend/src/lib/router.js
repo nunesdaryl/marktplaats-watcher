@@ -19,7 +19,8 @@ export function useRoute() {
   const id = params.get("id") ?? undefined;
   if (page === "chat" && id) return { section: "c", id };
   if (page === "watch" && id) return { section: "w", id };
-  if (page === "watches" || page === "alerts" || page === "archived" || page === "admin" || page === "rate") return { section: page };
+  if (page === "alerts") return { section: page, offerId: params.get("offer") ?? undefined };
+  if (page === "watches" || page === "archived" || page === "admin" || page === "rate") return { section: page };
   return { section: "" };
 }
 

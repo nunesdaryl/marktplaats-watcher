@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import AlertsView from "./AlertsView.jsx";
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useMutation: vi.fn() }));
+vi.mock("../components/OfferSheet.jsx", () => ({ default: ({ listing }) => <div data-offer-for={listing._id} /> }));
 vi.mock("react", async (original) => ({ ...await original(), useEffect: vi.fn((effect) => effect()),
   useRef: vi.fn(), useState: vi.fn() }));
 vi.stubGlobal("React", React);
@@ -45,6 +46,12 @@ test("creation time is the first-visit fallback", () => {
   responses[2] = { createdAt: 150 };
   const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} />);
   expect(html.match(/class="alert-item is-new"/g)).toHaveLength(1);
+});
+
+test("an email offer link opens the sheet for its matching alert", () => {
+  const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} offerId="Fresh" />);
+  expect(html).toContain('data-offer-for="Fresh"');
+  expect(html).not.toContain('data-offer-for="Old"');
 });
 
 test("first-use alerts explain when they appear and offer a watch action", () => {

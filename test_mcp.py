@@ -19,6 +19,12 @@ import mcp_server
 from evals.rag_cases import CASES, INJECTION, FORGED_ID, PASS_BAR, fake_search_alerts
 
 
+def test_alert_card_keeps_known_price_type_without_null_field():
+    row = {"alertId": "a1", "title": "Bike", "priceEur": 100, "url": "https://example.test"}
+    assert "price_type" not in mcp_server.alert_card(row)
+    assert mcp_server.alert_card({**row, "priceType": "bidding from"})["price_type"] == "bidding from"
+
+
 def rpc(client, method, params=None, token=None):
     headers = {"Accept": "application/json, text/event-stream"}
     if token:
