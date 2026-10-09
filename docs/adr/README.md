@@ -17,6 +17,7 @@ The quality attributes guiding these decisions are **security** (keep writes and
 | [0011](0011-server-writes-agent-turns.md) | The server writes agent turns; the browser writes user turns. |
 | [0012](0012-allowance-and-kill-switches.md) | Bound daily chat use and provide separate chat and check switches. |
 | [0013](0013-prompt-versions-and-eval-gate.md) | Version prompts and gate changes with corrected evaluations. |
+| [0014](0014-check-idempotency-and-resume.md) | A later dispatcher tick resumes a crashed check; listing persistence prevents duplicate alerts. |
 
 ## Add a decision
 

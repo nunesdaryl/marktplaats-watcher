@@ -16,6 +16,18 @@ def test_every_adr_is_linked_from_index():
         assert f"]({record.name})" in index, f"{record.name} is missing from the ADR index"
 
 
+def test_readme_explains_failure_harness_and_mcp():
+    readme = (Path(__file__).parent / "README.md").read_text()
+    assert "## Failure harness" in readme
+    assert "## MCP" in readme
+
+
+def test_local_trail_export_matches_eval_sequence_shape():
+    trail = json.loads((Path(__file__).parent / "evals/data/mw103_local_tool_trail.json").read_text())
+    turn = trail["turn"]
+    assert turn["tool_sequence"] == [step["name"] for step in turn["tool_trail"]]
+
+
 def test_public_docs_have_no_unlabelled_stale_eval_numbers():
     root = Path(__file__).parent
     report = (root / "evals/report.md").read_text()

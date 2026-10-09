@@ -504,7 +504,8 @@ def test_chat_saves_final_answer_once_and_reports_failure(client, monkeypatch, c
     assert sent[0][1]["json"]["inputTokens"] == 1
     assert sent[1][0] == ("https://deployment.convex.site/api/chats/assistant",)
     assert sent[1][1]["json"] == {"clerkId": "alice", "chatId": "chat-id", "content": "A useful answer.",
-                                   "listings": [], "proposals": []}
+                                   "listings": [], "proposals": [], "requestId": response.headers["X-Request-Id"],
+                                   "toolTrail": []}
     assert sent[2][0] == ("https://deployment.convex.site/api/ai-status",)
     assert sent[2][1]["json"]["failureKind"] is None
     assert ('"event": "assistant_save_failed"' in capsys.readouterr().out) is fails
@@ -860,6 +861,54 @@ def test_fetch_search_asks_for_date_order_with_filters_and_rejects_odd_answers(m
     assert url == "https://www.marktplaats.nl/lrp/api/search"
     assert params["query"] == "mac mini" and params["offset"] == 30 and params["postcode"] == "1012AB"
     assert params["sortBy"] == "SORT_INDEX" and params["sortOrder"] == "DECREASING"
+
+
+def test_fetch_search_retries_transient_responses_with_bounded_backoff(monkeypatch):
+    import httpx
+    monkeypatch.undo()
+    statuses = iter([429, 503, 200])
+    delays = []
+    monkeypatch.setattr(agent.httpx, "get", lambda url, **kw: httpx.Response(
+        status := next(statuses), json={"listings": []} if status == 200 else None,
+        headers={"Retry-After": "2"} if status == 429 else {}, request=httpx.Request("GET", url)))
+    monkeypatch.setattr(agent.time, "sleep", delays.append)
+    monkeypatch.setattr(agent.random, "uniform", lambda a, b: 0)
+    assert agent.fetch_search("bike", {}, 0, retry=True, attempts=5)["listings"] == []
+    assert delays == [2, 2]
+
+
+def test_scheduled_reads_retry_once_and_never_send_more_requests_than_before(monkeypatch):
+    # Operator rule (9 Oct 2026): request volume per check must not go up. Scheduled reads keep one retry.
+    import httpx
+    monkeypatch.undo()
+    calls = []
+    def get(url, **kw):
+        calls.append(kw["params"]["offset"])
+        return httpx.Response(503, request=httpx.Request("GET", url))
+    monkeypatch.setattr(agent.httpx, "get", get)
+    monkeypatch.setattr(agent.time, "sleep", lambda s: None)
+    with pytest.raises(httpx.HTTPStatusError):
+        agent.read_since("bike", {}, 0, __import__("datetime").date(2026, 10, 9))
+    assert calls == [0, 0]
+    calls.clear()
+    statuses = iter([503, 200])
+    monkeypatch.setattr(agent.httpx, "get", lambda url, **kw: (calls.append(1), httpx.Response(
+        status := next(statuses), json={"listings": []} if status == 200 else None,
+        request=httpx.Request("GET", url)))[1])
+    assert agent.fetch_search("bike", {}, 0, retry=True, attempts=2)["listings"] == []
+    assert len(calls) == 2
+
+
+def test_fetch_search_fails_fast_on_permanent_response(monkeypatch):
+    import httpx
+    monkeypatch.undo()
+    calls = []
+    monkeypatch.setattr(agent.httpx, "get", lambda url, **kw: calls.append(url) or
+                        httpx.Response(401, request=httpx.Request("GET", url)))
+    monkeypatch.setattr(agent.time, "sleep", lambda _: pytest.fail("permanent failure slept"))
+    with pytest.raises(httpx.HTTPStatusError, match="401"):
+        agent.fetch_search("bike", {}, 0, retry=True)
+    assert len(calls) == 1
 
 
 def test_rank_listings_chunks_in_order_and_retries_omissions_per_chunk(monkeypatch):
@@ -1340,6 +1389,8 @@ def test_tool_calls_are_capped_per_question(monkeypatch):
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: PAGE)
     done = agent.chat("find everything", [])
     assert len(done["searches"]) == agent.MAX_TOOL_CALLS == 6
+    assert done["usage"]["tool_sequence"] == ["search_marktplaats"] * 12
+    assert done["usage"]["tool_trail"][0] == {"name": "search_marktplaats", "argument_keys": ["query"], "outcome": "ok"}
 
 
 def test_words_before_a_tool_call_are_reset_in_the_stream(monkeypatch):
@@ -1567,6 +1618,20 @@ def test_request_id_header_and_logs(client, monkeypatch, capsys):
         assert re.fullmatch(r"[0-9a-f]{32}", response.headers["X-Request-Id"])
         assert json.loads(capsys.readouterr().out.splitlines()[-1])["requestId"] == response.headers["X-Request-Id"]
     assert re.fullmatch(r"[0-9a-f]{32}", client.get("/api/health").headers["X-Request-Id"])
+
+
+def test_assistant_save_sends_only_tool_argument_keys(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+    import main
+    posts = []
+    monkeypatch.setattr(main, "convex_post", lambda path, payload: posts.append((path, payload)))
+    event = {"answer": "Found one", "usage": {"tool_trail": [
+        {"name": "search_my_alerts", "argument_keys": ["query"], "outcome": "ok"}]}}
+    assert main.save_assistant(SimpleNamespace(chatId="chat-1"), "user-1", event, "request-1")
+    assert posts[0][0] == "/api/chats/assistant"
+    assert posts[0][1]["requestId"] == "request-1"
+    assert posts[0][1]["toolTrail"] == event["usage"]["tool_trail"]
 
 
 @pytest.mark.parametrize("path", ["/api/chat", "/api/chat/stream"])
