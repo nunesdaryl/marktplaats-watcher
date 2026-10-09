@@ -1528,6 +1528,23 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   top right and in the sidebar) and MW-97 (a <code>.gitattributes</code> rule that stores every text file with LF line
   endings, so a computer's git setting can no longer cause false whole-file conflicts) are merged too; CI on
   <code>main</code> is green and no factory branches or worktrees remain. Every buildable issue is live.</p>
+<p><b>Ratings that teach the watch (9 October).</b> Ratings used to feed only the owner's evals; on 9 October they
+  started improving the person's own watch. MW-106 finished the bidding fix: the budget rule for a "bidding from" price
+  near the maximum lives only in code (<code>cap_bidding_scores</code>, which also adds the reason to the explanation),
+  and the rank prompt (<code>rank-2026-10-09.1</code>) caps a different variant ("mini", "Lite", "Pro"), an unconfirmed
+  model or a set built around another item at 6; the €130 Switch bid the audit had missed is now an eval case. MW-107: after
+  "Not right", a one-tap fix matched to the reason ("Skip listings with '2012'" as a new skip-words filter, "Lower my
+  maximum to €X", or switching between great and good matches), each confirmed once with a 10-second Undo, in the app and
+  from the e-mail link; skip words show on the watch page and can be removed. The ranker now also receives the watch's
+  last 8 ratings as preference examples (<code>rank-2026-10-09.2</code>, data not instructions); a new preference eval
+  shows one earlier "not right" lowers the same kind of listing (Mac mini M1 9 → 2, iPhone 13 mini 7 → 1). MW-108: a
+  dismissible first-14-days card ("Rate your first 3 alerts — each rating tunes this watch for you"), the rating links
+  under each listing in the e-mail with 44px tap targets, "Tuned by N of your ratings" on the watch, and on the owner
+  dashboard the weekly rated share of e-mailed alerts plus the card's conversion. MW-109 makes the suggested skip word the
+  telling one (variants, then years and model codes, never filler such as "late"). Evals on the real model, three runs:
+  great-match precision median 100%, recall 78%, price-type, audit and preference cases pass, chat 19/20. Walked live in
+  Daryl's account (rating, fix, Undo; the watch was left unchanged). Baseline to beat: 2 of 340 alerts e-mailed in the
+  week of 5 October were rated (1%); the aim is 10% or more before the first day-14 survey on 19 October.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"

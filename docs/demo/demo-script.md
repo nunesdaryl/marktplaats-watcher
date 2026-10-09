@@ -143,6 +143,9 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - **"How do you know the scores are right?"** "Every morning an audit re-checks yesterday's listings with a second look.
   When it found good listings we'd scored too low, we fixed the scorer and proved it on real data: great-match precision
   stayed at 100%, good-match precision went from 83% to 91%."
+- **"Does it learn what I like?"** "Yes, per watch. Say 'Not right, not what I asked for' and it offers one tap to skip
+  that word, with Undo. And it remembers your last ratings for that watch: one 'not right' on a Mac mini M1 took the next
+  similar listing from 9 to 2."
 - **"What's next?"** "Real users' ratings into the eval set, the official API if Marktplaats offers it, and fixing
   what today's audit found on the Mac mini watch."
 
