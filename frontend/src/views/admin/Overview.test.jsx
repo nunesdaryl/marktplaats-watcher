@@ -179,10 +179,10 @@ test("latest misses show audit dates, status, and the latest audit's new count",
   const { html, open, tree } = render();
   expect(html).toContain("Latest delivery misses (1 new)");
   expect(html).toMatch(/class="stat-value">1<\/span><span class="stat-name">Delivery misses/);
-  expect(html).toContain('<th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th><th>Status</th>');
+  expect(html).toContain('<th>Status</th><th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th>');
   expect(html).toContain("3 Oct 2026");
   expect(html).toContain("1 Oct 2026");
-  expect(html).toContain("new</td>");
+  expect(html).toContain('<td class="delivery-miss-new">new</td><td>3 Oct 2026</td>');
   expect(html).toContain("reported before 1 Oct 2026");
   expect(html).toContain('class="openable delivery-miss-reported"');
   expect(html).toContain('href="https://www.marktplaats.nl/v/m1"');
@@ -191,7 +191,8 @@ test("latest misses show audit dates, status, and the latest audit's new count",
   expect(html).toContain("Other watch");
   expect(html).not.toContain("Old title");
   // Only rows first reported by the latest audit say "new"; an older first report is dated and muted.
-  expect(html.match(/>new<\/td>/g)).toHaveLength(1);
+  expect(html.match(/class="delivery-miss-new">new<\/td>/g)).toHaveLength(1);
+  expect(html).not.toMatch(/class="delivery-miss-new">(?:reported before|first reported)/);
   expect(html).toContain("first reported 1 Oct 2026");
   const panel = tree.props.children.find((child) => child?.props?.className === "panel delivery-misses");
   const row = panel.props.children[1].props.children.props.children[1].props.children[0];

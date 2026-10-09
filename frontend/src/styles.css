@@ -1151,14 +1151,15 @@ button.door-row:hover { background: var(--fill); }
 .delivery-misses { min-width: 0; }
 .delivery-miss-scroll { max-width: 100%; overflow-x: auto; }
 .delivery-misses .band-table { min-width: 760px; table-layout: fixed; }
-.delivery-misses .band-table th:first-child { width: 14%; }
-.delivery-misses .band-table th:nth-child(2), .delivery-misses .band-table th:nth-child(3) { width: 20%; }
-.delivery-misses .band-table th:nth-child(4), .delivery-misses .band-table th:nth-child(5) { width: 10%; }
-.delivery-misses .band-table th:last-child { width: 26%; }
+.delivery-misses .band-table th:first-child { width: 26%; }
+.delivery-misses .band-table th:nth-child(2) { width: 14%; }
+.delivery-misses .band-table th:nth-child(3), .delivery-misses .band-table th:nth-child(4) { width: 20%; }
+.delivery-misses .band-table th:nth-child(5), .delivery-misses .band-table th:last-child { width: 10%; }
 .delivery-misses .band-table th { white-space: nowrap; }
-.delivery-misses .band-table th:nth-child(2), .delivery-misses .band-table th:nth-child(3), .delivery-misses .band-table th:last-child { text-align: left; }
+.delivery-misses .band-table th:nth-child(2), .delivery-misses .band-table th:nth-child(3), .delivery-misses .band-table th:nth-child(4) { text-align: left; }
 .delivery-misses .band-table td { white-space: nowrap; }
 .delivery-miss-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.delivery-miss-new { color: var(--accent); font-weight: 600; }
 .delivery-miss-reported td { color: var(--text-3); }
 .delivery-miss-reported a { color: inherit; }
 .delivery-misses tr.openable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
