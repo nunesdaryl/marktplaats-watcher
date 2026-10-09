@@ -325,7 +325,9 @@ export function Audits({ params, open, update }) {
     status: { key: "kind", label: "Kind", options: [["handled", "Handled"], ["never_read", "Never read"], ["rescored", "Rescored"], ["never_scored", "Never scored"]] } }}
     name="delivery-audit" rows={rows?.rows} more={rows?.more} searchKeys={["title", "listingId", "requestId", "watch", "email"]} columns={[
       { key: "at", label: "When", render: (r) => when(r.at) }, { key: "title", label: "Listing", render: (r) => <a href={r.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{r.title}</a> },
-      { key: "score", label: "Score" }, { key: "kind", label: "Kind", nowrap: true }, { key: "watch", label: "Watch" },
+      { key: "score", label: "Score" }, { key: "kind", label: "Kind", nowrap: true },
+      { key: "reportedBefore", label: "Reported", render: (r) => r.reportedBefore === undefined ? "New" : `reported before (${new Date(r.reportedBefore).toLocaleDateString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric" })})` },
+      { key: "watch", label: "Watch" },
       { key: "email", label: "Account" }, { key: "requestId", label: "Request ID" },
     ]} onOpen={(r) => open({ view: "watch", title: r.watch, params: { id: r.watchId } })} />;
 }

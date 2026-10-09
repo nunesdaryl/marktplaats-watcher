@@ -14,6 +14,7 @@ import { healthReport } from "./health";
 import { usageDay } from "./usage";
 import { budgetFor } from "./aiBudget";
 import { capacityFor } from "./beta";
+import { annotateAudits } from "./auditMisses";
 import { readRows, readSummaries, windowSummaries, summarizeEvents, summarizeAlerts,
   sentAlertsSince, insertTracked, patchTracked } from "./totals";
 
@@ -100,8 +101,8 @@ export const dashboard = query({
     const alertSummaries = loadedAlerts ??
       groupDays(alertRows!, (a) => a.createdAt)
         .map(([day, rows]) => ({ day, summary: summarizeAlerts(rows) })).sort((a, b) => a.day.localeCompare(b.day));
-    const audits = (await readRows(ctx, "audits") ?? await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
-      .sort(newest((a) => a.at)).slice(0, LIMIT);
+    const audits = annotateAudits((await readRows(ctx, "audits") ?? await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
+      .sort(newest((a) => a.at)).slice(0, LIMIT));
     const loadedEvents = await readSummaries(ctx, "events", since);
     const eventRows = loadedEvents === null
       ? await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT) : null;
@@ -163,11 +164,17 @@ export const dashboard = query({
       .filter((e) => e.at >= now - DAY).sort(newest((e) => e.at));
     const latestAuditAt = audits[0]?.at;
     const latestAudit = audits.filter((a) => a.at === latestAuditAt);
+    const missKeys = new Set<string>();
     const latestMisses = audits.flatMap((a) => a.misses.map((m) => ({
       ...m, watchId: a.watchId, watchLabel: watches.find((w) => w._id === a.watchId)?.name ??
         watches.find((w) => w._id === a.watchId)?.label ?? "Deleted watch",
       requestId: a.requestId, at: a.at,
-    }))).slice(0, 5);
+    }))).filter((m) => {
+      const key = JSON.stringify([m.watchId, m.listingId]);
+      if (missKeys.has(key)) return false;
+      missKeys.add(key);
+      return true;
+    }).slice(0, 5);
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     const fallingBehind = watches.filter((w) => w.active && live(w) && ((w.backlog ?? 0) >= 20 || w.coverageCapped));
     return {
@@ -753,6 +760,7 @@ export const audits = query({
           minScore: v.optional(v.number()), requestId: v.optional(v.string()), search: v.optional(v.string()) },
   handler: async (ctx, a) => {
     if (!(await isOwner(ctx))) return null;
+    const earlierByWatch = new Map<string, Map<string, number>>();
     const source = a.watchId ? ctx.db.query("audits").withIndex("by_watch_at", (q) => {
       const lower = q.eq("watchId", a.watchId!);
       const start = a.since !== undefined ? lower.gte("at", a.since) : lower;
@@ -771,7 +779,16 @@ export const audits = query({
         if (a.search && ![miss.title, miss.listingId, row.requestId, user?.email, watch?.name, watch?.label]
           .some((x) => includes(x, a.search))) continue;
         if (rows.length === PAGE) return { rows, more: true };
-        rows.push({ ...miss, _id: `${row._id}:${miss.listingId}`, at: row.at, userId: row.userId, watchId: row.watchId,
+        if (!earlierByWatch.has(row.watchId)) {
+          const history = await ctx.db.query("audits").withIndex("by_watch_at", (q) => q.eq("watchId", row.watchId)).collect();
+          const first = new Map<string, number>();
+          for (const old of history) for (const item of old.misses)
+            if (!first.has(item.listingId)) first.set(item.listingId, item.reportedBefore ?? old.at);
+          earlierByWatch.set(row.watchId, first);
+        }
+        const reportedBefore = miss.reportedBefore ?? earlierByWatch.get(row.watchId)?.get(miss.listingId);
+        rows.push({ ...miss, ...(reportedBefore !== undefined && reportedBefore < row.at ? { reportedBefore } : {}),
+          _id: `${row._id}:${miss.listingId}`, at: row.at, userId: row.userId, watchId: row.watchId,
           email: user?.email ?? "(deleted user)", watch: watch?.name ?? watch?.label ?? "Deleted watch", requestId: row.requestId });
       }
     }

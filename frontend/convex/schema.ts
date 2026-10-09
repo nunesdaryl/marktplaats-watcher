@@ -218,11 +218,13 @@ export default defineSchema({
     scored: v.number(),
     unscored: v.optional(v.number()),
     missCount: v.number(),
+    deduplicated: v.optional(v.boolean()),
     misses: v.array(v.object({
       listingId: v.string(), title: v.string(), url: v.string(), score: v.number(),
       kind: v.union(v.literal("handled"), v.literal("never_read"),
         v.literal("rescored"), v.literal("never_scored")),
       checkScore: v.optional(v.number()),
+      reportedBefore: v.optional(v.number()),
     })),
     error: v.optional(v.string()),
   }).index("by_at", ["at"]).index("by_watch_at", ["watchId", "at"]),

@@ -19,7 +19,7 @@ export const latestMissesForDrafts = internalQuery({
     return (await ctx.db.query("audits").withIndex("by_at", (q) => q.eq("at", latest.at)).collect())
       .filter((row) => row.ok && row.missCount > 0)
       .map((row) => ({ id: row._id, at: row.at, watchId: row.watchId,
-        missCount: row.missCount, misses: row.misses }));
+        missCount: row.missCount, misses: row.misses.filter((miss) => miss.reportedBefore === undefined) }));
   },
 });
 
@@ -78,12 +78,24 @@ export const record = internalMutation({
       const id = ctx.db.normalizeId("watches", r.watchId);
       const watch = id && await ctx.db.get(id);
       if (!watch) continue;
+      const earlier = await ctx.db.query("audits").withIndex("by_watch_at", (q) => q.eq("watchId", watch._id))
+        .order("asc").collect();
+      const firstReported = new Map<string, number>();
+      for (const row of earlier) for (const miss of row.misses)
+        if (!firstReported.has(miss.listingId)) firstReported.set(miss.listingId, miss.reportedBefore ?? row.at);
+      let repeats = 0;
+      const misses = r.misses.map((m) => {
+        const first = firstReported.get(m.id);
+        if (first !== undefined) repeats++;
+        else firstReported.set(m.id, at);
+        return { listingId: m.id, title: m.title, url: m.url, score: m.score, kind: m.kind,
+          ...(m.checkScore !== undefined ? { checkScore: m.checkScore } : {}),
+          ...(first !== undefined ? { reportedBefore: first } : {}) };
+      });
       await insertTracked(ctx, "audits", {
         at, watchId: watch._id, userId: watch.userId, requestId, ok: r.ok, read: r.read,
-        scored: r.scored, missCount: r.missCount, ...(r.unscored !== undefined ? { unscored: r.unscored } : {}),
-        misses: r.misses.slice(0, 5).map((m) => ({ listingId: m.id, title: m.title,
-          url: m.url, score: m.score, kind: m.kind,
-          ...(m.checkScore !== undefined ? { checkScore: m.checkScore } : {}) })),
+        scored: r.scored, missCount: Math.max(0, r.missCount - repeats), deduplicated: true,
+        ...(r.unscored !== undefined ? { unscored: r.unscored } : {}), misses,
         ...(r.error ? { error: r.error } : {}),
       });
     }

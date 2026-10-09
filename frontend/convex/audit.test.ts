@@ -71,6 +71,69 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     latestMisses: [{ listingId: "m1", url: "https://www.marktplaats.nl/v/m1" }] });
 });
 
+test("a repeated listing is kept for review but counted only on its first audit", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const first = Date.now() - 86_400_000;
+  const miss = { id: "m1", title: "Mac mini", url: "https://example.com/m1", score: 9, kind: "rescored" as const };
+  const result = { watchId, ok: true, read: 1, candidates: 1, scored: 1, missCount: 1, misses: [miss] };
+  await t.mutation(internal.audit.record, { at: first, requestId: "first", results: [result] });
+  await t.mutation(internal.audit.record, { at: Date.now(), requestId: "second", results: [result] });
+  const audits = await t.run((ctx) => ctx.db.query("audits").withIndex("by_at").order("desc").collect());
+  expect(audits[0]).toMatchObject({ missCount: 0, misses: [{ listingId: "m1", reportedBefore: first }] });
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  expect((await owner.query(api.admin.dashboard, {}))?.deliveryAudit).toMatchObject({ misses: 0,
+    latestMisses: [{ listingId: "m1", reportedBefore: first }] });
+  expect((await t.query(internal.health.report, { now: Date.now() })).issues.some((i) => i.kind === "delivery_misses")).toBe(false);
+  expect((await owner.query(api.admin.audits, {}))?.rows[0]).toMatchObject({ listingId: "m1", reportedBefore: first });
+});
+
+test("legacy repeated rows clear the latest warning without losing their drilldown history", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const userId = (await t.run((ctx) => ctx.db.get(watchId)))!.userId;
+  const first = Date.now() - 86_400_000;
+  const miss = { listingId: "m1", title: "Mac mini", url: "https://example.com/m1", score: 9, kind: "rescored" as const };
+  await t.run(async (ctx) => {
+    await ctx.db.insert("audits", { at: first, userId, watchId, requestId: "old", ok: true,
+      read: 1, scored: 1, missCount: 1, misses: [miss] });
+    await ctx.db.insert("audits", { at: Date.now(), userId, watchId, requestId: "latest", ok: true,
+      read: 1, scored: 1, missCount: 1, misses: [miss] });
+  });
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  expect((await owner.query(api.admin.dashboard, {}))?.deliveryAudit).toMatchObject({ misses: 0,
+    latestMisses: [{ listingId: "m1", requestId: "latest", reportedBefore: first }] });
+  expect((await t.query(internal.health.report, { now: Date.now() })).issues.some((i) => i.kind === "delivery_misses")).toBe(false);
+  expect((await owner.query(api.admin.audits, {}))?.rows).toMatchObject([
+    { requestId: "latest", reportedBefore: first }, { requestId: "old" },
+  ]);
+});
+
+test("a mixed later audit counts only its new listing even when prior reports exceed five", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "mac mini",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const miss = (id: string) => ({ id, title: id, url: `https://example.com/${id}`, score: 9, kind: "handled" as const });
+  const first = Array.from({ length: 7 }, (_, i) => miss(`old-${i}`));
+  await t.mutation(internal.audit.record, { at: Date.now() - 86_400_000, requestId: "first", results: [
+    { watchId, ok: true, read: 7, candidates: 7, scored: 7, missCount: 7, misses: first },
+  ] });
+  await t.mutation(internal.audit.record, { at: Date.now(), requestId: "second", results: [
+    { watchId, ok: true, read: 8, candidates: 8, scored: 8, missCount: 8, misses: [...first, miss("new")] },
+  ] });
+  const rows = await t.run((ctx) => ctx.db.query("audits").withIndex("by_at").order("desc").collect());
+  expect(rows[0].missCount).toBe(1);
+  expect(rows[0].misses).toHaveLength(8);
+  expect((await t.query(internal.audit.latestMissesForDrafts, {}))[0].misses.map((m) => m.listingId)).toEqual(["new"]);
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  expect((await owner.query(api.admin.dashboard, {}))?.deliveryAudit.misses).toBe(1);
+});
+
 test("one owner e-mail and one exact draft plan for qualifying misses across watches, even on a repeat run", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
