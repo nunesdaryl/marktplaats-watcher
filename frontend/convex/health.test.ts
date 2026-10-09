@@ -234,7 +234,7 @@ test("the report, digest, and dashboard count only the latest audit for a watch"
     await ctx.db.insert("audits", { at: now - 60_000, watchId, userId: watch!.userId, requestId: "manual",
       ok: false, read: 0, scored: 0, missCount: 31, misses: misses(31), error: "old failure" });
     await ctx.db.insert("audits", { at: now, watchId, userId: watch!.userId, requestId: "nightly",
-      ok: true, read: 0, scored: 0, missCount: 3, misses: misses(3) });
+      ok: true, read: 0, scored: 0, missCount: 3, misses: misses(3).map((miss) => ({ ...miss, listingId: `new-${miss.listingId}` })) });
   });
   const report = await t.query(internal.health.report, { now });
   expect(report.problems).toEqual([expect.stringContaining("3 missed match(es) on 1 watch(es)")]);
@@ -269,9 +269,10 @@ test("the report sums each watch's latest audit and reports only current failure
     await ctx.db.insert("audits", { at: now - 60_000, watchId: ids[0], userId: watches[0]!.userId,
       requestId: "bike-old", ok: false, read: 0, scored: 0, missCount: 2, misses: [miss, miss], error: "old failure" });
     await ctx.db.insert("audits", { at: now, watchId: ids[0], userId: watches[0]!.userId,
-      requestId: "bike-new", ok: true, read: 0, scored: 0, missCount: 1, misses: [miss] });
+      requestId: "bike-new", ok: true, read: 0, scored: 0, missCount: 1, misses: [{ ...miss, listingId: "new-listing" }] });
     await ctx.db.insert("audits", { at: now, watchId: ids[1], userId: watches[1]!.userId,
-      requestId: "chair-new", ok: false, read: 0, scored: 0, missCount: 2, misses: [miss, miss], error: "current failure" });
+      requestId: "chair-new", ok: false, read: 0, scored: 0, missCount: 2,
+      misses: [{ ...miss, listingId: "chair-1" }, { ...miss, listingId: "chair-2" }], error: "current failure" });
   });
   const report = await t.query(internal.health.report, { now });
   expect(report.issues.find((issue) => issue.kind === "delivery_misses")).toMatchObject({

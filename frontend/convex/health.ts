@@ -6,6 +6,7 @@ import { internalAction, internalMutation, internalQuery, type QueryCtx } from "
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
 import { readRows, storedQuiet, liveQuiet, driftAlarm, insertTracked, deleteTracked } from "./totals";
+import { annotateAudits } from "./auditMisses";
 
 const DAY = 86_400_000;
 const STUCK_AFTER = 60 * 60_000;             // the dispatcher runs every 15 min; an hour of silence is a problem
@@ -35,7 +36,7 @@ export async function healthReport(ctx: QueryCtx, now: number) {
     .filter((r) => r.at >= since);
   const errors = (await readRows(ctx, "errors", since) ?? await ctx.db.query("errors").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect())
     .filter((e) => e.at >= since).sort(newest((e) => e.at));
-  const recentAudits = (await readRows(ctx, "audits", since) ?? await ctx.db.query("audits").withIndex("by_at", (q) => q.gte("at", since)).order("desc").collect())
+  const recentAudits = annotateAudits(await readRows(ctx, "audits") ?? await ctx.db.query("audits").withIndex("by_at").order("desc").take(5000))
     .filter((a) => a.at >= since).sort(newest((a) => a.at));
   const seenWatches = new Set<string>();
   const audits = recentAudits.filter((a) => {

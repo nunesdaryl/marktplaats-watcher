@@ -164,6 +164,30 @@ test("delivery misses explain why each match was missed without showing request 
   expect(html).toContain('aria-label="Copy request ID"');
 });
 
+test("latest misses show one row per watch and listing, newest first, with repeat dates", () => {
+  const data = responses[0];
+  data.deliveryAudit.latestMisses = [
+    { watchId: "w1", listingId: "m1", requestId: "new", watchLabel: "Mac", title: "New title", score: 9, kind: "handled", reportedBefore: oldNow },
+    { watchId: "w1", listingId: "m1", requestId: "old", watchLabel: "Mac", title: "Old title", score: 8, kind: "handled" },
+    { watchId: "w2", listingId: "m1", requestId: "other", watchLabel: "Other", title: "Other watch", score: 8, kind: "handled" },
+  ];
+  const { html } = render();
+  expect(html).toContain("New title");
+  expect(html).toContain("Other watch");
+  expect(html).not.toContain("Old title");
+  expect(html).toContain("reported before (1 Oct 2026)");
+});
+
+test("shares below one percent stay visible and zero stays zero", () => {
+  responses[1] = { rated: 1, ratedSent: 1, alertsSent: 250, fromEmail: 0,
+    good: 0, notRight: 1, withNote: 0, goodCouldBeGreat: 0,
+    bands: [], reasons: [], weeklyRatedShare: [{ week: "2026-09-28", sent: 250, rated: 1 }] };
+  const { html } = render();
+  expect(html).toContain("&lt;1% of 250 alerts e-mailed rated");
+  expect(html).toContain('<td class="num">&lt;1%</td>');
+  expect(html).toContain('class="stat-value">0%</span>');
+});
+
 test("the health issue copy icon copies the request ID and briefly confirms it", async () => {
   const data = dashboard(oldNow, 3);
   data.health.issues = [{ kind: "errors", severity: "high", headline: "1 error", count: 1,

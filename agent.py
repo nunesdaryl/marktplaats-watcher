@@ -952,7 +952,7 @@ def audit_watch(w, now=None):
                         pass
                 misses = alive
             result["missCount"] = len(misses)
-            result["misses"] = misses[:10 if w.get("check_alive") else 5]
+            result["misses"] = misses
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"

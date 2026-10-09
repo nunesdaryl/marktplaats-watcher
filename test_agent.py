@@ -1648,7 +1648,7 @@ def test_audit_watch_caps_scoring_and_reports_empty_and_failure(monkeypatch):
     monkeypatch.setattr(agent, "rank_listings", rank)
     w = {"id": "w", "query": "bike", "notify": "great", "seen_ids": [str(i) for i in range(50)]}
     result = agent.audit_watch(w, now)
-    assert (result["candidates"], result["scored"], result["missCount"], len(result["misses"])) == (50, 40, 40, 5)
+    assert (result["candidates"], result["scored"], result["missCount"], len(result["misses"])) == (50, 40, 40, 40)
     monkeypatch.setattr(agent, "read_since", lambda *args: ([], False))
     assert agent.audit_watch(w, now) == {"watchId": "w", "ok": True, "read": 0, "candidates": 0,
                                         "scored": 0, "unscored": 0, "misses": [], "missCount": 0}

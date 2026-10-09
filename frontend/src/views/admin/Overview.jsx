@@ -10,6 +10,8 @@ import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
 const shortDay = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every new listing" };
 const FUNNEL_KEYS = ["signed_up", "setup", "chatted", "watch", "alert"];
+const pct = (a, b) => !b ? "–" : a === 0 ? "0%" : a / b < 0.01 ? "<1%" : `${Math.round((a / b) * 100)}%`;
+const reportedBefore = (at) => at === undefined ? "" : ` · reported before (${new Date(at).toLocaleDateString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric" })})`;
 const deliveryMissReason = (miss) => ({
   rescored: `check scored ${miss.checkScore}`,
   never_read: "not read by the check",
@@ -44,6 +46,7 @@ function HealthIssue({ issue, go }) {
         : <span>{item.label}</span>}
       {item.score !== undefined && <span className="health-meta"> · {item.score}/10</span>}
       {issue.kind === "delivery_misses" && <span className="health-meta"> · {deliveryMissReason(item)}</span>}
+      {issue.kind === "delivery_misses" && item.reportedBefore !== undefined && <span className="health-meta">{reportedBefore(item.reportedBefore)}</span>}
       {item.title && <span className="health-meta"> · </span>}
       {item.title && (item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a> : <span>{item.title}</span>)}
       {item.userId && <button className="link-button health-user" onClick={() => go("user", "Account", { id: item.userId })}>Account</button>}
@@ -96,7 +99,7 @@ function Breakdown({ title, rows, empty = "Nothing yet", onRow, value = (r) => r
               <>
                 <span className="breakdown-name">{r.label ?? label(r.name)}</span>
                 <span className="breakdown-bar"><span style={{ width: `${(value(r) / max) * 100}%` }} /></span>
-                <span className="breakdown-count">{value(r)}<small>{Math.round((value(r) / sum) * 100)}%</small></span>
+                <span className="breakdown-count">{value(r)}<small>{pct(value(r), sum)}</small></span>
               </>
             );
             return <li key={r.key ?? r.name}>{onRow && value(r) > 0 ? <button className="door-row" onClick={() => onRow(r)}>{body}</button> : <div className="door-row still">{body}</div>}</li>;
@@ -119,7 +122,7 @@ function Funnel({ steps, onStep }) {
             <button className="funnel-main" onClick={() => onStep(FUNNEL_KEYS[i], s.step, false)}>
               <span className="funnel-bar" style={{ width: `${Math.max(2, (s.count / top) * 100)}%` }} />
               <span className="funnel-step">{s.step}</span>
-              <span className="funnel-count">{s.count}<small>{i === 0 ? "" : `${Math.round((s.count / top) * 100)}%`}</small></span>
+              <span className="funnel-count">{s.count}<small>{i === 0 ? "" : pct(s.count, top)}</small></span>
             </button>
             {lost > 0 && (
               <button className="funnel-lost" onClick={() => onStep(FUNNEL_KEYS[i], s.step, true)} title="The people who stopped here">
@@ -217,7 +220,6 @@ function Visitors({ days }) {
 /** Are the scores right? What users said when they rated their alerts (convex/ratings.ts). */
 function ScoreAccuracy({ s, go }) {
   if (!s) return null;
-  const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "–");
   return (
     <section className="panel">
       <h2>Are the scores right? <span className="hint">from people rating their alerts</span></h2>
@@ -404,8 +406,9 @@ export default function Overview({ open, onSearch, ask }) {
 
       {data.deliveryAudit.latestMisses.length > 0 && <section className="panel">
         <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses</button></h2>
-        <ul>{data.deliveryAudit.latestMisses.map((miss) => <li key={`${miss.requestId}-${miss.listingId}`}>
-          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {deliveryMissReason(miss)}</button>
+        <ul>{data.deliveryAudit.latestMisses.filter((miss, index, all) => all.findIndex((other) =>
+          other.watchId === miss.watchId && other.listingId === miss.listingId) === index).map((miss) => <li key={`${miss.watchId}-${miss.listingId}`}>
+          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {deliveryMissReason(miss)}{reportedBefore(miss.reportedBefore)}</button>
         </li>)}</ul>
       </section>}
 

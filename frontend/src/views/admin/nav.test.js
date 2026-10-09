@@ -3,11 +3,21 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, test, vi } from "vitest";
 import { useRouter, useSearchParams } from "next/navigation";
 import { dateFilters, drillUrl, parseDrill, useDrill } from "./nav.js";
+import { label } from "./nav.js";
+import { EVENT_NAMES } from "../../../convex/events.ts";
 import { filterParams } from "./FilterBar.jsx";
 
 vi.mock("next/navigation", () => ({ useRouter: vi.fn(), useSearchParams: vi.fn() }));
 
 afterEach(() => vi.unstubAllGlobals());
+
+test("every tracked event has a readable dashboard label", () => {
+  for (const name of EVENT_NAMES) {
+    expect(label(name), name).not.toBe(name);
+    expect(label(name), name).not.toMatch(/_/);
+  }
+  expect(label("alert_rated")).toBe("Alerts rated");
+});
 
 test("closing a drill uses the open view pathname without loading a document", () => {
   const push = vi.fn();
