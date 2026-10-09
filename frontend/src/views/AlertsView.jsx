@@ -62,7 +62,12 @@ export default function AlertsView({ actions, watches, onNewWatch }) {
             return <div key={a._id} className={`alert-item${isNew ? " is-new" : ""}`}>
               <ListingCard listing={{ ...a, price_eur: a.priceEur }} score={a.score} reason={a.reason} isNew={isNew}
                            meta={`${a.watchLabel} · ${describeWhen(a.createdAt, now)}`} />
-              <RateAlert alertId={a._id} rating={ratings[a._id]} onArchive={() => actions.archiveAlert(a._id)} />
+              <RateAlert alertId={a._id} rating={ratings[a._id]}
+                alert={{ ...a, query: watches?.find((w) => w._id === a.watchId)?.query ?? "",
+                  notify: watches?.find((w) => w._id === a.watchId)?.notify ?? "good",
+                  maxPriceEur: watches?.find((w) => w._id === a.watchId)?.maxPriceEur ?? null,
+                  excludeWords: watches?.find((w) => w._id === a.watchId)?.excludeWords ?? [] }}
+                onArchive={() => actions.archiveAlert(a._id)} />
             </div>;
           })}
         </div>

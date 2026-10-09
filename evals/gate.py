@@ -1,6 +1,6 @@
 """Fail CI when the saved evaluation results miss the release thresholds."""
 
-from evals.common import AUDIT_MISSES, CHAT_RESULTS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, SPOTCHECK, USER_CASES_GOLDEN, read
+from evals.common import AUDIT_MISSES, CHAT_RESULTS, LISTINGS, PRICE_TYPE_CASES, PREFERENCE_CASES, SCORER_RESULTS, SPOTCHECK, USER_CASES_GOLDEN, read
 from evals.report import scorer_metrics, spotcheck_overrides, user_precision
 
 
@@ -73,7 +73,15 @@ def check(chat, scorer, listings, spotcheck):
     recall = corrected_great_recall(scorer, listings, spotcheck)
     return (chat["total"] == 20 and chat["passed"] >= 19 and precision is not None and precision >= 0.9
             and recall is not None and recall >= 17 / 23 and price_type_cases_pass(scorer)
-            and audit_misses_pass(scorer))
+            and audit_misses_pass(scorer) and preference_cases_pass(scorer))
+
+
+def preference_cases_pass(scorer):
+    expected = {case["id"] for case in read(PREFERENCE_CASES)}
+    scored = {row["id"]: row for row in scorer.get("preference_scored", [])}
+    return len(expected) >= 4 and scored.keys() == expected and all(
+        row["without"] is not None and row["with"] is not None and row["with"] < row["without"]
+        for row in scored.values())
 
 
 def main():

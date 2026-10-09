@@ -23,6 +23,7 @@ USER_RATINGS = DATA / "user_ratings.json"   # people's "good match / not right" 
 USER_CASES_PENDING = DATA / "user_cases_pending.json"
 USER_CASES_GOLDEN = DATA / "user_cases_golden.json"
 RATING_REASONS = DATA / "rating_reasons.json"
+PREFERENCE_CASES = DATA / "preference_cases.json"
 REPORT = Path(__file__).parent / "report.md"
 RAG_RESULTS = DATA / "rag_results.json"
 

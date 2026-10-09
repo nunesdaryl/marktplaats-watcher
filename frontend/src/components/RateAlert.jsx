@@ -9,9 +9,11 @@ import Icon from "./Icon.jsx";
 const LABEL = Object.fromEntries(REASONS);
 
 /** Under an alert: "Good match?" Yes → Thanks. Not right → Thanks, tell us why? The answer can be changed any time. */
-export default function RateAlert({ alertId, rating, onArchive }) {
+export default function RateAlert({ alertId, rating, alert, onArchive }) {
   const rate = useMutation(api.ratings.rate);
   const explain = useMutation(api.ratings.explain);
+  const fix = useMutation(api.ratings.fix);
+  const undo = useMutation(api.ratings.undo);
   const [asking, setAsking] = useState(false);
   const [thanks, setThanks] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,7 +32,9 @@ export default function RateAlert({ alertId, rating, onArchive }) {
     return (
       <div className="rate">
         <WhyNotRight initial={rating?.verdict === "not_right" ? rating : undefined} busy={busy}
-                     onSend={(why) => run(explain({ alertId, ...why }).then(() => { setAsking(false); setThanks("Thanks, that helps us improve the scores."); }))} />
+          alert={alert} onFix={(args) => fix({ alertId, ...args })} onUndo={() => undo({ alertId })}
+          onSend={async (why) => { setBusy(true); setError(""); try { await explain({ alertId, ...why }); setThanks("Thanks, that helps us improve the scores."); }
+            catch (e) { setError(e.data ?? "That didn't save. Try again."); throw e; } finally { setBusy(false); } }} />
         <button className="link-button small" onClick={() => setAsking(false)}>Skip</button>
         {error && <p className="error small">{error}</p>}
         {archive}

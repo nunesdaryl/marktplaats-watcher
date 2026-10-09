@@ -35,7 +35,14 @@ function label(w: { query: string; maxPriceEur?: number; mustInclude?: string; p
   return text.charAt(0).toUpperCase() + text.slice(1);   // "gazelle bike" -> "Gazelle bike"
 }
 
-function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string; postcode?: string; maxDistanceKm?: number }) {
+export function cleanExcludeWords(words: string[]) {
+  const cleaned = words.map((word) => word.trim().toLowerCase());
+  if (cleaned.length > 10 || cleaned.some((word) => !word || word.length > 30) || new Set(cleaned).size !== cleaned.length)
+    throw new ConvexError("Use up to 10 different skip words, each at most 30 characters.");
+  return cleaned;
+}
+
+function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number }) {
   const q = args.query.trim().replace(/\s+/g, " ");
   if (q.length < 2 || q.length > 80) throw new ConvexError("Describe the item in 2 to 80 characters.");
   if (args.maxPriceEur !== undefined && !(args.maxPriceEur > 0 && args.maxPriceEur <= 1_000_000))
@@ -46,16 +53,17 @@ function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string
     throw new ConvexError("Pick a distance from 1 to 300 km.");
   const mustInclude = args.mustInclude?.trim().slice(0, 40) || undefined;
   return {
-    query: q, maxPriceEur: args.maxPriceEur, mustInclude, postcode,
+    query: q, maxPriceEur: args.maxPriceEur, mustInclude, excludeWords: args.excludeWords ? cleanExcludeWords(args.excludeWords) : undefined, postcode,
     maxDistanceKm: postcode ? args.maxDistanceKm : undefined,
   };
 }
 
-type SearchFields = { query: string; maxPriceEur?: number; mustInclude?: string; postcode?: string; maxDistanceKm?: number };
+type SearchFields = { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number };
 
 function sameSearch(w: SearchFields, f: SearchFields) {
   return w.query.toLowerCase() === f.query.toLowerCase() && w.maxPriceEur === f.maxPriceEur &&
     (w.mustInclude ?? "").toLowerCase() === (f.mustInclude ?? "").toLowerCase() && w.postcode === f.postcode &&
+    JSON.stringify(w.excludeWords ?? []) === JSON.stringify(f.excludeWords ?? []) &&
     w.maxDistanceKm === f.maxDistanceKm;
 }
 
@@ -75,6 +83,7 @@ const search = {
   query: v.string(),
   maxPriceEur: v.optional(v.number()),
   mustInclude: v.optional(v.string()),
+  excludeWords: v.optional(v.array(v.string())),
   postcode: v.optional(v.string()),
   maxDistanceKm: v.optional(v.number()),
 };
@@ -119,6 +128,7 @@ export const update = mutation({
     maxPriceEur: v.optional(v.union(v.number(), v.null())),
     query: v.optional(v.string()),
     mustInclude: v.optional(v.union(v.string(), v.null())),
+    excludeWords: v.optional(v.array(v.string())),
     postcode: v.optional(v.union(v.string(), v.null())),
     maxDistanceKm: v.optional(v.union(v.number(), v.null())),
   },
@@ -131,11 +141,12 @@ export const update = mutation({
 
     // The search itself: any field left out keeps its current value; null clears it
     const pick = <T,>(value: T | null | undefined, current: T | undefined) => (value === undefined ? current : value ?? undefined);
-    const searchChanged = ["query", "maxPriceEur", "mustInclude", "postcode", "maxDistanceKm"].some((k) => (change as Record<string, unknown>)[k] !== undefined);
+    const searchChanged = ["query", "maxPriceEur", "mustInclude", "excludeWords", "postcode", "maxDistanceKm"].some((k) => (change as Record<string, unknown>)[k] !== undefined);
     if (searchChanged) {
       const fields = clean({
         query: change.query ?? watch.query, maxPriceEur: pick(change.maxPriceEur, watch.maxPriceEur),
         mustInclude: pick(change.mustInclude, watch.mustInclude), postcode: pick(change.postcode, watch.postcode),
+        excludeWords: change.excludeWords ?? watch.excludeWords,
         maxDistanceKm: pick(change.maxDistanceKm, watch.maxDistanceKm),
       });
       const others = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", watch.userId)).collect())

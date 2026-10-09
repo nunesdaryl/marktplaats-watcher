@@ -45,7 +45,7 @@ export const groups = internalQuery({
       if (!byQuery.has(query)) byQuery.set(query, { watches: [] });
       byQuery.get(query)!.watches.push({
         id: w._id, query, description: w.label, max_price_eur: w.maxPriceEur ?? null,
-        must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
+        must_include: w.mustInclude ?? null, exclude_words: w.excludeWords ?? [], postcode: w.postcode ?? null,
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
         seen_ids: seen.map((s) => s.listingId), baseline_ids: baseline.map((s) => s.listingId),
         ...(w.seededAt === undefined && createdMark !== undefined ? { created_mark: createdMark } : {}),
