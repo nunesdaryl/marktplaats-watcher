@@ -176,8 +176,8 @@ def main():
                 lines.append(f"| {number} | {case['id']} | {case['label']} | {case['score']} | {case['reason']} |")
         lines.append("")
     audit = read(AUDIT_MISSES)["cases"]
-    lines += ["## 1b. Delivery audit misses (7 October)", "",
-              "The five frozen cases compare the check score with the daily audit score. "
+    lines += ["## 1b. Delivery audit misses (7 and 9 October)", "",
+              "The six frozen cases record the check score and, where known, the daily audit score. "
               "Unknown listing fields in the audit summary are omitted from scorer input.", ""]
     if any(run.get("audit_misses") for run in runs):
         lines += ["| Run | Listing | Check | Audit | New score | Notify bar |",
@@ -186,8 +186,9 @@ def main():
         for number, run in enumerate(runs, 1):
             for row in run.get("audit_misses", []):
                 case = cases_by_id[row["id"]]
+                audit_score = case["audit_score"] if case["audit_score"] is not None else "—"
                 lines.append(f"| {number} | {case['listing']['title']} | {case['check_score']} | "
-                             f"{case['audit_score']} | {row['score']} | {case['notify_threshold']} |")
+                             f"{audit_score} | {row['score']} | {case['notify_threshold']} |")
         lines.append("")
     else:
         lines += ["New scorer measurements pending the credentialed three-run eval; saved scorer results "
