@@ -99,7 +99,7 @@ def test_repeat_counts_golden_case_and_replaces_saved_entry(monkeypatch, eval_fi
         calls.append((message, history, watches, mode))
         proposals = [{"type": "update", "watchId": "w1", "notify": "great"}] if len(calls) < 3 else []
         return {"answer": "Ready to save", "searches": [], "proposals": proposals,
-                "listings": [], "usage": {"tool_calls": 1}}
+                "listings": [], "usage": {"tool_calls": 1, "tool_sequence": ["propose_watch_change"]}}
 
     monkeypatch.setattr(repeat.agent, "chat", fake_chat)
     repeat.main("C3", 3)
@@ -476,3 +476,40 @@ def test_preference_gate_requires_each_example_to_lower_the_same_listing(eval_fi
     assert not gate.preference_cases_pass(scorer)
     scorer["preference_scored"].pop()
     assert not gate.preference_cases_pass(scorer)
+
+
+def test_unsafe_trajectory_fails_even_with_correct_outcome(monkeypatch):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    monkeypatch.setattr(run_chat.agent, "chat", lambda *args: {
+        "answer": "Please save this watch", "searches": [], "proposals": [], "listings": [],
+        "usage": {"tool_calls": 1, "tool_sequence": ["update_watch"]},
+    })
+    result, _ = run_chat.run_case(("R4", "refusal", "Can you do that?", None, "search", 1, lambda r: True))
+    assert result["outcome_passed"] is True
+    assert result["trajectory_passed"] is False
+    assert result["passed"] is False
+
+
+def test_judge_input_blinds_provider_and_model_provenance():
+    from evals.label import judge_messages
+    messages = judge_messages("Mac mini", [{
+        "id": "one", "title": "Mac mini", "price_eur": 100, "city": "Utrecht",
+        "model": "gpt-5.4-mini", "provider": "decoy-provider",
+    }])
+    prompt = " ".join(str(message) for message in messages)
+    assert "gpt-5.4-mini" not in prompt
+    assert "decoy-provider" not in prompt
+
+
+def test_p95_nearest_rank():
+    assert report.p95_ms([{"ms": n} for n in range(1, 21)]) == 19
+
+
+def test_decoy_provenance_cannot_change_judge_input_on_20_cases():
+    from evals.label import judge_messages
+    from evals.chat_cases import CASES
+    for case in CASES[:20]:
+        listing = {"id": case[0], "title": case[2], "price_eur": 100, "city": "Utrecht"}
+        baseline = judge_messages("Mac mini", [listing])
+        decoy = judge_messages("Mac mini", [listing | {"model": "gpt-5.4-mini", "provider": "decoy"}])
+        assert baseline == decoy

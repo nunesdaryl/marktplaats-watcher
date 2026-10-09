@@ -32,7 +32,7 @@ def test_public_docs_have_no_unlabelled_stale_eval_numbers():
     root = Path(__file__).parent
     report = (root / "evals/report.md").read_text()
     great_precision = re.search(r"\| great \|[^\n]*\*\*(\d+)%\*\*", report).group(1)
-    chat_passed = re.search(r"\*\*(\d+/20) passed\.\*\*", report).group(1)
+    chat_passed = re.search(r"Outcome: \*\*(\d+/\d+)\*\*", report).group(1)
     scoring_cost = re.search(r"- Scoring: €(\d+\.\d+) per 100 listings", report).group(1)
     chat_cost = re.search(r"- Chat: (?:about )?€(\d+\.\d+) per question", report).group(1)
     watch_count = re.search(r"\d+ real Marktplaats listings from (\d+) watches", report).group(1)
@@ -113,3 +113,12 @@ def test_current_public_great_recall_agrees_with_report_and_gate():
             )
             if date_label in line or name == "docs/demo/demo-script.md":
                 assert "median of 3" in line, f"{name}:{number} must qualify the current recall"
+
+
+def test_report_has_operating_sections():
+    report = (Path(__file__).parent / "evals/report.md").read_text()
+    for section in ("## Operating rules", "## Open risks", "## Failure mapping"):
+        assert section in report
+    rules = report.split("## Operating rules\n", 1)[1].split("## Open risks", 1)[0]
+    assert [line.split(" —", 1)[0] for line in rules.splitlines() if line.strip()] == [
+        "CONFIDENCE", "ESCALATION", "READINESS"]
