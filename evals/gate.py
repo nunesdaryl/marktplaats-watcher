@@ -2,6 +2,7 @@
 
 from evals.common import AUDIT_MISSES, CHAT_RESULTS, LISTINGS, PRICE_TYPE_CASES, PREFERENCE_CASES, SCORER_RESULTS, SPOTCHECK, USER_CASES_GOLDEN, read
 from evals.report import scorer_metrics, spotcheck_overrides, user_precision
+from evals.chat_cases import CASES
 
 
 def corrected_great_precisions(scorer, listings, spotcheck):
@@ -71,7 +72,11 @@ def price_type_cases_pass(scorer):
 def check(chat, scorer, listings, spotcheck):
     precision = corrected_great_precision(scorer, listings, spotcheck)
     recall = corrected_great_recall(scorer, listings, spotcheck)
-    return (chat["total"] == 20 and chat["passed"] >= 19 and precision is not None and precision >= 0.9
+    return (((chat["total"] == 20 and chat["passed"] >= 19) or
+            (chat["total"] == len(CASES) and len(chat.get("cases", [])) == len(CASES) and
+             chat["passed"] >= len(CASES) - 1 and
+             all(row.get("passed") == (bool(row.get("outcome_passed")) and bool(row.get("trajectory_passed")))
+                 for row in chat.get("cases", [])))) and precision is not None and precision >= 0.9
             and recall is not None and recall >= 17 / 23 and price_type_cases_pass(scorer)
             and audit_misses_pass(scorer) and preference_cases_pass(scorer))
 

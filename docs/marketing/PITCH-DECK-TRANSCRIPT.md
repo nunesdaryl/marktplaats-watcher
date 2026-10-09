@@ -125,11 +125,11 @@ PROOF · IT EXISTS, IT RUNS, IT IS MEASURED
 Production discipline, not a hackathon script.
 100%
 of "great match" e-mails were real matches (9 Oct 2026 report: 53 listings from 6 watches, 78% recall, median of 3 runs)
-19/20
+23/23
 chat test cases passed (9 Oct 2026 report): search, watch, change, edge cases
 €0.00511
 AI cost of a check that scores 20 new listings (9 Oct 2026 report); no new listings, no cost
-€0.0307 per 100 listings scored and about €0.0019 per chat question (9 Oct 2026 report)
+€0.0299 per 100 listings scored and about €0.0019 per chat question (9 Oct 2026 report)
 Live
 marktplaats-watcher.vercel.app, free, up to 5 watches per person
 Judged honestly

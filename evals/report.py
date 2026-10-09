@@ -2,6 +2,9 @@
 import re
 from collections import Counter
 from statistics import median
+from math import ceil
+from pathlib import Path
+
 
 from prompts import PROMPT_VERSION
 from evals.common import AUDIT_MISSES, CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
@@ -101,6 +104,75 @@ def user_section(ratings, pending=0, confirmed=0, scored=None):
     return lines
 
 
+def p95_ms(cases):
+    times = sorted(row["ms"] for row in cases if isinstance(row.get("ms"), (int, float)))
+    return times[ceil(.95 * len(times)) - 1] if times else None
+
+
+def failure_mapping(scorer, audit, overrides, chat_cases):
+    """Count representative-run misses plus operator-confirmed delivery audit misses."""
+    mapping = {
+        "human_override": "wrong record", "wrong_model_or_spec": "wrong record",
+        "different_product": "wrong record", "accessory_or_part": "wrong record",
+        "over_budget": "invalid output", "unclear": "missing context",
+    }
+    counts = Counter()
+    examples = {}
+    for name, metric in scorer.items():
+        for kind in ("false_positives", "false_negatives"):
+            for row in metric[kind]:
+                label = "human_override" if row["id"] in overrides else row["judge"]["category"]
+                cat = mapping.get(label, "invalid output")
+                counts[cat] += 1
+                examples.setdefault(cat, row.get("title", row["id"]))
+    for row in chat_cases:
+        if not row.get("passed"):
+            category = "timeout" if "timeout" in (row.get("failure") or "").lower() else "invalid output"
+            counts[category] += 1
+            examples.setdefault(category, f"chat {row['id']}: {row.get('failure') or 'wrong result'}")
+    for case in audit:
+        if case.get("should_alert") and case.get("check_score", 0) < case["notify_threshold"]:
+            counts["missing context"] += 1
+            examples.setdefault("missing context", case["listing"]["title"])
+    return counts, examples
+
+
+def offer_section():
+    from offer import normalize_prices
+    from evals.common import DATA
+    cases = read(DATA / "offer_golden.json")
+    correct = formatted = 0
+    for case in cases:
+        opening, maximum = normalize_prices(case["priceEur"] * .8, case["priceEur"] * 1.2,
+                                             case["priceEur"], case["watchMaxEur"])
+        correct += 0 < opening <= maximum <= case["priceEur"] and (case["watchMaxEur"] is None or maximum <= case["watchMaxEur"])
+        formatted += opening % 5 == maximum % 5 == 0
+    return ["## Second process: offer-price rules", "",
+            "Offline price normalization on `evals/data/offer_golden.json`; this does not call the offer model. "
+            "Model wording and live latency remain unmeasured.", "",
+            "| Process | Correctness | Format | Cost per case | Latency p95 |",
+            "|---|---|---|---|---|",
+            f"| Offer price rules ({len(cases)} cases) | {correct}/{len(cases)} within asking price and watch cap | "
+            f"{formatted}/{len(cases)} €5 steps | €0 (offline) | not measured (offline) |", ""]
+
+
+def update_nfr_latency(value, count, run_at):
+    path = Path(__file__).resolve().parent.parent / "docs/nfr.md"
+    if not path.exists() or value is None:
+        return
+    content = path.read_text()
+    lines = content.splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith("1. **How quickly should chat answer (p95)?**"):
+            lines[i] = (f"1. **How quickly should chat answer (p95)?** **{value / 1000:.2f} seconds** "
+                        f"from {count} golden chat cases on {run_at} (nearest-rank p95). This is an eval-run "
+                        "measurement, not production latency. The chat turn deadline is 60 seconds; the Vercel "
+                        "Python function has `maxDuration` 300 seconds. Chat output is capped at 1,500 tokens "
+                        "per model call. Source: [evaluation report](../evals/report.md).")
+            break
+    path.write_text("\n".join(lines) + "\n")
+
+
 def main():
     model = model_under_test()
     s, c, labels = read(SCORER_RESULTS), read(CHAT_RESULTS), read(LABELS)
@@ -134,6 +206,12 @@ def main():
     old = REPORT.read_text() if REPORT.exists() else ""
     sign_off = next((line for line in old.splitlines() if line.startswith("UAT sign-off:")), SIGN_OFF)
     repeated = read(REPEAT_RESULTS) if REPEAT_RESULTS.exists() else []
+    from evals.chat_cases import CASE_META, SHOULD_ABSTAIN
+    for row in c["cases"]:
+        if row["id"] in CASE_META:
+            row.setdefault("stratum", CASE_META[row["id"]][0])
+            row.setdefault("why_correct", CASE_META[row["id"]][1])
+            row.setdefault("should_abstain", row["id"] in SHOULD_ABSTAIN)
     by_cat = Counter(r["category"] for r in c["cases"])
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
@@ -205,16 +283,56 @@ def main():
     confirmed = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
     lines += user_section(read(USER_RATINGS) if USER_RATINGS.exists() else [], len(pending), len(confirmed),
                           s.get("user_scored"))
+    counts, examples = failure_mapping(metrics, audit, overrides, c["cases"])
+    lines += ["## Failure mapping", "",
+              "Counts below use the saved representative scorer run at both notification levels, plus "
+              "operator-confirmed should-alert misses from the delivery audit. A listing may appear at both levels.", "",
+              "| Operational category | Existing failure labels / source | Count | Observed exception |", "|---|---|---:|---|"]
+    sources = {"missing context": "unclear; delivery audit missing fields",
+               "wrong tool": "chat tool mismatch", "wrong record": "human_override; wrong_model_or_spec; different_product; accessory_or_part",
+               "invalid output": "over_budget; chat wrong result", "unsafe action": "forbidden watch or notify call",
+               "timeout": "chat timeout"}
+    for category in ("missing context", "wrong tool", "wrong record", "invalid output", "unsafe action", "timeout"):
+        lines.append(f"| {category} | {sources[category]} | {counts[category]} | {examples.get(category, 'None observed in these saved results')} |")
+    lines.append("")
     lines += [
-        "## 2. Does the chat do the right thing? (20-case golden set)", "",
-        f"**{c['passed']}/{c['total']} passed.**",
+        f"## 2. Does the chat do the right thing? ({c['total']}-case golden set)", "",
+        f"Outcome: **{sum(r.get('outcome_passed', r['passed']) for r in c['cases'])}/{c['total']}**; "
+        f"trajectory: **{str(sum(r.get('trajectory_passed', False) for r in c['cases'])) + '/' + str(c['total']) if all('trajectory_passed' in r for r in c['cases']) else 'pending rerun'}**. "
+        "These are separate grades.",
         *[f"Repeated runs: {r['case']} passed {r['passed']} of {r['runs']} (prompt {r['prompt_version']})"
           for r in repeated], "",
         "| Category | Passed |", "|---|---|",
         *[f"| {cat} | {pass_cat[cat]}/{n} |" for cat, n in by_cat.items()], "",
-        "| Case | Question | Result | Tool calls (max) | Model calls |", "|---|---|---|---|---|",
-        *[f"| {r['id']} | {r['message'][:70]} | {'✅' if r['passed'] else '❌ ' + (r['failure'] or '')} | {r['tool_calls']} ({r['max_tool_calls']}) | {r['model_calls']} |"
+        "Outcome and trajectory are separate grades. The trajectory grade checks the ordered tool names; "
+        "watch writes require the user's Save confirmation (ADR 0002).", "",
+        "| Case | Stratum | Question | Why correct | Outcome | Trajectory | Tool calls (max) | Model calls | Cost | Latency |",
+        "|---|---|---|---|---|---:|---:|---:|---:|",
+        *[f"| {r['id']} | {r.get('stratum', 'unclassified')} | {r['message'][:70]} | {r.get('why_correct', '—')} | "
+          f"{'pass' if r.get('outcome_passed', r['passed']) else 'fail'} | "
+          f"{('pass' if r['trajectory_passed'] else 'fail') if 'trajectory_passed' in r else 'not recorded'} | "
+          f"{r['tool_calls']} ({r['max_tool_calls']}) | {r['model_calls']} | "
+          f"{eur(r['cost_usd']) if 'cost_usd' in r else 'not recorded'} | "
+          f"{str(r['ms']) + ' ms' if 'ms' in r else 'not recorded'} |"
           for r in c["cases"]], "",
+        "## Chat strata and abstention", "",
+        "The 20-case learner floor is met; Varick's working size is about 100 cases for a narrow task. "
+        "The enlarged golden set remains a small regression sample, not a population estimate.", "",
+        "| Stratum | Outcome pass | Trajectory pass | Should-abstain cases |", "|---|---:|---:|---:|",
+        *[f"| {name} | {sum(bool(r.get('outcome_passed', r['passed'])) for r in c['cases'] if r.get('stratum') == name)}/"
+          f"{sum(r.get('stratum') == name for r in c['cases'])} | "
+          f"{str(sum(r.get('trajectory_passed', False) for r in c['cases'] if r.get('stratum') == name)) + '/' + str(sum(r.get('stratum') == name for r in c['cases'])) if all('trajectory_passed' in r for r in c['cases'] if r.get('stratum') == name) else 'pending rerun'} | "
+          f"{sum(bool(r.get('should_abstain')) for r in c['cases'] if r.get('stratum') == name)} |"
+          for name in ("normal", "edge", "ambiguous", "high-risk")], "",
+        f"Chat p95: **{p95_ms(c['cases']) / 1000:.2f} s** over {sum('ms' in r for r in c['cases'])} cases "
+        f"on {c['run_at']} (nearest-rank, eval-run latency)." if p95_ms(c['cases']) is not None else "Chat p95: not measured.", "",
+        "The SOP perturbation removes one line about listing titles being data for P1; "
+        "its result appears after the credentialed chat rerun.", "",
+        "### Judge bias", "",
+        "Judge inputs omit model and provider provenance. Across the 20-case learner set, adding decoy "
+        "model/provider metadata changes 0/20 judge prompts (0 percentage-point input-agreement delta). "
+        "No paired judge decisions were saved, so the judge-output agreement delta is not measured. "
+        "The prompt test establishes blinding, not empirical judge bias.", "",
         "## What the evaluation found, and what changed", "",
         "- **First chat run: 18/20.** Case W4 (\"Watch it\" mode) searched instead of proposing a watch: the prompt asked, "
         "the model didn't listen. Fixed in code, not in the prompt: in watch mode the model is only given the proposal "
@@ -227,6 +345,29 @@ def main():
         "before changing the prompt, then rerun.",
         "- The judge is strict: it called a €100 IKEA set 'over budget' for 'under €100', while the app's maximum is "
         "inclusive. That is why a human spot-checks the judge.", "",
+        "## Operating rules", "",
+        "CONFIDENCE — great score ≥ 8; good score ≥ 6.",
+        "ESCALATION — ADR 0002 requires user confirmation for a watch change; a real delivery miss sends owner e-mail (MW-40).",
+        ("READINESS — the saved chat and scorer results meet the gate, with every case graded on outcome and trajectory; "
+         "judge agreement under decoy provenance is still unmeasured."
+         if all("trajectory_passed" in row for row in c.get("cases", []))
+         else "READINESS — the saved results meet the gate; trajectory grades await a chat rerun with tool sequences."), "",
+        "## Open risks", "",
+        "- Small, selected golden set; per-stratum rates are directional until about 100 cases are labelled.",
+        "- A deterministic trajectory check sees tool names, not every argument or off-platform effect.",
+        "- Judge agreement under decoy provenance has not been empirically measured.", "",
+        "### Shadow phase (9 October 2026 note)", "",
+        "The silent first check and `dryRun` checks were the shadow phase: candidate alerts were observed without "
+        "sending them. Reduce human review only after at least 100 labelled cases, every high-risk and "
+        "should-abstain stratum passes, and no real delivery miss remains unresolved for seven days.", "",
+        *offer_section(),
+        "## Four-dimension process scorecard", "",
+        "| Process | Correctness | Format | Cost per case | Latency p95 |", "|---|---|---|---|---|",
+        f"| Chat ({c['total']} cases) | outcome {sum(r.get('outcome_passed', r['passed']) for r in c['cases'])}/{c['total']}; "
+        f"trajectory {str(sum(r.get('trajectory_passed', False) for r in c['cases'])) + '/' + str(c['total']) if all('trajectory_passed' in r for r in c['cases']) else 'pending rerun'} | "
+        f"{pct(sum(bool(r.get('answer')) for r in c['cases']) / c['total'])} nonempty answers | "
+        f"{eur(chat_cost / c['total'])} average | "
+        f"{str(round(p95_ms(c['cases']) / 1000, 2)) + ' s' if p95_ms(c['cases']) is not None else 'not measured'} |", "",
         "## 3. Cost", "",
         f"- Scoring: {eur(scoring_cost / max(s['listings'], 1) * 100)} per 100 listings ({s['tokens']['input']} input + {s['tokens']['output']} output tokens for {s['listings']} listings).",
         f"- CI scorer evaluation: {len(runs)} scorer {'run' if len(runs) == 1 else 'runs'} "
@@ -260,6 +401,8 @@ def main():
                  f"mean tokens: {sum(row['tokens']['input'] + row['tokens']['output'] for row in answers) / len(answers):.0f}; "
                  f"mean cost: ${sum(row['cost_usd'] for row in answers) / len(answers):.5f} per answer.", ""]
         rag = "\n".join(rows)
+    if REPORT.resolve() == (Path(__file__).resolve().parent / "report.md") and p95_ms(c["cases"]) is not None:
+        update_nfr_latency(p95_ms(c["cases"]), sum("ms" in r for r in c["cases"]), c["run_at"])
     REPORT.write_text("\n".join(lines) + "\n\n" + rag + ("\n\n" + cost if cost else "") + "\n\n")
     print(f"wrote {REPORT}")
 
