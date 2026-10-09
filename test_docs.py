@@ -122,3 +122,66 @@ def test_report_has_operating_sections():
     rules = report.split("## Operating rules\n", 1)[1].split("## Open risks", 1)[0]
     assert [line.split(" —", 1)[0] for line in rules.splitlines() if line.strip()] == [
         "CONFIDENCE", "ESCALATION", "READINESS"]
+
+
+def test_case_study_links_and_report_citations():
+    root = Path(__file__).parent
+    case = root / "docs/case-study.md"
+    assert case.is_file()
+    content = case.read_text()
+    assert "[Case study](docs/case-study.md)" in (root / "README.md").read_text()
+    report = (root / "evals/report.md").read_text()
+    headings = re.findall(r"^## (.+)$", report, re.M)
+    citations = re.findall(r"\[evals/report\.md §([^]]+)\]\(\.\./evals/report\.md#[^)]+\)", content)
+    assert citations
+    assert set(citations) <= set(headings)
+    assert not re.search(r"report\.md:\d+", content), "Use report headings, not moving line numbers"
+
+
+def test_case_study_figures_match_current_report():
+    root = Path(__file__).parent
+    case = (root / "docs/case-study.md").read_text()
+    report = (root / "evals/report.md").read_text()
+    scorer_date = re.search(r"Scorer run (\d{4}-\d{2}-\d{2})", report).group(1)
+    chat_date = re.search(r"chat run (\d{4}-\d{2}-\d{2})", report).group(1)
+    assert f"Scorer run: {scorer_date}" in case
+    assert f"chat run: {chat_date}" in case
+    for pattern in (
+        r"(\d+) real Marktplaats listings from (\d+) watches",
+        r"Outcome: \*\*(\d+/\d+)\*\*; trajectory: \*\*(\d+/\d+)\*\*",
+        r"\| great \|[^\n]*\*\*(\d+%)\*\* \| \*\*(\d+%)\*\*",
+        r"\| good \|[^\n]*\*\*(\d+%)\*\* \| \*\*(\d+%)\*\*",
+        r"great precision range (\d+\.\d+–\d+\.\d+%)",
+        r"great recall range (\d+\.\d+–\d+\.\d+%)",
+        r"Chat p95: \*\*(\d+\.\d+ s)\*\*",
+        r"Scoring: (€\d+\.\d+ per 100 listings)",
+        r"Chat: (?:about )?(€\d+\.\d+ per question)",
+    ):
+        match = re.search(pattern, report)
+        assert match, pattern
+        for value in match.groups():
+            assert value in case, f"case study is missing current report value {value}"
+    failure = report.split("## Failure mapping\n", 1)[1].split("\n## ", 1)[0]
+    for category, count in re.findall(r"^\| (missing context|wrong tool|wrong record|invalid output|unsafe action|timeout) \|[^\n]*\| (\d+) \|", failure, re.M):
+        assert re.search(rf"\| {category} \| {count} \|", case), category
+
+    # Check the case study's own measured claims, including repeated cost claims.
+    assert re.search(r"scored \*\*(\d+/\d+) outcome", case).group(1) == re.search(
+        r"Outcome: \*\*(\d+/\d+)\*\*", report).group(1)
+    assert re.search(r"and \*\*(\d+/\d+) trajectory", case).group(1) == re.search(
+        r"trajectory: \*\*(\d+/\d+)\*\*", report).group(1)
+    assert re.search(r"\*\*(\d+) real Marktplaats listings from (\d+) watches", case).groups() == re.search(
+        r"(\d+) real Marktplaats listings from (\d+) watches", report).groups()
+    for label in ("great", "good"):
+        precision, recall = re.search(rf"\| {label} \|[^\n]*\*\*(\d+%)\*\* \| \*\*(\d+%)\*\*", report).groups()
+        if label == "great":
+            assert re.search(r"great-match precision was \*\*(\d+%)\*\*", case).group(1) == precision
+            assert re.search(r"and recall \*\*(\d+%)\*\*", case).group(1) == recall
+        else:
+            assert re.search(r"good-match precision/recall were \*\*(\d+%)/(\d+%)\*\*", case).groups() == (precision, recall)
+    scoring_cost = re.search(r"Scoring: €(\d+\.\d+) per 100 listings", report).group(1)
+    chat_cost = re.search(r"Chat: €(\d+\.\d+) per question", report).group(1)
+    assert set(re.findall(r"€(\d+\.\d+) per 100 listings", case)) == {scoring_cost}
+    assert set(re.findall(r"€(\d+\.\d+) per (?:chat )?question", case)) == {chat_cost}
+    assert re.search(r"eval p95 was \*\*(\d+\.\d+ s)\*\*", case).group(1) == re.search(
+        r"Chat p95: \*\*(\d+\.\d+ s)\*\*", report).group(1)

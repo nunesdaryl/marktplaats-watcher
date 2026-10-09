@@ -613,7 +613,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <li><b>Login on the chat</b> closes the "anyone can spend the key" gap from v1; the rate limit is keyed by the verified user id,
     not a spoofable <code>X-Forwarded-For</code> address.</li>
   <li><b>Chat transcripts:</b> the browser writes only the user's turns. The chat API writes the agent's turns through a shared-secret Convex route after verifying the Clerk session token.</li>
-  <li><b>Cost control:</b> a dedicated OpenAI project with a <b>$10/month hard limit</b> and a model allow-list
+  <li><b>Cost control:</b> a dedicated OpenAI project with a <b>hard monthly limit</b> ($10 at launch, $110 since 5 October 2026, with spend alerts) and a per-user €1 AI budget per 30 days, and a model allow-list
     (<code>gpt-5.4-mini</code> only); a restricted, project-scoped key. AgentMail's key is scoped to one inbox.</li>
   <li><b>Secrets</b> live in <code>.env</code> (mode 600), Convex environment variables and Vercel settings; Vercel holds no Convex
     deploy key. The diff is scanned for key patterns before every commit.</li>
@@ -732,7 +732,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
 
 <h3>Cost (measured, evals/report.md §4)</h3>
 <p>A check with no new listings makes no AI call. One new listing: <b>€0.00048</b>; ten: €0.00272. An hourly watch costs about
-  <b>€0.35/month</b> (worst case €1.96); a chat question about €0.002. Hosting runs on free tiers. The $10/month hard cap
+  <b>€0.35/month</b> (worst case €1.96); a chat question about €0.002. Hosting runs on free tiers. The OpenAI hard cap ($10 at launch, $110 since 5 October 2026)
   covers about 5,000 questions. <b>Risk found:</b> one very busy 15-minute watch can use most of the cap, which would pause
   scoring for everyone; a per-user daily budget is the next step. Since the audits, a check scores up to 20 new listings (the
   rest wait for the next check); a 20-listing check hasn't been measured yet.</p>

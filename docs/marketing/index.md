@@ -8,6 +8,11 @@
 - **(a) End users:** Dutch second-hand bargain hunters → buyer avatar, landing, in-app and e-mail copy.
 - **(b) LinkedIn:** hiring managers, potential clients, fellow FDE/AI engineers → portfolio posts on how it was built.
 
+## Pilot and case study
+
+- [Engineering case study](../case-study.md): problem, manual task map, stack, failures, evaluations, economics and pilot pre-flight.
+- [Marktplaats pitch pack](MARKTPLAATS-PITCH-PACK.md): access request and supporting artifacts.
+
 ## Reference Documents (Onboarding)
 
 | File | Status | Created by |
