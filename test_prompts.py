@@ -94,17 +94,19 @@ def test_other_prompts_preserve_old_system_bytes(template, expected):
 def test_rank_prompt_keeps_safety_rules_and_explains_audit_misses():
     rank = prompts.RANK_PROMPT_TEMPLATE.format_messages()[0].content
     assert rank.startswith(OLD_RANK_PROMPT.split("A 'bidding from'")[0].split("A listing that")[0])
-    for rule in ("accessory, part, add-on or kit", "'bidding from' or 'make an offer'",
+    for rule in ("accessory, part, add-on or kit", "'bidding from' price is a starting bid; score the listing on fit",
+                 "The app applies the budget rule for bids near the maximum",
                  "price_type 'free'", "price_eur 0", "'swap' or 'see description'",
                  "'Zo goed als nieuw'", "bundled with controllers", "newer generation",
                  "condition is unspecified"):
         assert rule in rank
+    assert "score it below great" not in rank
 
 def test_prompt_versions_are_central_and_reexported():
     assert agent.PROMPT_VERSION is prompts.PROMPT_VERSION
     assert prompts.PROMPT_VERSION == {
         "chat": "chat-2026-10-06.1",
-        "rank": "rank-2026-10-07.1",
+        "rank": "rank-2026-10-09.1",
         "admin": "admin-2026-10-03.1",
         "offer": "offer-2026-10-06.1",
     }

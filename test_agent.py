@@ -1035,12 +1035,12 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
 
 
 def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
-    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-07.1"
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-09.1"
     assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
     assert "0–4" in agent.RANK_PROMPT
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
     assert "bidding from" in agent.RANK_PROMPT
-    assert "make an offer" in agent.RANK_PROMPT
+    assert "score the listing on fit" in agent.RANK_PROMPT
 
 
 def test_scorer_loads_and_counts_accessory_cases(monkeypatch, tmp_path):
@@ -1803,3 +1803,20 @@ def test_bidding_near_the_watch_maximum_is_capped_below_great():
     agent.cap_bidding_scores(items, 200)
     assert [i["score"] for i in items] == [7, 7, 9, 9, 9]
     assert agent.cap_bidding_scores([{"price_type": "bidding from", "price_eur": 200, "score": 9}], None)[0]["score"] == 9
+
+
+def test_bid_with_room_under_watch_maximum_is_not_capped():
+    import agent
+    listing = {"id": "m2451390076", "price_type": "bidding from", "price_eur": 130, "score": 9}
+    assert agent.cap_bidding_scores([listing], 200)[0]["score"] == 9
+
+
+def test_capped_bid_explains_the_budget_rule_in_the_reason():
+    import agent
+    items = [{"id": "a", "price_type": "bidding from", "price_eur": 200, "score": 9, "reason": "Exact model, fits very well."},
+             {"id": "b", "price_type": "bidding from", "price_eur": 190, "score": 6, "reason": "Starting bid at the limit."},
+             {"id": "c", "price_type": "bidding from", "price_eur": 130, "score": 9, "reason": "Great fit."}]
+    agent.cap_bidding_scores(items, 200)
+    assert items[0]["score"] == 7 and "Starting bid of €200 is close to your €200 limit" in items[0]["reason"]
+    assert items[1]["reason"] == "Starting bid at the limit."           # already explains the bid
+    assert items[2]["score"] == 9 and items[2]["reason"] == "Great fit."  # room under the limit: untouched

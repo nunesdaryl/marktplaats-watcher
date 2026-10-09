@@ -27,8 +27,9 @@ def corrected_great_recall(scorer, listings, spotcheck):
 
 def audit_misses_pass(scorer):
     cases = {case["id"]: case for case in read(AUDIT_MISSES)["cases"]}
+    bid_id = "m2451390076"
     runs = scorer.get("runs", [scorer])
-    if len(runs) != 3 or len(cases) != 5:
+    if len(runs) != 3 or len(cases) != 6 or bid_id not in cases:
         return False
     for run in runs:
         rows = {row["id"]: row for row in run.get("audit_misses", [])}
@@ -38,7 +39,9 @@ def audit_misses_pass(scorer):
             score = rows[id]["score"]
             alerts = score is not None and score >= case["notify_threshold"]
             return alerts == case.get("should_alert", True)
-        if sum(correct(id, case) for id, case in cases.items()) < 4:
+        if not correct(bid_id, cases[bid_id]):
+            return False
+        if sum(correct(id, case) for id, case in cases.items() if id != bid_id) < 4:
             return False
     return True
 
@@ -93,7 +96,7 @@ def main():
         print(f"Confirmed user cases: {len(confirmed)}; great precision {value if value is not None else 'n/a'} (report only)")
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
-                         "great recall at least 17/23, all price type cases, and 4/5 audit misses in each of 3 runs")
+                         "great recall at least 17/23, all price type cases, 4/5 earlier audit cases and the €130 bid in each of 3 runs")
 
 
 if __name__ == "__main__":

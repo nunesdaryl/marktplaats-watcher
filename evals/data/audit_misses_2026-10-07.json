@@ -1,6 +1,6 @@
 {
-  "source": "Owner dashboard delivery audit, 2026-10-07 06:30 Europe/Amsterdam",
-  "note": "Only fields present in the issue evidence are filled. Null means the audit summary did not provide that listing field; it is not an inferred listing value. Notify thresholds are inferred from which score counted as a miss. Each case carries an operator-confirmed expected outcome (should_alert); the gate counts correct outcomes, not raw scores.",
+  "source": "Owner dashboard delivery audits, 2026-10-07 and 2026-10-09 Europe/Amsterdam",
+  "note": "Only fields present in the issue evidence are filled. Null means the audit summary did not provide that listing field; it is not an inferred listing value. Notify thresholds are inferred from which score counted as a miss. Each case carries an operator-confirmed expected outcome (should_alert); the gate counts correct outcomes, not raw scores. The 9 October bid case has no recorded audit score.",
   "cases": [
     {
       "id": "switch-oled-white-bundle",
@@ -91,6 +91,22 @@
       "diagnosis": "A comparable IKEA laminate model and useful quantity may fit, though the named line differs.",
       "should_alert": false,
       "decision": "Not a match (Daryl, 7 Oct): Slätten is a different IKEA laminate model than the Prarie the watch asks for."
+    },
+    {
+      "id": "m2451390076",
+      "watch_description": "Nintendo Switch OLED, under €200",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "m2451390076",
+        "title": "Nintendo Switch OLED met accessoires",
+        "price_eur": 130,
+        "price_type": "bidding from"
+      },
+      "check_score": 7,
+      "audit_score": null,
+      "diagnosis": "The Switch OLED matches the watch and the €130 starting bid is below the €170 cap threshold.",
+      "should_alert": true,
+      "decision": "Real miss (Daryl, 9 Oct): this matching Switch OLED should score great despite the starting bid being well below the watch maximum."
     }
   ],
   "earlier_observations": [

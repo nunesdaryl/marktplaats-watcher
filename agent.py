@@ -531,15 +531,20 @@ BIDDING_NEAR_MAX = 0.85   # a 'bidding from' price at 85% or more of the watch's
 
 
 def cap_bidding_scores(listings, max_price_eur):
-    """The MW-58 rule, enforced in code: a starting bid at or near the watch's maximum is never a great match (7 or less).
-    The prompt states the rule too, but the model sometimes says 'at your ceiling' and still scores 8."""
+    """The MW-58 rule: a starting bid at 85% or more of the watch's maximum scores 7 or less."""
     if not max_price_eur:
         return listings
     for item in listings:
         price, score = item.get("price_eur"), item.get("score")
         if (item.get("price_type") == "bidding from" and price is not None and score is not None
-                and price >= BIDDING_NEAR_MAX * max_price_eur and score > 7):
-            item["score"] = 7
+                and price >= BIDDING_NEAR_MAX * max_price_eur):
+            if score > 7:
+                item["score"] = 7
+            # The rule lives here, not in the prompt, so the explanation does too: a 7 must never read "fits very well"
+            reason = (item.get("reason") or "").strip()
+            if "bid" not in reason.lower():
+                note = f"Starting bid of €{price:g} is close to your €{max_price_eur:g} limit, so the final price will likely go over budget."
+                item["reason"] = f"{reason} {note}".strip()
     return listings
 
 

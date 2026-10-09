@@ -203,15 +203,29 @@ def test_price_type_gate_requires_each_snapshot_on_every_run(monkeypatch):
     assert not gate.price_type_cases_pass(scorer)
 
 
-def test_audit_miss_gate_requires_four_of_five_each_run(monkeypatch, tmp_path):
+def test_audit_miss_gate_requires_four_of_five_old_cases_and_new_bid_each_run(monkeypatch, tmp_path):
     path = tmp_path / "audit_misses.json"
-    common.write(path, {"cases": [{"id": str(i), "notify_threshold": 8, "should_alert": True} for i in range(5)]})
+    common.write(path, {"cases": [{"id": str(i), "notify_threshold": 8, "should_alert": True} for i in range(5)]
+                        + [{"id": "m2451390076", "notify_threshold": 8, "should_alert": True}]})
     monkeypatch.setattr(gate, "AUDIT_MISSES", path)
     runs = [{"audit_misses": [{"id": str(i), "score": 8 if i < 4 else 7}
-                             for i in range(5)]} for _ in range(3)]
+                             for i in range(5)] + [{"id": "m2451390076", "score": 8}]} for _ in range(3)]
     assert gate.audit_misses_pass({"runs": runs})
+    runs[2]["audit_misses"][5]["score"] = 7
+    assert not gate.audit_misses_pass({"runs": runs})
+    runs[2]["audit_misses"][5]["score"] = 8
     runs[2]["audit_misses"][3]["score"] = 7
     assert not gate.audit_misses_pass({"runs": runs})
+
+
+def test_october_bid_audit_fixture_has_room_below_cap():
+    cases = {case["id"]: case for case in common.read(common.AUDIT_MISSES)["cases"]}
+    bid = cases["m2451390076"]
+    assert bid["watch_description"] == "Nintendo Switch OLED, under €200"
+    assert bid["listing"]["price_eur"] == 130
+    assert bid["listing"]["price_type"] == "bidding from"
+    assert bid["notify_threshold"] == 8
+    assert bid["should_alert"] is True
 
 
 def test_gate_rejects_recall_below_previous_seventeen_of_twenty_three(monkeypatch):
@@ -242,6 +256,24 @@ def test_scorer_sends_known_audit_fields_without_inventing_missing_values(monkey
     assert seen == [("laminate", {"id": "free", "title": "Free laminate",
                                    "price_eur": 0, "price_type": "free"})]
     assert result["audit_misses"] == [{"id": "free", "score": 8, "reason": "Free match"}]
+
+
+def test_audit_scorer_caps_near_limit_bid_but_keeps_roomy_bid(monkeypatch, tmp_path):
+    path = tmp_path / "audit_misses.json"
+    common.write(path, {"cases": [
+        {"id": "near", "watch_description": "Nintendo Switch OLED, under €200",
+         "listing": {"id": "near", "price_eur": 175, "price_type": "bidding from"}},
+        {"id": "m2451390076", "watch_description": "Nintendo Switch OLED, under €200",
+         "listing": {"id": "m2451390076", "price_eur": 130, "price_type": "bidding from"}},
+    ]})
+    monkeypatch.setattr(run_scorer, "AUDIT_MISSES", path)
+    price_cases = tmp_path / "price_types.json"
+    common.write(price_cases, [])
+    monkeypatch.setattr(run_scorer, "PRICE_TYPE_CASES", price_cases)
+    monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda description, listings:
+                        [listings[0] | {"score": 9, "reason": "Exact model match"}])
+    result = run_scorer.score_once({"watches": [], "listings": []}, {}, "gpt-5.4-mini")
+    assert {row["id"]: row["score"] for row in result["audit_misses"]} == {"near": 7, "m2451390076": 9}
 
 
 def test_scorer_rescores_all_price_type_cases_three_times(monkeypatch, tmp_path):
@@ -416,10 +448,11 @@ def test_audit_miss_gate_counts_expected_non_alerts_as_correct(monkeypatch, tmp_
     path = tmp_path / "audit_misses.json"
     cases = [{"id": "a", "notify_threshold": 8, "should_alert": True}, {"id": "b", "notify_threshold": 6, "should_alert": True},
              {"id": "c", "notify_threshold": 8, "should_alert": False}, {"id": "d", "notify_threshold": 8, "should_alert": False},
-             {"id": "e", "notify_threshold": 6, "should_alert": False}]
+             {"id": "e", "notify_threshold": 6, "should_alert": False},
+             {"id": "m2451390076", "notify_threshold": 8, "should_alert": True}]
     common.write(path, {"cases": cases})
     monkeypatch.setattr(gate, "AUDIT_MISSES", path)
-    good = {"a": 9, "b": 10, "c": 6, "d": 2, "e": 3}
+    good = {"a": 9, "b": 10, "c": 6, "d": 2, "e": 3, "m2451390076": 9}
     runs = [{"audit_misses": [{"id": k, "score": v} for k, v in good.items()]} for _ in range(3)]
     assert gate.audit_misses_pass({"runs": runs})
     runs[1]["audit_misses"] = [{"id": k, "score": {"a": 5, "c": 9}.get(k, v)} for k, v in good.items()]
