@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from "react";
 
-export function suggestedWords(title = "", query = "") {
-  const asked = new Set(query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
-  return [...new Set((title.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
-    .filter((word) => word.length >= 3 && word.length <= 30 && !asked.has(word)))].slice(0, 5);
+const VARIANTS = new Set(["mini", "lite", "pro", "max", "plus", "ultra", "slim", "digital", "oled", "xl", "kids", "kinder", "children"]);
+const FILLER = new Set(["late", "model", "met", "voor", "van", "de", "het", "een", "en", "in", "te", "koop", "nieuw", "new", "used", "zgan", "als", "with", "for", "the", "and"]);
+
+export function suggestedWords(title = "", query = "", mustInclude = "") {
+  const words = (value) => value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const asked = new Set(words(`${query} ${mustInclude}`));
+  const rank = (word) => {
+    if (VARIANTS.has(word)) return 0;
+    const year = Number(word);
+    if ((/^\d{4}$/.test(word) && year >= 1990 && year <= 2030) ||
+      (/^[a-z]+\d+[a-z\d]*$/.test(word) && !/^(?:ddr\d+|lpddr\d+|\d+(?:gb|tb|mb))$/.test(word))) return 1;
+    if (/^(?:ddr\d+|lpddr\d+|\d+(?:gb|tb|mb)|hdd|ssd|nvme|ram)$/.test(word)) return 2;
+    return 3;
+  };
+  return [...new Set(words(title).filter((word) => word.length >= 3 && word.length <= 30 &&
+    !asked.has(word) && !FILLER.has(word)))].sort((a, b) => rank(a) - rank(b)).slice(0, 5);
 }
 
 /** An explicit watch change after a saved Not right reason. Each button confirms one change. */
 export default function RatingFix({ reasons = [], alert, onFix, onUndo }) {
-  const suggestions = suggestedWords(alert?.title, alert?.query);
+  const suggestions = suggestedWords(alert?.title, alert?.query, alert?.mustInclude);
   const [word, setWord] = useState(suggestions[0] ?? "");
   const [price, setPrice] = useState(alert?.priceEur != null ? Math.max(1, Math.min(alert.priceEur - 5,
     alert.maxPriceEur != null ? alert.maxPriceEur - 5 : Infinity)) : "");
@@ -36,7 +48,7 @@ export default function RatingFix({ reasons = [], alert, onFix, onUndo }) {
   const notify = alert?.notify;
   return <div className="rating-fix">
     {!saved && <>
-      {reasons.includes("not_asked") && <div>
+      {reasons.includes("not_asked") && suggestions.length > 0 && <div>
         <label>Skip listings with <input aria-label="Word to skip" value={word} maxLength={30}
           list={`rating-words-${alert?.title?.replace(/\W/g, "")}`} onChange={(e) => setWord(e.target.value)} /></label>
         <datalist id={`rating-words-${alert?.title?.replace(/\W/g, "")}`}>{suggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}</datalist>

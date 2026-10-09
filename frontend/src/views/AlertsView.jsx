@@ -66,6 +66,7 @@ export default function AlertsView({ actions, watches, onNewWatch }) {
                            meta={`${a.watchLabel} · ${describeWhen(a.createdAt, now)}`} />
               <RateAlert alertId={a._id} rating={ratings[a._id]}
                 alert={{ ...a, query: watches?.find((w) => w._id === a.watchId)?.query ?? "",
+                  mustInclude: watches?.find((w) => w._id === a.watchId)?.mustInclude ?? "",
                   notify: watches?.find((w) => w._id === a.watchId)?.notify ?? "good",
                   maxPriceEur: watches?.find((w) => w._id === a.watchId)?.maxPriceEur ?? null,
                   excludeWords: watches?.find((w) => w._id === a.watchId)?.excludeWords ?? [] }}

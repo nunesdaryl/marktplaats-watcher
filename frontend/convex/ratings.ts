@@ -105,7 +105,7 @@ export const rateWithToken = mutation({
     const alert = await tokenAlert(ctx, alertId, token);
     await save(ctx, alert, { verdict, source: "email" });
     const watch = await ctx.db.get(alert.watchId);
-    return { title: alert.title, score: alert.score ?? null, query: watch?.query ?? "",
+    return { title: alert.title, score: alert.score ?? null, query: watch?.query ?? "", mustInclude: watch?.mustInclude ?? "",
       notify: watch?.notify ?? "good", priceEur: alert.priceEur ?? null,
       maxPriceEur: watch?.maxPriceEur ?? null, excludeWords: watch?.excludeWords ?? [] };
   },
