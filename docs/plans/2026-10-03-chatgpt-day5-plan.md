@@ -22,7 +22,7 @@ The focused audit covered the course notes, relevant course slides, project arch
 
 Evidence: [agent tools and prompts](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/agent.py:245>), [suggestion chips](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/frontend/src/views/ChatView.jsx:14>), and [rating snapshots](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/frontend/convex/ratings.ts:53>).
 
-The evaluation discrepancy is **documentation drift**, not evidence that the latest scorer was untested. I verified [MW-58’s CI run](https://github.com/nunesdaryl/marktplaats-watcher/actions/runs/37102093880): 20/20 chat cases, 94.7% median great-match precision, and 15/15 price-type checks. The local report still describes that run as pending.
+The evaluation discrepancy is **documentation drift**, not evidence that the latest scorer was untested. I verified [MW-58’s CI run](https://github.com/nunesdaryl/marktplaats-watcher/actions/runs/37102093880): 20/20 chat cases, 94.7% median great-match precision, and 15/15 price-type checks. The local report still describes that run as pending. (3 Oct 2026 snapshot)
 
 ## 2. Prompt templates you can start using
 

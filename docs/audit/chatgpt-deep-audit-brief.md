@@ -42,7 +42,7 @@ Answer three versions of the question:
 - **Stack.** Next.js 16 static export and FastAPI on Vercel, with Convex (data and crons), Clerk (login), OpenAI
   gpt-5.4-mini, and AgentMail (e-mail).
 - **Evidence.**
-  - chat golden set: 20/20
+  - chat golden set: 20/20 (27 Sep 2026 snapshot)
   - scorer on 49 real listings judged by gpt-5.5: precision 100% at "great"; recall 90% at "good"
   - 54 JS and 29 Python tests
   - CI with pip-audit, npm audit and gitleaks

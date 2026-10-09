@@ -6,14 +6,14 @@ UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-20
 
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
 
-53 real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **23** are real matches.
+53 real Marktplaats listings from 6 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **23** are real matches.
 
-Corrected great precision: median of 3 runs; range 94.4–100.0%.
+| Notify level | E-mailed when | Precision | Recall |
+|---|---|---|---|
+| great | score ≥ 8 | **100%** | **78%** |
+| good | score ≥ 6 | **83%** | **87%** |
 
-| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |
-|---|---|---|---|---|---|---|---|
-| great | score ≥ 8 | **100%** | **87%** | 20 | 0 | 3 | 30 |
-| good | score ≥ 6 | **88%** | **91%** | 21 | 3 | 2 | 27 |
+Median of 3 runs; great precision range 94.4–100.0%, great recall range 73.9–87.0%. TP/FP/FN/TN counts are omitted; misses below use the saved representative run.
 
 *Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*
 
@@ -184,7 +184,7 @@ If the ranker omits all 20 ids, one retry of those ids costs up to 2× the measu
 | every hour | 720 | €0.33 | €2.02 | €3.68 | €7.37 |
 | every 15 minutes | 2880 | €1.34 | €8.10 | €14.73 | €29.46 |
 
-If a 20-listing check sends one alert, ranking costs €0.00511 per alert; if it sends several alerts, divide that check's cost by the number sent. A chat question costs about €0.0018.
+If a 20-listing check sends one alert, ranking costs €0.00511 per alert; if it sends several alerts, divide that check's cost by the number sent. A chat question costs about €0.0019.
 
 The busiest case, a 15-minute watch with 20 new listings every check, costs €14.73 per month, above the OpenAI project's $10/month hard cap (about €9.20).
 

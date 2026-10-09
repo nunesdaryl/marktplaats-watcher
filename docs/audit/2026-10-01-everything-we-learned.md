@@ -82,11 +82,11 @@ user, `main.py:102`); hostile listing titles (the injection cases `I1`/`I2` in `
 message only); error boundary (MW-28's chunk recovery is not one); the factory row (no machine merge gate; the gate is
 the operator); global limits (the allowance is in Convex, the per-minute rate limit is still per instance).
 
-**Evaluation numbers today** (`evals/report.md`, 30 Sep 22:53, `gpt-5.4-mini`): 53 listings from 5 watches; "great"
-precision 94% (median of 3 runs, range 85.7–100%), recall 74%; "good" 83% / 83%; chat 20/20; human spot-check of the
-judge 7/10; cost €0.028 per 100 listings, €0.0019 per chat question; busiest case €14.73/month (above the $10 cap).
+**30 Sep 2026 snapshot — evaluation numbers then** (`evals/report.md`, 30 Sep 22:53, `gpt-5.4-mini`): 53 listings from 5 watches; "great"
+precision 94% (30 Sep 2026 snapshot, median of 3 runs, range 85.7–100%), recall 74%; "good" 83% / 83%; chat 20/20; human spot-check of the
+judge 7/10; 30 Sep 2026 snapshot cost €0.028 per 100 listings, €0.0019 per chat question; busiest case €14.73/month (above the $10 cap).
 
-**Eval workflow re-run, 1 Oct 06:49 UTC (GitHub Actions run 36826865528, main): passed.** Chat 20/20; corrected "great" precision runs 0.947 / 0.944 / 0.900, median 0.944 against the 0.9 gate; "good" precision 0.826. The previous run (30 Sep 20:24) had failed on a single noisy run (0.895), which MW-29's median gate fixes.
+**1 Oct 2026 snapshot — eval workflow re-run, 1 Oct 06:49 UTC (GitHub Actions run 36826865528, main): passed.** Chat 20/20; corrected "great" precision runs 0.947 / 0.944 / 0.900, median 0.944 against the 0.9 gate; "good" precision 0.826. The previous run (30 Sep 20:24) had failed on a single noisy run (0.895), which MW-29's median gate fixes.
 
 ## 2. What the course taught, and where the project applied it
 

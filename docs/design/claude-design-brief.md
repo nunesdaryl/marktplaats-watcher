@@ -288,7 +288,7 @@ Real copy is quoted. Use it and don't invent new copy.
 - **LinkedIn:**
   - post image 1200×627
   - carousel of 7–12 slides at 1080×1350; slide 1 must work on its own; bold type of at least 24pt; numbered "3/10"
-  - **stat card** (e.g. "20/20 chat test cases passed")
+  - **stat card** (e.g. "19/20 chat test cases passed (9 Oct 2026 report)")
   - before/after card (0/10 skipped vs 9/10 e-mailed)
   - simple architecture or process graphic (Say it · Pick when · Get only the good ones)
 - **Favicon and app icons**, as in section 7.
@@ -296,9 +296,9 @@ Real copy is quoted. Use it and don't invent new copy.
 ## 12. Claims guardrails (for every mockup)
 
 **Allowed, with their exact qualifiers:**
-- "13/13 listings scored 8 or more agreed with a stronger AI judge (68% recall; human check pending)"
-- "20/20 chat test cases passed"
-- "An hourly watch finding one new listing an hour costs about €0.35 a month in AI cost"
+- "Great-match precision 100% and recall 78% (median of 3 runs) on 53 listings from 6 watches (9 Oct 2026 report)"
+- "19/20 chat test cases passed (9 Oct 2026 report)"
+- "An hourly watch finding one new listing an hour costs about €0.33 a month in AI cost (9 Oct 2026 report)"
 - "Free, up to 5 watches"
 - "Scores every new listing 0 to 10 and says why"
 - "Checks from every 15 minutes, Amsterdam time"

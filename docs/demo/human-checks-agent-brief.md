@@ -121,7 +121,7 @@ Since the redesign, the page also loads:
    - **Scorer:** "13 of 13 listings scored 8 or more agreed with the stronger AI judge (68% recall)". Add "human check
      pending" until section 1 is done; afterwards, the real N/10.
    - **"Good" level:** 90% recall at 85% precision.
-   - **Chat:** 20/20.
+   - **Chat:** 20/20. (29 Sep 2026 snapshot)
    - **Cost:** "an hourly watch finding one new listing an hour costs about €0.35 a month in AI cost".
    - **Monitoring:** "a daily health e-mail and an uptime check every 30 minutes".
    - **Flag any stronger claim:** "every e-mail is right", "before users notice", "nobody else does this".
