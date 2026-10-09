@@ -1,0 +1,23 @@
+{
+  "source": "local deterministic fake-model run on sanitised search fixture; no production data",
+  "request_id": "local-mw103-run-1",
+  "turn": {
+    "user_message": "Find a Mac mini",
+    "assistant_answer": "Here is a Mac mini listing.",
+    "model_calls": 2,
+    "tool_calls": 1,
+    "tool_trail": [
+      {
+        "name": "search_marktplaats",
+        "argument_keys": [
+          "query"
+        ],
+        "outcome": "ok"
+      }
+    ],
+    "tool_sequence": [
+      "search_marktplaats"
+    ],
+    "listings_returned": 6
+  }
+}

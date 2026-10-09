@@ -1,5 +1,5 @@
 import { ConvexError, v, type Infer } from "convex/values";
-import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { listingCard } from "./schema";
 import { notifyValidator, scheduleValidator } from "./schedule";
@@ -44,16 +44,18 @@ type MessageFields = {
   listings?: Infer<typeof listingCard>[];
   proposals?: Infer<typeof proposal>[];
   search?: Infer<typeof search>;
+  requestId?: string;
+  toolTrail?: { name: string; argument_keys: string[]; outcome: string }[];
 };
 
 async function insertMessage(ctx: MutationCtx, chatId: Id<"chats">, role: "user" | "assistant", content: string,
-                             { listings, proposals, search }: MessageFields = {}) {
+                             { listings, proposals, search, requestId, toolTrail }: MessageFields = {}) {
   const count = (await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", chatId)).take(MAX_MESSAGES)).length;
   if (count >= MAX_MESSAGES) throw new ConvexError("This chat is full. Start a new chat to keep going.");
   if (proposals && proposals.length > 5) throw new ConvexError("Too many proposals in one message.");
   const id = await ctx.db.insert("messages", {
     chatId, role, content: content.slice(0, MAX_CONTENT),
-    listings: listings?.slice(0, 10), proposals, search,
+    listings: listings?.slice(0, 10), proposals, search, requestId, toolTrail,
   });
   await patchTracked(ctx, "chats", chatId, { updatedAt: Date.now() });
   return id;
@@ -93,15 +95,24 @@ export const appendAssistant = internalMutation({
     clerkId: v.string(), chatId: v.string(), content: v.string(),
     listings: v.optional(v.array(listingCard)), proposals: v.optional(v.array(proposal)),
     search: v.optional(search),
+    requestId: v.optional(v.string()),
+    toolTrail: v.optional(v.array(v.object({ name: v.string(), argument_keys: v.array(v.string()), outcome: v.string() }))),
   },
-  handler: async (ctx, { clerkId, chatId, content, listings, proposals, search }) => {
+  handler: async (ctx, { clerkId, chatId, content, listings, proposals, search, requestId, toolTrail }) => {
     const id = ctx.db.normalizeId("chats", chatId);
     if (!id) throw new ConvexError("Chat not found.");
     const user = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId)).unique();
     const chat = await ctx.db.get(id);
     if (!user || !chat || chat.userId !== user._id) throw new ConvexError("Chat not found.");
-    return insertMessage(ctx, id, "assistant", content, { listings, proposals, search });
+    return insertMessage(ctx, id, "assistant", content, { listings, proposals, search, requestId, toolTrail });
   },
+});
+
+/** Server-only trace lookup for an assistant turn; never expose other users' turns to browser clients. */
+export const byRequestId = internalQuery({
+  args: { requestId: v.string() },
+  handler: async (ctx, { requestId }) => ctx.db.query("messages")
+    .withIndex("by_request_id", (q) => q.eq("requestId", requestId)).collect(),
 });
 
 /** Remember that a proposal card was saved, so reopening the chat doesn't offer "Save" again. */

@@ -62,6 +62,13 @@ to see the Python JSON lines for the request. For a scheduled check, the Convex 
 the run id; each Python check request adds `.0`, `.1`, and so on to that id. Search the run id in
 Vercel Logs to see every group. The Convex `errors` table stores the full id for failed groups
 and chat turns; filter it by `requestId`. Convex Logs also show the `check_run` line with the run id.
+For a saved assistant turn, use the internal `chats:byRequestId` query with that id to inspect its ordered
+`toolTrail` (tool name, argument keys and outcome; no argument values). The API also emits `chat_tool_trail`
+under the same id. The [local trail export](evals/data/mw103_local_tool_trail.json) shows the case-study shape;
+`tool_sequence` in chat evaluation output is the ordered list of its names.
+For a slow chat, compare the `chat_turn.ms` log with the 60-second chat deadline, five model calls,
+six tool calls and 1,500 output-token cap per model call in `agent.py`. A search request has a
+15-second default timeout and interactive retries stay within a 20-second total deadline.
 
 ---
 
@@ -72,6 +79,18 @@ cd frontend && npx convex env set --prod CHECKS_PAUSED 1      # takes effect at 
 cd frontend && npx convex env remove --prod CHECKS_PAUSED     # resume
 ```
 Chat keeps working. The next digest says "Checks are paused".
+
+### Stop and resume drill (2026-10-09)
+
+Local/test rehearsal, with no production writes: `CHECKS_PAUSED=1` made a tick return `paused: true` with
+zero alerts; removing it let the due watch run and send one alert. In a separate crash case, the test dispatcher
+claimed a seeded watch, then the worker stopped before `record`. A 15-minute tick could not reclaim the lease.
+After 31 minutes, the next tick claimed it; repeating `record` for the same listing made one alert. A failed
+e-mail was retried at the next check and a sent alert was not retried. The local request id `local-mw103-turn-1` identifies the saved
+assistant trail test, `local-mw103-run-1` identifies the deterministic [full run export](evals/data/mw103_local_tool_trail.json),
+and `run-123.0` exercises the check request-id header and JSON log path. These are
+local test ids; they cannot be looked up in Vercel or Production Convex logs. A production drill and log
+lookup require a later operator run with approved production writes. See [ADR 0014](docs/adr/0014-check-idempotency-and-resume.md).
 
 To pause chat immediately, set `CHAT_PAUSED=1` in Vercel Production environment variables and redeploy the API. Chat then returns 503 with the maintenance message; scheduled watches keep running. Remove the variable and redeploy to resume. `CHAT_DAILY_LIMIT` in Convex defaults to 40, and `USER_AI_BUDGET_EUR` defaults to €1.00 per 30 days. The allowance needs `CONVEX_SITE_URL` and `API_TO_CONVEX_SECRET` in Vercel and the same `API_TO_CONVEX_SECRET` in Convex. If the usage check is unavailable, chat refuses new questions and Vercel logs `usage_check_failed`.
 

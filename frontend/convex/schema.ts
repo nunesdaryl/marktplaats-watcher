@@ -263,8 +263,10 @@ export default defineSchema({
     listings: v.optional(v.array(listingCard)),
     proposals: v.optional(v.array(v.any())),     // shape checked in chats.ts
     search: v.optional(v.any()),                 // the last search's arguments, for "Watch this search"
+    requestId: v.optional(v.string()),
+    toolTrail: v.optional(v.array(v.object({ name: v.string(), argument_keys: v.array(v.string()), outcome: v.string() }))),
     savedProposals: v.optional(v.array(v.number())),
-  }).index("by_chat", ["chatId"]),
+  }).index("by_chat", ["chatId"]).index("by_request_id", ["requestId"]),
 
   watches: defineTable({
     userId: v.id("users"),

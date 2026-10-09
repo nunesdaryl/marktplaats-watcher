@@ -195,6 +195,35 @@ test("A01: a failed alert e-mail is retried at the next ticks, then marked sent"
   expect(mails).toHaveLength(1);
 });
 
+test("a killed check resumes after its lease and records only one alert", async () => {
+  const { t, id } = await seededWatch();
+  const started = Date.now();
+  expect(await t.mutation(internal.checker.claimDue, { now: started })).toHaveLength(1);
+  // The worker dies before record; its lease prevents an overlapping tick from claiming it.
+  expect(await t.mutation(internal.checker.claimDue, { now: started + 15 * 60_000 })).toEqual([]);
+  vi.setSystemTime(started + 31 * 60_000);
+  const resumed = Date.now();
+  expect(await t.mutation(internal.checker.claimDue, { now: resumed })).toHaveLength(1);
+  const first = await t.mutation(internal.checker.record, { now: resumed, results: [found(id, ["a1"])], dryRun: false });
+  const duplicate = await t.mutation(internal.checker.record, { now: resumed, results: [found(id, ["a1"])], dryRun: false });
+  expect(first).toHaveLength(1);
+  expect(duplicate).toEqual([]);
+  expect((await alerts(t)).map((a: any) => a.listingId)).toEqual(["a1"]);
+});
+
+test("local kill switch stops a tick and resume checks the due watch once", async () => {
+  const { t } = await seededWatch();
+  const mails = fakeServices(() => ["a1"]);
+  process.env.CHECKS_PAUSED = "1";
+  try {
+    expect(await t.action(internal.checker.checkDue, {})).toMatchObject({ paused: true, checked: 0 });
+    expect(await alerts(t)).toEqual([]);
+  } finally { delete process.env.CHECKS_PAUSED; }
+  expect(await t.action(internal.checker.checkDue, {})).toMatchObject({ checked: 1 });
+  expect((await alerts(t)).map((a: any) => a.listingId)).toEqual(["a1"]);
+  expect(mails).toHaveLength(1);
+});
+
 test("A01: retries stop after 4 attempts, and never for a paused watch", async () => {
   const { t, alice, id } = await seededWatch();
   fakeServices(() => ["a1"], 99);

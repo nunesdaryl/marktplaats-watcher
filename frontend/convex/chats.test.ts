@@ -77,6 +77,18 @@ test("assistant HTTP writes require the shared secret", async () => {
   } finally { delete process.env.API_TO_CONVEX_SECRET; }
 });
 
+test("assistant tool trail is stored in order and found by request id", async () => {
+  const { t, alice } = setup();
+  const chatId = await alice.mutation(api.chats.start, { content: "Find my alerts" });
+  const toolTrail = [{ name: "search_my_alerts", argument_keys: ["k", "query"], outcome: "ok" },
+    { name: "get_alert_evidence", argument_keys: ["alert_id"], outcome: "error" }];
+  await t.mutation(internal.chats.appendAssistant, { clerkId: "user_alice", chatId, content: "One match",
+    requestId: "local-mw103-turn-1", toolTrail });
+  const [saved] = await t.query(internal.chats.byRequestId, { requestId: "local-mw103-turn-1" });
+  expect(saved).toMatchObject({ role: "assistant", requestId: "local-mw103-turn-1", toolTrail });
+  expect(saved?.toolTrail?.[0]).not.toHaveProperty("query");
+});
+
 test("delete-my-data and the 30-day purge also remove chats", async () => {
   const { t, alice, bob } = setup();
   await alice.mutation(api.chats.start, { content: "alice's chat" });

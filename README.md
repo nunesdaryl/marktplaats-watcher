@@ -171,6 +171,17 @@ uptime check).
 - Data kept: e-mail address, watches, listings already seen and alerts, 30 days (purged daily).
   "Delete my data" removes all of it. Listing titles and search text are sent to OpenAI for scoring.
 
+## Failure harness
+
+- [Kill switches](RUNBOOK.md#1-stop-all-scheduled-checks-now-kill-switch) pause chat and scheduled checks separately; [ADR 0012](docs/adr/0012-allowance-and-kill-switches.md) records the choice.
+- Chat [fails closed on allowance and admission outages](docs/adr/0012-allowance-and-kill-switches.md#amendment-2026-10-05-mw-85). Model calls have [token caps and timeouts](RUNBOOK.md#trace-a-request); the [runbook](RUNBOOK.md#3-openai-cap-reached-key-revoked-or-model-gone) covers exhausted credit and revoked keys.
+- Scheduled Marktplaats reads (`fetch_search`) retry a 429, 5xx, timeout or connection error **once**, after a jittered backoff (honouring `Retry-After`, capped at 16 s) within the request's deadline, exactly as many requests as before MW-103 (operator rule: request volume per check must not go up); other 4xx and malformed responses fail at once. A lasting failure is left to the next 15-minute tick, which re-reads safely ([ADR 0014](docs/adr/0014-check-idempotency-and-resume.md)). The volume estimate never retries. Chat reads public `/q/` pages with a 15-minute cache and an hourly cap instead.
+- [Failed alert e-mail is retried at the next three checks](RUNBOOK.md#5-alerts-not-arriving), at most four sends total. [ADR 0012](docs/adr/0012-allowance-and-kill-switches.md) covers the operating controls. The [nightly delivery audit](RUNBOOK.md#the-delivery-audit-found-a-miss) checks for missed deliveries.
+
+## MCP
+
+The [MCP server](mcp_server.py) exposes six read-only tools over streamable HTTP at `/api/mcp`: `list_my_watches`, `get_watch_activity`, `get_alert_evidence`, `search_my_alerts`, `compare_vector_stores`, and `search_marktplaats`. A client connects to `https://marktplaats-watcher.vercel.app/api/mcp` with `Authorization: Bearer <token>`. The server must have `MCP_ENABLED=1`. The bearer token may be a verified Clerk session token for an admitted user, or the owner's configured `MCP_OWNER_TOKEN` with `OWNER_CLERK_ID`; rate limits and admission checks apply. See [the access middleware](main.py) and [ADR 0011](docs/adr/0011-server-writes-agent-turns.md). The owner's Claude Desktop/Code connection demonstration is a separate operator step.
+
 ## Running the factory
 
 The MW queue is in Linear. From the main checkout, run `scripts/factory/dispatch.sh MW-<number>` for one `agent-ready` issue. After a PASS review marks it `ready-to-merge` and Daryl adds an `Operator merge approval:` comment, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>`. The gate and evidence log are described in [AGENTS.md](AGENTS.md) and [RUNBOOK.md](RUNBOOK.md).

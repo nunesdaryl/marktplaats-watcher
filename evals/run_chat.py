@@ -23,6 +23,7 @@ def run_case(case):
     result = {"id": case_id, "category": category, "message": message, "passed": passed and not too_many,
               "failure": None if passed and not too_many else ("too many tool calls" if passed else (error or "wrong result")),
               "tool_calls": usage.get("tool_calls"), "max_tool_calls": max_tools, "model_calls": usage.get("model_calls"),
+              "tool_sequence": usage.get("tool_sequence", []),
               "answer": r["answer"][:300], "searches": r["searches"], "proposals": r["proposals"],
               "ms": round((time.time() - t0) * 1000)}
     return result, usage

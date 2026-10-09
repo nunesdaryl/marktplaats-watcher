@@ -278,6 +278,8 @@ def save_assistant(request, user, event, ident=None):
         return False
     search = event.get("searches") or []
     payload = {"clerkId": user, "chatId": request.chatId,
+               "requestId": ident or request_id.get(),
+               "toolTrail": (event.get("usage") or {}).get("tool_trail", []),
                "content": event.get("answer", event.get("text", "")) or "…",
                "listings": (event.get("listings") or [])[:10],
                "proposals": event.get("proposals") or [],
@@ -369,6 +371,7 @@ def chat_route(request: ChatRequest, background_tasks: BackgroundTasks, user: st
                 background_tasks.add_task(record_ai_status, None, request_id.get())
         finally:
             mcp_user.reset(identity)
+        log("chat_tool_trail", requestId=request_id.get(), toolTrail=(answer.get("usage") or {}).get("tool_trail", []))
         return {**answer, "saved": save_assistant(request, user, answer)}
     except Exception as e:
         answer, status = friendly_error(e)
@@ -414,6 +417,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
                 elif event["type"] == "done":
                     stats["proposals"] = len(event["proposals"])
                     stats.update({k: event["usage"][k] for k in ("input_tokens", "output_tokens", "model_calls")})
+                    log("chat_tool_trail", requestId=ident, toolTrail=event["usage"].get("tool_trail", []))
                     record_chat_spend(user, event["usage"], ident, request.chatId)
                     if event["usage"].get("model_calls", 0):
                         background_tasks.add_task(record_ai_status, None, ident)
