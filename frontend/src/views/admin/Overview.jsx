@@ -418,12 +418,15 @@ export default function Overview({ open, onSearch, ask }) {
         <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses ({data.deliveryAudit.misses} new)</button></h2>
         {data.deliveryAudit.latestMisses.length === 0 ? <p className="hint">No delivery misses in the latest audit</p> :
           <div className="delivery-miss-scroll">
-            <table className="band-table"><thead><tr><th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th><th>Status</th></tr></thead>
+            <table className="band-table"><thead><tr><th>Status</th><th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th></tr></thead>
               <tbody>{data.deliveryAudit.latestMisses.filter((miss, index, all) => all.findIndex((other) =>
                 other.watchId === miss.watchId && other.listingId === miss.listingId) === index).map((miss) =>
                 <tr key={`${miss.watchId}-${miss.listingId}`} className={`openable${miss.reportedBefore !== undefined || miss.at !== data.deliveryAudit.lastRunAt ? " delivery-miss-reported" : ""}`}
                     tabIndex={0} onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}
                     onKeyDown={(e) => { if (e.key === "Enter") go("audits", "Delivery miss", { requestId: miss.requestId }); }}>
+                  <td className={miss.reportedBefore === undefined && miss.at === data.deliveryAudit.lastRunAt ? "delivery-miss-new" : undefined}>
+                    {miss.reportedBefore !== undefined ? `reported before ${auditDate(miss.reportedBefore)}`
+                      : miss.at === data.deliveryAudit.lastRunAt ? "new" : `first reported ${auditDate(miss.at)}`}</td>
                   <td>{auditDate(miss.at)}</td>
                   <td><span className="delivery-miss-name" title={miss.watchLabel}>{miss.watchLabel}</span></td>
                   <td>{miss.url ? <a className="delivery-miss-name" href={miss.url} target="_blank" rel="noopener noreferrer" title={miss.title}
@@ -431,8 +434,6 @@ export default function Overview({ open, onSearch, ask }) {
                     : <span className="delivery-miss-name" title={miss.title}>{miss.title}</span>}</td>
                   <td className="num">{miss.score === undefined ? "–" : `${miss.score}/10`}</td>
                   <td className="num">{miss.checkScore === undefined ? "–" : `${miss.checkScore}/10`}</td>
-                  <td>{miss.reportedBefore !== undefined ? `reported before ${auditDate(miss.reportedBefore)}`
-                    : miss.at === data.deliveryAudit.lastRunAt ? "new" : `first reported ${auditDate(miss.at)}`}</td>
                 </tr>)}</tbody>
             </table>
           </div>}
