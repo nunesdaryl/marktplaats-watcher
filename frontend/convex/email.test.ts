@@ -58,6 +58,10 @@ test("each alert has 'Good match?' links that open the app's rate page with that
   expect(text).toContain("Good match? Yes: https://app.test/rate/?a=al0&v=good&t=tok0");
   expect(text).toContain("Not right: https://app.test/rate/?a=al0&v=not_right&t=tok0");
   expect(html.match(/Good match\?/g)).toHaveLength(2);
+  const firstCard = html.slice(html.indexOf("Mac mini i5 16GB"), html.indexOf("&lt;img"));
+  expect(firstCard.indexOf("Good price.")).toBeLessThan(firstCard.indexOf("Good match?"));
+  expect(firstCard.indexOf("Good match?")).toBeLessThan(firstCard.indexOf("Open on Marktplaats"));
+  expect(firstCard.match(/min-height:44px/g)).toHaveLength(2);
   expect(renderEmail(content, "https://app.test").text).not.toContain("Good match?");   // no code, no links
 });
 

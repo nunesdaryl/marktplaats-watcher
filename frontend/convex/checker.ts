@@ -322,12 +322,12 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 <tr>${badge(a.score)}<td valign="top" style="padding:14px 16px 16px 16px;">
 <a href="${escape(a.url)}" class="mw-text mw-title" style="color:#1b1a18;font-family:${sans};font-size:16px;line-height:22px;font-weight:600;text-decoration:underline;text-decoration-color:#e4e0da;">${escape(a.title)}</a>
 <div class="mw-text2" style="color:#5b5751;font-family:${sans};font-size:14px;line-height:20px;margin:4px 0 0 0;">${escape(facts(a))}</div>
-<div class="mw-text" style="color:#1b1a18;font-family:${sans};font-size:15px;line-height:22px;margin:4px 0 12px 0;">${escape(a.reason)}</div>
-<a href="${escape(a.url)}" class="mw-btn" style="display:inline-block;background:#0d6b62;color:#ffffff;font-family:${sans};font-size:14px;line-height:20px;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:6px;">Open on Marktplaats</a>${
+<div class="mw-text" style="color:#1b1a18;font-family:${sans};font-size:15px;line-height:22px;margin:4px 0 12px 0;">${escape(a.reason)}</div>${
   rateUrl(a, "good") ? `
-<div class="mw-text2 mw-rule" style="margin:12px 0 0 0;padding:10px 0 0 0;border-top:1px solid #eeebe6;font-family:${sans};font-size:14px;line-height:20px;color:#5b5751;">Good match?
-<a href="${escape(rateUrl(a, "good")!)}" class="mw-link" style="color:#0d6b62;font-weight:600;margin-left:6px;">Yes</a> &middot;
-<a href="${escape(rateUrl(a, "not_right")!)}" class="mw-link" style="color:#0d6b62;font-weight:600;">Not right</a></div>` : ""}
+<div class="mw-text2 mw-rule" style="margin:0 0 12px 0;padding:10px 0 0 0;border-top:1px solid #eeebe6;font-family:${sans};font-size:14px;line-height:20px;color:#5b5751;">Good match?<br>
+<a href="${escape(rateUrl(a, "good")!)}" class="mw-link" style="display:inline-block;min-height:44px;line-height:44px;padding:0 12px;color:#0d6b62;font-weight:600;">Yes</a> &middot;
+<a href="${escape(rateUrl(a, "not_right")!)}" class="mw-link" style="display:inline-block;min-height:44px;line-height:44px;padding:0 12px;color:#0d6b62;font-weight:600;">Not right</a></div>` : ""}
+<a href="${escape(a.url)}" class="mw-btn" style="display:inline-block;background:#0d6b62;color:#ffffff;font-family:${sans};font-size:14px;line-height:20px;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:6px;">Open on Marktplaats</a>
 </td></tr></table></td></tr>`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

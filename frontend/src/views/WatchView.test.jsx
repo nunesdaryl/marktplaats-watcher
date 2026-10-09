@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test, vi } from "vitest";
 import WatchView from "./WatchView.jsx";
 
-vi.mock("convex/react", () => ({ useMutation: vi.fn(() => vi.fn()) }));
+vi.mock("convex/react", () => ({ useMutation: vi.fn(() => vi.fn()), useQuery: vi.fn(() => null) }));
 vi.mock("../lib/router.js", () => ({ useNow: () => 0, go: vi.fn() }));
 vi.stubGlobal("React", React);
 

@@ -10,6 +10,60 @@ const modules = import.meta.glob("./**/*.ts");
 test("rating reason validator stays in sync with the user labels", () => {
   expect(RATING_REASONS).toEqual(REASONS.map(([key]) => key));
 });
+
+test("first-week card ends after three ratings or dismissal and never appears for owner", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const userId = (await alice.mutation(api.users.store, {})).id!;
+  const ids = await t.run(async (ctx) => Promise.all([0, 1, 2, 3].map((i) => ctx.db.insert("alerts", {
+    userId, watchId, listingId: `l${i}`, title: `Bike ${i}`, url: "https://example.com/bike", score: 8,
+    reason: "Match", channel: "email", emailStatus: "sent", createdAt: Date.now() + i,
+  }))));
+  expect((await alice.query(api.ratings.nudge, {}))?.alert._id).toBe(ids[3]);
+  await alice.mutation(api.ratings.dismissNudge, {});
+  expect(await alice.query(api.ratings.nudge, {})).toBeNull();
+  await t.run((ctx) => ctx.db.patch(userId, { ratingNudgeDismissedAt: undefined }));
+  await alice.mutation(api.ratings.markNudgeShown, {});
+  for (const id of ids.slice(0, 3)) await alice.mutation(api.ratings.rate, { alertId: id, verdict: "good" });
+  expect(await alice.query(api.ratings.nudge, {})).toBeNull();
+  expect(await alice.query(api.ratings.watchRatingCount, { watchId })).toBe(3);
+  await t.run((ctx) => ctx.db.patch(userId, { ratingNudgeDismissedAt: Date.now() }));
+  expect(await alice.query(api.ratings.nudge, {})).toBeNull();
+  await t.run(async (ctx) => {
+    await ctx.db.patch(userId, { ratingNudgeDismissedAt: undefined, admittedAt: Date.now() - 14 * 86_400_000 });
+    for (const rating of await ctx.db.query("ratings").collect()) await ctx.db.delete(rating._id);
+  });
+  expect(await alice.query(api.ratings.nudge, {})).toBeNull();
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const ownerWatch = await owner.mutation(api.watches.create, { query: "bike", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const ownerId = (await owner.mutation(api.users.store, {})).id!;
+  await t.run((ctx) => ctx.db.insert("alerts", { userId: ownerId, watchId: ownerWatch, listingId: "owner-alert",
+    title: "Owner bike", url: "https://example.com/bike", score: 8, reason: "Match", channel: "email",
+    emailStatus: "sent", createdAt: Date.now() }));
+  expect(await owner.query(api.ratings.nudge, {})).toBeNull();
+});
+
+test("owner rating metric uses e-mailed alerts by week and counts card conversion", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "alice@example.com" });
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike", schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const userId = (await alice.mutation(api.users.store, {})).id!;
+  const ids = await t.run(async (ctx) => Promise.all(["sent", "sent", "failed"].map((status, i) => ctx.db.insert("alerts", {
+    userId, watchId, listingId: `metric-${i}`, title: `Bike ${i}`, url: "https://example.com/bike", score: 8,
+    reason: "Match", channel: "email", emailStatus: status as "sent" | "failed", createdAt: Date.now(),
+  }))));
+  await t.run((ctx) => ctx.db.insert("alerts", { userId, watchId, listingId: "last-week", title: "Older bike",
+    url: "https://example.com/older", score: 8, reason: "Match", channel: "email", emailStatus: "sent",
+    createdAt: Date.now() - 8 * 86_400_000 }));
+  await alice.mutation(api.ratings.markNudgeShown, {});
+  await alice.mutation(api.ratings.rate, { alertId: ids[0], verdict: "good" });
+  await alice.mutation(api.ratings.rate, { alertId: ids[2], verdict: "not_right" });
+  const stats = await owner.query(api.admin.ratingStats, { days: 30 });
+  expect(stats).toMatchObject({ alertsSent: 3, rated: 2, ratedSent: 1, nudgeShown: 1, nudgeRated: 1 });
+  expect(stats?.weeklyRatedShare).toMatchObject([{ sent: 2, rated: 1 }, { sent: 1, rated: 0 }]);
+});
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-29T10:00:00Z"));

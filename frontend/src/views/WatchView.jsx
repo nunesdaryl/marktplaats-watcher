@@ -1,4 +1,4 @@
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { describeWhen } from "../../convex/schedule";
@@ -8,6 +8,7 @@ import ListingCard from "../components/ListingCard.jsx";
 import RowMenu from "../components/RowMenu.jsx";
 import WatchSentence from "../components/WatchSentence.jsx";
 import BroadWatchWarning from "../components/BroadWatchWarning.jsx";
+import RatingNudge from "../components/RatingNudge.jsx";
 import { go, useNow } from "../lib/router.js";
 import { track } from "../lib/track.js";
 
@@ -31,6 +32,7 @@ export default function WatchView({ watch, onEdit, actions }) {
   const update = useMutation(api.watches.update);
   const checkNow = useMutation(api.watches.checkNow);
   const now = useNow();
+  const ratingCount = useQuery(api.ratings.watchRatingCount, watch ? { watchId: watch._id } : "skip");
   const [error, setError] = useState("");
   const run = (fn) => fn().then(() => setError("")).catch((e) => setError(e.data ?? "That didn't work. Try again."));
 
@@ -56,6 +58,7 @@ export default function WatchView({ watch, onEdit, actions }) {
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
         {watch.excludeWords?.length > 0 && <p className="muted">Skipping: {watch.excludeWords.join(", ")}</p>}
         <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
+        {ratingCount > 0 && <p className="muted">Tuned by {ratingCount} of your ratings</p>}
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
         {watch.active && !watch.archivedAt && ((watch.backlog ?? 0) >= 20 || watch.coverageCapped) &&
           <BroadWatchWarning message={`This watch is falling behind${watch.backlog > 0 ? ` (${watch.backlog} listings waiting)` : ""}. Add a brand, model or price limit, or choose 'good matches'.`}
@@ -76,6 +79,8 @@ export default function WatchView({ watch, onEdit, actions }) {
         </div>
         {error && <p className="error" role="alert">{error}</p>}
       </header>
+
+      <RatingNudge watchId={watch._id} />
 
       <h2 className="section-title">Matches</h2>
       {watch.alerts.length ? (

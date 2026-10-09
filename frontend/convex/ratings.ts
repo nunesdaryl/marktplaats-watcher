@@ -51,6 +51,9 @@ async function save(ctx: MutationCtx, alert: Doc<"alerts">, change:
     await patchTracked(ctx, "ratings", existing._id, { ...fields, source: change.source, updatedAt: now });
     return existing._id;
   }
+  const user = await ctx.db.get(alert.userId);
+  if (user?.ratingNudgeShownAt && !user.ratingNudgeRatedAt)
+    await ctx.db.patch(user._id, { ratingNudgeRatedAt: now });
   const watch = await ctx.db.get(alert.watchId);
   return await insertTracked(ctx, "ratings", {
     alertId: alert._id, userId: alert.userId, watchId: alert.watchId, ...fields,
@@ -192,6 +195,45 @@ export const mine = query({
     return Object.fromEntries(rows.map((r) => [r.alertId, { verdict: r.verdict, reasons: r.reasons ?? [], note: r.note ?? "" }]));
   },
 });
+
+/** First 14 days: one card across Alerts and watch pages, until dismissed or three alerts rated. */
+export const nudge = query({
+  args: { watchId: v.optional(v.id("watches")) },
+  handler: async (ctx, { watchId }) => {
+    const user = await currentUser(ctx);
+    if (!user || !user.freeUntil ||
+        (user.clerkId === process.env.OWNER_CLERK_ID?.trim() &&
+         user.email.toLowerCase() === process.env.OWNER_EMAIL?.trim().toLowerCase()) ||
+        Date.now() >= (user.admittedAt ?? user.createdAt) + 14 * 86_400_000 ||
+        user.ratingNudgeDismissedAt) return null;
+    const ratings = await ctx.db.query("ratings").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    if (ratings.length >= 3) return null;
+    const rated = new Set(ratings.map((r) => r.alertId));
+    const alerts = await ctx.db.query("alerts")
+      .withIndex("by_user_archivedAt", (q) => q.eq("userId", user._id).eq("archivedAt", undefined))
+      .order("desc").take(500);
+    const alert = alerts.find((a) => (!watchId || a.watchId === watchId) && !rated.has(a._id));
+    return alert ? { alert: { _id: alert._id, title: alert.title } } : null;
+  },
+});
+
+export const markNudgeShown = mutation({ args: {}, handler: async (ctx) => {
+  const user = await requireUser(ctx);
+  if (!user.ratingNudgeShownAt && !user.ratingNudgeDismissedAt)
+    await ctx.db.patch(user._id, { ratingNudgeShownAt: Date.now() });
+} });
+
+export const dismissNudge = mutation({ args: {}, handler: async (ctx) => {
+  const user = await requireUser(ctx);
+  await ctx.db.patch(user._id, { ratingNudgeDismissedAt: Date.now() });
+} });
+
+export const watchRatingCount = query({ args: { watchId: v.id("watches") }, handler: async (ctx, { watchId }) => {
+  const user = await currentUser(ctx);
+  const watch = await ctx.db.get(watchId);
+  if (!user || watch?.userId !== user._id) return 0;
+  return (await ctx.db.query("ratings").withIndex("by_watch", (q) => q.eq("watchId", watchId)).collect()).length;
+} });
 
 /** For evals: every rating and its scorer inputs, without who gave it. `npx convex run --prod ratings:exportAll`. */
 export const exportAll = internalQuery({
