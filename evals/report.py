@@ -1,6 +1,7 @@
 """Step 5: evals/report.md from the saved results (no model calls)."""
 import re
 from collections import Counter
+from statistics import median
 
 from prompts import PROMPT_VERSION
 from evals.common import AUDIT_MISSES, CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
@@ -113,16 +114,23 @@ def main():
     metrics = scorer_metrics(s["scored"], overrides,
                              {name: m["threshold"] for name, m in s["metrics"].items()})
     runs = s.get("runs", [s])
-    great_precisions = [scorer_metrics(run["scored"], overrides,
-                                       {"great": run.get("great", run.get("metrics", {}).get("great"))["threshold"]})["great"]["precision"]
-                        for run in runs]
+    run_metrics = [scorer_metrics(run["scored"], overrides,
+                                  {name: run.get(name, run.get("metrics", {}).get(name, s["metrics"][name]))["threshold"]
+                                   for name in metrics}) for run in runs]
     scorer_eval_cost = sum(run.get("cost_usd", cost_usd(model, run["tokens"]["input"], run["tokens"]["output"]))
                            + run.get("price_type_cost_usd", 0) + run.get("audit_misses_cost_usd", 0)
                            for run in runs)
-    measured = [precision for precision in great_precisions if precision is not None]
-    run_summary = (f"median of {len(runs)} {'run' if len(runs) == 1 else 'runs'}; "
-                   f"range {min(measured) * 100:.1f}–{max(measured) * 100:.1f}%" if measured else
-                   f"median of {len(runs)} runs; range n/a")
+    def median_metric(name, field):
+        values = [run[name][field] for run in run_metrics if run[name][field] is not None]
+        return median(values) if values else None
+
+    def metric_range(field):
+        values = [run["great"][field] for run in run_metrics if run["great"][field] is not None]
+        return f"{min(values) * 100:.1f}–{max(values) * 100:.1f}%" if values else "n/a"
+
+    run_summary = (f"Median of {len(runs)} {'run' if len(runs) == 1 else 'runs'}; "
+                   f"great precision range {metric_range('precision')}, great recall range {metric_range('recall')}. "
+                   "TP/FP/FN/TN counts are omitted; misses below use the saved representative run.")
     old = REPORT.read_text() if REPORT.exists() else ""
     sign_off = next((line for line in old.splitlines() if line.startswith("UAT sign-off:")), SIGN_OFF)
     repeated = read(REPEAT_RESULTS) if REPEAT_RESULTS.exists() else []
@@ -135,11 +143,10 @@ def main():
         f"Prompt versions: chat **{c.get('prompt_version', 'not recorded')}**, rank **{s.get('prompt_version', 'not recorded')}**.",
         sign_off, "",
         "## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)", "",
-        f"{s['listings']} real Marktplaats listings from 5 watches, frozen in `evals/data/listings.json`; "
+        f"{s['listings']} real Marktplaats listings from {len(read(LISTINGS).get('watches', []))} watches, frozen in `evals/data/listings.json`; "
         f"the judge marked **{s['judge_matches']}** as real matches. After human overrides, "
         f"**{sum(row['judge']['match'] ^ (row['id'] in overrides) for row in s['scored'])}** are real matches.", "",
-        f"Corrected great precision: {run_summary}.", "",
-        "| Notify level | E-mailed when | Precision | Recall | TP | FP | FN | TN |", "|---|---|---|---|---|---|---|---|",
+        "| Notify level | E-mailed when | Precision | Recall |", "|---|---|---|---|",
     ]
     if s.get("prompt_version") != PROMPT_VERSION["rank"]:
         lines[5:5] = [f"Current rank prompt **{PROMPT_VERSION['rank']}** has no saved scorer run yet; "
@@ -148,7 +155,8 @@ def main():
         lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}**, chat **{c['model']}**. "
                       "Rerun those evals to measure the configured model.", ""]
     for name, m in metrics.items():
-        lines.append(f"| {name} | score ≥ {m['threshold']} | **{pct(m['precision'])}** | **{pct(m['recall'])}** | {m['tp']} | {m['fp']} | {m['fn']} | {m['tn']} |")
+        lines.append(f"| {name} | score ≥ {m['threshold']} | **{pct(median_metric(name, 'precision'))}** | **{pct(median_metric(name, 'recall'))}** |")
+    lines += ["", run_summary]
     lines += ["", "*Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*", ""]
     for name, m in metrics.items():
         if m["false_positives"] or m["false_negatives"]:

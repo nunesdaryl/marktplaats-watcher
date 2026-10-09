@@ -34,7 +34,7 @@ All **59 items**, in the original order of [F/references/checklists.md](</Users/
 |---|---|---|
 | 3.1 ≥20 cases; hand-labelled ideals | ⚠️ | 20 chats/49 listings; human labels pending. [evals/report.md:3](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/report.md:3>) |
 | 3.2 Human-authored assertions | ⚠️ | Conditions exist; human approval unrecorded. [evals/chat_cases.py:24](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/chat_cases.py:24>) |
-| 3.3 Numeric pass rate | ✅ | 20/20 and confusion matrices. [evals/report.md:9](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/report.md:9>) |
+| 3.3 Numeric pass rate | ✅ | 20/20 and confusion matrices (27 Sep 2026 snapshot). [evals/report.md:9](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/report.md:9>) |
 | 3.4 Count failure categories | ⚠️ | Individual misses; no category summary. [evals/report.md:16](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/report.md:16>) |
 | 3.5 Actual/expected loop counts | ✅ | Tool limits and model-call counts. [evals/report.md:44](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/evals/report.md:44>) |
 | 3.6 Uncertainty/risk → human | ⚠️ | Writes need approval; relevance score ≠ confidence. [agent.py:380](</Users/daryldimitrianthony/FDE Course/2 Projects/marktplaats-watcher/agent.py:380>) |

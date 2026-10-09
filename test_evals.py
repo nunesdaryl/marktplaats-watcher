@@ -392,7 +392,7 @@ def test_report_shows_run_count_range_and_three_run_cost(monkeypatch, eval_files
     common.write(eval_files["SCORER_RESULTS"], scorer)
     report.main()
     text = eval_files["REPORT"].read_text()
-    assert "median of 3 runs; range 0.0–50.0%" in text
+    assert "Median of 3 runs; great precision range 0.0–50.0%, great recall range 0.0–50.0%" in text
     assert "3 scorer runs" in text
 
 

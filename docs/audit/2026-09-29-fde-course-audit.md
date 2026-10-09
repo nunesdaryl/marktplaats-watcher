@@ -163,7 +163,7 @@ concrete fixes.
 | Course rule | Status | Evidence | Recommended fix | Effort · Wave |
 |---|---|---|---|---|
 | Golden set ≥ 20 real cases (CHK §3) | ✅ | 20 chat cases (`evals/chat_cases.py`), 49 scored listings | Grow the scorer set to 100+ from user ratings | M · 2 |
-| Pass rate as a number | ✅ | Chat 20/20; scorer precision and recall per level | — | — |
+| Pass rate as a number | ✅ | Chat 20/20; scorer precision and recall per level (29 Sep 2026 snapshot) | — | — |
 | Loop-count check (took 8 steps where 3 expected = FAIL) | ✅ | The chat table records tool calls against a max per case | — | — |
 | LLM judge with a human sample (D1 p176) | 🟡 | Human spot-check 7/10, but precision and recall still use the judge's labels (`evals/report.md` line 3) | Recompute with Daryl's three corrections as ground truth | S · 1 |
 | Failure categories counted (CHK §3) | ❌ | Misses are listed, not categorised | Categories (wrong model/spec, accessory, over budget, unclear) with counts | S · 1 |
@@ -262,7 +262,7 @@ concrete fixes.
 ## 4. What is already strong (say it on stage)
 
 - **Evaluation in layers:**
-    - chat golden set 20/20
+    - chat golden set 20/20 (29 Sep 2026 snapshot)
     - scorer precision and recall against a stronger judge
     - a human spot check of the judge (7/10, disagreements named)
     - measured cost

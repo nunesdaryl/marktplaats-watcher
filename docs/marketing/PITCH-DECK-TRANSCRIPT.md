@@ -17,7 +17,7 @@ An independent proof of concept, not affiliated with Marktplaats.
 
 
 **Speaker notes:**
-Thank you for the time. In one line: Marktplaats Watcher turns searching into being told. You say what you want in plain words, like a Mac mini with 16GB under 500 euros, you pick when to check, and you only get an e-mail when a listing is genuinely worth a look. Every new listing is read and scored 0 to 10 by an AI agent, and the reason comes with it. It runs live today, free, up to five watches per person.
+Thank you for the time. In one line: Marktplaats Watcher turns searching into being told. You say what you want in plain words, like a Mac mini with 16GB under 500 euros, you pick when to check, and you only get an e-mail when a listing is genuinely worth a look. Every new listing is read and scored 0 to 10 by an AI agent, and the reason comes with it. It runs live today, free, up to 5 watches per person.
 
 
 ## Slide 2
@@ -123,12 +123,13 @@ Here is what it could mean for you, in the three buckets every business measures
 
 PROOF · IT EXISTS, IT RUNS, IT IS MEASURED
 Production discipline, not a hackathon script.
-94%
-of "great match" e-mails were real matches (53 real listings, median of 3 runs)
-20/20
-chat test cases passed: search, watch, change, edge cases
-€0.005
-AI cost of a check that scores 20 new listings; no new listings, no cost
+100%
+of "great match" e-mails were real matches (9 Oct 2026 report: 53 listings from 6 watches, 78% recall, median of 3 runs)
+19/20
+chat test cases passed (9 Oct 2026 report): search, watch, change, edge cases
+€0.00511
+AI cost of a check that scores 20 new listings (9 Oct 2026 report); no new listings, no cost
+€0.0307 per 100 listings scored and about €0.0019 per chat question (9 Oct 2026 report)
 Live
 marktplaats-watcher.vercel.app, free, up to 5 watches per person
 Judged honestly
@@ -190,7 +191,7 @@ Marktplaats Watcher · not affiliated with Marktplaats
 
 
 **Speaker notes:**
-Now the honest part, and the reason I am here. Today the app reads listings through my own signed-in session. I capped it on purpose: free, five watches per person. There is a kill switch that stops every scheduled check at once, and users can delete all their data in one click. What I want instead is the official route: an API or a partner feed, with a service account rather than a person's login, rate limits and data rules that you set, and your security and legal review before anything scales. A production version needs a non-personal function user and official access. I would rather build it with you than around you.
+Now the honest part, and the reason I am here. Today the app reads listings through my own signed-in session. I capped it on purpose: free, 5 watches per person. There is a kill switch that stops every scheduled check at once, and users can delete all their data in one click. What I want instead is the official route: an API or a partner feed, with a service account rather than a person's login, rate limits and data rules that you set, and your security and legal review before anything scales. A production version needs a non-personal function user and official access. I would rather build it with you than around you.
 
 
 ## Slide 9
@@ -229,7 +230,7 @@ METRIC
 TODAY
 PILOT TARGET
 "Great match" e-mails that are real matches
-94% on 53 listings
+100% on 53 listings from 6 watches (9 Oct 2026 report; 78% recall (median of 3 runs))
 ≥ 90% on a larger, agreed set
 Buyers who rate an alert a good match
 collected in the app today
