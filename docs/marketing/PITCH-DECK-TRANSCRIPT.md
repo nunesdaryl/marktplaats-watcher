@@ -1,5 +1,5 @@
 # Marktplaats Watcher — Pitch Deck Transcript (14 slides)
-_Extracted verbatim from the Claude artifact 2026-10-04 by Axel (read-only). Source: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma_
+_Working transcript extracted from the Claude artifact 2026-10-04 by Axel and updated for MW-115. The source artifact is updated by the station after merge. Source: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma_
 
 
 ## Slide 1
@@ -173,13 +173,15 @@ The second kind of proof is people. I built this during DataBag's 40-hour Forwar
 ## Slide 8
 
 THE HONEST LIMIT
-Today it reads listings through one personal signed-in session. That is fine for a demo and wrong for scale.
+Today it anonymously reads public search results. Official access is needed to scale within Marktplaats' rules.
 TODAY
-A personal session, deliberately capped: free, 5 watches per person
+Public search results via /lrp/api/search; free, 5 watches per person
+ADR 0009 records the robots.txt and terms risk of repeated systematic reads
 A kill switch stops every scheduled check at once
 Users can delete all their data in one click; ratings kept 12 months
 WHAT WE WANT INSTEAD
-An API or partner feed with a service account, not a person's login
+Official /v1/search access with partner credentials for alerts
+Revocable, per-user consent on Marktplaats' screen for bids and messages
 Rate limits and data rules you set
 Your security and legal review before anything scales
 Marktplaats Watcher · not affiliated with Marktplaats
@@ -191,7 +193,7 @@ Marktplaats Watcher · not affiliated with Marktplaats
 
 
 **Speaker notes:**
-Now the honest part, and the reason I am here. Today the app reads listings through my own signed-in session. I capped it on purpose: free, 5 watches per person. There is a kill switch that stops every scheduled check at once, and users can delete all their data in one click. What I want instead is the official route: an API or a partner feed, with a service account rather than a person's login, rate limits and data rules that you set, and your security and legal review before anything scales. A production version needs a non-personal function user and official access. I would rather build it with you than around you.
+Now the honest part, and the reason I am here. Today the app anonymously reads public search results through /lrp/api/search. ADR 0009 records that this route is disallowed by robots.txt and that repeated systematic reads conflict with the recorded terms. I capped the demo on purpose: free, 5 watches per person. There is a kill switch that stops every scheduled check at once, and users can delete all their data in one click. I want official /v1/search access for alerts, then Marktplaats-controlled consent for each buyer to authorise bids and messages, with revocation, rate limits and your security and legal review before anything scales. The app does not place bids or send messages today.
 
 
 ## Slide 9
@@ -265,7 +267,7 @@ You can. The build is not the moat; knowing what buyers respond to is. Piloting 
 "Does it really save time?"
 An expert buyer spent a lunch break refreshing for a €400 Mac mini. The Watcher does that for every user, on schedule, with reasons.
 "Is this allowed?"
-Today it is a capped, personal demo. The sanctioned path is exactly what this meeting is for.
+Today it is a capped demo reading public search results, with the risk recorded in ADR 0009. The sanctioned path is exactly what this meeting is for.
 "What about wrong scores?"
 Measured per prompt version, misses kept visible. Every alert shows its reason, and buyers choose the threshold.
 Marktplaats Watcher · not affiliated with Marktplaats
@@ -277,28 +279,27 @@ Marktplaats Watcher · not affiliated with Marktplaats
 
 
 **Speaker notes:**
-These four came up at demo day, so let me answer them before you ask. Why not build it yourselves? You can, and that is exactly why to talk: the build is not the moat, knowing what buyers respond to is, and piloting something already running is faster than specifying it from zero. If you are already building it, even better: then this becomes a conversation about helping. Does it save time? Our instructor spent a lunch break refreshing Marktplaats for a 400 euro Mac mini; this does that for everyone, on schedule. Is it allowed? Today it is a capped personal demo; the official route is the point of this meeting. Wrong scores? They are measured per prompt version with the misses visible, every alert carries its reason, and buyers pick the threshold: great matches only, good matches, or everything.
+These four came up at demo day, so let me answer them before you ask. Why not build it yourselves? You can, and that is exactly why to talk: the build is not the moat, knowing what buyers respond to is, and piloting something already running is faster than specifying it from zero. If you are already building it, even better: then this becomes a conversation about helping. Does it save time? Our instructor spent a lunch break refreshing Marktplaats for a 400 euro Mac mini; this does that for everyone, on schedule. Is it allowed? Today it is a capped demo reading public search results, with the risk recorded in ADR 0009; the official route is the point of this meeting. Wrong scores? They are measured per prompt version with the misses visible, every alert carries its reason, and buyers pick the threshold: great matches only, good matches, or everything.
 
 
 ## Slide 12
 
 THE ASK
-One step now: a 30-minute conversation with the right person.
+Official, revocable delegated buyer access: consent on Marktplaats' own screen.
 01 · NOW
 30-minute call
 Product, partnerships or GTM for the buyer experience.
-Decide: is there interest?
+Agree on the official path.
 02 · NEXT
-Sandbox access
-An API or partner feed for one category.
-Decide: run the pilot?
+Search access
+/v1/search with partner credentials for alerts, under your rate limits.
 03 · THEN
-The pilot
-Six weeks against agreed criteria.
-Decide: go, pivot or stop
-04 · LATER
-Together
-A white-label feature, a partner integration, or the capability itself.
+Delegated buyer access
+Per-user, revocable consent to "place a bid" and "send a message"; you set the limits.
+04 · TOGETHER
+Joint pilot
+Agree on category, data rules and success criteria; decide go, pivot or stop.
+Evidence to bring: bid_handoff [N] · alerts sent [N] · founding users [N]
 Marktplaats Watcher · not affiliated with Marktplaats
 12
 
@@ -308,7 +309,7 @@ Marktplaats Watcher · not affiliated with Marktplaats
 
 
 **Speaker notes:**
-So the ask is small: one 30-minute conversation with the right person on product, partnerships or GTM for the buyer experience. Everything after that is a path we would walk together, with a decision at every step. After the call: sandbox access for one category, through an API or partner feed. Then the six-week pilot against the criteria we agreed. Then, if it works, the options to explore together: a white-label smart-alerts feature, a partner integration, or acquiring the capability. Who would be the right person for that first conversation?
+The first step is small: one 30-minute conversation with the right person on product, partnerships or GTM. The headline ask in that conversation is official, revocable delegated buyer access. A buyer would authorise us on Marktplaats' own OAuth-style consent screen, with separate "place a bid" and "send a message" scopes; each user's access can be revoked, and you set the rate limits. The first step is a 30-minute conversation with product, partnerships or GTM. Then we ask for official /v1/search read access for alerts, as in MW-14, followed by delegated buyer access and a joint pilot with agreed criteria. We can bring observed bid_handoff events [N], alerts sent [N], and founding users [N] once measured, without guessing the numbers. The hypothesis to test is faster first bids on fresh listings and fewer abandoned conversations, while buyers act inside Marktplaats and an official, auditable channel replaces bot-like search reads. Who would be the right person for that first conversation?
 
 
 ## Slide 13
