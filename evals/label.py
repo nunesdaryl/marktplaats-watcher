@@ -1,16 +1,17 @@
 """Step 2: the judge. A stronger model (gpt-5.5) labels every frozen listing: would someone watching for this item
 want an e-mail about it? Labels plus a failure category are saved; 10 random ones go to spotcheck.md for a human."""
 import json
+import os
 import random
 from typing import Literal
 
 from langchain_core.messages import SystemMessage
-from langchain_openai import ChatOpenAI
+from model_config import chat_model, provider
 from pydantic import BaseModel, Field
 
 from evals.common import LABELS, LISTINGS, SPOTCHECK, cost_usd, read, write
 
-JUDGE_MODEL = "gpt-5.5"
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gpt-5.5")
 Category = Literal["match", "accessory_or_part", "different_product", "wrong_model_or_spec", "over_budget", "unclear"]
 
 
@@ -43,7 +44,7 @@ def judge_messages(watching_for, listings):
 
 def main():
     data = read(LISTINGS)
-    judge = ChatOpenAI(model=JUDGE_MODEL, timeout=120, max_retries=2).with_structured_output(Labels, include_raw=True)
+    judge = chat_model(JUDGE_MODEL, timeout=120, max_retries=2).with_structured_output(Labels, include_raw=True)
     labels, tokens_in, tokens_out = {}, 0, 0
     for w in data["watches"]:
         items = [{k: l[k] for k in ("id", "title", "price_eur", "city")} for l in data["listings"] if l["watch"] == w["id"]]
@@ -57,7 +58,7 @@ def main():
             labels[label.id] = label.model_dump()
         print(f"{w['id']:7} labelled {len(out['parsed'].labels)}/{len(items)}")
     missing = [l["id"] for l in data["listings"] if l["id"] not in labels]
-    write(LABELS, {"judge": JUDGE_MODEL, "labels": labels, "missing": missing,
+    write(LABELS, {"judge": JUDGE_MODEL, "judge_provider": provider(), "labels": labels, "missing": missing,
                    "cost_usd": round(cost_usd(JUDGE_MODEL, tokens_in, tokens_out), 4)})
 
     # 10 random labels for a human to check (agreement is reported)

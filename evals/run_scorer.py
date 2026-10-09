@@ -2,12 +2,24 @@
 "good" ≥ 6), a listing counts as e-mailed when its score reaches it. Reports precision, recall, the misses by
 category, tokens, cost and time."""
 import argparse
+import os
 import re
 import sys
 import time
 
+if __name__ == "__main__":
+    _early = argparse.ArgumentParser(add_help=False)
+    _early.add_argument("--provider")
+    _early.add_argument("--model")
+    _options, _ = _early.parse_known_args()
+    if _options.provider:
+        os.environ["MODEL_PROVIDER"] = _options.provider
+    if _options.model:
+        os.environ["OPENAI_MODEL"] = _options.model
+
 import agent
-from evals.common import AUDIT_MISSES, LABELS, LISTINGS, PRICE_TYPE_CASES, PREFERENCE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
+from evals.common import AUDIT_MISSES, LABELS, LISTINGS, PRICE_TYPE_CASES, PREFERENCE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, result_path, write
+from model_config import provider
 
 THRESHOLDS = {"great": 8, "good": 6}
 
@@ -116,9 +128,17 @@ def score_preference_cases(cases):
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=1)
+    parser.add_argument("--provider")
+    parser.add_argument("--model")
     args = parser.parse_args([] if argv is None else argv)
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    if args.provider:
+        os.environ["MODEL_PROVIDER"] = args.provider
+    if args.model:
+        os.environ["OPENAI_MODEL"] = args.model
+    if args.provider or args.model:
+        agent.configure_models()
     model = model_under_test()
     data, labels = read(LISTINGS), read(LABELS)["labels"]
     results = [score_once(data, labels, model) for _ in range(args.runs)]
@@ -126,7 +146,7 @@ def main(argv=None):
     user_scored = score_user_cases(cases)
     preference_scored = score_preference_cases(read(PREFERENCE_CASES))
     if args.runs == 1:
-        write(SCORER_RESULTS, results[0] | {"user_scored": user_scored, "preference_scored": preference_scored})
+        write(result_path(SCORER_RESULTS, provider(), model), results[0] | {"provider": provider(), "user_scored": user_scored, "preference_scored": preference_scored})
         return
     runs = [{"great": result["metrics"]["great"], "good": result["metrics"]["good"],
              "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"],
@@ -134,7 +154,7 @@ def main(argv=None):
              "audit_misses": result["audit_misses"], "audit_misses_cost_usd": result["audit_misses_cost_usd"]}
             for result in results]
     selected = median_run(runs)
-    write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored,
+    write(result_path(SCORER_RESULTS, provider(), model), results[runs.index(selected)] | {"provider": provider(), "runs": runs, "user_scored": user_scored,
                                                      "preference_scored": preference_scored})
 
 

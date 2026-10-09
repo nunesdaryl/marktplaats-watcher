@@ -19,7 +19,8 @@ import httpx
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from model_config import chat_model, provider
 from pydantic import BaseModel, Field
 from openai_failure import classify_openai_failure
 from prompts import (ADMIN_INTENT_PROMPT, ADMIN_INTENT_TEMPLATE, CHAT_PROMPT, PROMPT_VERSION, RAG_RULE,
@@ -314,7 +315,7 @@ def make_tools(ctx):
     return [search_marktplaats, propose_watch, propose_watch_change]
 
 
-# The OpenAI model (OPENAI_API_KEY is read from the environment by the client)
+# The selected chat provider reads its key from the environment.
 def required_env(name):
     value = os.getenv(name)
     if not value:
@@ -322,14 +323,20 @@ def required_env(name):
     return value
 
 
-required_env("OPENAI_API_KEY")   # read by the OpenAI client itself; checked here for a clear error
+if provider() == "openai":
+    required_env("OPENAI_API_KEY")   # checked here for a clear error on the default path
 CHAT_MAX_TOKENS = 1500
-base_model = ChatOpenAI(model=required_env("OPENAI_MODEL"), timeout=30, max_retries=2,
-                        max_tokens=CHAT_MAX_TOKENS, stream_usage=True)
-model = base_model.bind_tools(make_tools(ChatContext([])))
+def configure_models():
+    global base_model, model, watch_model, ranker
+    base_model = chat_model(required_env("OPENAI_MODEL"), timeout=30, max_retries=2,
+                            max_tokens=CHAT_MAX_TOKENS, stream_usage=True)
+    model = base_model.bind_tools(make_tools(ChatContext([])))
+    watch_model = base_model.bind_tools([t for t in make_tools(ChatContext([])) if t.name != "search_marktplaats"])
+    ranker = chat_model(required_env("OPENAI_MODEL"), timeout=20, max_retries=1,
+                        max_tokens=RANK_MAX_TOKENS).with_structured_output(Ranking, include_raw=True)
+
 # "Watch it" mode, enforced in code rather than asked for in the prompt: the model gets only the proposal tools
 # (no search), so it can't search instead of setting up the watch. Found by evals/ case W4.
-watch_model = base_model.bind_tools([t for t in make_tools(ChatContext([])) if t.name != "search_marktplaats"])
 
 
 class AdminIntent(BaseModel):
@@ -528,9 +535,7 @@ class Ranking(BaseModel):
 
 # Scheduled checks rank many watches: a shorter timeout and one retry keep a run inside the function time limit
 RANK_MAX_TOKENS = 2500
-ranker = ChatOpenAI(model=required_env("OPENAI_MODEL"), timeout=20, max_retries=1,
-                    max_tokens=RANK_MAX_TOKENS).with_structured_output(
-    Ranking, include_raw=True)   # raw response kept for token usage (cost), see RANK_USAGE
+configure_models()  # raw rank response kept for token usage (cost), see RANK_USAGE
 RANK_USAGE = []                  # (input_tokens, output_tokens) per ranking call, read by evals/
 _rank_usage_for_check = ContextVar("rank_usage_for_check", default=None)
 RANK_WORKERS = 6

@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from model_config import chat_model
 from pydantic import BaseModel, Field
 
 import agent
@@ -126,7 +126,7 @@ def main():
         retrieval[mode] = {"cases": rows, "recall_at_5": sum(positives) / len(positives),
                            "precision_at_5": sum(row["precision_at_5"] for row in rows) / len(rows)}
         print(f"{mode}: recall@5 {retrieval[mode]['recall_at_5']:.3f}, precision@5 {retrieval[mode]['precision_at_5']:.3f}")
-    judge = ChatOpenAI(model=JUDGE_MODEL, temperature=0).with_structured_output(Verdict)
+    judge = chat_model(JUDGE_MODEL, temperature=0).with_structured_output(Verdict)
     original_post = mcp_server.convex_post
     activity_calls = []
     def fixture_post(path, payload):

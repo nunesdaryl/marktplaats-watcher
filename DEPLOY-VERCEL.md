@@ -20,6 +20,10 @@ chat or the repo.
 |---|---|
 | `OPENAI_API_KEY` | your key |
 | `OPENAI_MODEL` | model name |
+| `MODEL_PROVIDER` | optional chat and rank provider; defaults to `openai`. Production requirements support OpenAI only; deliberately add `langchain-anthropic` to production requirements before deploying Anthropic. |
+| `ANTHROPIC_API_KEY` | only when `MODEL_PROVIDER=anthropic`; OpenAI key is still needed for embeddings |
+| `JUDGE_MODEL` | optional eval judge model; defaults to `gpt-5.5` |
+| `MODEL_INPUT_PRICE_USD_PER_MILLION`, `MODEL_OUTPUT_PRICE_USD_PER_MILLION` | eval cost prices for a model absent from the built-in table |
 | `CLERK_ISSUER` | `https://<your-app>.clerk.accounts.dev` (or your Clerk production domain) |
 | `CRON_SECRET` | the random string |
 | `API_TO_CONVEX_SECRET` | a separate random string, identical in Vercel and Convex |

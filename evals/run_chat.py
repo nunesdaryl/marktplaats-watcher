@@ -1,9 +1,23 @@
 """Step 4: the chat golden set against the real model. Records pass/fail, tokens, model and tool calls per case."""
+import argparse
+import os
+import sys
 import time
+
+if __name__ == "__main__":
+    _early = argparse.ArgumentParser(add_help=False)
+    _early.add_argument("--provider")
+    _early.add_argument("--model")
+    _options, _ = _early.parse_known_args()
+    if _options.provider:
+        os.environ["MODEL_PROVIDER"] = _options.provider
+    if _options.model:
+        os.environ["OPENAI_MODEL"] = _options.model
 
 import agent
 from evals.chat_cases import CASES, CASE_META, SHOULD_ABSTAIN, SOP_PERTURBATION
-from evals.common import CHAT_RESULTS, cost_usd, model_under_test, write
+from evals.common import CHAT_RESULTS, cost_usd, model_under_test, result_path, write
+from model_config import provider
 
 
 def trajectory_grade(case_id, tool_sequence, max_tools):
@@ -62,7 +76,17 @@ def run_case(case):
     return result, usage
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--provider")
+    parser.add_argument("--model")
+    args = parser.parse_args([] if argv is None else argv)
+    if args.provider:
+        os.environ["MODEL_PROVIDER"] = args.provider
+    if args.model:
+        os.environ["OPENAI_MODEL"] = args.model
+    if args.provider or args.model:
+        agent.configure_models()
     model = model_under_test()
     results, tokens_in, tokens_out = [], 0, 0
     for case_id, category, message, watches, mode, max_tools, check in CASES:
@@ -73,11 +97,11 @@ def main():
         print(f"{case_id:3} {'PASS' if results[-1]['passed'] else 'FAIL'}  tools {usage.get('tool_calls')}/{max_tools}  {message[:60]}")
     usd = cost_usd(model, tokens_in, tokens_out)
     passed = sum(r["passed"] for r in results)
-    write(CHAT_RESULTS, {"run_at": time.strftime("%Y-%m-%d %H:%M"), "model": model, "prompt_version": agent.PROMPT_VERSION["chat"], "passed": passed,
+    write(result_path(CHAT_RESULTS, provider(), model), {"run_at": time.strftime("%Y-%m-%d %H:%M"), "provider": provider(), "model": model, "prompt_version": agent.PROMPT_VERSION["chat"], "passed": passed,
                          "total": len(results), "tokens": {"input": tokens_in, "output": tokens_out},
                          "cost_usd": round(usd, 5), "cost_usd_per_question": round(usd / len(results), 5), "cases": results})
     print(f"{passed}/{len(results)} passed, cost ${usd:.4f}")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

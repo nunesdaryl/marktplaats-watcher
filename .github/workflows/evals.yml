@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - agent.py
+      - model_config.py
+      - requirements.txt
+      - requirements-evals.txt
       - prompts.py
       - mcp_server.py
       - test_mcp.py
@@ -13,6 +16,9 @@ on:
   pull_request:
     paths:
       - agent.py
+      - model_config.py
+      - requirements.txt
+      - requirements-evals.txt
       - prompts.py
       - mcp_server.py
       - test_mcp.py
@@ -21,6 +27,17 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      provider:
+        description: "Chat model provider (openai or anthropic)"
+        required: true
+        default: openai
+        type: choice
+        options: [openai, anthropic]
+      model:
+        description: "Model name; leave blank for the configured default"
+        required: false
+        type: string
 
 jobs:
   evals:
@@ -29,10 +46,11 @@ jobs:
       - name: Check eval key
         id: key
         env:
-          EVAL_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
+          EVAL_KEY: ${{ inputs.provider == 'anthropic' && secrets.ANTHROPIC_API_KEY_EVALS || secrets.OPENAI_API_KEY_EVALS }}
+          EVAL_PROVIDER: ${{ inputs.provider || 'openai' }}
         run: |
           if [ -z "$EVAL_KEY" ]; then
-            echo "::notice::Evals skipped: OPENAI_API_KEY_EVALS is not set"
+            echo "::notice::Evals skipped: no key for $EVAL_PROVIDER"
             echo "available=false" >> "$GITHUB_OUTPUT"
           else
             echo "available=true" >> "$GITHUB_OUTPUT"
@@ -43,17 +61,32 @@ jobs:
         if: steps.key.outputs.available == 'true'
       - name: Install Python dependencies
         if: steps.key.outputs.available == 'true'
-        run: uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt
+        env:
+          EVAL_PROVIDER: ${{ inputs.provider || 'openai' }}
+        run: |
+          uv venv --python 3.12 .venv
+          if [ "$EVAL_PROVIDER" = "openai" ]; then
+            uv pip install --python .venv/bin/python -r requirements.txt
+          else
+            uv pip install --python .venv/bin/python -r requirements-evals.txt
+          fi
       - name: Run chat and scorer evaluations
         if: steps.key.outputs.available == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
+          ANTHROPIC_API_KEY: ${{ inputs.provider == 'anthropic' && secrets.ANTHROPIC_API_KEY_EVALS || '' }}
+          MODEL_INPUT_PRICE_USD_PER_MILLION: ${{ vars.MODEL_INPUT_PRICE_USD_PER_MILLION }}
+          MODEL_OUTPUT_PRICE_USD_PER_MILLION: ${{ vars.MODEL_OUTPUT_PRICE_USD_PER_MILLION }}
+          EVAL_PROVIDER: ${{ inputs.provider || 'openai' }}
+          EVAL_MODEL: ${{ inputs.model }}
         run: |
-          .venv/bin/python -m evals.run_chat
-          .venv/bin/python -m evals.run_scorer --runs 3
+          model_args=()
+          if [ -n "$EVAL_MODEL" ]; then model_args=(--model "$EVAL_MODEL"); fi
+          .venv/bin/python -m evals.run_chat --provider "$EVAL_PROVIDER" "${model_args[@]}"
+          .venv/bin/python -m evals.run_scorer --runs 3 --provider "$EVAL_PROVIDER" "${model_args[@]}"
       - name: Run RAG and MCP gate
-        if: steps.key.outputs.available == 'true'
+        if: steps.key.outputs.available == 'true' && (inputs.provider == '' || inputs.provider == 'openai')
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
@@ -68,9 +101,10 @@ jobs:
         if: steps.key.outputs.available == 'true' && always()
         env:
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_EVALS || 'unused-report-key' }}
         run: .venv/bin/python -m evals.report
       - name: Check evaluation gate
-        if: steps.key.outputs.available == 'true'
+        if: steps.key.outputs.available == 'true' && (inputs.provider == '' || inputs.provider == 'openai')
         run: .venv/bin/python -m evals.gate
       - name: Upload evaluation report
         if: always() && steps.key.outputs.available == 'true'
@@ -79,5 +113,5 @@ jobs:
           name: evals-report
           path: |
             evals/report.md
-            evals/data/*results.json
+            evals/data/*results*.json
             evals/data/rag_results.json
