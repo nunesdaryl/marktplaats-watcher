@@ -1548,7 +1548,14 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   high-severity Next.js advisories turned CI's npm audit red on every push; MW-110 upgraded Next.js 16.3.6 → 16.4.0 (no
   other dependency changes) and CI on main is green again. Real exposure was low: the site is a static export, so the
   affected features (incremental page caching, image optimisation, draft mode, the development server) do not run in
-  production.</p>
+  production. Two trust fixes followed. MW-111: the owner dashboard counted the same delivery misses every morning
+  (the audit re-reads listings still inside a watch's look-back window and had no memory of what it had reported), so the
+  "Needs your attention" row stayed red; each miss now counts once per watch, repeats stay in the drilldown as "reported
+  before", the list has no duplicates, every activity has a readable name and small shares show "&lt;1%". Live, the card
+  went from 4 to 1 (a genuinely new report). MW-101: every public document now quotes the current evaluation report, and
+  a docs test fails on an unlabelled stale figure. Review caught that the report's table showed a single run while the
+  gate uses the median of three; the table now shows the median with ranges, and the docs test checks that the report's
+  recall equals the gate's.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October; earlier snapshot).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"
