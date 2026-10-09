@@ -36,11 +36,14 @@ export const groups = internalQuery({
       const seen = await ctx.db.query("seenListings").withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id))
         .order("desc").collect();
       const alerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", w._id)).collect();
+      const ratings = await ctx.db.query("ratings").withIndex("by_watch_updated", (q) => q.eq("watchId", w._id)).order("desc").take(8);
       const query = w.query.toLowerCase();
       if (!byQuery.has(query)) byQuery.set(query, { watches: [] });
       byQuery.get(query)!.watches.push({
         id: w._id, query, description: w.label, max_price_eur: w.maxPriceEur ?? null,
-        must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
+        must_include: w.mustInclude ?? null, exclude_words: w.excludeWords ?? [], postcode: w.postcode ?? null,
+        rating_examples: ratings.map((r) => ({ title: (r.title ?? r.listing?.title ?? "").slice(0, 100),
+          price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [], note: (r.note ?? "").slice(0, 100) })),
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
         seen_ids: seen.map((s) => s.listingId),
         seen_scores: Object.fromEntries(seen.filter((s) => s.score !== undefined).map((s) => [s.listingId, s.score])),

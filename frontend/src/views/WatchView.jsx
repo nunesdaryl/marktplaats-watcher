@@ -54,6 +54,7 @@ export default function WatchView({ watch, onEdit, actions }) {
         </div>
         {watch.pinned && <span className="pill">Pinned</span>}
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
+        {watch.excludeWords?.length > 0 && <p className="muted">Skipping: {watch.excludeWords.join(", ")}</p>}
         <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {watch.lastError && <p className="warn">{watch.lastError}</p>}
         {watch.active && !watch.archivedAt && ((watch.backlog ?? 0) >= 20 || watch.coverageCapped) &&

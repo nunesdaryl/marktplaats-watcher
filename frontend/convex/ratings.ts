@@ -8,6 +8,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { ratingReason } from "./schema";
 import { currentUser, requireUser } from "./users";
 import { insertTracked, patchTracked } from "./totals";
+import { cleanExcludeWords } from "./watches";
 
 const verdict = v.union(v.literal("good"), v.literal("not_right"));
 const MAX_NOTE = 500;
@@ -100,9 +101,78 @@ export const rateWithToken = mutation({
   handler: async (ctx, { alertId, token, verdict }) => {
     const alert = await tokenAlert(ctx, alertId, token);
     await save(ctx, alert, { verdict, source: "email" });
-    return { title: alert.title, score: alert.score ?? null };
+    const watch = await ctx.db.get(alert.watchId);
+    return { title: alert.title, score: alert.score ?? null, query: watch?.query ?? "",
+      notify: watch?.notify ?? "good", priceEur: alert.priceEur ?? null,
+      maxPriceEur: watch?.maxPriceEur ?? null, excludeWords: watch?.excludeWords ?? [] };
   },
 });
+
+const fixKind = v.union(v.literal("exclude"), v.literal("price"), v.literal("notify"));
+const fixArgs = { kind: fixKind, word: v.optional(v.string()), priceEur: v.optional(v.number()) };
+
+async function applyFix(ctx: MutationCtx, alert: Doc<"alerts">, args: { kind: "exclude" | "price" | "notify"; word?: string; priceEur?: number }) {
+  const rating = await ctx.db.query("ratings").withIndex("by_alert", (q) => q.eq("alertId", alert._id)).unique();
+  if (!rating || rating.verdict !== "not_right") throw new ConvexError("Say why this alert wasn't right first.");
+  const watch = await ctx.db.get(alert.watchId);
+  if (!watch || watch.userId !== alert.userId) throw new ConvexError("Watch not found.");
+  const now = Date.now();
+  if (args.kind === "exclude") {
+    if (!rating.reasons?.includes("not_asked")) throw new ConvexError("Choose 'Not what I asked for' first.");
+    const word = cleanExcludeWords([args.word ?? ""])[0];
+    const previousWords = watch.excludeWords ?? [];
+    const appliedWords = cleanExcludeWords([...previousWords, word]);
+    await patchTracked(ctx, "watches", watch._id, { excludeWords: appliedWords, searchEditedAt: now });
+    await patchTracked(ctx, "ratings", rating._id, { fixUndo: { kind: "exclude", at: now, previousWords, appliedWords } });
+    return { message: `Done: this watch now skips listings with '${word}'.`, undoUntil: now + 10_000 };
+  }
+  if (args.kind === "price") {
+    if (!rating.reasons?.includes("price")) throw new ConvexError("Choose 'Price isn't good' first.");
+    const price = args.priceEur ?? (alert.priceEur === undefined ? undefined : alert.priceEur - 5);
+    if (!Number.isInteger(price) || price === undefined || price <= 0 || price > 1_000_000 ||
+        alert.priceEur === undefined || price >= alert.priceEur ||
+        (watch.maxPriceEur !== undefined && price >= watch.maxPriceEur))
+      throw new ConvexError("Enter a whole-euro maximum below this listing's price and your current maximum.");
+    const previousPrice = watch.maxPriceEur;
+    await patchTracked(ctx, "watches", watch._id, { maxPriceEur: price, searchEditedAt: now });
+    await patchTracked(ctx, "ratings", rating._id, { fixUndo: { kind: "price", at: now, previousPrice, appliedPrice: price } });
+    return { message: `Done: this watch's maximum is now €${price}.`, undoUntil: now + 10_000 };
+  }
+  const next = rating.reasons?.includes("score_too_high") && watch.notify !== "great" ? "great"
+    : rating.reasons?.includes("score_too_low") && watch.notify === "great" ? "good" : null;
+  if (!next) throw new ConvexError("This watch's e-mail setting already matches that reason.");
+  await patchTracked(ctx, "watches", watch._id, { notify: next });
+  await patchTracked(ctx, "ratings", rating._id, { fixUndo: { kind: "notify", at: now, previousNotify: watch.notify, appliedNotify: next } });
+  return { message: next === "great" ? "Done: this watch now e-mails only great matches." : "Done: this watch now also e-mails good matches.", undoUntil: now + 10_000 };
+}
+
+async function undoFix(ctx: MutationCtx, alert: Doc<"alerts">) {
+  const rating = await ctx.db.query("ratings").withIndex("by_alert", (q) => q.eq("alertId", alert._id)).unique();
+  const fix = rating?.fixUndo;
+  if (!rating || !fix || Date.now() - fix.at > 10_000) throw new ConvexError("Undo is available for 10 seconds after saving.");
+  const watch = await ctx.db.get(alert.watchId);
+  if (!watch || watch.userId !== alert.userId) throw new ConvexError("Watch not found.");
+  if (fix.kind === "exclude") {
+    if (JSON.stringify(watch.excludeWords ?? []) !== JSON.stringify(fix.appliedWords)) throw new ConvexError("This watch has changed since the fix.");
+    await patchTracked(ctx, "watches", watch._id, { excludeWords: fix.previousWords, searchEditedAt: Date.now() });
+  } else if (fix.kind === "price") {
+    if (watch.maxPriceEur !== fix.appliedPrice) throw new ConvexError("This watch has changed since the fix.");
+    await patchTracked(ctx, "watches", watch._id, { maxPriceEur: fix.previousPrice, searchEditedAt: Date.now() });
+  } else {
+    if (watch.notify !== fix.appliedNotify) throw new ConvexError("This watch has changed since the fix.");
+    await patchTracked(ctx, "watches", watch._id, { notify: fix.previousNotify });
+  }
+  await patchTracked(ctx, "ratings", rating._id, { fixUndo: undefined });
+}
+
+export const fix = mutation({ args: { alertId: v.id("alerts"), ...fixArgs },
+  handler: async (ctx, { alertId, ...args }) => applyFix(ctx, await ownAlert(ctx, alertId), args) });
+export const fixWithToken = mutation({ args: { alertId: v.string(), token: v.string(), ...fixArgs },
+  handler: async (ctx, { alertId, token, ...args }) => applyFix(ctx, await tokenAlert(ctx, alertId, token), args) });
+export const undo = mutation({ args: { alertId: v.id("alerts") },
+  handler: async (ctx, { alertId }) => undoFix(ctx, await ownAlert(ctx, alertId)) });
+export const undoWithToken = mutation({ args: { alertId: v.string(), token: v.string() },
+  handler: async (ctx, { alertId, token }) => undoFix(ctx, await tokenAlert(ctx, alertId, token)) });
 
 export const explainWithToken = mutation({
   args: { alertId: v.string(), token: v.string(), reasons: v.array(ratingReason), note: v.optional(v.string()) },

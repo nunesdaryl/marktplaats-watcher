@@ -106,7 +106,7 @@ def test_prompt_versions_are_central_and_reexported():
     assert agent.PROMPT_VERSION is prompts.PROMPT_VERSION
     assert prompts.PROMPT_VERSION == {
         "chat": "chat-2026-10-06.1",
-        "rank": "rank-2026-10-09.1",
+        "rank": "rank-2026-10-09.2",
         "admin": "admin-2026-10-03.1",
         "offer": "offer-2026-10-06.1",
     }

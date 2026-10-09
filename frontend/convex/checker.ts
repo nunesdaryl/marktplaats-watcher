@@ -88,9 +88,14 @@ export const claimDue = internalMutation({
         if (!dryRun) await patchTracked(ctx, "watches", w._id, { nextRunAt: Math.min(nextRun(w.schedule, now, w.timezone), now + LEASE_MS), leaseUntil: now + LEASE_MS });
         const seen = await ctx.db.query("seenListings")      // the newest ones: those are still on the page
           .withIndex("by_watch_lastSeen", (q) => q.eq("watchId", w._id)).order("desc").take(MAX_SEEN_SENT);
+        const ratings = await ctx.db.query("ratings")
+          .withIndex("by_watch_updated", (q) => q.eq("watchId", w._id)).order("desc").take(8);
         payload.push({
           id: w._id, clerkId: (await ctx.db.get(w.userId))!.clerkId, description: w.label, max_price_eur: w.maxPriceEur ?? null,
-          must_include: w.mustInclude ?? null, postcode: w.postcode ?? null,
+          must_include: w.mustInclude ?? null, exclude_words: w.excludeWords ?? [], postcode: w.postcode ?? null,
+          rating_examples: ratings.map((r) => ({ title: (r.title ?? r.listing?.title ?? "").slice(0, 100),
+            price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [],
+            note: (r.note ?? "").slice(0, 100) })),
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId), seeded: w.seeded,
           watermark: w.seeded ? w.watermark ?? null : null, last_checked_at: w.seeded ? w.lastReadAt ?? null : null,
         });

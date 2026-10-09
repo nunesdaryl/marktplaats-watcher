@@ -14,6 +14,8 @@ export default function RateView() {
   const [verdict, setVerdict] = useState(params.get("v") === "not_right" ? "not_right" : "good");
   const rate = useMutation(api.ratings.rateWithToken);
   const explain = useMutation(api.ratings.explainWithToken);
+  const fix = useMutation(api.ratings.fixWithToken);
+  const undo = useMutation(api.ratings.undoWithToken);
   const [state, setState] = useState("saving");   // saving | saved | explained | error
   const [alert, setAlert] = useState(null);
   const [error, setError] = useState("");
@@ -45,8 +47,10 @@ export default function RateView() {
           </>
         )}
         {state === "saved" && verdict === "not_right" && (
-          <WhyNotRight onSend={(why) => explain({ alertId, token, ...why }).then(() => setState("explained"))
-            .catch((e) => { setError(e.data ?? "That didn't send. Try again."); setState("error"); })} />
+          <><WhyNotRight alert={alert} onFix={(args) => fix({ alertId, token, ...args })}
+            onUndo={() => undo({ alertId, token })}
+            onSend={(why) => explain({ alertId, token, ...why }).catch((e) => { setError(e.data ?? "That didn't send. Try again."); throw e; })} />
+            {error && <p className="error" role="alert">{error}</p>}</>
         )}
         {state === "explained" && (
           <>

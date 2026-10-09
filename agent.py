@@ -94,7 +94,7 @@ def listing_image(item):
     return url
 
 
-def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10):
+def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10, exclude_words=None):
     """Filtered listings from a search page (at most `limit`; None = all). stats["readable"] is False when the page
     has no listings data at all (a maintenance page or a redesign), which is not the same as zero results."""
     if isinstance(html, list):     # listings already read from the search (read_since)
@@ -113,6 +113,8 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         if not vip.startswith("/") or vip.startswith("//"):
             continue  # a link must stay on marktplaats.nl
         if must_include and squash(must_include) not in squash(item.get("title", "")):
+            continue
+        if any(squash(word) in squash(item.get("title", "")) for word in (exclude_words or []) if word):
             continue
         price_info = item.get("priceInfo") or {}
         cents = price_info.get("priceCents") or 0
@@ -548,7 +550,7 @@ def cap_bidding_scores(listings, max_price_eur):
     return listings
 
 
-def rank_listings(description, listings, raise_on_failure=False):
+def rank_listings(description, listings, raise_on_failure=False, rating_examples=None):
     """Adds scores, retrying omitted ids once. Model failures leave scores empty unless requested to raise."""
     if not listings:
         return listings
@@ -558,7 +560,8 @@ def rank_listings(description, listings, raise_on_failure=False):
             missing = listings[start:start + RANK_BATCH]
             for _ in range(2):
                 out = ranker.invoke([*RANK_PROMPT_TEMPLATE.format_messages(), {"role": "user", "content": json.dumps(
-                    {"watching_for": description, "listings": missing})}])
+                    {"watching_for": description, "this_persons_earlier_ratings_for_this_watch": (rating_examples or [])[:8],
+                     "listings": missing})}])
                 ranking = out["parsed"] if isinstance(out, dict) else out
                 if isinstance(out, dict):
                     usage = getattr(out.get("raw"), "usage_metadata", None) or {}
@@ -812,7 +815,8 @@ def check_query(query, watches, now=None):
             continue
         # Every listing read counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
         listings, _ = parse_listings(raw, w.get("max_price_eur"), home,
-                                     w.get("max_distance_km") if home else None, w.get("must_include"), limit=None)
+                                     w.get("max_distance_km") if home else None, w.get("must_include"), limit=None,
+                                     exclude_words=w.get("exclude_words"))
         newest = max((n for i in raw if (n := listing_number(i.get("itemId"))) is not None), default=None)
         seen = set(w.get("seen_ids") or [])
         # New = not seen by this watch; Convex dedupes against its full seen table.
@@ -834,7 +838,9 @@ def check_query(query, watches, now=None):
         usage = []
         token = _rank_usage_for_check.set(usage)
         try:
-            return cap_bidding_scores(rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True),
+            examples = job[0].get("rating_examples")
+            return cap_bidding_scores(rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True,
+                                                  **({"rating_examples": examples} if examples else {})),
                                       job[0].get("max_price_eur")), usage
         except Exception as e:
             return classify_openai_failure(e), usage
@@ -881,7 +887,7 @@ def audit_watch(w, now=None):
                     and (age := days_old(item.get("date"), today)) is not None and 0 <= age <= since_days]
         listings, _ = parse_listings(eligible, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None,
-                                     w.get("must_include"), limit=None)
+                                     w.get("must_include"), limit=None, exclude_words=w.get("exclude_words"))
         result["read"] = len(listings)
         seen, alerted = set(w.get("seen_ids") or []), set(w.get("alerted_ids") or [])
         seen_scores = w.get("seen_scores") or {}
@@ -903,8 +909,10 @@ def audit_watch(w, now=None):
         result["candidates"] = len(candidates)
         chosen = candidates[:40]
         if chosen:
+            examples = w.get("rating_examples")
             ranked = cap_bidding_scores(rank_listings(w.get("description") or w["query"],
-                                                      [item for item, _ in chosen], raise_on_failure=True),
+                                                      [item for item, _ in chosen], raise_on_failure=True,
+                                                      **({"rating_examples": examples} if examples else {})),
                                         w.get("max_price_eur"))
             if len(ranked) != len(chosen):
                 raise ValueError("The AI did not return every candidate.")

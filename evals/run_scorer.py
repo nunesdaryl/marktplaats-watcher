@@ -7,7 +7,7 @@ import sys
 import time
 
 import agent
-from evals.common import AUDIT_MISSES, LABELS, LISTINGS, PRICE_TYPE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
+from evals.common import AUDIT_MISSES, LABELS, LISTINGS, PRICE_TYPE_CASES, PREFERENCE_CASES, SCORER_RESULTS, USER_CASES_GOLDEN, cost_usd, model_under_test, read, write
 
 THRESHOLDS = {"great": 8, "good": 6}
 
@@ -103,6 +103,16 @@ def score_user_cases(cases):
     return scored
 
 
+def score_preference_cases(cases):
+    scored = []
+    for case in cases:
+        plain = agent.rank_listings(case["watch_description"], [dict(case["listing"])], raise_on_failure=True)[0]
+        personal = agent.rank_listings(case["watch_description"], [dict(case["listing"])],
+                                       raise_on_failure=True, rating_examples=[case["rating_example"]])[0]
+        scored.append({"id": case["id"], "without": plain["score"], "with": personal["score"]})
+    return scored
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=1)
@@ -114,8 +124,9 @@ def main(argv=None):
     results = [score_once(data, labels, model) for _ in range(args.runs)]
     cases = read(USER_CASES_GOLDEN) if USER_CASES_GOLDEN.exists() else []
     user_scored = score_user_cases(cases)
+    preference_scored = score_preference_cases(read(PREFERENCE_CASES))
     if args.runs == 1:
-        write(SCORER_RESULTS, results[0] | {"user_scored": user_scored})
+        write(SCORER_RESULTS, results[0] | {"user_scored": user_scored, "preference_scored": preference_scored})
         return
     runs = [{"great": result["metrics"]["great"], "good": result["metrics"]["good"],
              "scored": result["scored"], "tokens": result["tokens"], "cost_usd": result["cost_usd"],
@@ -123,7 +134,8 @@ def main(argv=None):
              "audit_misses": result["audit_misses"], "audit_misses_cost_usd": result["audit_misses_cost_usd"]}
             for result in results]
     selected = median_run(runs)
-    write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored})
+    write(SCORER_RESULTS, results[runs.index(selected)] | {"runs": runs, "user_scored": user_scored,
+                                                     "preference_scored": preference_scored})
 
 
 if __name__ == "__main__":

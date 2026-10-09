@@ -167,6 +167,10 @@ export default defineSchema({
     verdict: v.union(v.literal("good"), v.literal("not_right")),
     reasons: v.optional(v.array(ratingReason)),
     note: v.optional(v.string()),
+    fixUndo: v.optional(v.object({ kind: v.union(v.literal("exclude"), v.literal("price"), v.literal("notify")),
+      at: v.number(), previousWords: v.optional(v.array(v.string())), previousPrice: v.optional(v.number()),
+      previousNotify: v.optional(notifyValidator), appliedWords: v.optional(v.array(v.string())),
+      appliedPrice: v.optional(v.number()), appliedNotify: v.optional(notifyValidator) })),
     score: v.optional(v.number()),               // the alert's score when it was rated
     notify: v.optional(v.string()),              // the watch's "which alerts" setting then
     title: v.optional(v.string()),               // kept for the evaluation even after the alert is forgotten (30 days)
@@ -263,6 +267,7 @@ export default defineSchema({
     query: v.string(),
     maxPriceEur: v.optional(v.number()),
     mustInclude: v.optional(v.string()),
+    excludeWords: v.optional(v.array(v.string())),
     postcode: v.optional(v.string()),
     maxDistanceKm: v.optional(v.number()),
     schedule: scheduleValidator,

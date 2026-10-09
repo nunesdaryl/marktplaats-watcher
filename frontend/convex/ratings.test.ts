@@ -57,7 +57,7 @@ test("from the e-mail: the link's code rates only its own alert; a wrong or miss
   const { t, alertId, rows } = await withAlert();
   const token = (await ratingToken(alertId))!;
   expect(token).toHaveLength(32);
-  expect(await t.mutation(api.ratings.rateWithToken, { alertId, token, verdict: "not_right" })).toEqual({ title: "Gazelle Orange C7", score: 9 });
+  expect(await t.mutation(api.ratings.rateWithToken, { alertId, token, verdict: "not_right" })).toMatchObject({ title: "Gazelle Orange C7", score: 9, query: "gazelle fiets", priceEur: 350 });
   await t.mutation(api.ratings.explainWithToken, { alertId, token, reasons: ["not_asked"] });
   expect((await rows())[0]).toMatchObject({ verdict: "not_right", reasons: ["not_asked"], source: "email" });
   await expect(t.mutation(api.ratings.rateWithToken, { alertId, token: token.replace(/.$/, (c) => (c === "A" ? "B" : "A")), verdict: "good" }))
@@ -139,4 +139,65 @@ test("export uses a live alert for ratings made before scorer snapshots existed"
     id: rating._id, watchDescription: "Gazelle fiets",
     listing: expect.objectContaining({ id: "l1", price_eur: 350 }),
   })]);
+});
+
+test("one-tap fixes require the rated reason, change only the owner's watch, and undo within ten seconds", async () => {
+  const { t, alice, watchId, alertId } = await withAlert();
+  const watch = () => t.run((ctx) => ctx.db.get(watchId));
+  const bob = t.withIdentity({ subject: "b", email: "bob@example.com" });
+  await alice.mutation(api.ratings.explain, { alertId, reasons: ["not_asked", "price", "score_too_high"] });
+  await expect(bob.mutation(api.ratings.fix, { alertId, kind: "exclude", word: "Orange" })).rejects.toThrow(/isn't yours/);
+  await expect(alice.mutation(api.ratings.fix, { alertId, kind: "exclude", word: "" })).rejects.toThrow(/skip words/);
+  await expect(alice.mutation(api.ratings.fix, { alertId, kind: "exclude", word: "x".repeat(31) })).rejects.toThrow(/skip words/);
+  expect(await alice.mutation(api.ratings.fix, { alertId, kind: "exclude", word: "Orange" })).toMatchObject({ message: expect.stringContaining("orange") });
+  expect((await watch())?.excludeWords).toEqual(["orange"]);
+  await alice.mutation(api.ratings.undo, { alertId });
+  expect((await watch())?.excludeWords).toEqual([]);
+
+  await alice.mutation(api.ratings.fix, { alertId, kind: "price" });
+  expect((await watch())?.maxPriceEur).toBe(345);
+  await alice.mutation(api.ratings.undo, { alertId });
+  expect((await watch())?.maxPriceEur).toBeUndefined();
+  await expect(alice.mutation(api.ratings.fix, { alertId, kind: "price", priceEur: 350 })).rejects.toThrow(/below/);
+
+  await alice.mutation(api.ratings.fix, { alertId, kind: "notify" });
+  expect((await watch())?.notify).toBe("great");
+  vi.advanceTimersByTime(10_001);
+  await expect(alice.mutation(api.ratings.undo, { alertId })).rejects.toThrow(/10 seconds/);
+  expect((await watch())?.notify).toBe("great");
+});
+
+test("score too low adds good e-mails; fixes reject mismatched reasons and allow signed e-mail undo", async () => {
+  const { t, alice, watchId, alertId } = await withAlert();
+  await alice.mutation(api.watches.update, { id: watchId, notify: "great" });
+  await alice.mutation(api.ratings.explain, { alertId, reasons: ["score_too_low"] });
+  await expect(alice.mutation(api.ratings.fix, { alertId, kind: "price" })).rejects.toThrow(/Price isn't good/);
+  const token = (await ratingToken(alertId))!;
+  await t.mutation(api.ratings.fixWithToken, { alertId, token, kind: "notify" });
+  expect((await t.run((ctx) => ctx.db.get(watchId)))?.notify).toBe("good");
+  await t.mutation(api.ratings.undoWithToken, { alertId, token });
+  expect((await t.run((ctx) => ctx.db.get(watchId)))?.notify).toBe("great");
+  await expect(t.mutation(api.ratings.fixWithToken, { alertId, token: "bad", kind: "notify" })).rejects.toThrow(/isn't valid/);
+});
+
+test("skip-word limits apply to direct watch edits too", async () => {
+  const { alice, watchId, alertId } = await withAlert();
+  await expect(alice.mutation(api.watches.update, { id: watchId, excludeWords: Array.from({ length: 11 }, (_, i) => `word${i}`) }))
+    .rejects.toThrow(/up to 10/);
+  await expect(alice.mutation(api.watches.update, { id: watchId, excludeWords: ["Mini", "mini"] }))
+    .rejects.toThrow(/different/);
+  await alice.mutation(api.watches.update, { id: watchId, excludeWords: Array.from({ length: 10 }, (_, i) => `word${i}`) });
+  await alice.mutation(api.ratings.explain, { alertId, reasons: ["not_asked"] });
+  await expect(alice.mutation(api.ratings.fix, { alertId, kind: "exclude", word: "orange" }))
+    .rejects.toThrow(/up to 10/);
+});
+
+test("only this watch's latest eight ratings travel to its scorer request with short notes", async () => {
+  const { t, alice, watchId, alertId } = await withAlert();
+  await alice.mutation(api.ratings.explain, { alertId, reasons: ["not_asked"], note: "a".repeat(150) });
+  const [group] = await t.mutation(internal.checker.claimDue, { now: Date.now() });
+  const request = group.watches.find((w: { id: string }) => w.id === watchId)!;
+  expect(request.rating_examples).toEqual([{ title: "Gazelle Orange C7", price_eur: 350,
+    verdict: "not_right", reasons: ["not_asked"], note: "a".repeat(100) }]);
+  expect(request.exclude_words).toEqual([]);
 });

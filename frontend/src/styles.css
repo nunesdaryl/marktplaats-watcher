@@ -1119,6 +1119,10 @@ button.door-row:hover { background: var(--fill); }
 .why .chips .chip { text-transform: none; }
 .why textarea.field { min-height: 60px; }
 .why .button.primary { align-self: flex-start; }
+.rating-fix { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); width: 100%; }
+.rating-fix > div { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.rating-fix label { display: flex; align-items: center; gap: var(--space-1); }
+.rating-fix input { width: 110px; max-width: 45vw; }
 .rate-page { min-height: 100dvh; display: grid; place-items: center; padding:var(--space-4) var(--space-3); }
 .rate-card { width: min(460px, 100%); display: flex; flex-direction: column; gap:14px; /* off-scale: layout */ padding:var(--space-4); border-radius:var(--radius-lg);
   background: var(--elevated); border: 1px solid var(--line); box-shadow: var(--shadow); }

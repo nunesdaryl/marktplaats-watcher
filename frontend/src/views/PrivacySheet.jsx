@@ -18,7 +18,7 @@ export default function PrivacySheet({ email, waitlisted = false, onClose }) {
           (for example "saved a watch" or "opened an alert"), never what you type, and keep that for 90 days. Vercel
           counts page visits without cookies. To run the service, fix problems and improve it, Daryl (the owner) can see
           your account, watches, alerts, saved chats and feedback in a private dashboard that only Daryl can open. When you
-          rate an alert ("good match" or "not right, because…"), that answer is kept for 12 months to improve the scores, and is deleted with the watch or with Delete my data. Founding survey answers are kept for 12 months and deleted with Delete my data. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
+          rate an alert ("good match" or "not right, because…"), that answer is kept for 12 months to improve the scores and tune that watch's future scores, and is deleted with the watch or with Delete my data. Founding survey answers are kept for 12 months and deleted with Delete my data. Nothing is sold; the only other companies that see it are the ones that run the app (OpenAI, Convex,
           Clerk, AgentMail, Vercel). Delete my data removes everything we store; close your login account separately
           under your account menu.</p>
         </>}

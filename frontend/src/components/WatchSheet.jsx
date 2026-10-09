@@ -18,6 +18,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
   const update = useMutation(api.watches.update);
   const [f, setF] = useState(() => ({
     query: initial.query ?? "", mustInclude: initial.mustInclude ?? "", maxPriceEur: initial.maxPriceEur ?? "",
+    excludeWords: initial.excludeWords ?? [],
     postcode: initial.postcode ?? "", maxDistanceKm: initial.maxDistanceKm ?? "",
     schedule: initial.schedule ?? HOURLY, notify: initial.notify ?? "good",
   }));
@@ -68,6 +69,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
       if (mode === "create") {
         id = await create({
           query: f.query, mustInclude: f.mustInclude || undefined, maxPriceEur: number(f.maxPriceEur),
+          excludeWords: f.excludeWords,
           postcode: f.postcode || undefined, maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : undefined,
           schedule: f.schedule, notify: f.notify,
         });
@@ -75,6 +77,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
         await update({
           id: watchId, schedule: f.schedule, notify: f.notify, query: f.query,
           mustInclude: f.mustInclude.trim() || null, maxPriceEur: number(f.maxPriceEur) ?? null,
+          excludeWords: f.excludeWords,
           postcode: f.postcode.trim() || null, maxDistanceKm: f.postcode.trim() ? number(f.maxDistanceKm) ?? null : null,
         });
       }
@@ -95,6 +98,10 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
               <input {...field("query")} required minLength={2} maxLength={80} placeholder="Mac mini" autoFocus /></label>
             <label className="row"><span>Title includes</span>
               <input {...field("mustInclude")} maxLength={40} placeholder="Optional, e.g. 16gb" /></label>
+            {f.excludeWords.length > 0 && <div className="row"><span>Skipping: {f.excludeWords.join(", ")}</span>
+              <div className="chips">{f.excludeWords.map((word) => <button key={word} type="button" className="chip"
+                aria-label={`Remove ${word} from skipped words`}
+                onClick={() => setF({ ...f, excludeWords: f.excludeWords.filter((value) => value !== word) })}>Remove {word} ×</button>)}</div></div>}
             <label className="row"><span>Max price</span>
               <input {...field("maxPriceEur")} ref={priceInput} type="number" min="1" inputMode="numeric" placeholder="Optional, in €" /></label>
             <label className="row"><span>Near postcode</span>

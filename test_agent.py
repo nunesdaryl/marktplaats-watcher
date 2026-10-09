@@ -1035,7 +1035,7 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
 
 
 def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
-    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-09.1"
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-09.2"
     assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
     assert "0–4" in agent.RANK_PROMPT
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
@@ -1067,6 +1067,9 @@ def test_scorer_loads_and_counts_accessory_cases(monkeypatch, tmp_path):
     audit_cases = tmp_path / "audit_misses.json"
     write(audit_cases, {"cases": []})
     monkeypatch.setattr(run_scorer, "AUDIT_MISSES", audit_cases)
+    preference_cases = tmp_path / "preference_cases.json"
+    write(preference_cases, [])
+    monkeypatch.setattr(run_scorer, "PREFERENCE_CASES", preference_cases)
     monkeypatch.setattr(run_scorer.agent, "rank_listings", lambda _description, listings:
                         [dict(item, score=8 if expected.get(item["id"], False) else 2, reason="test")
                          for item in listings])
@@ -1820,3 +1823,37 @@ def test_capped_bid_explains_the_budget_rule_in_the_reason():
     assert items[0]["score"] == 7 and "Starting bid of €200 is close to your €200 limit" in items[0]["reason"]
     assert items[1]["reason"] == "Starting bid at the limit."           # already explains the bid
     assert items[2]["score"] == 9 and items[2]["reason"] == "Great fit."  # room under the limit: untouched
+
+
+def test_exclude_words_filter_titles_before_ranking():
+    items = [{"itemId": str(i), "title": title, "vipUrl": f"/v/{i}",
+              "priceInfo": {"priceCents": 10000, "priceType": "FIXED"}}
+             for i, title in enumerate(["Mac mini M2", "Mac mini hoes", "Mac mini case"])]
+    listings, _ = agent.parse_listings(items, must_include="Mac mini", exclude_words=["hoes", "case"])
+    assert [item["title"] for item in listings] == ["Mac mini M2"]
+
+
+def test_personal_rating_examples_reach_ranker_as_bounded_data(monkeypatch):
+    example = {"title": "Nintendo Switch Lite", "price_eur": 120, "verdict": "not_right",
+               "reasons": ["not_asked"], "note": "Wrong model"}
+    listing = {"id": "one", "title": "Nintendo Switch Lite", "price_eur": 120}
+    seen = []
+
+    class CaptureRanker:
+        def invoke(self, messages):
+            payload = json.loads(messages[-1]["content"])
+            seen.append(payload)
+            return agent.Ranking(ranks=[{"id": "one", "score": 5, "reason": "Wrong model"}])
+
+    monkeypatch.setattr(agent, "ranker", CaptureRanker())
+    assert agent.rank_listings("Switch OLED", [listing], rating_examples=[example] * 9)[0]["score"] == 5
+    assert seen[0]["this_persons_earlier_ratings_for_this_watch"] == [example] * 8
+    assert seen[0]["listings"][0]["title"] == "Nintendo Switch Lite"
+    # Count the added model-input tokens with the model's tokenizer, then price them
+    # over a full 20-listing check against the per-person €1 budget.
+    import tiktoken
+    from evals.common import USD_TO_EUR, cost_usd
+    encoder = tiktoken.get_encoding("o200k_base")
+    extra_tokens = len(encoder.encode(json.dumps(seen[0]["this_persons_earlier_ratings_for_this_watch"])))
+    assert extra_tokens < 1_000
+    assert cost_usd("gpt-5.4-mini", extra_tokens * 2, 0) * USD_TO_EUR < 0.01
