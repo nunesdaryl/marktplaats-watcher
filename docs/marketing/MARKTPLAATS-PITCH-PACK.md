@@ -13,6 +13,7 @@ Live today: **https://marktplaats-watcher.vercel.app** · Free, up to 5 watches 
 
 - **It solves the retention gap in saved searches.** Today's saved-search e-mails are keyword dumps: high noise, low trust, users unsubscribe. The Watcher reads every new listing like a human would and only surfaces the good ones, with a reason. That is "saved search 2.0" — a daily habit instead of inbox noise.
 - **It brings buyers back on the platform's schedule.** Every alert is a high-intent visit: the user already knows the listing scored 8/10 and why. Better click-through, faster transactions, fresher demand signal for sellers.
+- **It helps buyers act on Marktplaats.** Fresh listings could receive first bids sooner, and fewer buyer-seller conversations could be abandoned. Bids and messages would stay inside Marktplaats, without off-platform deals. An official, auditable channel would replace the current bot-like search reads; these are outcomes to test together, not measured claims.
 - **Natural-language demand data.** "Gazelle bike near 3511AB under €300, mornings" is structured buyer intent Marktplaats currently never captures. At scale this is a demand-side dataset sellers and categories teams would love.
 - **It exists and runs.** Not a slide deck. Deployed, evaluated, tested, with CI, uptime checks and a kill switch. They can try it during the meeting.
 
@@ -23,11 +24,15 @@ Live today: **https://marktplaats-watcher.vercel.app** · Free, up to 5 watches 
 - **Production discipline, not a hackathon script:** evals measured against judge labels with human spot-checks (`evals/report.md`), offline test suites (pytest + Convex tests), CI with pip-audit/npm-audit/gitleaks on every push, 30-minute uptime checks, ADR index, NFR doc, a full design system, and a documented runbook with a kill switch.
 - **Why these questions were already answered in the room:** peers asked "why wouldn't Marktplaats build this themselves?" — see §6.
 
-## 4. What we're actually asking for (pick per conversation)
+## 4. What we're actually asking for (in stages)
 
-1. **A 30-minute conversation** with someone on Product/Partnerships/GTM for the buyer-side experience.
-2. **Sanctioned data access** (API or partner feed) — the current MVP reads listings via a signed-in session, which is fine for a demo and wrong for scale. We WANT to do this the official way; that is the point of reaching out.
-3. Longer-term options to explore together: white-label "smart alerts" feature, a partner integration, or an acquisition of the capability.
+**First step: a 30-minute conversation** with the right person on product, partnerships or GTM for the buyer experience. Everything below is what that conversation is about.
+
+The headline ask is **official, revocable delegated buyer access**: users authorise us on Marktplaats' own OAuth-style consent screen to act for them, with separate "place a bid" and "send a message" scopes. Consent is per user and revocable; Marktplaats sets the rate limits and rules. A 30-minute conversation with Product/Partnerships/GTM is the first step toward this path:
+
+1. **Official read access to `/v1/search` for alerts** (the existing MW-14 request), with partner credentials and Marktplaats' rate limits. Today the MVP anonymously reads public search results through `/lrp/api/search`; ADR 0009 records that this route is disallowed by robots.txt and that repeated systematic querying conflicts with the recorded terms. Official access is the exit from that accepted demo risk.
+2. **Delegated buyer access for bids and messages.** Let each user opt in through Marktplaats' own consent screen to the "place a bid" and "send a message" scopes, revoke authorisation, and keep every action inside Marktplaats under its limits. The app does not place bids or send messages today.
+3. **A joint pilot** with agreed category, success criteria, data rules and a go/pivot/stop decision. Bring observed `bid_handoff` events [N], alerts sent [N], and founding users [N] as evidence once measured; do not substitute estimates for these placeholders.
 
 **Position honestly:** this is a working proof of concept by an engineer who builds governed AI agents for a living (Rabobank, Low-Code & RPA Solutions Engineer; FDE-certified). It is an invitation to build the official version together, not a threat to scrape at scale.
 
@@ -42,7 +47,8 @@ Live today: **https://marktplaats-watcher.vercel.app** · Free, up to 5 watches 
 
 - **"Why wouldn't Marktplaats build this themselves?"** They can — that is exactly why to talk. The build is not the moat; the proof of what users respond to is. Faster for them to pilot with someone who has it running than to spec it from zero. (And if they are building it: even better, the conversation becomes a hiring/consulting one.)
 - **"Does it really save time?"** Vinod's lunch break is the anecdote: a motivated, expert buyer manually refreshing for a €400 Mac mini. The Watcher does that for every user, on schedule, with reasons. Roadmap: WhatsApp/Telegram push, "like self-investing alerts for stocks."
-- **"Is this allowed?"** Current MVP runs on a personal signed-in session, deliberately capped (free, 5 watches). We are asking for the sanctioned path — that is the purpose of the meeting. Enterprise framing: "a production version needs a non-personal function user and official access" (your own words at demo day).
+- **"Is this allowed?"** The capped MVP anonymously reads public search results through `/lrp/api/search`; ADR 0009 records the robots.txt and terms risk. Official `/v1/search` access and Marktplaats-controlled consent for buyer actions are the sanctioned path we are asking for.
+- **"Why not just automate it?"** We could do it in the user's own browser, but the right way is your consent screen: auditable, revocable, and within your rules.
 - **"What about hallucinated scores?"** Scoring is evaluated against judge labels corrected by human spot-checks, with failure categories tracked per prompt version. Alerts carry the reason, so users calibrate trust themselves. Thresholds are user-chosen (great only / good / everything).
 
 ## 7. Outreach drafts (Daryl voice, gated)
@@ -59,7 +65,7 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 >
 > Marktplaats Watcher: a user says in plain words what they want ("Mac mini 16GB under €500"), picks when to check, and only hears about listings an AI agent scored worth their time, with the reason. It runs live at marktplaats-watcher.vercel.app.
 >
-> I built it during a Forward Deployed Engineer program, it won the cohort build-off, and the instructor asked to be its first paying user. The honest limit: it currently reads listings via a signed-in session. For anything real it needs official access, and that is exactly what I want to talk about.
+> I built it during a Forward Deployed Engineer program, it won the cohort build-off, and the instructor asked to be its first paying user. The honest limit: it anonymously reads public search results today, with a documented robots.txt and terms risk. I would like official search access and revocable buyer consent for bids and messages, and that is exactly what I want to talk about.
 >
 > Open to a 30-minute call?
 >

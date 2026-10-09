@@ -39,10 +39,10 @@ Fill in before sending: `[phone]`, `[LinkedIn URL]`.
 
 > "Hallo, ik ben Daryl Nunes. Ik heb een kleine app gebouwd die kopers een e-mail stuurt als er een nieuwe advertentie
 > verschijnt die past bij wat ze zoeken. Ik wil dat graag op de officiële manier doen via jullie API
-> (api.marktplaats.nl). Met wie kan ik praten over partnertoegang tot de zoek-API, of hoe kan ik die aanvragen?"
+> (api.marktplaats.nl). Daarnaast wil ik kopers via jullie eigen toestemmingsscherm per gebruiker intrekbare toegang laten geven om namens hen te bieden en berichten te sturen, binnen jullie limieten. Met wie kan ik praten over partnertoegang tot de zoek-API en deze gedelegeerde toegang?"
 >
 > English: "I built a small app that e-mails buyers when a new listing matches what they're looking for. I'd like to do
-> this the official way through your API. Who can I talk to about partner access to the search API, or how do I apply?"
+> this the official way through your API. I would also like buyers to authorise us on your own consent screen, per user and revocably, to place bids and send messages within your limits. Who can I talk to about search API access and this delegated access?"
 
 **Follow-up e-mail (once you have a name or address):**
 
@@ -56,7 +56,7 @@ Fill in before sending: `[phone]`, `[LinkedIn URL]`.
 > Marktplaats.
 >
 > Today it reads public search results, but I'd like to do this properly through your official API (api.marktplaats.nl,
-> /v1/search) with partner credentials, within your rate limits and terms. Could you tell me how to request access, or
+> /v1/search) with partner credentials, within your rate limits and terms. I would also like to discuss official, revocable delegated buyer access: each user authorises us on Marktplaats' own consent screen to place bids and send messages for them, within your limits. Could you tell me how to request access, or
 > put me in touch with the right team?
 >
 > I'm also happy to show a 2-minute demo.
