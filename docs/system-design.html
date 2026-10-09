@@ -1544,7 +1544,11 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   telling one (variants, then years and model codes, never filler such as "late"). Evals on the real model, three runs:
   great-match precision median 100%, recall 78%, price-type, audit and preference cases pass, chat 19/20. Walked live in
   Daryl's account (rating, fix, Undo; the watch was left unchanged). Baseline to beat: 2 of 340 alerts e-mailed in the
-  week of 5 October were rated (1%); the aim is 10% or more before the first day-14 survey on 19 October.</p>
+  week of 5 October were rated (1%); the aim is 10% or more before the first day-14 survey on 19 October. The same day six new
+  high-severity Next.js advisories turned CI's npm audit red on every push; MW-110 upgraded Next.js 16.3.6 → 16.4.0 (no
+  other dependency changes) and CI on main is green again. Real exposure was low: the site is a static export, so the
+  affected features (incremental page caching, image optimisation, draft mode, the development server) do not run in
+  production.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"
