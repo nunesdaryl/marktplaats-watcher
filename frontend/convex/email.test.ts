@@ -32,6 +32,14 @@ test("every listing links to Marktplaats and the footer says why you got it", ()
   expect(html).toContain("Best: Mac mini i5 16GB. Good price.");   // hidden inbox preview line
 });
 
+test("an alert email links to that alert's offer sheet in the app", () => {
+  const withIds = { ...content, alerts: content.alerts.map((a, i) => ({ ...a, _id: `al${i}` })) };
+  const { text, html } = renderEmail(withIds, "https://app.test/");
+  expect(text).toContain("Help me make an offer: https://app.test/alerts/?offer=al0");
+  expect(html).toContain('href="https://app.test/alerts/?offer=al1"');
+  expect(html.match(/Open on Marktplaats/g)).toHaveLength(2);
+});
+
 test.each(["great", "good", "all"] as Notify[])("%s footer explains the level in normal and catch-up e-mails", (notify) => {
   for (const catchUp of [false, true]) {
     const { text, html } = renderEmail({ ...content, notify, catchUp }, "https://app.test");
@@ -61,7 +69,7 @@ test("each alert has 'Good match?' links that open the app's rate page with that
   const firstCard = html.slice(html.indexOf("Mac mini i5 16GB"), html.indexOf("&lt;img"));
   expect(firstCard.indexOf("Good price.")).toBeLessThan(firstCard.indexOf("Good match?"));
   expect(firstCard.indexOf("Good match?")).toBeLessThan(firstCard.indexOf("Open on Marktplaats"));
-  expect(firstCard.match(/min-height:44px/g)).toHaveLength(2);
+  expect(firstCard.match(/min-height:44px/g)).toHaveLength(3);
   expect(renderEmail(content, "https://app.test").text).not.toContain("Good match?");   // no code, no links
 });
 

@@ -8,6 +8,7 @@ export const listingCard = v.object({
   title: v.string(),
   description: v.optional(v.string()),
   price_eur: v.union(v.number(), v.null()),
+  price_type: v.optional(v.string()),
   city: v.union(v.string(), v.null()),
   distance_km: v.union(v.number(), v.null()),
   date: v.optional(v.any()),
@@ -41,6 +42,9 @@ export const eventProps = v.object({
   mode: v.optional(v.string()),
   kind: v.optional(v.string()),
   value: v.optional(v.string()),
+  alertId: v.optional(v.string()),
+  priceType: v.optional(v.string()),
+  amount: v.optional(v.string()),
 });
 
 export const catchupItem = v.object({
@@ -347,6 +351,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     priceEur: v.optional(v.number()),
+    priceType: v.optional(v.string()),
     city: v.optional(v.string()),
     url: v.string(),
     image: v.optional(v.string()),

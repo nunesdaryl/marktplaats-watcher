@@ -10,9 +10,9 @@ let flushNow = null;
 const device = () => (typeof window !== "undefined" && window.matchMedia("(min-width: 900px)").matches ? "desktop" : "phone");
 const short = (v) => (v === undefined || v === null ? undefined : String(v).slice(0, 40));
 
-/** track("chat_sent", { mode: "watch" }). Props: section, mode, kind, value (short strings only). */
+/** track("chat_sent", { mode: "watch" }). Props are short strings; never send message text. */
 export function track(name, props = {}) {
-  const clean = Object.fromEntries(["section", "mode", "kind", "value"]
+  const clean = Object.fromEntries(["section", "mode", "kind", "value", "alertId", "priceType", "amount"]
     .map((k) => [k, short(props[k])]).filter(([, v]) => v !== undefined));
   queue.push({ name, props: Object.keys(clean).length ? clean : undefined, device: device(), at: Date.now() });
   if (queue.length > 100) queue.splice(0, queue.length - 100);   // signed out or offline: keep only the latest

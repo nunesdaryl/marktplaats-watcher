@@ -574,6 +574,7 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
     assert result["ok"] and result["currentIds"] == all_ids
     assert [i["id"] for i in result["listings"]] == [all_ids[0]]     # only the one not seen before
     assert result["listings"][0]["score"] == 7 and result["listings"][0]["reason"] == "fair price"
+    assert result["listings"][0]["price_type"] == "fixed price"
 
 
 def test_search_url_uses_plus_for_spaces_like_the_site():

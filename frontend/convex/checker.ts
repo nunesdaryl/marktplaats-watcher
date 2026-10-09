@@ -109,6 +109,7 @@ export const claimDue = internalMutation({
 
 const listing = v.object({
   id: v.string(), title: v.string(), description: v.optional(v.string()), price_eur: v.union(v.number(), v.null()), city: v.union(v.string(), v.null()),
+  price_type: v.optional(v.string()),
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
   image: v.optional(v.union(v.string(), v.null())),
   score: v.union(v.number(), v.null()), reason: v.string(),
@@ -183,7 +184,7 @@ export const record = internalMutation({
         newAlerts.push(await insertTracked(ctx, "alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           description: item.description,
-          priceEur: item.price_eur ?? undefined, city: item.city ?? undefined, url: item.url,
+          priceEur: item.price_eur ?? undefined, priceType: item.price_type, city: item.city ?? undefined, url: item.url,
           image: item.image ?? undefined,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
           emailStatus: "pending", createdAt: now,
@@ -298,9 +299,12 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   // follow links without running the page can't rate anything
   const rateUrl = (a: (typeof top)[number], verdict: "good" | "not_right") => a._id && a.rateToken
     ? `${appUrl.replace(/\/$/, "")}/rate/?a=${encodeURIComponent(a._id)}&v=${verdict}&t=${encodeURIComponent(a.rateToken)}` : null;
+  const offerUrl = (a: (typeof top)[number]) => a._id
+    ? `${appUrl.replace(/\/$/, "")}/alerts/?offer=${encodeURIComponent(a._id)}` : null;
   const text = [
     heading, ...(c.catchUp ? [apology] : []), "",
     ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
+      ...(offerUrl(a) ? [`Help me make an offer: ${offerUrl(a)}`] : []),
       ...(rateUrl(a, "good") ? [`Good match? Yes: ${rateUrl(a, "good")}  ·  Not right: ${rateUrl(a, "not_right")}`] : []), ""]),
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
     footer, `Manage or pause this watch: ${manageUrl}`,
@@ -328,6 +332,7 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 <a href="${escape(rateUrl(a, "good")!)}" class="mw-link" style="display:inline-block;min-height:44px;line-height:44px;padding:0 12px;color:#0d6b62;font-weight:600;">Yes</a> &middot;
 <a href="${escape(rateUrl(a, "not_right")!)}" class="mw-link" style="display:inline-block;min-height:44px;line-height:44px;padding:0 12px;color:#0d6b62;font-weight:600;">Not right</a></div>` : ""}
 <a href="${escape(a.url)}" class="mw-btn" style="display:inline-block;background:#0d6b62;color:#ffffff;font-family:${sans};font-size:14px;line-height:20px;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:6px;">Open on Marktplaats</a>
+${offerUrl(a) ? `<a href="${escape(offerUrl(a)!)}" class="mw-link" style="display:inline-block;min-height:44px;line-height:44px;margin-left:8px;color:#0d6b62;font-family:${sans};font-size:14px;font-weight:600;text-decoration:underline;">Help me make an offer</a>` : ""}
 </td></tr></table></td></tr>`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

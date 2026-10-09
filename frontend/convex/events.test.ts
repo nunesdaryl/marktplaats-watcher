@@ -28,6 +28,16 @@ test("events need an account, only known names are kept, and props are cut short
   expect(rows[2].at).toBe(Date.now());
 });
 
+test("bid handoff records only alert id, price type, and suggested amount", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  await alice.mutation(api.users.store, {});
+  expect(await alice.mutation(api.events.track, { events: [ev("bid_handoff", {
+    props: { alertId: "alert123", priceType: "MIN_BID", amount: "100" },
+  })] })).toBe(1);
+  expect((await all(t))[0]).toMatchObject({ name: "bid_handoff", props: { alertId: "alert123", priceType: "MIN_BID", amount: "100" } });
+});
+
 test("at most 20 per call and 500 a day per person; deleted with the account data", async () => {
   const t = convexTest(schema, modules);
   const bob = t.withIdentity({ subject: "b", email: "b@example.com" });

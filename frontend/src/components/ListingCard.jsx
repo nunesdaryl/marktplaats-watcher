@@ -11,10 +11,12 @@ function ScoreBadge({ score }) {
 }
 
 /** One listing as a card: photo, title, price, place, and (for alerts) the score and its reason. */
-export default function ListingCard({ listing, score, reason, meta, isNew = false }) {
+export default function ListingCard({ listing, score, reason, meta, isNew = false, initialOfferOpen = false }) {
   const [broken, setBroken] = useState(false);
-  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(initialOfferOpen);
   const price = listing.price_eur ?? listing.priceEur;
+  const priceType = listing.price_type ?? listing.priceType;
+  const canOffer = !["FREE", "SWAP", "SEE_DESCRIPTION", "free", "swap", "see description"].includes(priceType);
   const city = listing.city;
   const distance = listing.distance_km != null ? `${listing.distance_km} km` : null;
   return (
@@ -40,7 +42,7 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
       </div>
       {isNew && <span className="visually-hidden">, new</span>}
     </a>
-    {Number.isFinite(Number(price)) && Number(price) >= 5 && <button type="button" className="link-button offer-action"
+    {canOffer && Number.isFinite(Number(price)) && Number(price) >= 5 && <button type="button" className="link-button offer-action"
       onClick={() => setOfferOpen(true)}>Help me make an offer</button>}
     {offerOpen && <OfferSheet listing={listing} watchId={listing.watchId} onClose={() => setOfferOpen(false)} />}
     </div>
