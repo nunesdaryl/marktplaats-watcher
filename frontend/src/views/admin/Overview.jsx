@@ -12,6 +12,7 @@ const NOTIFY = { great: "Great matches only", good: "Good matches", all: "Every 
 const FUNNEL_KEYS = ["signed_up", "setup", "chatted", "watch", "alert"];
 const pct = (a, b) => !b ? "–" : a === 0 ? "0%" : a / b < 0.01 ? "<1%" : `${Math.round((a / b) * 100)}%`;
 const reportedBefore = (at) => at === undefined ? "" : ` · reported before (${new Date(at).toLocaleDateString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric" })})`;
+const auditDate = (at) => at === undefined ? "–" : new Date(at).toLocaleDateString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric" });
 const deliveryMissReason = (miss) => ({
   rescored: `check scored ${miss.checkScore}`,
   never_read: "not read by the check",
@@ -376,15 +377,24 @@ export default function Overview({ open, onSearch, ask }) {
         <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
       <OpenAiSpendCard open={go} />
-      {founding && <section className="panel">
-        <h2>Would they be disappointed?</h2>
-        <p><strong>{founding.percentVery}% very disappointed</strong> ({founding.very} of {founding.n} answers)</p>
-        {founding.n < 40 && <p className="hint">Too few answers to judge; aim for 40%+ very disappointed.</p>}
-        <p>{founding.paused} paused founding users · {founding.extended} extended founding users</p>
-        <h3>Would you pay?</h3>
-        <ul><li>No: {founding.prices.no}</li><li>Up to €5 a month: {founding.prices.up_to_5}</li>
-          <li>€5–10: {founding.prices["5_to_10"]}</li><li>More than €10: {founding.prices.over_10}</li></ul>
-        <details><summary>See founding answers</summary>
+      {founding && <section className="panel founding-summary">
+        <h2>Founding survey</h2>
+        <div className="breakdowns">
+          <section className="breakdown">
+            <h3>Would they be disappointed?</h3>
+            {founding.n ? <p><strong>{founding.percentVery}% very disappointed</strong> ({founding.very} of {founding.n} answers)</p>
+              : <p className="hint">No answers yet</p>}
+            {founding.n > 0 && founding.n < 40 && <p className="hint">Too few answers to judge; aim for 40%+ very disappointed.</p>}
+            <p>{founding.paused} paused founding users · {founding.extended} extended founding users</p>
+          </section>
+          <Breakdown title="Would you pay?" empty="No answers yet" rows={[
+            { key: "no", label: "No", count: founding.prices.no },
+            { key: "up_to_5", label: "Up to €5 a month", count: founding.prices.up_to_5 },
+            { key: "5_to_10", label: "€5–10", count: founding.prices["5_to_10"] },
+            { key: "over_10", label: "More than €10", count: founding.prices.over_10 },
+          ]} />
+        </div>
+        <details className="founding-answers"><summary>See founding answers</summary>
           <ul>{founding.answers.map((answer, index) => <li key={`${answer.email}-${answer.freeUntil}-${index}`}>
             {answer.email} · round ending {new Date(answer.freeUntil).toLocaleDateString("en-GB")} · {answer.disappointed ?? "No survey answer"}
             {answer.benefit ? ` · ${answer.benefit}` : ""} · {answer.wouldPay ?? "No pay answer"}
@@ -404,13 +414,29 @@ export default function Overview({ open, onSearch, ask }) {
         </li>)}</ul>
       </section>}
 
-      {data.deliveryAudit.latestMisses.length > 0 && <section className="panel">
-        <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses</button></h2>
-        <ul>{data.deliveryAudit.latestMisses.filter((miss, index, all) => all.findIndex((other) =>
-          other.watchId === miss.watchId && other.listingId === miss.listingId) === index).map((miss) => <li key={`${miss.watchId}-${miss.listingId}`}>
-          <button className="link-button" onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}>{miss.watchLabel} · {miss.score}/10 · {miss.title} · {deliveryMissReason(miss)}{reportedBefore(miss.reportedBefore)}</button>
-        </li>)}</ul>
-      </section>}
+      <section className="panel delivery-misses">
+        <h2><button className="link-button strong" onClick={() => go("audits", "Latest delivery misses")}>Latest delivery misses ({data.deliveryAudit.misses} new)</button></h2>
+        {data.deliveryAudit.latestMisses.length === 0 ? <p className="hint">No delivery misses in the latest audit</p> :
+          <div className="delivery-miss-scroll">
+            <table className="band-table"><thead><tr><th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th><th>Status</th></tr></thead>
+              <tbody>{data.deliveryAudit.latestMisses.filter((miss, index, all) => all.findIndex((other) =>
+                other.watchId === miss.watchId && other.listingId === miss.listingId) === index).map((miss) =>
+                <tr key={`${miss.watchId}-${miss.listingId}`} className={`openable${miss.reportedBefore !== undefined || miss.at !== data.deliveryAudit.lastRunAt ? " delivery-miss-reported" : ""}`}
+                    tabIndex={0} onClick={() => go("audits", "Delivery miss", { requestId: miss.requestId })}
+                    onKeyDown={(e) => { if (e.key === "Enter") go("audits", "Delivery miss", { requestId: miss.requestId }); }}>
+                  <td>{auditDate(miss.at)}</td>
+                  <td><span className="delivery-miss-name" title={miss.watchLabel}>{miss.watchLabel}</span></td>
+                  <td>{miss.url ? <a className="delivery-miss-name" href={miss.url} target="_blank" rel="noopener noreferrer" title={miss.title}
+                    onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>{miss.title}</a>
+                    : <span className="delivery-miss-name" title={miss.title}>{miss.title}</span>}</td>
+                  <td className="num">{miss.score === undefined ? "–" : `${miss.score}/10`}</td>
+                  <td className="num">{miss.checkScore === undefined ? "–" : `${miss.checkScore}/10`}</td>
+                  <td>{miss.reportedBefore !== undefined ? `reported before ${auditDate(miss.reportedBefore)}`
+                    : miss.at === data.deliveryAudit.lastRunAt ? "new" : `first reported ${auditDate(miss.at)}`}</td>
+                </tr>)}</tbody>
+            </table>
+          </div>}
+      </section>
 
       <div className="charts">
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}
@@ -442,7 +468,7 @@ export default function Overview({ open, onSearch, ask }) {
         <Breakdown title="Schedules of active watches" rows={data.schedules} onRow={(r) => go("watches", `Watches checked ${r.name}`, { scheduleKey: r.name })} />
         <Breakdown title="Which alerts they want" rows={data.notify.map((r) => ({ ...r, label: NOTIFY[r.name] ?? r.name }))}
                    onRow={(r) => go("watches", `Watches e-mailing ${r.label.toLowerCase()}`, { notify: r.name })} />
-        <Breakdown title="Would you pay for this?" rows={data.wouldPay} empty="No answers yet"
+        <Breakdown title="App feedback: pricing" rows={data.wouldPay} empty="No answers yet"
                    onRow={(r) => go("feedback", `Would pay: ${r.name}`, { wouldPay: r.key })} />
       </div>
 

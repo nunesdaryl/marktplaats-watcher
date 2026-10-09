@@ -26,6 +26,7 @@ let previous;
 let renderCount;
 let responses;
 let queryCount;
+let foundingResponse;
 
 function render() {
   renderCount = 0;
@@ -44,8 +45,9 @@ beforeEach(() => {
   });
   vi.mocked(useRef).mockImplementation(() => previous);
   responses = [dashboard(oldNow, 3), ratings, { rows: [] }];
+  foundingResponse = undefined;
   queryCount = 0;
-  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0 ? undefined : responses[(queryCount++) % 3]);
+  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0 ? foundingResponse : responses[(queryCount++) % 3]);
 });
 
 test("the first dashboard row opens the matching review lists", () => {
@@ -156,7 +158,7 @@ test("delivery misses explain why each match was missed without showing request 
   expect(html).toContain("not read by the check");
   expect(html).toContain("not scored by the check");
   expect(html).toContain("scored but not sent");
-  expect(html).toContain("Apple Mac mini · check scored 2");
+  expect(html).toContain("Apple Mac mini");
   expect(html).not.toContain("audit-rescored");
   expect(html).not.toContain("audit-unread");
   expect(html).not.toContain("audit-unscored");
@@ -164,18 +166,62 @@ test("delivery misses explain why each match was missed without showing request 
   expect(html).toContain('aria-label="Copy request ID"');
 });
 
-test("latest misses show one row per watch and listing, newest first, with repeat dates", () => {
+test("latest misses show audit dates, status, and the latest audit's new count", () => {
   const data = responses[0];
+  data.deliveryAudit.misses = 1;
   data.deliveryAudit.latestMisses = [
-    { watchId: "w1", listingId: "m1", requestId: "new", watchLabel: "Mac", title: "New title", score: 9, kind: "handled", reportedBefore: oldNow },
-    { watchId: "w1", listingId: "m1", requestId: "old", watchLabel: "Mac", title: "Old title", score: 8, kind: "handled" },
-    { watchId: "w2", listingId: "m1", requestId: "other", watchLabel: "Other", title: "Other watch", score: 8, kind: "handled" },
+    { watchId: "w1", listingId: "m1", requestId: "new", watchLabel: "Mac", title: "New title", score: 9, checkScore: 4, kind: "handled", reportedBefore: oldNow, at: oldNow + 2 * 24 * 60 * 60 * 1000, url: "https://www.marktplaats.nl/v/m1" },
+    { watchId: "w1", listingId: "m1", requestId: "old", watchLabel: "Mac", title: "Old title", score: 8, kind: "handled", at: oldNow },
+    { watchId: "w2", listingId: "m2", requestId: "other", watchLabel: "Other", title: "Other watch", score: 8, kind: "handled", at: oldNow + 2 * 24 * 60 * 60 * 1000 },
+    { watchId: "w3", listingId: "m3", requestId: "earlier", watchLabel: "Earlier", title: "Earlier first report", score: 9, kind: "handled", at: oldNow },
   ];
-  const { html } = render();
+  data.deliveryAudit.lastRunAt = oldNow + 2 * 24 * 60 * 60 * 1000;
+  const { html, open, tree } = render();
+  expect(html).toContain("Latest delivery misses (1 new)");
+  expect(html).toMatch(/class="stat-value">1<\/span><span class="stat-name">Delivery misses/);
+  expect(html).toContain('<th>Audit date</th><th>Watch</th><th>Listing</th><th>Audit score</th><th>Check score</th><th>Status</th>');
+  expect(html).toContain("3 Oct 2026");
+  expect(html).toContain("1 Oct 2026");
+  expect(html).toContain("new</td>");
+  expect(html).toContain("reported before 1 Oct 2026");
+  expect(html).toContain('class="openable delivery-miss-reported"');
+  expect(html).toContain('href="https://www.marktplaats.nl/v/m1"');
+  expect(html).toContain('title="New title"');
   expect(html).toContain("New title");
   expect(html).toContain("Other watch");
   expect(html).not.toContain("Old title");
-  expect(html).toContain("reported before (1 Oct 2026)");
+  // Only rows first reported by the latest audit say "new"; an older first report is dated and muted.
+  expect(html.match(/>new<\/td>/g)).toHaveLength(1);
+  expect(html).toContain("first reported 1 Oct 2026");
+  const panel = tree.props.children.find((child) => child?.props?.className === "panel delivery-misses");
+  const row = panel.props.children[1].props.children.props.children[1].props.children[0];
+  row.props.onClick();
+  expect(open).toHaveBeenCalledWith({ view: "audits", title: "Delivery miss", params: { requestId: "new" } }, { fresh: true });
+});
+
+test("latest misses has a clean empty state", () => {
+  expect(render().html).toContain("No delivery misses in the latest audit");
+});
+
+test("founding pay answers use breakdown bars and appear in one place", () => {
+  foundingResponse = { n: 2, very: 1, percentVery: 50, paused: 0, extended: 0,
+    prices: { no: 1, up_to_5: 2, "5_to_10": 0, over_10: 0 }, answers: [] };
+  const { html } = render();
+  expect(html).toContain("Would they be disappointed?");
+  expect(html.match(/<h3>Would you pay\?<\/h3>/g)).toHaveLength(1);
+  expect(html).toContain('class="breakdown-bar"');
+  expect(html).toContain('class="breakdown-count">2<small>67%</small>');
+  expect(html).not.toContain("Would you pay for this?");
+  expect(html).toContain("App feedback: pricing");
+  expect(html).toContain("See founding answers");
+});
+
+test("founding survey has a clean no-answers state", () => {
+  foundingResponse = { n: 0, very: 0, percentVery: 0, paused: 0, extended: 0,
+    prices: { no: 0, up_to_5: 0, "5_to_10": 0, over_10: 0 }, answers: [] };
+  const html = render().html;
+  expect(html).toContain("No answers yet");
+  expect(html.match(/<h3>Would you pay\?<\/h3>/g)).toHaveLength(1);
 });
 
 test("shares below one percent stay visible and zero stays zero", () => {
