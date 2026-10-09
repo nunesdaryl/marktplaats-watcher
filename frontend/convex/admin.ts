@@ -639,11 +639,33 @@ export const ratingStats = query({
     const alertsSent = await sentAlertsSince(ctx, since) ??
       (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).take(LIMIT))
         .filter((a) => a.emailStatus === "sent").length;
+    const sentRows = (await ctx.db.query("alerts").withIndex("by_createdAt", (q) => q.gte("createdAt", since)).take(LIMIT))
+      .filter((a) => a.emailStatus === "sent");
+    const ratedAlerts = new Set(ratings.map((r) => r.alertId));
+    const weekOf = (at: number) => {
+      const date = new Date(at);
+      date.setUTCHours(0, 0, 0, 0);
+      date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7);
+      return date.toISOString().slice(0, 10);
+    };
+    const weeks = new Map<string, { week: string; sent: number; rated: number }>();
+    for (const alert of sentRows) {
+      const key = weekOf(alert.createdAt);
+      const row = weeks.get(key) ?? { week: key, sent: 0, rated: 0 };
+      row.sent++;
+      if (ratedAlerts.has(alert._id)) row.rated++;
+      weeks.set(key, row);
+    }
+    const users = await ctx.db.query("users").take(LIMIT);
+    const nudgeShown = users.filter((u) => u.ratingNudgeShownAt !== undefined).length;
+    const nudgeRated = users.filter((u) => u.ratingNudgeShownAt !== undefined && u.ratingNudgeRatedAt !== undefined).length;
     const good = ratings.filter((r) => r.verdict === "good").length;
     const reasons: Record<string, number> = {};
     ratings.forEach((r) => r.reasons?.forEach((x) => { reasons[x] = (reasons[x] ?? 0) + 1; }));
     return {
-      rated: ratings.length, alertsSent, good, notRight: ratings.length - good,
+      rated: ratings.length, alertsSent, ratedSent: sentRows.filter((a) => ratedAlerts.has(a._id)).length,
+      weeklyRatedShare: [...weeks.values()].sort((a, b) => b.week.localeCompare(a.week)),
+      nudgeShown, nudgeRated, good, notRight: ratings.length - good,
       fromEmail: ratings.filter((r) => r.source === "email").length,
       bands: BANDS.map(([key, label]) => {
         const rows = ratings.filter((r) => band(r.score) === key);
@@ -911,4 +933,3 @@ export const markFeedbackReplied = mutation({
     await patchTracked(ctx, "feedback", id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel, repliedBy: identity!.email! });
   },
 });
-

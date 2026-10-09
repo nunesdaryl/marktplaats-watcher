@@ -1109,7 +1109,14 @@ button.door-row:hover { background: var(--fill); }
 .alerts-head-row .link-button { font-size:var(--text-sm); white-space:nowrap; }
 .rate { display: flex; flex-wrap: wrap; align-items: center; gap:6px 8px; /* off-scale: layout */ font-size:var(--text-sm); color: var(--text-2); }
 .rate-archive { margin-left:auto; }
-.rate .button.small-button { min-height: 36px; }
+.rate .button.small-button { min-height: 44px; }
+.rating-nudge { position:relative; padding:var(--space-4); margin-bottom:var(--space-4); background:var(--elevated); border:1px solid var(--line); border-radius:var(--radius-lg); }
+.rating-nudge strong { display:block; padding-right:var(--space-5); }
+.rating-nudge p { margin:var(--space-2) 0; }
+.rating-nudge-close { position:absolute; top:var(--space-2); right:var(--space-2); min-width:44px; min-height:44px; }
+.rating-nudge-actions { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.rating-nudge-actions .button { min-height:44px; }
+.rate-thanks { width:100%; margin:0; }
 .rate-yes:hover:not(:disabled) { background: color-mix(in srgb, var(--great) 14%, transparent); color: var(--great); }
 .rate-no:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .rate.done strong { color: var(--text); font-weight: 600; }

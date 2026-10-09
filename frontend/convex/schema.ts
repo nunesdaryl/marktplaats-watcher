@@ -70,6 +70,9 @@ export default defineSchema({
     aiBudgetEur: v.optional(v.number()),
     onboardedAt: v.optional(v.number()),   // set when the first-run setup is finished or skipped
     alertsSeenAt: v.optional(v.number()),  // last time the Alerts page was open: newer alerts count as new
+    ratingNudgeShownAt: v.optional(v.number()),
+    ratingNudgeDismissedAt: v.optional(v.number()),
+    ratingNudgeRatedAt: v.optional(v.number()),
   }).index("by_clerkId", ["clerkId"]),
 
   waitlist: defineTable({

@@ -42,12 +42,12 @@ export default function RateView() {
         {state === "saved" && verdict === "good" && (
           <>
             <h1>Thanks.</h1>
-            <p className="muted">Good to hear it was a good match. That tells us the score got it right.</p>
+            <p className="muted">Thanks — this watch will use it from the next check.</p>
             <button className="link-button" onClick={() => record("not_right")}>Actually, it wasn't right</button>
           </>
         )}
         {state === "saved" && verdict === "not_right" && (
-          <><WhyNotRight alert={alert} onFix={(args) => fix({ alertId, token, ...args })}
+          <><p className="muted">Thanks — this watch will use it from the next check.</p><WhyNotRight alert={alert} onFix={(args) => fix({ alertId, token, ...args })}
             onUndo={() => undo({ alertId, token })}
             onSend={(why) => explain({ alertId, token, ...why }).catch((e) => { setError(e.data ?? "That didn't send. Try again."); throw e; })} />
             {error && <p className="error" role="alert">{error}</p>}</>
@@ -55,7 +55,7 @@ export default function RateView() {
         {state === "explained" && (
           <>
             <h1>Thanks, that helps.</h1>
-            <p className="muted">Daryl reads every answer and uses them to make the scores better.</p>
+            <p className="muted">Thanks — this watch will use it from the next check.</p>
           </>
         )}
         <a className="button tinted rate-open" href="/alerts/">Open my alerts</a>

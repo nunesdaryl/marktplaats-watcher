@@ -22,7 +22,7 @@ export default function RateAlert({ alertId, rating, alert, onArchive }) {
 
   const choose = (verdict) => run(rate({ alertId, verdict }).then(() => {
     track("alert_rated", { value: verdict });
-    setThanks("Thanks.");
+    setThanks("Thanks — this watch will use it from the next check.");
     setAsking(verdict === "not_right");
   }));
   const archive = <button type="button" className="icon-button small rate-archive" aria-label="Archive alert" title="Archive alert"
@@ -31,9 +31,10 @@ export default function RateAlert({ alertId, rating, alert, onArchive }) {
   if (asking) {
     return (
       <div className="rate">
+        {thanks && <p className="rate-thanks">{thanks}</p>}
         <WhyNotRight initial={rating?.verdict === "not_right" ? rating : undefined} busy={busy}
           alert={alert} onFix={(args) => fix({ alertId, ...args })} onUndo={() => undo({ alertId })}
-          onSend={async (why) => { setBusy(true); setError(""); try { await explain({ alertId, ...why }); setThanks("Thanks, that helps us improve the scores."); }
+          onSend={async (why) => { setBusy(true); setError(""); try { await explain({ alertId, ...why }); setThanks("Thanks — this watch will use it from the next check."); }
             catch (e) { setError(e.data ?? "That didn't save. Try again."); throw e; } finally { setBusy(false); } }} />
         <button className="link-button small" onClick={() => setAsking(false)}>Skip</button>
         {error && <p className="error small">{error}</p>}
