@@ -1555,7 +1555,13 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   went from 4 to 1 (a genuinely new report). MW-101: every public document now quotes the current evaluation report, and
   a docs test fails on an unlabelled stale figure. Review caught that the report's table showed a single run while the
   gate uses the median of three; the table now shows the median with ranges, and the docs test checks that the report's
-  recall equals the gate's.</p>
+  recall equals the gate's. Finally the dashboard got its look in order before the first survey answers (19 October): MW-112
+  turned "Latest delivery misses" into a dated table whose title count matches the attention card (only the latest
+  audit's first reports say "new"; repeats read "reported before" and older first reports "first reported", both muted)
+  and showed the founding survey ("Would they be disappointed?", "Would you pay?") as matching bar cards; the separate
+  in-app feedback pricing chart is now named "App feedback: pricing". MW-113 moved Status to the first column so "new"
+  is visible on a phone without scrolling the table. Review caught one contradiction before merge: the first MW-112 build
+  labelled an older first report "new" next to a "(1 new)" title.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October; earlier snapshot).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"
