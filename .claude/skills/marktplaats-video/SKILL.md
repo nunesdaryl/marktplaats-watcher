@@ -8,7 +8,7 @@ description: Use when making, changing, rendering or reviewing a Marktplaats Wat
 One template makes every variant, format and language. Detail: [`marketing/video/HOW-TO.md`](../../../marketing/video/HOW-TO.md). Credits: [`marketing/video/CREDITS.md`](../../../marketing/video/CREDITS.md).
 
 ```bash
-scripts/render-video.sh <original|animated-logo|cohort1> [landscape|vertical|all] [en|nl|all]
+scripts/render-video.sh <original|animated-logo|cohort1|why> [landscape|vertical|all] [en|nl|all]
 marketing/video/compare.sh <new.mp4> <reference.mp4>   # duration, frame count, PSNR >= 35 dB
 ```
 
@@ -30,8 +30,9 @@ Output goes to the gitignored `marketing/video/out/`; the poster is also baked i
 | `original` | 24.5 s | Committed: `docs/marketing/media/launch-2026-10-10/` |
 | `animated-logo` | 29.0 s (H-to-I loop from 25.0 s) | Not committed yet; render with the command above |
 | `cohort1` | 32.0 s (problem hook first; loop from 28.0 s) | Not committed yet; render with the command above |
+| `why` | 40.3 s (pain, outcomes, proof, offer; loop from 36.5 s) | Committed: `docs/marketing/media/why-2026-10-10/` |
 
-Open: the platform pack of cut-downs (MW-130) and the `why` variant (MW-131). Both build on this template.
+Open: the platform pack of cut-downs (MW-130), which can add `why` cuts later. It builds on this template.
 
 ## Change something
 
