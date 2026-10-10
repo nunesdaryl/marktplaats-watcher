@@ -4,6 +4,7 @@ The evals run the PRODUCTION code paths (agent.rank_listings, agent.chat) agains
 prompt or model change measures exactly what users get. CI runs them on relevant pull requests and weekly."""
 import json
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -42,17 +43,30 @@ WATCHES = [
 
 
 def cost_usd(model, input_tokens, output_tokens):
-    if model not in PRICES:
-        raise ValueError(f"add prices for {model} to evals/common.py")
-    price_in, price_out = PRICES[model]
+    price_in, price_out = model_prices(model)
     return input_tokens / 1e6 * price_in + output_tokens / 1e6 * price_out
+
+
+def model_prices(model):
+    if model in PRICES:
+        return PRICES[model]
+    names = ("MODEL_INPUT_PRICE_USD_PER_MILLION", "MODEL_OUTPUT_PRICE_USD_PER_MILLION")
+    if all(os.getenv(name) for name in names):
+        return tuple(float(os.environ[name]) for name in names)
+    raise ValueError(f"add prices for {model} to evals/common.py or set both MODEL_*_PRICE_USD_PER_MILLION variables")
 
 
 def model_under_test():
     model = os.environ["OPENAI_MODEL"]
-    if model not in PRICES:
-        raise ValueError(f"add prices for {model} to evals/common.py")
+    model_prices(model)
     return model
+
+
+def result_path(path, provider, model):
+    if provider == "openai":
+        return path
+    suffix = re.sub(r"[^a-zA-Z0-9_-]", "_", f"{provider}_{model}")
+    return path.with_name(f"{path.stem}_{suffix}{path.suffix}")
 
 
 def read(path):

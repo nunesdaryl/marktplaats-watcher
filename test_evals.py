@@ -4,6 +4,88 @@ import pytest
 from evals import common, gate, repeat, report, run_chat, run_scorer
 
 
+def test_model_factory_uses_default_and_second_provider(monkeypatch):
+    import builtins
+    import sys
+    from types import ModuleType
+    import model_config
+
+    calls = []
+    monkeypatch.setattr(model_config, "ChatOpenAI", lambda **kwargs: calls.append(("openai", kwargs)) or object())
+    original_import = builtins.__import__
+    def import_guard(name, *args, **kwargs):
+        if name == "langchain_anthropic":
+            raise AssertionError("default provider imported optional package")
+        return original_import(name, *args, **kwargs)
+    with monkeypatch.context() as patch:
+        patch.setattr(builtins, "__import__", import_guard)
+        patch.delenv("MODEL_PROVIDER", raising=False)
+        model_config.chat_model("gpt-5.4-mini", timeout=30, max_retries=2, max_tokens=1500, stream_usage=True)
+    assert calls[-1] == ("openai", {"model": "gpt-5.4-mini", "timeout": 30,
+                                   "max_retries": 2, "max_tokens": 1500, "stream_usage": True})
+
+    fake_anthropic = ModuleType("langchain_anthropic")
+    fake_anthropic.ChatAnthropic = lambda **kwargs: calls.append(("anthropic", kwargs)) or object()
+    monkeypatch.setitem(sys.modules, "langchain_anthropic", fake_anthropic)
+    monkeypatch.setenv("MODEL_PROVIDER", "anthropic")
+    model_config.chat_model("claude-test", timeout=20, max_retries=1, max_tokens=2500, stream_usage=True)
+    assert calls[-1] == ("anthropic", {"model": "claude-test", "timeout": 20,
+                                      "max_retries": 1, "max_tokens": 2500})
+
+
+def test_model_factory_reports_missing_optional_provider(monkeypatch):
+    import builtins
+    import model_config
+
+    original_import = builtins.__import__
+    def missing_anthropic(name, *args, **kwargs):
+        if name == "langchain_anthropic":
+            raise ModuleNotFoundError("No module named 'langchain_anthropic'", name=name)
+        return original_import(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, "__import__", missing_anthropic)
+    monkeypatch.setenv("MODEL_PROVIDER", "anthropic")
+    with pytest.raises(RuntimeError, match="langchain-anthropic.*requirements-evals.txt"):
+        model_config.chat_model("claude-test")
+
+
+def test_model_factory_rejects_unknown_provider(monkeypatch):
+    import model_config
+
+    monkeypatch.setenv("MODEL_PROVIDER", "unknown")
+    with pytest.raises(ValueError, match="Unsupported MODEL_PROVIDER='unknown'"):
+        model_config.chat_model("test")
+
+
+def test_second_provider_chat_results_are_tagged_without_network(monkeypatch, tmp_path):
+    monkeypatch.setenv("MODEL_PROVIDER", "anthropic")
+    monkeypatch.setenv("OPENAI_MODEL", "claude-test")
+    monkeypatch.setattr(run_chat, "CASES", [("case", "normal", "question", [], "ask", 0, lambda r: True)])
+    monkeypatch.setattr(run_chat.agent, "configure_models", lambda: None)
+    monkeypatch.setattr(run_chat.agent, "chat", lambda *args: {"answer": "ok", "searches": [],
+                        "proposals": [], "usage": {"input_tokens": 20, "output_tokens": 10, "tool_sequence": []}})
+    monkeypatch.setattr(run_chat, "CHAT_RESULTS", tmp_path / "chat.json")
+    monkeypatch.setenv("MODEL_INPUT_PRICE_USD_PER_MILLION", "1")
+    monkeypatch.setenv("MODEL_OUTPUT_PRICE_USD_PER_MILLION", "2")
+    run_chat.main(["--provider", "anthropic", "--model", "claude-test"])
+    result = common.read(common.result_path(run_chat.CHAT_RESULTS, "anthropic", "claude-test"))
+    assert (result["provider"], result["model"]) == ("anthropic", "claude-test")
+    assert result["cost_usd"] > 0
+
+
+def test_model_swap_report_compares_saved_second_provider(eval_files, monkeypatch):
+    scorer = common.read(eval_files["SCORER_RESULTS"])
+    chat = common.read(eval_files["CHAT_RESULTS"])
+    scorer.update({"provider": "anthropic", "model": "claude-test", "seconds_total": 2})
+    chat.update({"provider": "anthropic", "model": "claude-test", "cost_usd": 0.02})
+    common.write(common.result_path(eval_files["SCORER_RESULTS"], "anthropic", "claude-test"), scorer)
+    common.write(common.result_path(eval_files["CHAT_RESULTS"], "anthropic", "claude-test"), chat)
+    lines = report.model_swap_section(common.read(eval_files["SCORER_RESULTS"]),
+                                      common.read(eval_files["CHAT_RESULTS"]), {})
+    assert "anthropic / claude-test" in "\n".join(lines)
+    assert "Great precision / recall" in "\n".join(lines)
+    assert "not yet run" not in "\n".join(lines)
+
+
 @pytest.fixture
 def eval_files(monkeypatch, tmp_path):
     paths = {name: tmp_path / filename for name, filename in {
@@ -137,7 +219,7 @@ def test_report_names_configured_model_and_separate_judge(monkeypatch, eval_file
     text = report.REPORT.read_text()
     assert "Model under test: **gpt-5.5**" in text
     assert "Judge model: **gpt-5.5**" in text
-    assert "Saved results used for this report: scorer **gpt-5.4-mini**, chat **gpt-5.4-mini**" in text
+    assert "Saved results used for this report: scorer **gpt-5.4-mini** (openai), chat **gpt-5.4-mini** (openai)" in text
     assert "Prices: gpt-5.5 $5.00 / $30.00" in text
 
 

@@ -1,6 +1,6 @@
 # Evaluation report
 
-Scorer run 2026-10-09 21:04, chat run 2026-10-09 21:03. Model under test: **gpt-5.4-mini**. Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
+Scorer run 2026-10-09 21:04, chat run 2026-10-09 21:03. Model under test: **gpt-5.4-mini** (provider: **openai**). Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
 Prompt versions: chat **chat-2026-10-06.1**, rank **rank-2026-10-09.2**.
 UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-2026-09-30.2 / rank-2026-10-01.1
 
@@ -181,6 +181,17 @@ Judge inputs omit model and provider provenance. Across the 20-case learner set,
 - **Scorer weaknesses kept visible, not tuned away** on this small set: an iPhone 13 128GB at a good price scored 1 (a real miss), older or differently sized models (2011 Mac mini, iPhone 13 mini) land around the 6–8 line, and plainly titled bikes score 6–7 so they miss the 'great' bar. Next step: a larger labelled set before changing the prompt, then rerun.
 - The judge is strict: it called a €100 IKEA set 'over budget' for 'under €100', while the app's maximum is inclusive. That is why a human spot-checks the judge.
 
+## Model swap
+
+Second-provider comparison: **not yet run**. With `ANTHROPIC_API_KEY` and the model's input/output prices set in the environment, run:
+
+```bash
+uv pip install --python .venv/bin/python -r requirements-evals.txt
+.venv/bin/python -m evals.run_scorer --runs 3 --provider anthropic --model claude-sonnet-4-5
+.venv/bin/python -m evals.run_chat --provider anthropic --model claude-sonnet-4-5
+.venv/bin/python -m evals.report
+```
+
 ## Operating rules
 
 CONFIDENCE — great score ≥ 8; good score ≥ 6.
@@ -260,4 +271,3 @@ If a 20-listing check sends one alert, ranking costs €0.00511 per alert; if it
 The busiest case, a 15-minute watch with 20 new listings every check, costs €14.73 per month, within the OpenAI project's $110/month hard cap (about €101.20). Each admitted user also has an AI budget of €1.00 per 30 days, so a watch this busy is paused by its owner's budget long before the project cap.
 
 Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. When the OpenAI cap is reached, the AI stops and nothing unscored is e-mailed.
-

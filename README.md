@@ -36,6 +36,16 @@ Convex cron, every 15 min ─► due watches (and those due within 2 min), one r
 ## Run it locally
 You need an OpenAI key, a Clerk application, a Convex account and an AgentMail inbox + API key
 (see [DEPLOY-VERCEL.md](DEPLOY-VERCEL.md) for where each value comes from).
+
+| Variable | Purpose |
+|---|---|
+| `MODEL_PROVIDER` | Optional chat and rank provider; defaults to `openai`. Production installs OpenAI only; an Anthropic deployment requires deliberately adding `langchain-anthropic` to production requirements. |
+| `OPENAI_MODEL` | Chat and rank model name, including when `MODEL_PROVIDER` selects another provider. |
+| `OPENAI_API_KEY` | Required for the default provider and embeddings. |
+| `ANTHROPIC_API_KEY` | Required for an Anthropic model swap; install `requirements-evals.txt` for a local eval rerun. |
+| `JUDGE_MODEL` | Optional eval judge model; defaults to `gpt-5.5`. |
+| `MODEL_INPUT_PRICE_USD_PER_MILLION`, `MODEL_OUTPUT_PRICE_USD_PER_MILLION` | Required for an eval model absent from the price table; used for cost reporting. |
+
 ```bash
 cp .env.example .env                           # fill in
 uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt

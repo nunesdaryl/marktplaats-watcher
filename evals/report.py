@@ -7,7 +7,8 @@ from pathlib import Path
 
 
 from prompts import PROMPT_VERSION
-from evals.common import AUDIT_MISSES, CHAT_RESULTS, LABELS, LISTINGS, PRICES, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_under_test, read
+from evals.common import AUDIT_MISSES, CHAT_RESULTS, LABELS, LISTINGS, RAG_RESULTS, RATING_REASONS, REPEAT_RESULTS, REPORT, SCORER_RESULTS, SPOTCHECK, USD_TO_EUR, USER_CASES_GOLDEN, USER_CASES_PENDING, USER_RATINGS, cost_usd, model_prices, model_under_test, read
+from model_config import provider
 
 
 def eur(usd):
@@ -16,6 +17,61 @@ def eur(usd):
 
 def pct(x):
     return "n/a" if x is None else f"{x * 100:.0f}%"
+
+
+def model_swap_section(s, c, overrides):
+    """Compare saved default and second-provider golden-set runs without making model calls."""
+    lines = ["## Model swap", ""]
+    pairs = []
+    for scorer_path in sorted(SCORER_RESULTS.parent.glob("scorer_results_*.json")):
+        suffix = scorer_path.stem.removeprefix("scorer_results_")
+        chat_path = CHAT_RESULTS.with_name(f"chat_results_{suffix}.json")
+        if chat_path.exists():
+            other_s, other_c = read(scorer_path), read(chat_path)
+            if (other_s.get("provider"), other_s.get("model")) == (other_c.get("provider"), other_c.get("model")):
+                pairs.append((other_s, other_c))
+    if not pairs:
+        return lines + ["Second-provider comparison: **not yet run**. With `ANTHROPIC_API_KEY` and the model's "
+                        "input/output prices set in the environment, run:", "", "```bash",
+                        "uv pip install --python .venv/bin/python -r requirements-evals.txt",
+                        ".venv/bin/python -m evals.run_scorer --runs 3 --provider anthropic --model claude-sonnet-4-5",
+                        ".venv/bin/python -m evals.run_chat --provider anthropic --model claude-sonnet-4-5",
+                        ".venv/bin/python -m evals.report", "```", ""]
+
+    def metrics(scored):
+        return scorer_metrics(scored, overrides, {"great": 8, "good": 6})
+
+    def value(row_s, row_c, name):
+        m = metrics(row_s["scored"])
+        if name == "Great precision / recall":
+            return f"{pct(m['great']['precision'])} / {pct(m['great']['recall'])}"
+        if name == "Good precision / recall":
+            return f"{pct(m['good']['precision'])} / {pct(m['good']['recall'])}"
+        if name == "Cost per chat query":
+            recorded = row_c.get("cost_usd")
+            if recorded is None:
+                recorded = cost_usd(row_c["model"], row_c["tokens"]["input"], row_c["tokens"]["output"])
+            return eur(recorded / max(row_c["total"], 1))
+        if name == "Cost per scored listing":
+            return eur(row_s.get("cost_usd", 0) / max(row_s["listings"], 1))
+        if name == "Chat latency p95":
+            ms = p95_ms(row_c["cases"])
+            return f"{ms / 1000:.2f} s" if ms is not None else "n/a"
+        if name.startswith("Chat "):
+            stratum = name.removeprefix("Chat ")
+            cases = [r for r in row_c["cases"] if r.get("stratum") == stratum]
+            return f"{sum(bool(r['passed']) for r in cases)}/{len(cases)}" if cases else "n/a"
+        return f"{row_s.get('seconds_total', 0) / max(row_s['listings'], 1):.2f} s/listing"
+
+    columns = [(s, c)] + pairs
+    lines += ["Saved golden-set results, with the same human spot-check overrides. Cost uses the recorded model prices.", "",
+              "| Metric | " + " | ".join(f"{rs.get('provider', 'openai')} / {rs['model']}" for rs, _ in columns) + " |",
+              "|---|" + "---:|" * len(columns)]
+    for name in ("Great precision / recall", "Good precision / recall", "Chat normal", "Chat edge",
+                 "Chat ambiguous", "Chat high-risk", "Cost per chat query", "Cost per scored listing",
+                 "Chat latency p95", "Scorer latency"):
+        lines.append(f"| {name} | " + " | ".join(value(rs, rc, name) for rs, rc in columns) + " |")
+    return lines + [""]
 
 
 REASONS = read(RATING_REASONS)
@@ -176,7 +232,7 @@ def update_nfr_latency(value, count, run_at):
 def main():
     model = model_under_test()
     s, c, labels = read(SCORER_RESULTS), read(CHAT_RESULTS), read(LABELS)
-    price_in, price_out = PRICES[model]
+    price_in, price_out = model_prices(model)
     scoring_cost = cost_usd(model, s["tokens"]["input"], s["tokens"]["output"])
     chat_cost = cost_usd(model, c["tokens"]["input"], c["tokens"]["output"])
     overrides, answered, total = spotcheck_overrides(read(LISTINGS)["listings"], SPOTCHECK.read_text())
@@ -216,7 +272,7 @@ def main():
     pass_cat = Counter(r["category"] for r in c["cases"] if r["passed"])
     lines = [
         "# Evaluation report", "",
-        f"Scorer run {s['run_at']}, chat run {c['run_at']}. Model under test: **{model}**. "
+        f"Scorer run {s['run_at']}, chat run {c['run_at']}. Model under test: **{model}** (provider: **{provider()}**). "
         f"Judge model: **{labels['judge']}**, human spot-check of {total} judge labels: **{spot}**.",
         f"Prompt versions: chat **{c.get('prompt_version', 'not recorded')}**, rank **{s.get('prompt_version', 'not recorded')}**.",
         sign_off, "",
@@ -229,8 +285,9 @@ def main():
     if s.get("prompt_version") != PROMPT_VERSION["rank"]:
         lines[5:5] = [f"Current rank prompt **{PROMPT_VERSION['rank']}** has no saved scorer run yet; "
                       "new precision, recall, and audit-miss scores await the credentialed eval.", ""]
-    if s["model"] != model or c["model"] != model:
-        lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}**, chat **{c['model']}**. "
+    if s["model"] != model or c["model"] != model or s.get("provider", "openai") != provider() or c.get("provider", "openai") != provider():
+        lines[3:3] = [f"Saved results used for this report: scorer **{s['model']}** ({s.get('provider', 'openai')}), "
+                      f"chat **{c['model']}** ({c.get('provider', 'openai')}). "
                       "Rerun those evals to measure the configured model.", ""]
     for name, m in metrics.items():
         lines.append(f"| {name} | score ≥ {m['threshold']} | **{pct(median_metric(name, 'precision'))}** | **{pct(median_metric(name, 'recall'))}** |")
@@ -345,6 +402,7 @@ def main():
         "before changing the prompt, then rerun.",
         "- The judge is strict: it called a €100 IKEA set 'over budget' for 'under €100', while the app's maximum is "
         "inclusive. That is why a human spot-checks the judge.", "",
+        *model_swap_section(s, c, overrides),
         "## Operating rules", "",
         "CONFIDENCE — great score ≥ 8; good score ≥ 6.",
         "ESCALATION — ADR 0002 requires user confirmation for a watch change; a real delivery miss sends owner e-mail (MW-40).",
