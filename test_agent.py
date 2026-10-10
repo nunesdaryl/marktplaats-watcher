@@ -67,6 +67,39 @@ def test_parses_listings_without_seller_data():
     assert all("seller" not in json.dumps(item).lower() for item in listings)
 
 
+def test_parse_listings_keeps_condition_and_search_distance_for_ranker(monkeypatch):
+    raw = {"itemId": "one", "title": "Mac mini", "vipUrl": "/v/one",
+           "location": {"latitude": 52.09, "longitude": 5.12, "distanceMeters": 12_400},
+           "attributes": [{"key": "other", "value": "ignored"}],
+           "extendedAttributes": [{"key": "condition", "value": "Zo goed als nieuw"}]}
+    [listing], _ = agent.parse_listings([raw], home=(52.09, 5.12))
+    assert listing["condition"] == "Zo goed als nieuw"
+    assert listing["distance_km"] == 12
+
+    class CaptureRanker:
+        def invoke(self, messages):
+            assert json.loads(messages[-1]["content"])["listings"][0]["condition"] == "Zo goed als nieuw"
+            return agent.Ranking(ranks=[{"id": "one", "score": 8, "reason": "Match"}])
+
+    monkeypatch.setattr(agent, "ranker", CaptureRanker())
+    assert agent.rank_listings("Mac mini", [listing])[0]["score"] == 8
+
+
+def test_parse_listings_falls_back_to_computed_distance_and_omits_missing_condition():
+    raw = {"itemId": "one", "title": "Mac mini", "vipUrl": "/v/one",
+           "location": {"latitude": 52.09, "longitude": 5.12, "distanceMeters": -1000}}
+    [listing], _ = agent.parse_listings([raw], home=(52.09, 5.12))
+    assert listing["distance_km"] == 0
+    assert listing.get("condition") is None
+    [listing], _ = agent.parse_listings([raw])
+    assert listing["distance_km"] is None
+    raw["location"]["distanceMeters"] = 12_000
+    raw["attributes"] = [{"key": "condition", "value": "Gebruikt"}]
+    [listing], _ = agent.parse_listings([raw])
+    assert listing["distance_km"] is None   # no postcode: Marktplaats' distance has no meaningful origin
+    assert listing["condition"] == "Gebruikt"
+
+
 @pytest.mark.parametrize("raw, expected", [
     ("FIXED", "fixed price"), ("MIN_BID", "bidding from"),
     ("FAST_BID", "make an offer"), ("BID", "make an offer"),
@@ -2070,3 +2103,12 @@ def test_personal_rating_examples_reach_ranker_as_bounded_data(monkeypatch):
     extra_tokens = len(encoder.encode(json.dumps(seen[0]["this_persons_earlier_ratings_for_this_watch"])))
     assert extra_tokens < 1_000
     assert cost_usd("gpt-5.4-mini", extra_tokens * 2, 0) * USD_TO_EUR < 0.01
+
+
+def test_marktplaats_distance_is_ignored_without_a_postcode():
+    # MW-120 review: Marktplaats' distanceMeters is measured from the searched postcode; without one it means nothing.
+    item = {"itemId": "m1", "title": "Mac mini", "vipUrl": "/v/m1", "date": "Vandaag",
+            "priceInfo": {"priceCents": 30000, "priceType": "FIXED"},
+            "location": {"cityName": "Utrecht", "distanceMeters": 12000}}
+    listings, _ = agent.parse_listings([item], None, None, None, None, limit=None)
+    assert listings[0]["distance_km"] is None

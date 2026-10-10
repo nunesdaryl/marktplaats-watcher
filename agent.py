@@ -131,12 +131,20 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         loc = item.get("location") or {}
         stats["with_location"] += bool(loc.get("latitude"))
         km = None
-        if home and loc.get("latitude"):
+        distance_meters = loc.get("distanceMeters")
+        # Marktplaats' own distance is measured from the searched postcode, so it is only meaningful when the watch has one.
+        if home and isinstance(distance_meters, (int, float)) and not isinstance(distance_meters, bool) and math.isfinite(distance_meters) and distance_meters >= 0:
+            km = round(distance_meters / 1000)
+        elif home and loc.get("latitude"):
             km = round(distance_km(home, (loc["latitude"], loc["longitude"])))
         if max_km is not None and (km is None or km > max_km):
             continue  # too far, or no location on the listing
         # Keep only listing facts; seller details are never stored or sent to the model
         ad_type = listing_ad_type(item)
+        condition = next((attribute.get("value") for attribute in
+                          (item.get("attributes") or []) + (item.get("extendedAttributes") or [])
+                          if isinstance(attribute, dict) and str(attribute.get("key", "")).lower() == "condition"
+                          and isinstance(attribute.get("value"), str) and attribute["value"].strip()), None)
         results.append({
             "id": item.get("itemId"),
             "title": item.get("title", "")[:100],
@@ -149,6 +157,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             }.get(price_type, price_type),
             "city": loc.get("cityName"),
             "distance_km": km,
+            **({"condition": condition} if condition else {}),
             "date": item.get("date"),
             "url": "https://www.marktplaats.nl" + vip,
             "image": listing_image(item),

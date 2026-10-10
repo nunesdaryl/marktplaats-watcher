@@ -23,6 +23,13 @@ test("a price-drop alert names both prices in text and the HTML card", () => {
   expect(html).toContain("Price dropped €450 → €400");
 });
 
+test("the e-mail row shows condition and distance in text and escaped HTML", () => {
+  const alert = { ...content.alerts[0], condition: "Zo goed als <nieuw>", distanceKm: 12 };
+  const { text, html } = renderEmail({ ...content, alerts: [alert] }, "https://app.test");
+  expect(text).toContain("Zo goed als <nieuw> · 12 km");
+  expect(html).toContain("Zo goed als &lt;nieuw&gt; · 12 km");
+});
+
 test("listing titles from strangers are escaped, never rendered as HTML", () => {
   const { html } = renderEmail(content, "https://app.test");
   expect(html).not.toContain("<img src=x");                     // a listing title can't inject markup

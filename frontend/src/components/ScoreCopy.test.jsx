@@ -36,6 +36,16 @@ test("a price-drop card shows the previous and new prices", () => {
   expect(html).toContain("Price dropped €450 → €400");
 });
 
+test.each([
+  ["Zo goed als nieuw", 12, "Zo goed als nieuw · 12 km"],
+  ["Gebruikt", null, "Gebruikt"],
+  [null, 12, "12 km"],
+])("listing facts omit missing parts", (condition, distance_km, expected) => {
+  const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", condition, distance_km }} />);
+  expect(html).toContain(expected);
+  expect(html).not.toContain("null km");
+});
+
 test.each(["MIN_BID", "BID", "FAST_BID", "FIXED", "bidding from", "make an offer", "fixed price"])("%s listings offer help", (price_type) => {
   const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", price_eur: 100, price_type }} score={8} />);
   expect(html).toContain("Help me make an offer");

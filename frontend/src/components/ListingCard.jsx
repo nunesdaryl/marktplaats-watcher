@@ -18,7 +18,9 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
   const priceType = listing.price_type ?? listing.priceType;
   const canOffer = !["FREE", "SWAP", "SEE_DESCRIPTION", "free", "swap", "see description"].includes(priceType);
   const city = listing.city;
-  const distance = listing.distance_km != null ? `${listing.distance_km} km` : null;
+  const distanceKm = listing.distance_km ?? listing.distanceKm;
+  const distance = distanceKm != null ? `${distanceKm} km` : null;
+  const conditionDistance = [listing.condition, distance].filter(Boolean).join(" · ");
   return (
     <div className="listing-unit">
     <a className={`listing ${score === 0 ? "skipped" : ""}`} href={listing.url} target="_blank" rel="noopener noreferrer"
@@ -36,8 +38,9 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
         <span className="title">{listing.title}</span>
         <span className="line">
           <strong className={price ? "price-number" : undefined}>{price ? `€${price}` : "No price listed"}</strong>
-          {(city || distance) && <span> · {city}{city && distance ? ", " : ""}{distance && <span className="distance">{distance}</span>}</span>}
+          {city && <span> · {city}</span>}
         </span>
+        {conditionDistance && <span className="line">{conditionDistance}</span>}
         {reason && <span className="reason">{reason}</span>}
         {score === 0 && <span className="meta">Skipped</span>}
         {meta && <span className="meta">{meta}</span>}
