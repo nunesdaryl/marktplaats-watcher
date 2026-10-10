@@ -1580,6 +1580,27 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   unchanged, a review fix); MW-105 the <a href="case-study.md">FDE case study</a>, which also corrected the OpenAI cap to
   $110 and the €1 per-user budget in the report, README and NFRs. Review sent two builds back and caught one station error
   (a PASS posted while tests failed, withdrawn within minutes).</p>
+<p><b>A marketing engine for the founding 100 (10 October, evening).</b> With the product stable, the gap became users
+  (founding places, first survey on 19 October). Daryl's marketing skills (membership.nl, agent-skill-pack, the FDE
+  community skills) were audited together with latent-spaces/brag and turned into four factory issues, all reviewed by
+  running them and merged on his OK. MW-125: a fact-only marketing pack (Context DNA, offer and funnel with a UTM scheme,
+  a 60–90 s demo VSL script in Dutch and English in Mitchel van Duuren's sentence-by-sentence method, a two-week
+  calendar, community and DM drafts, Meta test briefs with a Reclame Code checklist; the September desk research is
+  archived as unverified). MW-126: public <code>/nl/</code> and <code>/en/</code> landing pages that render without the
+  sign-in loader, show the live founding-places count and store first-touch UTM source and language at sign-up (session
+  storage only, no cookies or trackers), grouped on the owner dashboard. MW-127: a Dutch/English onboarding e-mail
+  sequence (welcome, no-watch nudge, first-alert guide, day-7 tips; at most one a day, stops on unsubscribe, pause or
+  deletion, a scanner-safe unsubscribe); review caught that the first post-deploy run would have sent every recent user a
+  late welcome, so only people who signed up in the last two days start it. MW-128: four 24.5 s launch videos made with
+  brag pinned at a fixed commit and Hyperframes 0.8.145, reviewed frame by frame; review removed a false "hide shops and
+  dealers" line (that filter is still off) and fixed the Dutch. Hyperframes' <code>init</code> had silently installed
+  its skills into seven agent folders; they were moved to the Trash and the rule "never run init" was written down.
+  Variants followed from feedback: an animated-logo ending, and an FDE Cohort 1 version that opens with the problem
+  ("Always just too late for that Marktplaats deal?"), after a cohort voice note said the first second must name the
+  pain. Next in the factory: the video source, a one-command render and a project video skill in the repo (MW-129),
+  platform cuts for Reels/Stories, the Meta feed, X and a 6 s YouTube bumper (MW-130), and a "why" variant that contrasts
+  searching Marktplaats yourself with our outcomes, every comparison a dated fact from our own checks (MW-131). Nothing is
+  posted or spent by the station; paid ads wait for the Marktplaats call.</p>
 <p><b>Closing the feedback loop and genuine listings (10 October).</b> Daryl asked that the loop just finished with
   Vinod (asked on LinkedIn on 5 October, built as MW-90 and MW-114, told on 10 October) become a standard part of the
   factory. MW-116: feedback from any channel (LinkedIn added) is linked to its MW issue; a build moves it to in progress

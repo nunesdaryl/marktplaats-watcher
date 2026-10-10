@@ -32,8 +32,8 @@ Convex cron, every 15 min ─► due watches (and those due within 2 min), one r
 |---|---|
 | `agent.py` | The search tool, the watch-proposal tools, the chat loop, and the scoring used by scheduled checks. |
 | `main.py` | FastAPI: `POST /api/chat` (login required), `POST /api/internal/check` (Convex only), `GET /api/health` (owner's uptime check only: needs `HEALTH_KEY`, 404 for everyone else). |
-| `frontend/convex/` | Database schema, watches, the scheduled checker, e-mail, crons, and `schedule.ts` (next-check maths and plain-English wording, shared with the UI). |
-| `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page; desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup; the feedback strip, the theme toggle and the owner dashboard (`/admin`). |
+| `frontend/convex/` | Database schema, watches, the scheduled checker, e-mail (incl. the Dutch/English onboarding sequence in `nurture.ts`), crons, and `schedule.ts` (next-check maths and plain-English wording, shared with the UI). |
+| `frontend/app/`, `frontend/src/` | Next.js (App Router, static export): landing page, public Dutch/English landing pages `/nl/` and `/en/` (live founding-places count, first-touch UTM source stored at sign-up); desktop sidebar + phone tab bar; streaming chat with photo cards and saved history; watches, alerts, first-run setup; the feedback strip, the theme toggle and the owner dashboard (`/admin`). |
 | `test_agent.py`, `frontend/convex/*.test.ts` | Offline tests (no model, no Marktplaats, no e-mail). |
 | `.env.example`, `frontend/.env.example` | Every setting, with where to find it. **Never commit real values.** |
 
