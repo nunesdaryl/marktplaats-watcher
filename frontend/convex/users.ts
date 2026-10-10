@@ -18,6 +18,17 @@ const DAY = 86_400_000;
 const OFFER_AT = Date.parse("2026-10-05T00:00:00Z");
 const FREE_PERIOD = 30 * DAY;
 const ADMISSIONS_KEY = "founding-admissions";
+const attributionArgs = {
+  utm_source: v.optional(v.string()), utm_medium: v.optional(v.string()),
+  utm_campaign: v.optional(v.string()),
+  landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
+};
+
+function attribution(args: { utm_source?: string; utm_medium?: string; utm_campaign?: string; landingLanguage?: "nl" | "en" }) {
+  const clean = (value?: string) => value?.trim().slice(0, 100) || undefined;
+  return { utmSource: clean(args.utm_source), utmMedium: clean(args.utm_medium),
+    utmCampaign: clean(args.utm_campaign), landingLanguage: args.landingLanguage };
+}
 
 async function admissionTotal(ctx: QueryCtx) {
   return ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", ADMISSIONS_KEY)).unique();
@@ -44,7 +55,7 @@ async function position(ctx: QueryCtx, createdAt: number, id: Id<"waitlist">) {
   return earlier.filter((row) => row.createdAt < createdAt || row._id <= id).length;
 }
 
-async function admit(ctx: MutationCtx, lookingFor?: string) {
+async function admit(ctx: MutationCtx, lookingFor?: string, firstTouch?: ReturnType<typeof attribution>) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new ConvexError("Please sign in first.");
   const existing = await currentUser(ctx);
@@ -60,7 +71,7 @@ async function admit(ctx: MutationCtx, lookingFor?: string) {
   const waiting = await ctx.db.query("waitlist").withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)).unique();
   const first = await ctx.db.query("waitlist").withIndex("by_createdAt").first();
   if (!ownerMatches(identity) && (total.admitted! >= maxUsers() || first && first._id !== waiting?._id)) {
-    const id = waiting?._id ?? await ctx.db.insert("waitlist", { clerkId: identity.subject, email, createdAt: Date.now(), ...(lookingFor ? { lookingFor } : {}) });
+    const id = waiting?._id ?? await ctx.db.insert("waitlist", { clerkId: identity.subject, email, createdAt: Date.now(), ...firstTouch, ...(lookingFor ? { lookingFor } : {}) });
     if (waiting && (waiting.email !== email || lookingFor !== undefined))
       await ctx.db.patch(id, { email, ...(lookingFor !== undefined ? { lookingFor } : {}) });
     const row = (await ctx.db.get(id))!;
@@ -68,7 +79,9 @@ async function admit(ctx: MutationCtx, lookingFor?: string) {
   }
   const now = Date.now();
   const id = await insertTracked(ctx, "users", { clerkId: identity.subject, email, createdAt: now,
-    admittedAt: now, freeUntil: now + FREE_PERIOD });
+    admittedAt: now, freeUntil: now + FREE_PERIOD,
+    ...(waiting ? { utmSource: waiting.utmSource, utmMedium: waiting.utmMedium,
+      utmCampaign: waiting.utmCampaign, landingLanguage: waiting.landingLanguage } : firstTouch) });
   if (!ownerMatches(identity)) await ctx.db.patch(total._id, { admitted: total.admitted! + 1 });
   if (waiting) await ctx.db.delete(waiting._id);
   return { status: "admitted" as const, user: (await ctx.db.get(id))! };
@@ -83,9 +96,9 @@ export async function requireUser(ctx: MutationCtx) {
 
 /** Called by the app after sign-in, so the e-mail address is on file before the first watch. */
 export const store = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const result = await admit(ctx);
+  args: attributionArgs,
+  handler: async (ctx, args) => {
+    const result = await admit(ctx, undefined, attribution(args));
     return result.status === "admitted" ? { status: result.status, id: result.user._id }
       : { status: result.status, position: result.position };
   },

@@ -54,6 +54,26 @@ test("parallel signups cannot exceed the cap and invalid settings use the defaul
   expect(await t.query(api.users.placesLeft, {})).toEqual({ left: 99, capacity: 100 });
 });
 
+test("first-touch attribution survives repeat sign-in and waitlist admission", async () => {
+  const t = convexTest(schema, modules);
+  await person(t, "a").mutation(api.users.store, { utm_source: "linkedin", utm_medium: "post", utm_campaign: "launch", landingLanguage: "nl" });
+  await person(t, "a").mutation(api.users.store, { utm_source: "search", landingLanguage: "en" });
+  const first = await t.run((ctx) => ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", "a")).unique());
+  expect(first).toMatchObject({ utmSource: "linkedin", utmMedium: "post", utmCampaign: "launch", landingLanguage: "nl" });
+  await person(t, "b").mutation(api.users.store, {});
+  await person(t, "c").mutation(api.users.store, { utm_source: "newsletter", landingLanguage: "en" });
+  process.env.MAX_USERS = "3";
+  await person(t, "c").mutation(api.users.store, {});
+  const admitted = await t.run((ctx) => ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", "c")).unique());
+  expect(admitted).toMatchObject({ utmSource: "newsletter", landingLanguage: "en" });
+  const owner = person(t, "owner");
+  expect(await owner.query(api.admin.signupSources, {})).toMatchObject({
+    languages: expect.arrayContaining([{ language: "nl", count: 1 }, { language: "en", count: 1 }]),
+    sources: expect.arrayContaining([expect.objectContaining({ source: "linkedin", medium: "post", campaign: "launch", count: 1 })]),
+  });
+  expect(await person(t, "a").query(api.admin.signupSources, {})).toBeNull();
+});
+
 test("existing accounts get the offer date and AI rejects people without admission", async () => {
   const t = convexTest(schema, modules);
   expect((await t.mutation(internal.usage.consume, { clerkId: "owner" })).allowed).toBe(true);
