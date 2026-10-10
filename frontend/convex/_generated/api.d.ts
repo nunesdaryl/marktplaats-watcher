@@ -25,6 +25,7 @@ import type * as embeddings from "../embeddings.js";
 import type * as events from "../events.js";
 import type * as feedback from "../feedback.js";
 import type * as founding from "../founding.js";
+import type * as nurture from "../nurture.js";
 import type * as folders from "../folders.js";
 import type * as health from "../health.js";
 import type * as ratings from "../ratings.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   feedback: typeof feedback;
   founding: typeof founding;
+  nurture: typeof nurture;
   folders: typeof folders;
   health: typeof health;
   ratings: typeof ratings;
