@@ -2,6 +2,8 @@
 
 Drafts for Daryl to review and publish. This replaces the dated 29 September–9 October [series](linkedin-series.md). Dutch and English are equal alternatives for the same slot; use the version that fits the audience rather than posting duplicates to one feed. Links should use the [UTM scheme](funnel.md). Replace any capacity reference with the live app value at posting time. A product clip should hide personal and seller data. “What's new” topics come from the [app release notes](../../../frontend/src/views/WhatsNew.jsx).
 
+The [launch posts for 11 October](launch-posts-2026-10-10.md) cover LinkedIn, the cohort WhatsApp group and Vinod.
+
 | Date | Channel / format | Dutch draft | English draft | Asset / next step |
 |---|---|---|---|---|
 | Mon 12 Oct | LinkedIn, founder story | “Ik bouwde een watch voor een concreet probleem: steeds opnieuw naar dezelfde Mac mini zoeken. Je beschrijft wat je zoekt, kiest een schema en bevestigt zelf Save. Welke zoekopdracht herhaal jij?” | “I built a watch for a concrete problem: repeating the same Mac mini search. Describe the item, choose a schedule and confirm Save yourself. What search do you keep repeating?” | 10 s setup clip; link to app in first comment. |
