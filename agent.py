@@ -112,6 +112,8 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
     stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
     for item in listings or []:
+        if item.get("reserved") is True:
+            continue
         vip = item.get("vipUrl") or ""
         if not vip.startswith("/") or vip.startswith("//"):
             continue  # a link must stay on marktplaats.nl
@@ -885,6 +887,8 @@ def check_query(query, watches, now=None):
             results.append({"watchId": w["id"], "ok": False, "error": "Marktplaats showed an unexpected page. We'll try again soon."})
             continue
         raw, capped = reads[key]
+        reserved_ids = list(dict.fromkeys(item.get("itemId") for item in raw
+                                          if item.get("reserved") is True and item.get("itemId")))
         if w.get("read_only"):
             previous = w.get("watermark") or 0
             numbers = [listing_number(item.get("itemId")) for item in raw]
@@ -923,7 +927,7 @@ def check_query(query, watches, now=None):
         waiting_numbers = [n for i in waiting if (n := listing_number(i)) is not None]
         candidates = fresh[:MAX_RANK_PER_CHECK] + drops[:max(0, MAX_RANK_PER_CHECK - len(fresh[:MAX_RANK_PER_CHECK]))]
         to_rank.append((w, listings, candidates, min(waiting_numbers) - 1 if waiting_numbers else newest,
-                        len(waiting), capped))
+                        len(waiting), capped, reserved_ids))
 
     # Rank the watches in parallel, including a retry for any ids a response omitted
     def rank(job):
@@ -940,7 +944,7 @@ def check_query(query, watches, now=None):
 
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = list(pool.map(rank, to_rank))
-    for (w, listings, fresh_candidates, newest, waiting, capped), (fresh, usage) in zip(to_rank, ranked):
+    for (w, listings, fresh_candidates, newest, waiting, capped, reserved_ids), (fresh, usage) in zip(to_rank, ranked):
         tokens = {"input_tokens": sum(x[0] for x in usage), "output_tokens": sum(x[1] for x in usage),
                   "calls": [{"input_tokens": x[0], "output_tokens": x[1]} for x in usage]}
         if isinstance(fresh, str):
@@ -948,12 +952,14 @@ def check_query(query, watches, now=None):
                         "spend_cap": "Paused: the AI account's spending limit has been reached. The owner has been told; nothing is sent unscored.",
                         "auth": "Paused: the AI account needs attention. The owner has been told; nothing is sent unscored."}
             results.append({"watchId": w["id"], "ok": False, "failureKind": fresh,
+                            **({"reservedIds": reserved_ids} if reserved_ids else {}),
                             **({"usage": tokens} if usage else {}), "error": messages.get(fresh, "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored.")})
             continue
         for item in fresh:
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
         results.append({"watchId": w["id"], "ok": True,
+                        **({"reservedIds": reserved_ids} if reserved_ids else {}),
                         **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),
                         "currentIds": [i["id"] for i in listings if i["id"]],
                         "currentPrices": [{"id": i["id"], "priceEur": i["price_eur"]} for i in listings
@@ -981,6 +987,9 @@ def audit_watch(w, now=None):
         raw, _ = read_since(w["query"], search_filters(w), since_days, today)
         eligible = [item for item in raw if item.get("priorityProduct", "NONE") == "NONE"
                     and (age := days_old(item.get("date"), today)) is not None and 0 <= age <= since_days]
+        # The prior page-fetch count cannot be recovered exactly without scoring reserved ads again.
+        # Count them as a conservative upper bound for the before/after request log.
+        reserved_count = sum(item.get("reserved") is True for item in eligible)
         listings, _ = parse_listings(eligible, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None,
                                      w.get("must_include"), limit=None, exclude_words=w.get("exclude_words"))
@@ -1004,6 +1013,8 @@ def audit_watch(w, now=None):
         candidates = [(item, "handled") for item in handled] + [(item, "never_read") for item in never_read]
         result["candidates"] = len(candidates)
         chosen = candidates[:40]
+        page_fetches = 0
+        before_estimate = reserved_count
         if chosen:
             examples = w.get("rating_examples")
             ranked = score_listings(w.get("description") or w["query"], [item for item, _ in chosen],
@@ -1030,8 +1041,10 @@ def audit_watch(w, now=None):
             misses.sort(key=lambda item: item["score"], reverse=True)
             if w.get("check_alive"):
                 alive = []
+                before_estimate = len(misses) + reserved_count
                 for miss in misses:
                     try:
+                        page_fetches += 1
                         page = httpx.get(miss["url"], timeout=10.0, follow_redirects=True,
                                          headers={"User-Agent": "Mozilla/5.0 (marktplaats-watcher demo)"})
                         if page.status_code != 200:
@@ -1048,6 +1061,9 @@ def audit_watch(w, now=None):
                 misses = alive
             result["missCount"] = len(misses)
             result["misses"] = misses
+        if w.get("check_alive"):
+            print(json.dumps({"event": "audit_page_fetches", "watchId": w["id"],
+                              "beforeEstimate": before_estimate, "after": page_fetches}))
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"

@@ -48,6 +48,12 @@ test("creation time is the first-visit fallback", () => {
   expect(html.match(/class="alert-item is-new"/g)).toHaveLength(1);
 });
 
+test("an alert marked reserved on a later check shows Reserved", () => {
+  responses[0] = [{ ...alert("bike", 100), reserved: true }];
+  const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} />);
+  expect(html).toContain("Reserved");
+});
+
 test("an email offer link opens the sheet for its matching alert", () => {
   const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} offerId="Fresh" />);
   expect(html).toContain('data-offer-for="Fresh"');

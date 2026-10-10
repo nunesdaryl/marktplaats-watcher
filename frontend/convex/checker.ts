@@ -126,7 +126,8 @@ const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
   failureKind: v.optional(v.union(v.literal("credit_exhausted"), v.literal("spend_cap"),
     v.literal("rate_limited"), v.literal("auth"), v.literal("other"))), aiCall: v.optional(v.boolean()),
-  currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
+  currentIds: v.optional(v.array(v.string())), reservedIds: v.optional(v.array(v.string())),
+  listings: v.optional(v.array(listing)),
   currentPrices: v.optional(v.array(v.object({ id: v.string(), priceEur: v.number() }))),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
@@ -148,7 +149,8 @@ export const record = internalMutation({
       if (!dryRun && watch.leaseUntil === now + LEASE_MS) await patchTracked(ctx, "watches", watch._id, { leaseUntil: undefined });
       const account = await ctx.db.get(watch.userId);
       if (!account || hasEnded(account)) continue;
-      const ids = [...new Set(r.currentIds ?? [])];
+      const reserved = new Set(r.reservedIds ?? []);
+      const ids = [...new Set(r.currentIds ?? [])].filter((id) => !reserved.has(id));
       // Paused, archived or given a different search while it was being checked: this result is stale
       if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
       if (dryRun) {
@@ -172,6 +174,11 @@ export const record = internalMutation({
           watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule),
           notify: watch.notify, alerts: fresh.sort((a, b) => (b.score ?? -1) - (a.score ?? -1)) } });
         continue;
+      }
+      if (r.reservedIds?.length) {
+        const existingAlerts = await ctx.db.query("alerts").withIndex("by_watch", (q) => q.eq("watchId", watch._id)).collect();
+        for (const alert of existingAlerts)
+          if (reserved.has(alert.listingId) && !alert.reserved) await ctx.db.patch(alert._id, { reserved: true });
       }
       if (!r.ok) {
         // Retry soon instead of waiting for the next scheduled time (a weekly watch would wait a week)
