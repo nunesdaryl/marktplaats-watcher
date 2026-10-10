@@ -28,8 +28,8 @@ Output goes to the gitignored `marketing/video/out/`; the poster is also baked i
 | Variant | Length | Renders |
 |---|---|---|
 | `original` | 24.5 s | Committed: `docs/marketing/media/launch-2026-10-10/` |
-| `animated-logo` | 29.0 s (H-to-I loop from 25.0 s) | Not committed yet; render with the command above |
-| `cohort1` | 32.0 s (problem hook first; loop from 28.0 s) | Not committed yet; render with the command above |
+| `animated-logo` | 30.2 s (H-to-I loop from 26.2 s) | Committed: `docs/marketing/media/variants-2026-10-10/` |
+| `cohort1` | 33.2 s (problem hook first; loop from 29.2 s) | Committed: `docs/marketing/media/variants-2026-10-10/` |
 | `why` | 40.3 s (pain, outcomes, proof, offer; loop from 36.5 s) | Committed: `docs/marketing/media/why-2026-10-10/` |
 
 | `pack` | 15.0 s | `reels-stories`, `meta-feed`, `x`; committed in `docs/marketing/media/platform-pack-2026-10-11/` (own template `pack.html`, safe boxes) |

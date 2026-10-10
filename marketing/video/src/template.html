@@ -151,6 +151,8 @@
       .chips { display: flex; gap: 8px; flex-wrap: wrap; }
       .chip { padding: 6px 12px; border-radius: 999px; background: var(--fill); color: var(--text-2); font-size: 14px; line-height: 20px; font-weight: 500; }
       .chip.on { background: var(--tag); color: var(--tag-ink); }
+      /*@end*/
+      /*@only animated-logo, cohort1, why*/
       .vbr { display: none; }
       .fmt-vertical .vbr { display: inline; }
       .fmt-vertical .sep { display: none; }
@@ -228,7 +230,7 @@
       </section>
 
       <!-- Scene 3: the sieve -->
-      <section id="s3" class="scene clip" data-start="__S3__" data-duration="4.37" data-track-index="3">
+      <section id="s3" class="scene clip" data-start="__S3__" data-duration="__S3D__" data-track-index="3">
         <div class="inner" id="s3-in">
           <h1 class="cap" id="s3-cap" data-t="s3"></h1>
           <div class="stage"><div class="ui sample z-__FMT__">
@@ -246,7 +248,7 @@
       </section>
 
       <!-- Scene 4: the e-mail -->
-      <section id="s4" class="scene clip" data-start="__S4__" data-duration="4.36" data-track-index="4">
+      <section id="s4" class="scene clip" data-start="__S4__" data-duration="__S4D__" data-track-index="4">
         <div class="inner" id="s4-in">
           <h1 class="cap" id="s4-cap" data-t="s4"></h1>
           <div class="stage"><div class="ui z-__FMT__" id="s4-ui">
@@ -454,17 +456,14 @@ __SFX__
             //@only original
             s5foot: 'Onze test met 53 echte advertenties uit 6 watches, mediaan van 3 runs (rapport van 10 okt 2026).',
             //@end
-            //@only animated-logo, cohort1
-            s5foot: 'Onze test met 53 echte advertenties uit 6 watches, mediaan van 3 testrondes (rapport van 10 okt 2026).',
-            //@end
-            //@only why
+            //@only animated-logo, cohort1, why
             s5foot: 'Onze test met 53 echte advertenties uit 6 zoekopdrachten, mediaan van 3 testrondes (rapport van 10 okt 2026).',
             //@end
             offer: '30 dagen gratis voor de eerste 100 gebruikers.',
-            //@only original, animated-logo, cohort1
+            //@only original
             fine: 'Een gratis portfolioproject · Niet verbonden aan Marktplaats · App in het Engels'
             //@end
-            //@only why
+            //@only animated-logo, cohort1, why
             fine: 'Een gratis portfolioproject<span class="sep"> · </span><br class="vbr">Niet verbonden aan Marktplaats · App in het Engels'
             //@end
           }
@@ -527,6 +526,8 @@ __SFX__
         body.to("#cursor", { opacity: 0, duration: 0.3 }, 7.6);
         body.to("#s2-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 8.39);
 
+        //@end
+        //@only original
         // Scene 3 (8.74 - 13.11): scored rows
         body.fromTo("#s3-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 8.78); // beat-locked: 8.74s
         // beat-grid: row 1 at 8.74s (+0.1), row 2 at 9.83s, row 3 at 10.93s (every other beat, readable holds)
@@ -549,6 +550,29 @@ __SFX__
         body.fromTo("#s5-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 17.75);
         body.fromTo("#s5-foot", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 18.1);
         //@end
+        //@only animated-logo, cohort1
+        // Scene 3 (8.74 - 13.71): scored rows; strikes 0.3 s earlier and the scene +0.6 s, so the finished state holds 1.26 s
+        body.fromTo("#s3-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 8.78); // beat-locked: 8.74s
+        // beat-grid: row 1 at 8.74s (+0.1), row 2 at 9.83s, row 3 at 10.93s (every other beat, readable holds)
+        body.fromTo("#r1", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 8.84);
+        body.fromTo("#r2", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 9.83);
+        body.fromTo("#r3", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 10.93);
+        body.fromTo("#k2", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 0.35, ease: "power2.out" }, 11.6);
+        body.fromTo("#k3", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 0.35, ease: "power2.out" }, 11.7);
+        body.to(["#r2", "#r3"], { opacity: 0.65, duration: 0.35 }, 11.65);
+        body.fromTo("#mailed", { opacity: 0.35 }, { opacity: 1, duration: 0.3 }, 11.8);
+        body.to("#s3-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 13.36);
+
+        // Scene 4 (13.71 - 18.27): e-mail, +0.2 s
+        body.fromTo("#s4-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 13.75);
+        body.fromTo("#mail", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 13.71); // was beat-locked at 13.11s; the longer score scene moves it off-grid
+        body.to("#s4-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 17.92);
+
+        // Scene 5: proof, footnote readable 5.0 s or more (+0.4 s)
+        body.fromTo("#big", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.6, ease: E }, 18.27); // was beat-locked at 17.47s
+        body.fromTo("#s5-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 18.55);
+        body.fromTo("#s5-foot", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 18.9);
+        //@end
         //@only original
         tl.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 20.93);
 
@@ -561,14 +585,14 @@ __SFX__
         tl.fromTo("#robot", { rotation: 0 }, { rotation: -3, duration: 0.6, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, 23.2);
         //@end
         //@only animated-logo, cohort1
-        body.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 22.93); // proof held +2.0 s
+        body.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 24.13); // proof held +2.0 s, then +0.4 s for the footnote
 
         // Scene 6: outro
-        body.fromTo("#robot", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 23.3); // still and upright, pose H
-        body.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 23.7);
-        body.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 24.37); // was beat-locked at 22.37s; +2.0 s hold moves it off-grid
-        body.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 24.6);
-        body.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 24.8);
+        body.fromTo("#robot", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 24.5); // still and upright, pose H
+        body.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 24.9);
+        body.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 25.57); // was beat-locked at 22.37s; the longer holds move it off-grid
+        body.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 25.8);
+        body.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 26.0);
         //@end
         //@only why
         // Pain (3.0 - 8.9): three lines on our 29 Sep check, footnote held 5.4 s, then the scene fades

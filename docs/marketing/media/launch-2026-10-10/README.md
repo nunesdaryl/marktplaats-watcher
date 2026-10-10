@@ -26,3 +26,5 @@ The storyboard traces the on-screen claims to these project sources:
 | Free portfolio project; not affiliated with Marktplaats | [Landing page fine print](../../../../frontend/src/Landing.jsx) |
 
 The videos were made with **brag** pinned to `latent-spaces/brag@8531ccb9f471` and **Hyperframes 0.8.145**. The source (one template for all variants, the sounds, fonts and credits) is in [marketing/video](../../../../marketing/video/HOW-TO.md); these four files are its `original` variant, and `scripts/render-video.sh` makes the later `animated-logo` and `cohort1` variants from the same template.
+
+The committed `animated-logo` and `cohort1` renders are in [variants-2026-10-10](../variants-2026-10-10/README.md); the `why` renders are in [why-2026-10-10](../why-2026-10-10/README.md).
