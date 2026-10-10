@@ -441,6 +441,8 @@ export default function Overview({ open, onSearch, ask }) {
       </section>
 
       <div className="charts">
+        <DayChart title="Listings removed" daily={data.daily} keys={[{ key: "paidRemoved", name: "paid placements" },
+          { key: "businessRemoved", name: "shops/dealers", tone: "tag" }]} />
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}
                   onTitle={() => go("users", `Active in the last ${days} days`, { activeSince: since })} />
         <DayChart title="Chat messages" daily={data.daily} onDay={(day) => go("events", `Chat messages ${dayLabel(day)}`, { ...dayRange(day), name: "chat_sent" })}

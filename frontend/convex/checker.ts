@@ -101,6 +101,7 @@ export const claimDue = internalMutation({
             price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [],
             note: (r.note ?? "").slice(0, 100) })),
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId),
+          include_business_sellers: w.includeBusinessSellers ?? false,
           seen_prices: Object.fromEntries(seen.filter((s) => s.firstPriceEur !== undefined).map((s) =>
             [s.listingId, { first_price_eur: s.firstPriceEur!, ...(s.alertedDropPriceEur !== undefined
               ? { alerted_price_eur: s.alertedDropPriceEur } : {}) }])), seeded: w.seeded,
@@ -120,6 +121,7 @@ const listing = v.object({
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
   condition: v.optional(v.string()),
   image: v.optional(v.union(v.string(), v.null())),
+  seller_type: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))),
   score: v.union(v.number(), v.null()), reason: v.string(), wanted_ad: v.optional(v.boolean()),
   drop_from_eur: v.optional(v.number()),
 });
@@ -132,6 +134,8 @@ const result = v.object({
   currentPrices: v.optional(v.array(v.object({ id: v.string(), priceEur: v.number() }))),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
+  paidRemoved: v.optional(v.number()), businessRemoved: v.optional(v.number()), businessSignaled: v.optional(v.number()),
+  websiteUrlPresent: v.optional(v.number()), showWebsiteTrue: v.optional(v.number()),
   usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(), model: v.optional(v.string()),
     calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number() })) })),
 });
@@ -163,12 +167,14 @@ export const record = internalMutation({
           const item = r.listings?.find((l) => l.id === id);
           if (!seen && item && !item.wanted_ad && item.score !== null && item.score >= MIN_SCORE[watch.notify])
             fresh.push({ title: item.title, priceEur: item.price_eur ?? undefined, city: item.city ?? undefined,
+              sellerType: item.seller_type,
               condition: item.condition, distanceKm: item.distance_km ?? undefined,
               url: item.url, score: item.score, reason: item.reason });
           if (seen && item && !item.wanted_ad && item.drop_from_eur !== undefined &&
               item.price_eur !== null && item.score !== null && item.score >= MIN_SCORE[watch.notify] &&
               priceDropped(seen.alertedDropPriceEur ?? seen.firstPriceEur, item.price_eur))
             fresh.push({ title: item.title, priceEur: item.price_eur, dropFromEur: seen.alertedDropPriceEur ?? seen.firstPriceEur,
+              sellerType: item.seller_type,
               city: item.city ?? undefined, condition: item.condition, distanceKm: item.distance_km ?? undefined,
               url: item.url, score: item.score, reason: item.reason });
         }
@@ -213,6 +219,7 @@ export const record = internalMutation({
             priceType: item.price_type, city: item.city ?? undefined,
             condition: item.condition, distanceKm: item.distance_km ?? undefined, url: item.url,
             image: item.image ?? undefined, score: item.score!, reason: item.reason,
+            sellerType: item.seller_type,
             channel: "email", emailStatus: "pending", createdAt: now,
           }));
           continue;
@@ -228,6 +235,7 @@ export const record = internalMutation({
           priceEur: item.price_eur ?? undefined, priceType: item.price_type, city: item.city ?? undefined,
           condition: item.condition, distanceKm: item.distance_km ?? undefined, url: item.url,
           image: item.image ?? undefined,
+          sellerType: item.seller_type,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
           emailStatus: "pending", createdAt: now,
         }));
@@ -315,6 +323,7 @@ const escape = (s: string) =>
 type EmailContent = {
   watchId?: string; label: string; summary: string; notify: Notify; catchUp?: boolean;
   alerts: { title: string; priceEur?: number; dropFromEur?: number; city?: string; condition?: string; distanceKm?: number; url: string; score?: number; reason: string;
+            sellerType?: "private" | "shop" | "unverified";
             _id?: string; rateToken?: string | null }[];
 };
 
@@ -334,7 +343,8 @@ export function renderEmail(c: EmailContent, appUrl: string) {
         : `${n} new match${n === 1 ? "" : "es"}`}${bestText ? `, ${bestText}` : ""}`;
   const preheader = best ? `Best: ${best.title}. ${best.reason}` : "";
   const facts = (a: (typeof top)[number]) =>
-    [a.score !== undefined ? `Scored ${a.score}/10 (${scoreLevel(a.score)})` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
+    [a.score !== undefined ? `Scored ${a.score}/10 (${scoreLevel(a.score)})` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? "",
+      a.sellerType === "private" ? "Private seller" : a.sellerType === "shop" ? "Shop/dealer" : ""]
       .filter(Boolean).join(", ");
   const conditionDistance = (a: (typeof top)[number]) =>
     [a.condition, a.distanceKm !== undefined ? `${a.distanceKm} km` : ""].filter(Boolean).join(" · ");
@@ -456,6 +466,7 @@ export const checkDue = internalAction({
     }
     const appUrl = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
     let checked = 0, emails = 0, failed = 0, emailFailures = 0, timeouts = 0;
+    let paidRemoved = 0, businessRemoved = 0, businessSignaled = 0, websiteUrlPresent = 0, showWebsiteTrue = 0;
 
     /** Send one watch's alert e-mail and record the outcome; a failure is retried at the next ticks. */
     const deliver = async (mail: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string }) => {
@@ -501,6 +512,14 @@ export const checkDue = internalAction({
       }
       checked += group.watches.length;
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;
+      for (const r of results as { paidRemoved?: number; businessRemoved?: number; businessSignaled?: number;
+        websiteUrlPresent?: number; showWebsiteTrue?: number }[]) {
+        paidRemoved += r.paidRemoved ?? 0;
+        businessRemoved += r.businessRemoved ?? 0;
+        businessSignaled += r.businessSignaled ?? 0;
+        websiteUrlPresent += r.websiteUrlPresent ?? 0;
+        showWebsiteTrue += r.showWebsiteTrue ?? 0;
+      }
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       if (!dryRun) {
         const accountFailure = results.find((r: { failureKind?: string }) =>
@@ -557,7 +576,8 @@ export const checkDue = internalAction({
       }
     }
     if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent
-    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts, requestId: runId });
+    await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts,
+      paidRemoved, businessRemoved, businessSignaled, websiteUrlPresent, showWebsiteTrue, requestId: runId });
     if (checked || emails || emailFailures)
       console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, timeouts, ms: Date.now() - now, requestId: runId }));
     return { checked, emails };

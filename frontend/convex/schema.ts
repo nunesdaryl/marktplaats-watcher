@@ -15,6 +15,7 @@ export const listingCard = v.object({
   date: v.optional(v.any()),
   url: v.string(),
   image: v.optional(v.union(v.string(), v.null())),
+  seller_type: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))),
 });
 
 // The answers to "Would you pay for this?" (labels in feedback.ts)
@@ -52,6 +53,7 @@ export const catchupItem = v.object({
   watchId: v.id("watches"), userId: v.id("users"), listingId: v.string(),
   title: v.string(), url: v.string(), priceEur: v.optional(v.number()),
   score: v.number(), city: v.optional(v.string()), image: v.optional(v.string()),
+  sellerType: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))),
 });
 
 export default defineSchema({
@@ -219,6 +221,11 @@ export default defineSchema({
     timeouts: v.optional(v.number()),
     paused: v.optional(v.boolean()),
     requestId: v.optional(v.string()),
+    paidRemoved: v.optional(v.number()),
+    businessRemoved: v.optional(v.number()),
+    businessSignaled: v.optional(v.number()),
+    websiteUrlPresent: v.optional(v.number()),
+    showWebsiteTrue: v.optional(v.number()),
   }).index("by_at", ["at"]),
 
   audits: defineTable({
@@ -290,6 +297,7 @@ export default defineSchema({
     excludeWords: v.optional(v.array(v.string())),
     postcode: v.optional(v.string()),
     maxDistanceKm: v.optional(v.number()),
+    includeBusinessSellers: v.optional(v.boolean()),
     schedule: scheduleValidator,
     timezone: v.string(),
     notify: notifyValidator,
@@ -370,6 +378,7 @@ export default defineSchema({
     distanceKm: v.optional(v.number()),
     url: v.string(),
     image: v.optional(v.string()),
+    sellerType: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))),
     score: v.optional(v.number()),
     reason: v.string(),
     channel: v.literal("email"),     // Telegram / Discord / WhatsApp come later

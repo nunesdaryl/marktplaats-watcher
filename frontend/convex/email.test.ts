@@ -30,6 +30,16 @@ test("the e-mail row shows condition and distance in text and escaped HTML", () 
   expect(html).toContain("Zo goed als &lt;nieuw&gt; · 12 km");
 });
 
+test("seller type appears in both e-mail formats without seller identity", () => {
+  const alerts = [{ ...content.alerts[0], sellerType: "private" as const },
+    { ...content.alerts[1], sellerType: "shop" as const }];
+  const { text, html } = renderEmail({ ...content, alerts }, "https://app.test");
+  expect(text).toContain("Private seller");
+  expect(text).toContain("Shop/dealer");
+  expect(html).toContain("Private seller");
+  expect(html).toContain("Shop/dealer");
+});
+
 test("listing titles from strangers are escaped, never rendered as HTML", () => {
   const { html } = renderEmail(content, "https://app.test");
   expect(html).not.toContain("<img src=x");                     // a listing title can't inject markup

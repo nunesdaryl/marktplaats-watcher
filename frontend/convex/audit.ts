@@ -45,6 +45,7 @@ export const groups = internalQuery({
         rating_examples: ratings.map((r) => ({ title: (r.title ?? r.listing?.title ?? "").slice(0, 100),
           price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [], note: (r.note ?? "").slice(0, 100) })),
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
+        include_business_sellers: w.includeBusinessSellers ?? false,
         seen_ids: seen.map((s) => s.listingId),
         seen_scores: Object.fromEntries(seen.filter((s) => s.score !== undefined).map((s) => [s.listingId, s.score])),
         baseline_ids: w.seededAt === undefined ? [] : seen
@@ -67,6 +68,7 @@ const result = v.object({
   watchId: v.string(), ok: v.boolean(), read: v.number(), candidates: v.number(), scored: v.number(),
   missCount: v.number(), unscored: v.optional(v.number()), error: v.optional(v.string()),
   misses: v.array(v.object({ id: v.string(), title: v.string(), url: v.string(), score: v.number(),
+    seller_type: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))),
     kind: v.union(v.literal("handled"), v.literal("never_read"), v.literal("rescored"),
       v.literal("never_scored")), checkScore: v.optional(v.number()) })),
 });
@@ -114,7 +116,7 @@ export const ownerItems = internalQuery({
       for (const m of r.misses) {
         if (m.score < 9 || (m.kind !== "handled" && m.kind !== "rescored")) continue;
         items.push({ watchId: watch._id, userId: watch.userId, listingId: m.id,
-          title: m.title, url: m.url, score: m.score });
+          title: m.title, url: m.url, score: m.score, sellerType: m.seller_type });
       }
     }
     return items;

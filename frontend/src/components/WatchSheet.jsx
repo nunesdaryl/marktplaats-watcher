@@ -21,6 +21,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
     excludeWords: initial.excludeWords ?? [],
     postcode: initial.postcode ?? "", maxDistanceKm: initial.maxDistanceKm ?? "",
     schedule: initial.schedule ?? HOURLY, notify: initial.notify ?? "good",
+    includeBusinessSellers: initial.includeBusinessSellers ?? false,
   }));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,11 +72,12 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           query: f.query, mustInclude: f.mustInclude || undefined, maxPriceEur: number(f.maxPriceEur),
           excludeWords: f.excludeWords,
           postcode: f.postcode || undefined, maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : undefined,
-          schedule: f.schedule, notify: f.notify,
+          schedule: f.schedule, notify: f.notify, includeBusinessSellers: f.includeBusinessSellers,
         });
       } else {
         await update({
           id: watchId, schedule: f.schedule, notify: f.notify, query: f.query,
+          includeBusinessSellers: f.includeBusinessSellers,
           mustInclude: f.mustInclude.trim() || null, maxPriceEur: number(f.maxPriceEur) ?? null,
           excludeWords: f.excludeWords,
           postcode: f.postcode.trim() || null, maxDistanceKm: f.postcode.trim() ? number(f.maxDistanceKm) ?? null : null,
@@ -111,6 +113,9 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           </div>
         )}
         {mode === "edit" && <p className="hint">Changing the item or place starts a fresh first look, so you're only told about listings that are new from then on.</p>}
+        <label className="row"><span>Also show shops and dealers</span>
+          <input type="checkbox" checked={f.includeBusinessSellers}
+            onChange={(e) => setF({ ...f, includeBusinessSellers: e.target.checked })} /></label>
         <ScheduleEditor schedule={f.schedule} notify={f.notify} onChange={(s) => {
           setF({ ...f, ...s });
           if (s.schedule !== f.schedule) { hasChanged.current = true; setVolumeNote(null); setEstimateDelay(800); }

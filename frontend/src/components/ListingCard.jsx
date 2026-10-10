@@ -41,6 +41,8 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
           {city && <span> · {city}</span>}
         </span>
         {conditionDistance && <span className="line">{conditionDistance}</span>}
+        {(listing.seller_type ?? listing.sellerType) === "private" && <span className="line">Private seller</span>}
+        {(listing.seller_type ?? listing.sellerType) === "shop" && <span className="line">Shop/dealer</span>}
         {reason && <span className="reason">{reason}</span>}
         {score === 0 && <span className="meta">Skipped</span>}
         {meta && <span className="meta">{meta}</span>}

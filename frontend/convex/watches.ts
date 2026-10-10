@@ -86,6 +86,7 @@ const search = {
   excludeWords: v.optional(v.array(v.string())),
   postcode: v.optional(v.string()),
   maxDistanceKm: v.optional(v.number()),
+  includeBusinessSellers: v.optional(v.boolean()),
 };
 
 export const create = mutation({
@@ -100,7 +101,8 @@ export const create = mutation({
     const now = Date.now();
     const id = await insertTracked(ctx, "watches", {
       userId: user._id, label: label(fields), ...fields, schedule: args.schedule, timezone: TIMEZONE,
-      notify: args.notify, active: true, seeded: false, nextRunAt: now, createdAt: now,
+      notify: args.notify, includeBusinessSellers: args.includeBusinessSellers ?? false,
+      active: true, seeded: false, nextRunAt: now, createdAt: now,
     });
     // The first check only records what is already listed, so you're not e-mailed about old listings.
     await ctx.scheduler.runAfter(0, internal.checker.checkDue, {});
@@ -131,6 +133,7 @@ export const update = mutation({
     excludeWords: v.optional(v.array(v.string())),
     postcode: v.optional(v.union(v.string(), v.null())),
     maxDistanceKm: v.optional(v.union(v.number(), v.null())),
+    includeBusinessSellers: v.optional(v.boolean()),
   },
   handler: async (ctx, { id, ...change }) => {
     const watch = await ownWatch(ctx, id);
@@ -138,6 +141,12 @@ export const update = mutation({
     const patch: Partial<Doc<"watches">> = {};
     if (change.active && watch.archivedAt) throw new ConvexError("This watch is archived. Restore it first.");
     if (change.notify) patch.notify = change.notify;
+    if (change.includeBusinessSellers !== undefined && change.includeBusinessSellers !== (watch.includeBusinessSellers ?? false)) {
+      patch.includeBusinessSellers = change.includeBusinessSellers;
+      patch.searchEditedAt = now;
+      patch.leaseUntil = undefined;
+      patch.nextRunAt = now;
+    }
 
     // The search itself: any field left out keeps its current value; null clears it
     const pick = <T,>(value: T | null | undefined, current: T | undefined) => (value === undefined ? current : value ?? undefined);

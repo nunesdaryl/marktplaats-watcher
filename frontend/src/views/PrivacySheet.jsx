@@ -10,6 +10,7 @@ export default function PrivacySheet({ email, waitlisted = false, onClose }) {
       <div className="stack prose">
         {waitlisted ? <p>We keep your waitlist e-mail address and what you're hunting for until you're admitted or delete your data. We use your e-mail to tell you when a place opens.</p> : <>
         <p>Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
+        <p>We hide paid placements and, unless you choose otherwise, shops and dealers. We use only whether a seller has a website, never who they are.</p>
         <p>We keep your e-mail address and your watches until you delete them. Chats and checked listings are deleted
           30 days after they were last used. Your messages, searches and listing details (titles, prices, places)
           are sent to OpenAI to answer and score them. Feedback you send is kept with your e-mail address so Daryl can

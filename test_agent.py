@@ -64,7 +64,60 @@ def test_parses_listings_without_seller_data():
     assert listings[0]["price_eur"] == 425
     assert listings[0]["price_type"] == "fixed price"
     assert listings[0]["url"].startswith("https://www.marktplaats.nl/")
-    assert all("seller" not in json.dumps(item).lower() for item in listings)
+    assert all("sellerId" not in json.dumps(item) and "sellerName" not in json.dumps(item) for item in listings)
+
+
+def test_paid_and_business_filters_keep_only_boolean_seller_type(monkeypatch):
+    base = {"title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE"}
+    raw = [
+        {**base, "itemId": "private", "sellerInformation": {"sellerName": "Do not store", "sellerId": 123}},
+        {**base, "itemId": "paid", "priorityProduct": "TOP_ADVERTENTIE"},
+        {**base, "itemId": "shop", "sellerInformation": {"sellerWebsiteUrl": "https://shop.invalid", "sellerName": "Do not store"}},
+        {**base, "itemId": "shown", "sellerInformation": {"showWebsiteUrl": True}},
+    ]
+    monkeypatch.delenv("BUSINESS_SELLER_FILTER_ENABLED", raising=False)
+    observed, stats = agent.parse_listings(raw, limit=None)
+    assert [item["id"] for item in observed] == ["private", "shop", "shown"]
+    assert stats["paid_removed"] == 1 and stats["business_signaled"] == 2 and stats["business_removed"] == 0
+    assert all("Do not store" not in json.dumps(item) and "shop.invalid" not in json.dumps(item) for item in observed)
+    monkeypatch.setenv("BUSINESS_SELLER_FILTER_ENABLED", "1")
+    private, stats = agent.parse_listings(raw, limit=None)
+    assert [item["id"] for item in private] == ["private"]
+    assert private[0]["seller_type"] == "private" and stats["business_removed"] == 2
+    opted_in, _ = agent.parse_listings(raw, limit=None, include_business_sellers=True)
+    assert [item["seller_type"] for item in opted_in] == ["private", "shop", "shop"]
+
+
+def test_scheduled_check_filters_before_ranking(monkeypatch):
+    monkeypatch.setenv("BUSINESS_SELLER_FILTER_ENABLED", "1")
+    raw = [{"itemId": "m1", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE"},
+           {"itemId": "m2", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "DAYTOP"},
+           {"itemId": "m3", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE",
+            "sellerInformation": {"showWebsiteUrl": True}}]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    ranked = []
+    def fake_rank(description, items, *args, **kwargs):
+        ranked.extend(item["id"] for item in items)
+        return [{**item, "score": 8, "reason": "Match"} for item in items]
+    monkeypatch.setattr(agent, "score_listings", fake_rank)
+    [result] = agent.check_query("bike", [{"id": "w", "seeded": True, "watermark": 0}])
+    assert ranked == ["m1"] and result["currentIds"] == ["m1"]
+    assert result["paidRemoved"] == 1 and result["businessRemoved"] == 1
+
+
+def test_chat_search_and_audit_use_the_same_listing_filter(monkeypatch):
+    monkeypatch.setenv("BUSINESS_SELLER_FILTER_ENABLED", "1")
+    raw = [{"itemId": "m1", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE", "date": "Vandaag"},
+           {"itemId": "m2", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "TOP_AD", "date": "Vandaag"},
+           {"itemId": "m3", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE", "date": "Vandaag",
+            "sellerInformation": {"sellerWebsiteUrl": "https://shop.invalid"}}]
+    page = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps({"listings": raw}) + "</script>"
+    monkeypatch.setattr(agent, "fetch_page", lambda *args, **kwargs: page)
+    found = json.loads(agent.search_marktplaats.invoke({"query": "bike"}))
+    assert [item["id"] for item in found] == ["m1"]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    audit = agent.audit_watch({"id": "w", "query": "bike", "notify": "good", "since_days": 0})
+    assert audit["ok"] and audit["read"] == 1
 
 
 def test_parse_listings_keeps_condition_and_search_distance_for_ranker(monkeypatch):
@@ -113,7 +166,7 @@ def test_parse_listings_sends_price_type_but_no_seller_details(raw, expected):
     listings, _ = agent.parse_listings([item], max_price_eur=200)
     assert len(listings) == 1  # a starting bid at the cap still passes the price filter
     assert listings[0]["price_type"] == expected
-    assert "seller" not in json.dumps(listings[0]).lower()
+    assert "sellerId" not in json.dumps(listings[0]) and "sellerName" not in json.dumps(listings[0])
 
 
 @pytest.mark.parametrize("price_type, expected_price", [
@@ -1025,11 +1078,17 @@ def test_chat_can_only_propose_watches_never_save_them(monkeypatch):
     _, propose, change = agent.make_tools(ctx)
     propose.invoke({"query": "mac mini", "schedule_kind": "weekly", "days": ["fri", "mon"], "times": ["18:00"]})
     assert ctx.proposals[0]["schedule"] == {"kind": "weekly", "days": ["mon", "fri"], "time": "18:00"}
+    assert ctx.proposals[0]["includeBusinessSellers"] is False
+    propose.invoke({"query": "bike", "schedule_kind": "interval", "every_minutes": 60,
+                    "include_business_sellers": True})
+    assert ctx.proposals[-1]["includeBusinessSellers"] is True
     assert "Invalid" in propose.invoke({"query": "x", "schedule_kind": "interval", "every_minutes": 1})
     assert "Unknown watch_id" in change.invoke({"watch_id": "someone-elses", "active": False})
     change.invoke({"watch_id": "w1", "schedule_kind": "daily", "times": ["20:00", "08:00"]})
     assert ctx.proposals[-1] == {"type": "update", "watchId": "w1", "label": "Mac mini",
                                  "schedule": {"kind": "daily", "times": ["08:00", "20:00"]}}
+    change.invoke({"watch_id": "w1", "include_business_sellers": True})
+    assert ctx.proposals[-1]["includeBusinessSellers"] is True
 
 
 def test_proposal_shows_search_count_and_today_count(monkeypatch):
@@ -1133,7 +1192,8 @@ def test_sheet_estimate_route_shares_chat_rate_limit(client, monkeypatch):
 
 def test_broken_page_json_means_no_listings_not_a_crash():
     html = '<script id="__NEXT_DATA__" type="application/json">{not json</script>'
-    assert agent.parse_listings(html) == ([], {"on_page": 0, "price_ok": 0, "with_location": 0, "readable": False})
+    listings, stats = agent.parse_listings(html)
+    assert listings == [] and stats["readable"] is False
 
 
 def test_listing_photos_only_come_from_marktplaats_image_hosts():
@@ -1588,7 +1648,8 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page([]))
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
     assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "currentPrices": [], "listings": [], "newestId": None,
-                     "waiting": 0, "capped": False}
+                     "waiting": 0, "capped": False, "paidRemoved": 0, "businessRemoved": 0, "businessSignaled": 0,
+                     "websiteUrlPresent": 0, "showWebsiteTrue": 0}
 
 
 def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
