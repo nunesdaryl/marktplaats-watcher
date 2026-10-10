@@ -31,6 +31,7 @@ export default function ListingCard({ listing, score, reason, meta, isNew = fals
       </div>
       <div className="body">
         {isNew && <span className="alert-new-pill" aria-hidden="true">New</span>}
+        {listing.reserved && <span className="alert-new-pill">Reserved</span>}
         {listing.dropFromEur != null && price != null && <span className="alert-new-pill">Price dropped €{listing.dropFromEur} → €{price}</span>}
         <span className="title">{listing.title}</span>
         <span className="line">

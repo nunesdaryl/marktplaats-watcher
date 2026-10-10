@@ -358,6 +358,7 @@ export default defineSchema({
     userId: v.id("users"),
     watchId: v.id("watches"),
     listingId: v.string(),
+    reserved: v.optional(v.boolean()),
     title: v.string(),
     description: v.optional(v.string()),
     priceEur: v.optional(v.number()),

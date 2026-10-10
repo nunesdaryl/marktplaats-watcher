@@ -30,6 +30,21 @@ async function seededWatch(schedule: any = hourly) {
 }
 const found = (id: any, ids: string[]) => ({ watchId: id, ok: true, currentIds: ids, listings: ids.map(listing) });
 
+test("a later reserved search result marks an existing alert without creating another", async () => {
+  const { t, id } = await seededWatch();
+  const now = Date.now();
+  await t.mutation(internal.checker.record, { now, dryRun: false, results: [found(id, ["bike"])] });
+  expect(await alerts(t)).toHaveLength(1);
+  await t.mutation(internal.checker.record, { now: now + 60_000, dryRun: false,
+    results: [{ watchId: id, ok: false, error: "Scoring unavailable", reservedIds: ["bike"] }] });
+  expect(await alerts(t)).toMatchObject([{ listingId: "bike", reserved: true }]);
+  await t.mutation(internal.checker.record, { now: now + 120_000, dryRun: false,
+    results: [{ watchId: id, ok: true, currentIds: ["bike", "other"],
+      listings: [listing("bike"), listing("other")], reservedIds: ["bike", "other"] }] });
+  expect(await alerts(t)).toMatchObject([{ listingId: "bike", reserved: true }]);
+  expect(await t.run((ctx) => ctx.db.query("seenListings").collect())).toHaveLength(1);
+});
+
 test("record stores scores and reasons for alerted and non-alerted listings", async () => {
   const { t, id } = await seededWatch();
   const now = Date.now();

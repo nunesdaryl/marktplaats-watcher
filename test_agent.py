@@ -1871,20 +1871,22 @@ def test_audit_watch_uses_real_read_since_result(monkeypatch):
     assert result["misses"][0]["kind"] == "never_scored"
 
 
-def test_audit_watch_check_alive_keeps_only_current_listings(monkeypatch):
+def test_audit_watch_check_alive_keeps_only_current_listings(monkeypatch, capsys):
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
     now = datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
     ids = ["live", "gone", "reserved", "error", "redirect", "description"]
     raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Gisteren",
-            "priceInfo": {"priceCents": 2500}} for ident in ids]
+            "priceInfo": {"priceCents": 2500}, "reserved": ident == "reserved"} for ident in ids]
     monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
     monkeypatch.setattr(agent, "rank_listings", lambda _description, listings, raise_on_failure=False:
                         [dict(item, score=9) for item in listings])
 
+    fetched = []
     def fetch(url, **kwargs):
         ident = url.rsplit("/", 1)[-1]
+        fetched.append(ident)
         assert kwargs["timeout"] == 10.0
         if ident == "error":
             raise agent.httpx.ConnectError("offline")
@@ -1900,6 +1902,32 @@ def test_audit_watch_check_alive_keeps_only_current_listings(monkeypatch):
     assert result["ok"] is True
     assert result["missCount"] == 2
     assert [m["id"] for m in result["misses"]] == ["live", "description"]
+    assert "reserved" not in fetched
+    assert len(fetched) == 5  # previously six listing-page requests
+    assert result["read"] == 5 and result["scored"] == 5
+    assert json.loads(capsys.readouterr().out.splitlines()[-1]) == {
+        "event": "audit_page_fetches", "watchId": "w", "beforeEstimate": 6, "after": 5}
+
+
+def test_check_skips_reserved_but_reports_existing_alert_status(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 10, 10, 12, tzinfo=ZoneInfo("Europe/Amsterdam"))
+    raw = [{"itemId": ident, "title": ident, "vipUrl": f"/v/{ident}", "date": "Vandaag",
+            "priceInfo": {"priceCents": 2500}, "reserved": ident == "reserved"}
+           for ident in ("live", "reserved")]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    ranked = []
+    def rank(_description, listings, _max_price_eur, **kwargs):
+        ranked.extend(item["id"] for item in listings)
+        return [dict(item, score=9, reason="match") for item in listings]
+    monkeypatch.setattr(agent, "score_listings", rank)
+    [result] = agent.check_query("bike", [{"id": "w", "watermark": 0, "seen_ids": []}], now)
+    assert ranked == ["live"]
+    assert result["currentIds"] == ["live"]
+    assert [item["id"] for item in result["listings"]] == ["live"]
+    assert result["reservedIds"] == ["reserved"]
 
 
 def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
