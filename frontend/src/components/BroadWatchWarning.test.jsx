@@ -6,6 +6,13 @@ import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
 vi.stubGlobal("React", React);
 
 const note = "This search gets about 25 new listings per check; one check can read 20. Add a word or a max price so nothing is missed.";
+const countNote = "About 1200 listings match now; about 30 new per day";
+
+test("a thousand matching listings gets the narrowing hint", () => {
+  expect(broadWatchMessage(countNote, 500, "good")).toContain("This search is broad");
+  expect(broadWatchMessage(countNote, 500, "good")).toContain("Add a brand, model or price limit");
+  expect(broadWatchMessage("About 999 listings match now; about 30 new per day", 500, "good")).toBeNull();
+});
 
 test("estimated volume must exceed 20, unless price is unlimited and every listing is emailed", () => {
   expect(broadWatchMessage(note, 500, "good")).toContain("about 25 new listings per check");

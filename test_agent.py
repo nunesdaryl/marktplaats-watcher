@@ -953,38 +953,57 @@ def test_chat_can_only_propose_watches_never_save_them(monkeypatch):
                                  "schedule": {"kind": "daily", "times": ["08:00", "20:00"]}}
 
 
-def test_proposal_warns_only_when_new_listings_exceed_one_checks_budget(monkeypatch):
+def test_proposal_shows_search_count_and_today_count(monkeypatch):
     reads = []
     def fake_read(query, filters, offset, **kwargs):
         reads.append((query, filters, offset))
-        return {"listings": [{"itemId": f"m{i}", "date": "Gisteren", "title": "iPhone 15 Pro 256GB"}
+        return {"totalResultCount": 240, "listings": [{"itemId": f"m{i}", "date": "Vandaag", "title": "iPhone 15 Pro 256GB"}
                              for i in range(25)] + [{"itemId": "old", "date": "20 sep 26", "title": "iPhone 15 Pro 256GB"}]}
     monkeypatch.setattr(agent, "fetch_search", fake_read)
     ctx = agent.ChatContext([{"id": "w1", "label": "iPhone", "query": "iphone",
                              "schedule": {"kind": "daily", "times": ["08:00"]}}])
     _, propose, change = agent.make_tools(ctx)
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00"]})
-    assert "25 new listings per check" in ctx.proposals[0]["volumeNote"]
+    # One daily check for 25 new listings a day exceeds the 20-listing scoring cap: the coverage warning shows.
+    assert ctx.proposals[0]["volumeNote"] == "About 240 listings match now; about 25 new per day" + ". This search gets about 25 new listings per check; one check can read 20. Add a word or a max price so nothing is missed."
     assert reads == [("iphone", {}, 0)]
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00", "20:00"]})
-    assert ctx.proposals[1]["volumeNote"] is None
+    assert ctx.proposals[1]["volumeNote"] == "About 240 listings match now; about 25 new per day"
     propose.invoke({"query": "iphone", "must_include": "16gb", "schedule_kind": "daily", "times": ["08:00"]})
-    assert ctx.proposals[2]["volumeNote"] is None
+    assert ctx.proposals[2]["volumeNote"] == "About 240 listings match now; about 0 new per day"
     change.invoke({"watch_id": "w1", "max_price_eur": 600})
-    assert "25 new listings per check" in ctx.proposals[3]["volumeNote"]
+    assert ctx.proposals[3]["volumeNote"] == "About 240 listings match now; about 25 new per day" + ". This search gets about 25 new listings per check; one check can read 20. Add a word or a max price so nothing is missed."
     assert reads[-1] == ("iphone", {"attributeRanges[]": "PriceCents:null:60000"}, 0)
 
 
-def test_estimate_stops_after_two_pages_and_marks_lower_bound(monkeypatch):
+def test_estimate_reads_only_first_page_and_uses_total_result_count(monkeypatch):
     offsets = []
     def fake_read(query, filters, offset, **kwargs):
+        assert kwargs["retry"] is False
         offsets.append(offset)
-        return {"listings": [{"itemId": f"m{offset + i}", "date": "Vandaag", "title": "iPhone"}
+        return {"totalResultCount": 1200, "listings": [{"itemId": f"m{offset + i}", "date": "Vandaag", "title": "iPhone"}
                              for i in range(agent.PAGE_SIZE)]}
     monkeypatch.setattr(agent, "fetch_search", fake_read)
     note = agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}})
-    assert offsets == [0, agent.PAGE_SIZE]
-    assert "at least 60 new listings per check" in note
+    assert offsets == [0]
+    # A full first page dated today: the count is a lower bound, and one daily check cannot score them all.
+    assert note.startswith("About 1200 listings match now; at least 30 new per day")
+    assert f"one check can read {agent.MAX_RANK_PER_CHECK}. Add a word or a max price so nothing is missed." in note
+
+
+def test_estimate_does_not_warn_when_one_check_can_score_all(monkeypatch):
+    monkeypatch.setattr(agent, "fetch_search", lambda *args, **kwargs: {
+        "totalResultCount": 90, "listings": [{"itemId": f"m{i}", "date": "Vandaag" if i < 5 else "Gisteren", "title": "iPhone"}
+                                               for i in range(agent.PAGE_SIZE)]})
+    note = agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}})
+    assert note == "About 90 listings match now; about 5 new per day"
+
+
+def test_estimate_omits_daily_count_when_first_page_has_no_dates(monkeypatch):
+    monkeypatch.setattr(agent, "fetch_search", lambda *args, **kwargs: {
+        "totalResultCount": 7, "listings": [{"itemId": "m1", "title": "iPhone"}]})
+    assert agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}}) == (
+        "About 7 listings match now")
 
 
 def test_estimate_timeout_leaves_no_note(monkeypatch):
@@ -1005,10 +1024,7 @@ def test_estimate_timeout_leaves_no_note(monkeypatch):
 
 def test_estimate_failed_page_leaves_no_note(monkeypatch):
     def failed_read(query, filters, offset, **kwargs):
-        if offset:
-            raise ValueError("bad page")
-        return {"listings": [{"itemId": f"m{i}", "date": "Vandaag", "title": "iPhone"}
-                             for i in range(agent.PAGE_SIZE)]}
+        raise ValueError("bad page")
     monkeypatch.setattr(agent, "fetch_search", failed_read)
     assert agent.estimate_volume_note({"query": "iphone", "schedule": {"kind": "daily", "times": ["08:00"]}}) is None
 

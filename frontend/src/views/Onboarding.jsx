@@ -86,6 +86,7 @@ export default function Onboarding({ email, onDone }) {
       <p className="sentence small">Checking Marktplaats for <mark>{query}{maxPrice ? ` under €${maxPrice}` : ""}</mark>{" "}
         <mark>{describe(plan.schedule)}</mark>, e-mailing you <mark>{NOTIFY_LABEL[plan.notify]}</mark> ({NOTIFY_SHORT[plan.notify]}).</p>
       <p className="hint">The first check only notes what's listed now, so you only hear about new ones.</p>
+      {volumeNote && <p className="hint" role="status">{volumeNote}</p>}
       <BroadWatchWarning message={broadMessage} onPrice={() => { setFocusPrice(true); setStep(0); }}
         onGood={() => setPlan({ ...plan, notify: "good" })} showGood={plan.notify !== "good"} />
       {error && <p className="error" role="alert">{error}</p>}
