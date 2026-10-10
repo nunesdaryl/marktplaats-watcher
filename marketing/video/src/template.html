@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"lang","type":"enum","label":"On-screen language","default":"en","options":[{"value":"en","label":"English"},{"value":"nl","label":"Nederlands"}]}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=__W__, height=__H__" />
+    <title>Marktplaats Watcher · launch film (__FMT__)</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; }
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-style: normal; }
+      @font-face { font-family: "Geist Mono"; src: url("assets/fonts/geist-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+      @font-face { font-family: "Geist Mono"; src: url("assets/fonts/geist-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; }
+
+      :root {
+        --bg: #fbfaf7; --surface: #eeebe6; --elevated: #ffffff; --fill: rgba(94,84,72,0.08); --fill-strong: rgba(94,84,72,0.15);
+        --line: rgba(42,36,30,0.11); --text: #1b1a18; --text-2: #5b5751; --text-3: #6e6a63;
+        --accent: #0d6b62; --accent-ink: #ffffff; --accent-soft: rgba(13,107,98,0.10);
+        --tag: #ddd0ff; --tag-ink: #25124f; --great: #157346; --great-ink: #ffffff;
+        --logo-bar: #4fd1bf; --logo-dot: #bca8ff;
+        --shadow: 0 1px 2px rgba(40,30,20,.05), 0 8px 28px rgba(40,30,20,.08);
+        --font: "Geist", -apple-system, "Segoe UI", sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: __W__px; height: __H__px; overflow: hidden; background: #fbfaf7; }
+      body { font-family: var(--font); color: var(--text); -webkit-font-smoothing: antialiased; }
+      #root { position: relative; width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
+
+      /* Soft brand glow behind everything; its opacity breathes with the music (audio-reactive) */
+      .glow { position: absolute; inset: 0; pointer-events: none; }
+      .glow-a, .glow-b { position: absolute; border-radius: 50%; filter: blur(90px); }
+      .glow-a { width: 900px; height: 900px; background: rgba(79,209,191,0.20); right: -260px; top: -320px; }
+      .glow-b { width: 760px; height: 760px; background: rgba(188,168,255,0.22); left: -280px; bottom: -340px; }
+
+      .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .inner { position: absolute; inset: 0; display: flex; }
+      .fmt-landscape .inner { flex-direction: row; align-items: center; justify-content: center; gap: 96px; padding: 110px 120px; }
+      .fmt-vertical .inner { flex-direction: column; align-items: stretch; justify-content: center; gap: 88px; padding: 140px 60px 200px; }
+
+      .cap { flex: none; font-weight: 600; letter-spacing: -0.035em; color: var(--text); }
+      .fmt-landscape .cap { width: 680px; font-size: 68px; line-height: 1.1; }
+      .fmt-vertical .cap { width: 100%; font-size: 80px; line-height: 1.1; padding: 0 12px; }
+      .cap .hl { background: var(--tag); color: var(--tag-ink); border-radius: 10px; padding: 0 0.16em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+      .eyebrow { display: block; margin-bottom: 26px; font: 500 26px/1.2 var(--mono); letter-spacing: 0; color: var(--accent); }
+
+      .stage { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+      .fmt-vertical .stage { flex: none; align-items: flex-start; }
+      /* App-size UI (real CSS px from styles.css), zoomed up for video */
+      .ui { width: 560px; position: relative; }
+      .ui.z-landscape { zoom: 1.55; }
+      .ui.z-vertical { zoom: 1.7; }
+
+      /* Scene 1: chat start screen + composer (Watch it mode) */
+      .hello h2 { font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 18px; }
+      .composer { display: flex; flex-direction: column; gap: 4px; padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--elevated); border: 1px solid var(--tag); box-shadow: var(--shadow); }
+      .mode-switch { display: inline-flex; align-self: flex-start; padding: 2px; border-radius: 8px; background: var(--fill); }
+      .mode-switch span { border-radius: 6px; min-height: 28px; padding: 4px 12px; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text-2); }
+      .mode-switch span.on { background: var(--tag); color: var(--tag-ink); }
+      .composer-row { display: flex; align-items: flex-end; gap: 8px; padding-left: 4px; }
+      .typed { flex: 1; min-height: 52px; padding: 8px 0; font-size: 17px; line-height: 26px; color: var(--text); }
+      .typed .ch { opacity: 0; }
+      .send { flex: none; width: 32px; height: 32px; border-radius: 999px; background: var(--tag); color: var(--tag-ink); display: grid; place-items: center; }
+      .send svg { display: block; }
+
+      /* Scene 2: thread with the proposal */
+      .thread { display: flex; flex-direction: column; gap: 14px; }
+      .bubble { align-self: flex-end; max-width: 78%; background: var(--surface); padding: 10px 16px; border-radius: 12px; font-size: 15px; line-height: 22px; }
+      .proposal { position: relative; padding: 14px 16px; border-radius: 8px; background: var(--elevated); border: 1px solid var(--line); box-shadow: inset 0 4px 0 var(--tag), var(--shadow); display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 22px; }
+      .actions { display: flex; gap: 8px; }
+      .button { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 14px; border-radius: 6px; font-size: 15px; font-weight: 500; background: var(--fill); color: var(--text-2); }
+      .button.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+      .done { color: var(--great); font-weight: 600; }
+      .act-wrap { position: relative; }
+      .act-wrap .done { position: absolute; left: 0; top: 7px; }
+      .cursor { position: absolute; left: 70px; top: 90px; width: 26px; height: 32px; }
+
+      /* Scene 3: the landing's scored sample */
+      .sample h3 { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-2); margin-bottom: 10px; }
+      .rows { display: flex; flex-direction: column; gap: 8px; }
+      .row { position: relative; display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 8px; background: var(--surface); color: var(--text-2); font-size: 15px; line-height: 22px; }
+      .row strong { color: var(--text); font-weight: 600; }
+      .score { flex: none; width: 64px; height: 48px; border-radius: 6px; padding: 4px 0; text-align: center; font: 500 13px/18px var(--mono); background: var(--elevated); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line); }
+      .score b, .score i { display: block; font-style: normal; font-weight: 500; }
+      .row.good .score { background: var(--great); color: var(--great-ink); box-shadow: none; }
+      .price { font-family: var(--mono); }
+      .t { position: relative; display: inline-block; }
+      .strike { position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--text); display: block; }
+      .mailed { color: var(--accent); font-weight: 600; }
+      #s0-cap { text-wrap: balance; }
+      .nowrap { white-space: nowrap; }
+      .row.lost { align-items: center; justify-content: space-between; padding: 18px 18px; font-size: 17px; line-height: 26px; }
+      .lost-meta { display: block; font-size: 13px; line-height: 18px; color: var(--text-2); }
+      .reserved { flex: none; display: inline-block; padding: 4px 12px; border-radius: 999px; background: #f8e5e2; color: #b42318; box-shadow: inset 0 0 0 1.5px rgba(180,35,24,0.35); font-size: 15px; line-height: 22px; font-weight: 600; }
+
+      /* Scene 4: the alert e-mail (template: docs/design/sieve/email) */
+      .mail { background: #f4f2ee; border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+      .mail-subject { font-size: 13px; line-height: 18px; color: var(--text-2); margin-bottom: 12px; }
+      .mail-subject b { color: var(--text); font-weight: 600; }
+      .mail-head { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+      .mail-head img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+      .mail-card { background: #ffffff; border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+      .mail-card h4 { font-size: 17px; line-height: 24px; font-weight: 600; }
+      .mail-card .sub { font-size: 13px; line-height: 18px; color: var(--text-2); margin-bottom: 12px; }
+      .hit { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--line); padding-top: 12px; }
+      .badge { flex: none; width: 52px; height: 52px; border-radius: 6px; background: var(--great); color: #fff; display: grid; place-items: center; font: 500 16px var(--mono); }
+      .hit .title { font-size: 15px; line-height: 22px; font-weight: 600; }
+      .hit .meta { font-size: 13px; line-height: 18px; color: var(--text-2); }
+      .hit .why { font-size: 15px; line-height: 22px; margin-top: 2px; }
+      .open { display: inline-flex; margin-top: 10px; padding: 7px 14px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 600; }
+      .mail-foot { margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--text-3); }
+
+      /* Scene 5: proof */
+      .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 120px; }
+      .big { font: 500 230px/1 var(--mono); letter-spacing: -0.04em; color: var(--accent); }
+      .fmt-vertical .big { font-size: 250px; }
+      .proof-line { margin-top: 26px; font-size: 56px; line-height: 1.12; font-weight: 600; letter-spacing: -0.03em; max-width: 1200px; }
+      .fmt-vertical .proof-line { font-size: 60px; max-width: 880px; }
+      .foot { margin-top: 34px; font-size: 26px; line-height: 1.4; color: var(--text-2); max-width: 1100px; }
+      .fmt-vertical .foot { font-size: 30px; max-width: 860px; }
+      /*@only animated-logo, cohort1*/
+      html[lang="nl"] .foot, html[lang="nl"] .offer, html[lang="nl"] .cap { text-wrap: balance; }
+      /*@end*/
+
+      /* Scene 6: outro */
+      .robot { width: 190px; height: 190px; display: block; }
+      .robot svg { width: 100%; height: 100%; display: block; }
+      .fmt-vertical .robot { width: 230px; height: 230px; }
+      .wordmark { margin-top: 34px; font-size: 76px; line-height: 1.05; letter-spacing: -0.035em; }
+      .fmt-vertical .wordmark { font-size: 78px; }
+      .wordmark .m { font-weight: 400; color: var(--text-2); }
+      .wordmark .w { font-weight: 600; color: var(--text); }
+      .offer { margin-top: 30px; font-size: 40px; line-height: 1.2; font-weight: 500; letter-spacing: -0.015em; }
+      .fmt-vertical .offer { font-size: 44px; max-width: 860px; }
+      .url { display: inline-block; margin-top: 26px; padding: 12px 26px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font: 500 30px/1.2 var(--mono); }
+      .fineprint { margin-top: 34px; font-size: 24px; line-height: 1.4; color: var(--text-3); max-width: 1300px; }
+      .fmt-vertical .fineprint { font-size: 28px; max-width: 860px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="fmt-__FMT__" data-composition-id="main" data-start="0" data-duration="__TOTAL__" data-width="__W__" data-height="__H__">
+
+      <div class="glow" id="glow" data-layout-ignore><div class="glow-a" id="glow-a"></div><div class="glow-b" id="glow-b"></div></div>
+
+      <!--@only cohort1-->
+      <!-- Scene 0: the problem (FDE Cohort 1 hook) -->
+      <section id="s0" class="scene clip" data-start="0" data-duration="3" data-track-index="0">
+        <div class="inner" id="s0-in">
+          <h1 class="cap" id="s0-cap" data-t="s0"></h1>
+          <div class="stage"><div class="ui z-__FMT__">
+            <div class="row lost" id="s0-card">
+              <span><strong>Mac mini, 16GB</strong>, <span class="price">€230</span><span class="lost-meta">Utrecht</span></span>
+              <span class="reserved" id="s0-badge" data-t="reserved"></span>
+            </div>
+          </div></div>
+        </div>
+      </section>
+      <!--@end-->
+
+      <!-- Scene 1: hook -->
+      <section id="s1" class="scene clip" data-start="__S1__" data-duration="4.4" data-track-index="1">
+        <div class="inner" id="s1-in">
+          <h1 class="cap" id="s1-cap" data-t="s1"></h1>
+          <div class="stage"><div class="ui z-__FMT__" id="s1-ui">
+            <div class="hello"><h2>What are you looking for?</h2></div>
+            <div class="composer">
+              <div class="mode-switch"><span>Search now</span><span class="on">Watch it</span></div>
+              <div class="composer-row">
+                <div class="typed" id="typed"></div>
+                <div class="send" id="send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- Scene 2: the watch it proposes -->
+      <section id="s2" class="scene clip" data-start="__S2__" data-duration="4.34" data-track-index="2">
+        <div class="inner" id="s2-in">
+          <h1 class="cap" id="s2-cap" data-t="s2"></h1>
+          <div class="stage"><div class="ui z-__FMT__">
+            <div class="thread">
+              <div class="bubble" id="s2-bubble">Mac mini with 16GB under €500, every morning at 8</div>
+              <div class="proposal" id="s2-card">
+                <p>Watch <strong>Mac mini, 16GB, under €500</strong>, checked <strong>every morning at 8</strong>, and <span style="white-space:nowrap">e-mail</span> you good matches (listings scoring 6 or higher out of 10).</p>
+                <div class="act-wrap"><div class="actions" id="s2-actions"><span class="button primary" id="save">Save watch</span><span class="button">Adjust</span></div>
+                <p class="done" id="s2-done">Watch saved.</p></div>
+                <svg class="cursor" id="cursor" viewBox="0 0 26 32" aria-hidden="true"><path d="M2 2 L2 26 L8.5 20 L13 30 L17 28.2 L12.6 18.6 L21 18.6 Z" fill="#1b1a18" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- Scene 3: the sieve -->
+      <section id="s3" class="scene clip" data-start="__S3__" data-duration="4.37" data-track-index="3">
+        <div class="inner" id="s3-in">
+          <h1 class="cap" id="s3-cap" data-t="s3"></h1>
+          <div class="stage"><div class="ui sample z-__FMT__">
+            <h3>From a real check for "Mac mini, 16GB, under €500"</h3>
+            <div class="rows">
+              <div class="row good" id="r1"><span class="score"><b>9/10</b><i>great</i></span>
+                <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, <span class="price">€230</span>. A Mac mini with 16GB and a price well under €500. <span class="mailed" id="mailed">E-mailed.</span></span></div>
+              <div class="row" id="r2"><span class="score"><b>0/10</b><i>low</i></span>
+                <span><span class="t"><strong>Mac Mini M4 Docking Station 1TB</strong><span class="strike" id="k2" data-layout-allow-occlusion></span></span>, <span class="price">€74</span>. A docking station, not a Mac mini.</span></div>
+              <div class="row" id="r3"><span class="score"><b>0/10</b><i>low</i></span>
+                <span><span class="t"><strong>Also found: SSDs, a tracker and a Cisco switch</strong><span class="strike" id="k3" data-layout-allow-occlusion></span></span>. All scored 0/10.</span></div>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- Scene 4: the e-mail -->
+      <section id="s4" class="scene clip" data-start="__S4__" data-duration="4.36" data-track-index="4">
+        <div class="inner" id="s4-in">
+          <h1 class="cap" id="s4-cap" data-t="s4"></h1>
+          <div class="stage"><div class="ui z-__FMT__" id="s4-ui">
+            <div class="mail" id="mail">
+              <p class="mail-subject"><b>Mac mini, 16GB, under €500: 1 new match, best 9/10 at €230</b></p>
+              <div class="mail-head"><img src="assets/brand/robot-mail.svg" alt="" />Marktplaats Watcher</div>
+              <div class="mail-card">
+                <h4>Mac mini, 16GB, under €500</h4>
+                <p class="sub">1 new match</p>
+                <div class="hit"><span class="badge">9/10</span>
+                  <div><p class="title">Mac mini i5, 16 GB</p><p class="meta">Scored 9/10, €230, Utrecht</p><p class="why">Well under €500.</p><span class="open">Open on Marktplaats</span></div>
+                </div>
+              </div>
+              <p class="mail-foot">Not affiliated with Marktplaats.</p>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- Scene 5: proof -->
+      <section id="s5" class="scene clip" data-start="__S5__" data-duration="__S5D__" data-track-index="5">
+        <div class="center" id="s5-in">
+          <div class="big" id="big">100%</div>
+          <p class="proof-line" id="s5-line" data-t="s5"></p>
+          <p class="foot" id="s5-foot" data-t="s5foot"></p>
+        </div>
+      </section>
+
+      <!-- Scene 6: outro -->
+      <section id="s6" class="scene clip" data-start="__S6__" data-duration="__S6D__" data-track-index="6">
+        <div class="center" id="s6-in">
+          <!--@only original-->
+          <img class="robot" id="robot" src="assets/brand/robot.svg" alt="Marktplaats Watcher logo" />
+          <!--@end-->
+          <!--@only animated-logo, cohort1-->
+          <div class="robot" id="robot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marktplaats Watcher"><rect width="64" height="64" rx="16" fill="#1b1a18"/><path d="M32 8.5V13" stroke="#4fd1bf" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="7" r="2.8" fill="#4fd1bf"/><rect x="11.5" y="19" width="5" height="11" rx="2.5" fill="#4fd1bf"/><rect x="47.5" y="19" width="5" height="11" rx="2.5" fill="#4fd1bf"/><rect x="16" y="13" width="32" height="25" rx="9" fill="#1b1a18" stroke="#f4f2ee" stroke-width="3"/><g class="mw-e"><path d="M23 23.5q3-3.4 6 0M35 23.5q3-3.4 6 0" fill="none" stroke="#4fd1bf" stroke-width="2.4" stroke-linecap="round"/></g><rect x="23" y="49" width="18" height="8" rx="3" fill="#f4f2ee"/><g class="mw-b"><rect x="6.5" y="34" width="9" height="15" rx="4.5" fill="#f4f2ee"/><rect x="48.5" y="34" width="9" height="15" rx="4.5" fill="#f4f2ee"/><rect x="26" y="31" width="12" height="9" rx="4" fill="#4fd1bf"/><circle cx="32" cy="34.5" r="2.2" fill="#1b1a18"/><circle cx="21" cy="42" r="11" fill="#4fd1bf"/><circle cx="43" cy="42" r="11" fill="#4fd1bf"/><circle cx="21" cy="42" r="7.6" fill="#1b1a18"/><circle cx="43" cy="42" r="7.6" fill="#1b1a18"/><circle cx="21" cy="42" r="6.992" fill="#eda566"/><path d="M18.7656 38.9676 L23.394 41.6808 L18.7656 44.394" fill="none" stroke="#2d3c4d" stroke-width="1.52" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.606 46.4688 H23.394" stroke="#2d3c4d" stroke-width="1.52" stroke-linecap="round"/><circle cx="43" cy="42" r="6.992" fill="#eda566"/><path d="M40.7656 38.9676 L45.394 41.6808 L40.7656 44.394" fill="none" stroke="#2d3c4d" stroke-width="1.52" stroke-linecap="round" stroke-linejoin="round"/><path d="M40.606 46.4688 H45.394" stroke="#2d3c4d" stroke-width="1.52" stroke-linecap="round"/></g></svg></div>
+          <!--@end-->
+          <p class="wordmark" id="wm"><span class="m">Marktplaats </span><span class="w">Watcher</span></p>
+          <p class="offer" id="offer" data-t="offer"></p>
+          <span class="url" id="url">marktplaats-watcher.vercel.app</span>
+          <p class="fineprint" id="fine" data-t="fine"></p>
+        </div>
+      </section>
+
+      <!-- Audio: music bed + sparse SFX (brag audio policy: music 0.30, SFX soft) -->
+      __MUSIC__
+__SFX__
+    </div>
+
+    <script>
+      (function () {
+        var T = {
+          en: {
+            s0: 'Always just <span class="hl nowrap">too late</span> for that <span class="nowrap">Marktplaats deal?</span>',
+            reserved: 'Reserved',
+            //@only original
+            s1: 'Tell it what you want, <span class="hl">in plain words.</span>',
+            s2: 'It checks Marktplaats <span class="hl">on your schedule.</span>',
+            s3: 'Every new listing gets a score from 0 to 10, <span class="hl">and a reason.</span>',
+            s4: 'Only the ones worth a look reach your inbox, <span class="hl">with the reason.</span>',
+            //@end
+            //@only animated-logo, cohort1
+            s1: 'Tell it what you want, <span class="hl nowrap">in plain words.</span>',
+            s2: 'It checks Marktplaats <span class="hl nowrap">on your schedule.</span>',
+            s3: 'Every new listing gets a score from 0 to 10, <span class="hl nowrap">and a reason.</span>',
+            s4: 'Only the ones worth a look reach your inbox, <span class="hl nowrap">with the reason.</span>',
+            //@end
+            s5: 'of ‘great match’ picks were real matches',
+            s5foot: 'Our test of 53 real listings from 6 watches, median of 3 runs (report of 10 Oct 2026).',
+            offer: 'Free for 30 days for the first 100 users.',
+            fine: 'A free portfolio project · Not affiliated with Marktplaats'
+          },
+          nl: {
+            s0: 'Altijd net <span class="hl nowrap">te laat</span> voor die ene <span class="nowrap">Marktplaats-deal?</span>',
+            reserved: 'Gereserveerd',
+            //@only original
+            s1: 'Zeg in <span class="hl">gewone woorden</span> wat je zoekt.',
+            s2: 'Hij checkt Marktplaats <span class="hl">wanneer jij wilt.</span>',
+            s3: 'Elke nieuwe advertentie krijgt een score van 0 tot 10, <span class="hl">met de reden.</span>',
+            s4: 'Alleen wat de moeite waard is komt in je inbox, <span class="hl">met de reden.</span>',
+            //@end
+            //@only animated-logo, cohort1
+            s1: 'Zeg in <span class="hl nowrap">gewone woorden</span> wat je zoekt.',
+            s2: 'Hij checkt Marktplaats <span class="hl nowrap">wanneer jij wilt.</span>',
+            s3: 'Elke nieuwe advertentie krijgt een score van 0\u00a0tot\u00a010, <span class="hl nowrap">met uitleg waarom.</span>',
+            s4: 'Alleen wat de moeite waard is, komt in je inbox, <span class="hl nowrap">met uitleg waarom.</span>',
+            //@end
+            s5: 'van de ‘great match’-keuzes waren echt raak',
+            //@only original
+            s5foot: 'Onze test met 53 echte advertenties uit 6 watches, mediaan van 3 runs (rapport van 10 okt 2026).',
+            //@end
+            //@only animated-logo, cohort1
+            s5foot: 'Onze test met 53 echte advertenties uit 6 watches, mediaan van 3 testrondes (rapport van 10 okt 2026).',
+            //@end
+            offer: '30 dagen gratis voor de eerste 100 gebruikers.',
+            fine: 'Een gratis portfolioproject · Niet verbonden aan Marktplaats · App in het Engels'
+          }
+        };
+        var vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+        var lang = vars.lang === "nl" ? "nl" : "en";
+        document.documentElement.lang = lang;
+        document.querySelectorAll("[data-t]").forEach(function (el) { el.innerHTML = T[lang][el.getAttribute("data-t")]; });
+
+        // Typed request: one span per character, revealed by opacity (seek-safe, no callbacks)
+        var typedText = "Mac mini with 16GB under €500, every morning at 8";
+        var typed = document.getElementById("typed");
+        typedText.split("").forEach(function (c) { var s = document.createElement("span"); s.className = "ch"; s.textContent = c; typed.appendChild(s); });
+        var chars = typed.querySelectorAll(".ch");
+
+        var AUDIO = __AUDIO__; // per-frame 0..1 energy at 30 fps (music RMS + bass), pre-extracted
+
+        var tl = gsap.timeline({ paused: true });
+        //@only original, animated-logo
+        var body = tl; // the film itself
+        //@end
+        //@only cohort1
+        var body = gsap.timeline(); // the animated-logo film, unchanged, nested at +3.0 s
+        //@end
+        var E = "power3.out";
+
+        // Ambient glow: audio-reactive (per-frame sampling, as hyperframes-creative/audio-reactive.md prescribes)
+        var ga = document.getElementById("glow-a"), gb = document.getElementById("glow-b");
+        for (var f = 0; f < AUDIO.length; f++) {
+          tl.call((function (v) { return function () { ga.style.opacity = (0.55 + 0.45 * v).toFixed(3); gb.style.opacity = (0.5 + 0.4 * v).toFixed(3); }; })(AUDIO[f]), [], f / 30);
+        }
+
+        //@only cohort1
+        // Scene 0 (0 - 3.0): the problem. Caption and card are fully visible from frame 0 (no fade-in).
+        tl.fromTo("#s0-badge", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.2, ease: "back.out(2)" }, 1.6);
+        tl.to("#s0-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 2.65);
+        //@end
+
+        // Scene 1 (0 - 4.4): hook
+        body.fromTo("#s1-cap", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 0.2);
+        body.fromTo("#s1-ui", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 0.45);
+        body.to(chars, { opacity: 1, duration: 0.01, stagger: 0.048 }, 1.0); // types 1.0 - 3.4 s
+        body.fromTo("#send", { scale: 1 }, { scale: 0.86, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, 3.7);
+        body.to("#s1-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 4.05);
+
+        // Scene 2 (4.4 - 8.74): proposal + Save watch
+        body.fromTo("#s2-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 4.45);
+        body.fromTo("#s2-bubble", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 4.55);
+        body.fromTo("#s2-card", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 5.0);
+        body.fromTo("#cursor", { opacity: 0, x: 150, y: 70 }, { opacity: 1, x: 0, y: 0, duration: 0.9, ease: "power2.inOut" }, 5.8);
+        body.fromTo("#save", { scale: 1 }, { scale: 0.94, duration: 0.08, yoyo: true, repeat: 1, ease: "power1.inOut" }, 6.9);
+        body.fromTo("#s2-actions", { opacity: 1 }, { opacity: 0, duration: 0.2 }, 7.15);
+        body.fromTo("#s2-done", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 7.2);
+        body.to("#cursor", { opacity: 0, duration: 0.3 }, 7.6);
+        body.to("#s2-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 8.39);
+
+        // Scene 3 (8.74 - 13.11): scored rows
+        body.fromTo("#s3-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 8.78); // beat-locked: 8.74s
+        // beat-grid: row 1 at 8.74s (+0.1), row 2 at 9.83s, row 3 at 10.93s (every other beat, readable holds)
+        body.fromTo("#r1", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 8.84);
+        body.fromTo("#r2", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 9.83);
+        body.fromTo("#r3", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 10.93);
+        body.fromTo("#k2", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 0.35, ease: "power2.out" }, 11.9);
+        body.fromTo("#k3", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 0.35, ease: "power2.out" }, 12.0);
+        body.to(["#r2", "#r3"], { opacity: 0.65, duration: 0.35 }, 11.95);
+        body.fromTo("#mailed", { opacity: 0.35 }, { opacity: 1, duration: 0.3 }, 12.1);
+        body.to("#s3-in", { opacity: 0, x: -50, duration: 0.35, ease: "power2.in" }, 12.76);
+
+        // Scene 4 (13.11 - 17.47): e-mail
+        body.fromTo("#s4-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: E }, 13.15);
+        body.fromTo("#mail", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 13.11); // beat-locked: 13.11s
+        body.to("#s4-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 17.12);
+
+        // Scene 5: proof
+        body.fromTo("#big", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.6, ease: E }, 17.47); // beat-locked: 17.47s
+        body.fromTo("#s5-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 17.75);
+        body.fromTo("#s5-foot", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 18.1);
+        //@only original
+        tl.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 20.93);
+
+        // Scene 6: outro
+        tl.fromTo("#robot", { opacity: 0, scale: 0.8, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(1.4)" }, 21.4);
+        tl.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 21.7);
+        tl.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 22.37); // beat-locked: 22.37s
+        tl.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 22.6);
+        tl.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 22.8);
+        tl.fromTo("#robot", { rotation: 0 }, { rotation: -3, duration: 0.6, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, 23.2);
+        //@end
+        //@only animated-logo, cohort1
+        body.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 22.93); // proof held +2.0 s
+
+        // Scene 6: outro
+        body.fromTo("#robot", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 23.3); // still and upright, pose H
+        body.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 23.7);
+        body.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 24.37); // was beat-locked at 22.37s; +2.0 s hold moves it off-grid
+        body.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 24.6);
+        body.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 24.8);
+        // Logo "H to I", once, from L0 (25.0 s in this film, +3.0 s with the hook): the 4 s loop from frontend/src/brand/logo.js (ANIMATION / raiseAt),
+        // keyframes 0-22% hold H, 40% at I, hold to 72%, 90% back at H, hold to 100%; cubic-bezier(.45,0,.25,1)
+        // per segment; binoculars (.mw-b) rise 6.5 and eyes (.mw-e) 2 SVG units. Seek-safe GSAP tweens.
+        function bezier(x1, y1, x2, y2) {
+          function c(a1, a2, t) { return ((1 - 3 * a2 + 3 * a1) * t + (3 * a2 - 6 * a1)) * t * t + 3 * a1 * t; }
+          return function (x) {
+            if (x <= 0) return 0; if (x >= 1) return 1;
+            var lo = 0, hi = 1, t = x;
+            for (var i = 0; i < 40; i++) { t = (lo + hi) / 2; if (c(x1, x2, t) < x) lo = t; else hi = t; }
+            return c(y1, y2, t);
+          };
+        }
+        var LOGO_EASE = bezier(0.45, 0, 0.25, 1), L0 = 25.0, LOOP = 4.0;
+        var mwB = document.querySelector("#robot .mw-b"), mwE = document.querySelector("#robot .mw-e");
+        body.set([mwB, mwE], { y: 0 }, 0);
+        body.to(mwB, { y: -6.5, duration: (0.40 - 0.22) * LOOP, ease: LOGO_EASE }, L0 + 0.22 * LOOP);
+        body.to(mwE, { y: -2, duration: (0.40 - 0.22) * LOOP, ease: LOGO_EASE }, L0 + 0.22 * LOOP);
+        body.to(mwB, { y: 0, duration: (0.90 - 0.72) * LOOP, ease: LOGO_EASE }, L0 + 0.72 * LOOP);
+        body.to(mwE, { y: 0, duration: (0.90 - 0.72) * LOOP, ease: LOGO_EASE }, L0 + 0.72 * LOOP);
+        //@end
+
+        //@only cohort1
+        tl.add(body, 3.0);
+        //@end
+
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

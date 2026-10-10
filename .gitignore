@@ -28,3 +28,7 @@ evals/data/user_ratings.json
 # Credentials files must never be committed (3 Oct 2026)
 *credentials*
 *.env
+
+# Launch-video source: generated Hyperframes projects and renders (MW-129)
+marketing/video/.build/
+marketing/video/out/

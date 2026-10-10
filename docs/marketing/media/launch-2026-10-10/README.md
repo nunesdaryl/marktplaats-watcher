@@ -25,4 +25,4 @@ The storyboard traces the on-screen claims to these project sources:
 | Free for 30 days for the first 100 users | [Landing page offer](../../../../frontend/src/Landing.jsx), [landing test](../../../../frontend/src/Landing.test.jsx), [6 October outreach drafts](../../outreach-drafts-2026-10-06.md) |
 | Free portfolio project; not affiliated with Marktplaats | [Landing page fine print](../../../../frontend/src/Landing.jsx) |
 
-The videos were made with **brag** pinned to `latent-spaces/brag@8531ccb9f471` and **Hyperframes 0.8.145**. The composition, sounds and other working files are outside this archive.
+The videos were made with **brag** pinned to `latent-spaces/brag@8531ccb9f471` and **Hyperframes 0.8.145**. The source (one template for all variants, the sounds, fonts and credits) is in [marketing/video](../../../../marketing/video/HOW-TO.md); these four files are its `original` variant, and `scripts/render-video.sh` makes the later `animated-logo` and `cohort1` variants from the same template.
