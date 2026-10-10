@@ -46,13 +46,15 @@ test("backfilled overview matches the original across every window and health de
     const sentAlert = await ctx.db.insert("alerts", { userId: aliceId, watchId, listingId: "listing-1", title: "Bike", url: "https://example.com/bike",
       score: 9, reason: "Match", channel: "email", emailStatus: "sent", createdAt: Date.now() - 2 * DAY });
     await ctx.db.insert("alerts", { userId: aliceId, watchId, listingId: "listing-2", title: "Second bike", url: "https://example.com/second",
-      score: 7, reason: "Match", channel: "email", emailStatus: "failed", createdAt: Date.now() });
+      score: 7, reason: "Match", priceEur: 400, dropFromEur: 450,
+      channel: "email", emailStatus: "failed", createdAt: Date.now() });
     await ctx.db.insert("ratings", { alertId: sentAlert, userId: aliceId, watchId, verdict: "good", source: "app",
       score: 9, createdAt: Date.now(), updatedAt: Date.now() });
     await ctx.db.insert("audits", { userId: aliceId, watchId, at: Date.now(), requestId: "audit-1", ok: true,
       read: 1, scored: 1, missCount: 1, misses: [{ listingId: "miss", title: "Bike", url: "https://example.com/miss", score: 8, kind: "never_read" }] });
   });
   const old = await Promise.all([7, 30, 90].map((days) => owner.query(api.admin.dashboard, { days })));
+  expect(old.map((row) => row?.totals.priceDropAlerts)).toEqual([1, 1, 1]);
   const oldRatings = await owner.query(api.admin.ratingStats, { days: 30 });
   expect((await t.mutation(internal.totals.backfill, { dryRun: true })).drift.length).toBeGreaterThan(0);
   expect(await t.run((ctx) => ctx.db.query("dashboardTotals").collect())).toMatchObject([{ key: "founding-admissions", admitted: 2 }]);

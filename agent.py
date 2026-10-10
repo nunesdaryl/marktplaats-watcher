@@ -838,7 +838,7 @@ def estimate_volume_note(w):
 
 def check_query(query, watches, now=None):
     """Read each watch's search since its last check (its own price and distance applied by Marktplaats), keep
-    only new listings and rank those. New means not seen by this watch, regardless of id or creation number;
+    new listings and qualifying price drops, and rank those. New means not seen by this watch, regardless of id or creation number;
     Convex dedupes against its full seen table. The watermark remains for the silent first look.
     watches: [{id, description, max_price_eur, must_include, postcode, max_distance_km, seen_ids, seeded, watermark,
     last_checked_at, read_only}]"""
@@ -900,16 +900,29 @@ def check_query(query, watches, now=None):
         seen = set(w.get("seen_ids") or [])
         # New = not seen by this watch; Convex dedupes against its full seen table.
         fresh = [item for item in listings if item["id"] and item["id"] not in seen]
+        drops = []
+        for item in listings:
+            prior = (w.get("seen_prices") or {}).get(item["id"])
+            if item["id"] not in seen or not prior or item["price_eur"] is None:
+                continue
+            reference = prior.get("alerted_price_eur", prior.get("first_price_eur"))
+            if reference is None:
+                continue
+            difference = reference - item["price_eur"]
+            if difference > 0 and (difference >= 5 or difference >= reference * 0.05):
+                drops.append({**item, "drop_from_eur": reference})
         if not w.get("seeded", True) or w.get("watermark") is None:
             # First check, or the first since checks moved to the date-sorted search (no watermark yet): only
             # remember what's there, nothing is e-mailed, so don't score
             fresh = []
+            drops = []
         # Bound the scoring per check; listings beyond the bound stay unseen and are scored at the next check
         waiting = {item["id"] for item in fresh[MAX_RANK_PER_CHECK:]}
         listings = [item for item in listings if item["id"] not in waiting]
         # The watermark may only pass what was handled: it stops just below the oldest listing still waiting
         waiting_numbers = [n for i in waiting if (n := listing_number(i)) is not None]
-        to_rank.append((w, listings, fresh[:MAX_RANK_PER_CHECK], min(waiting_numbers) - 1 if waiting_numbers else newest,
+        candidates = fresh[:MAX_RANK_PER_CHECK] + drops[:max(0, MAX_RANK_PER_CHECK - len(fresh[:MAX_RANK_PER_CHECK]))]
+        to_rank.append((w, listings, candidates, min(waiting_numbers) - 1 if waiting_numbers else newest,
                         len(waiting), capped))
 
     # Rank the watches in parallel, including a retry for any ids a response omitted
@@ -943,6 +956,8 @@ def check_query(query, watches, now=None):
         results.append({"watchId": w["id"], "ok": True,
                         **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),
                         "currentIds": [i["id"] for i in listings if i["id"]],
+                        "currentPrices": [{"id": i["id"], "priceEur": i["price_eur"]} for i in listings
+                                          if i["id"] and i["price_eur"] is not None],
                         "listings": [{k: v for k, v in (item | ({"wanted_ad": True} if is_wanted_ad(item) else {})).items()
                                       if (k != "price_type" or isinstance(v, str)) and k != "ad_type"}
                                      for item in fresh if item["score"] is not None], "newestId": newest,

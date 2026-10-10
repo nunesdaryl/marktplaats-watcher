@@ -25,7 +25,7 @@ export function projection(table: Tracked, row: Record<string, any>): Row {
     users: ["clerkId", "email", "createdAt", "onboardedAt"],
     watches: ["userId", "name", "label", "createdAt", "active", "archivedAt", "backlog", "coverageCapped", "lastError", "schedule", "notify", "seededAt"],
     chats: ["userId", "updatedAt"],
-    alerts: ["userId", "watchId", "score", "emailStatus", "createdAt"],
+    alerts: ["userId", "watchId", "score", "emailStatus", "createdAt", "dropFromEur"],
     audits: ["_creationTime", "at", "watchId", "userId", "requestId", "ok", "missCount", "deduplicated", "misses", "error"],
     events: ["at", "userId", "name", "props", "device"],
     feedback: ["status", "handledAt", "repliedAt", "wouldPay", "createdAt"],
@@ -68,6 +68,7 @@ export function summarizeEvents(rows: Row[]) {
 export function summarizeAlerts(rows: Row[]) {
   return { count: rows.length, sent: rows.filter((a: any) => a.emailStatus === "sent").length,
     failed: rows.filter((a: any) => a.emailStatus === "failed").length,
+    priceDrops: rows.filter((a: any) => a.dropFromEur !== undefined).length,
     users: [...new Set(rows.map((a: any) => a.userId))].sort() };
 }
 

@@ -577,6 +577,38 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
     assert result["listings"][0]["price_type"] == "fixed price"
 
 
+@pytest.mark.parametrize("old,new,expected", [
+    (450, 446, False), (450, 445, True), (100, 95, True), (80, 76, True), (450, 455, False),
+])
+def test_check_query_scores_only_qualifying_seen_price_drops(monkeypatch, old, new, expected):
+    row = {"itemId": "m123", "title": "Bike", "vipUrl": "/v/m123", "date": "Vandaag",
+           "priceInfo": {"priceCents": new * 100, "priceType": "FIXED"}}
+    monkeypatch.setattr(agent, "read_since", lambda *_: ([row], False))
+    scored = []
+    def rank(_description, items, _maximum, **_kwargs):
+        scored.extend(items)
+        return [{**item, "score": 9, "reason": f"New price €{new}"} for item in items]
+    monkeypatch.setattr(agent, "score_listings", rank)
+    [result] = agent.check_query("bike", [{"id": "w", "seeded": True, "watermark": 1,
+        "seen_ids": ["m123"], "seen_prices": {"m123": {"first_price_eur": old}}}])
+    assert len(scored) == int(expected)
+    assert result["currentPrices"] == [{"id": "m123", "priceEur": new}]
+    assert result["listings"] == ([{**scored[0], "score": 9, "reason": f"New price €{new}"}] if expected else [])
+
+
+def test_bidding_price_drop_keeps_the_bidding_cap(monkeypatch):
+    row = {"itemId": "m123", "title": "Bike", "vipUrl": "/v/m123", "date": "Vandaag",
+           "priceInfo": {"priceCents": 19000, "priceType": "MIN_BID"}}
+    monkeypatch.setattr(agent, "read_since", lambda *_: ([row], False))
+    monkeypatch.setattr(agent, "rank_listings", lambda _description, items, **_kwargs:
+                        [{**item, "score": 9, "reason": "Good fit"} for item in items])
+    [result] = agent.check_query("bike", [{"id": "w", "seeded": True, "watermark": 1,
+        "max_price_eur": 200, "seen_ids": ["m123"],
+        "seen_prices": {"m123": {"first_price_eur": 200}}}])
+    assert result["listings"][0]["drop_from_eur"] == 200
+    assert result["listings"][0]["score"] == 7
+
+
 def test_check_query_scores_wanted_ad_zero_without_sending_it_to_model(monkeypatch):
     raw = [{"itemId": "m2451247849", "title": "GEZOCHT: prarie laminaat licht eiken",
             "vipUrl": "/v/m2451247849", "date": "Vandaag",
@@ -1522,7 +1554,7 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     # A readable page that really has no listings is still fine
     monkeypatch.setattr(agent, "fetch_page", lambda url, capped=True: synthetic_page([]))
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
-    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "listings": [], "newestId": None,
+    assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "currentPrices": [], "listings": [], "newestId": None,
                      "waiting": 0, "capped": False}
 
 

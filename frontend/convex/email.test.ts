@@ -15,6 +15,14 @@ test("the subject names the watch and the best match", () => {
   expect(subject).toBe("mac mini, 16GB, under €500: 2 new matches, best 9/10 at €230");
 });
 
+test("a price-drop alert names both prices in text and the HTML card", () => {
+  const drop = { ...content.alerts[0], dropFromEur: 450, priceEur: 400 };
+  const { text, html } = renderEmail({ ...content, alerts: [drop] }, "https://app.test");
+  expect(renderEmail({ ...content, alerts: [drop] }, "https://app.test").subject).toContain("1 price drop");
+  expect(text).toContain("Price dropped €450 → €400");
+  expect(html).toContain("Price dropped €450 → €400");
+});
+
 test("listing titles from strangers are escaped, never rendered as HTML", () => {
   const { html } = renderEmail(content, "https://app.test");
   expect(html).not.toContain("<img src=x");                     // a listing title can't inject markup

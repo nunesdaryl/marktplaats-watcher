@@ -29,6 +29,10 @@ const RETENTION_MS = 30 * 86_400_000;
 const CANARY_INTERVAL_MS = 60 * 60_000;
 const CANARY_WINDOW_MS = 6 * CANARY_INTERVAL_MS;
 
+function priceDropped(from: number | undefined, to: number): boolean {
+  return from !== undefined && from > to && (from - to >= 5 || from - to >= from * 0.05);
+}
+
 export const claimCanary = internalMutation({
   args: { now: v.number() },
   handler: async (ctx, { now }) => {
@@ -96,7 +100,10 @@ export const claimDue = internalMutation({
           rating_examples: ratings.map((r) => ({ title: (r.title ?? r.listing?.title ?? "").slice(0, 100),
             price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [],
             note: (r.note ?? "").slice(0, 100) })),
-          max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId), seeded: w.seeded,
+          max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId),
+          seen_prices: Object.fromEntries(seen.filter((s) => s.firstPriceEur !== undefined).map((s) =>
+            [s.listingId, { first_price_eur: s.firstPriceEur!, ...(s.alertedDropPriceEur !== undefined
+              ? { alerted_price_eur: s.alertedDropPriceEur } : {}) }])), seeded: w.seeded,
           watermark: w.seeded ? w.watermark ?? null : null, last_checked_at: w.seeded ? w.lastReadAt ?? null : null,
         });
       }
@@ -113,12 +120,14 @@ const listing = v.object({
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
   image: v.optional(v.union(v.string(), v.null())),
   score: v.union(v.number(), v.null()), reason: v.string(), wanted_ad: v.optional(v.boolean()),
+  drop_from_eur: v.optional(v.number()),
 });
 const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
   failureKind: v.optional(v.union(v.literal("credit_exhausted"), v.literal("spend_cap"),
     v.literal("rate_limited"), v.literal("auth"), v.literal("other"))), aiCall: v.optional(v.boolean()),
   currentIds: v.optional(v.array(v.string())), listings: v.optional(v.array(listing)),
+  currentPrices: v.optional(v.array(v.object({ id: v.string(), priceEur: v.number() }))),
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
   usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(), model: v.optional(v.string()),
@@ -144,7 +153,7 @@ export const record = internalMutation({
       if (!watch.active || watch.archivedAt !== undefined || (watch.searchEditedAt ?? -1) >= now) continue;
       if (dryRun) {
         if (!r.ok || !watch.seeded) continue;
-        const fresh = [];
+        const fresh: EmailContent["alerts"] = [];
         for (const id of ids) {
           const seen = await ctx.db.query("seenListings")
             .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
@@ -152,11 +161,16 @@ export const record = internalMutation({
           if (!seen && item && !item.wanted_ad && item.score !== null && item.score >= MIN_SCORE[watch.notify])
             fresh.push({ title: item.title, priceEur: item.price_eur ?? undefined, city: item.city ?? undefined,
               url: item.url, score: item.score, reason: item.reason });
+          if (seen && item && !item.wanted_ad && item.drop_from_eur !== undefined &&
+              item.price_eur !== null && item.score !== null && item.score >= MIN_SCORE[watch.notify] &&
+              priceDropped(seen.alertedDropPriceEur ?? seen.firstPriceEur, item.price_eur))
+            fresh.push({ title: item.title, priceEur: item.price_eur, dropFromEur: seen.alertedDropPriceEur ?? seen.firstPriceEur,
+              city: item.city ?? undefined, url: item.url, score: item.score, reason: item.reason });
         }
         const user = await ctx.db.get(watch.userId);
         if (fresh.length && user) emails.push({ watchId: watch._id, alertIds: [], to: user.email, preview: {
           watchId: watch._id, label: watch.name ?? watch.label, summary: describe(watch.schedule),
-          notify: watch.notify, alerts: fresh.sort((a, b) => b.score - a.score) } });
+          notify: watch.notify, alerts: fresh.sort((a, b) => (b.score ?? -1) - (a.score ?? -1)) } });
         continue;
       }
       if (!r.ok) {
@@ -167,17 +181,33 @@ export const record = internalMutation({
       }
       const newAlerts: Id<"alerts">[] = [];
       const scored = new Map(r.listings?.filter((item) => item.score !== null).map((item) => [item.id, item]) ?? []);
+      const prices = new Map(r.currentPrices?.map((item) => [item.id, item.priceEur]) ?? []);
       for (const id of ids) {
         const seen = await ctx.db.query("seenListings")
           .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
         const item = scored.get(id);
+        const price = prices.get(id) ?? item?.price_eur ?? undefined;
         const scoreFields = item ? { score: item.score!, reason: item.reason.slice(0, 200), scoredAt: now,
           title: item.title, url: item.url } : {};
         if (seen) {
-          await ctx.db.patch(seen._id, { lastSeenAt: now, ...scoreFields });
+          const dropFrom = seen.alertedDropPriceEur ?? seen.firstPriceEur;
+          const alertDrop = watch.seeded && item && !item.wanted_ad && item.drop_from_eur !== undefined &&
+            item.score !== null && item.score >= MIN_SCORE[watch.notify] && price !== undefined && price !== null &&
+            priceDropped(dropFrom, price);
+          await ctx.db.patch(seen._id, { lastSeenAt: now, ...scoreFields,
+            ...(seen.firstPriceEur === undefined && price !== undefined && price !== null ? { firstPriceEur: price } : {}),
+            ...(alertDrop ? { alertedDropPriceEur: price! } : {}) });
+          if (alertDrop) newAlerts.push(await insertTracked(ctx, "alerts", {
+            userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
+            description: item.description, priceEur: price!, dropFromEur: dropFrom,
+            priceType: item.price_type, city: item.city ?? undefined, url: item.url,
+            image: item.image ?? undefined, score: item.score!, reason: item.reason,
+            channel: "email", emailStatus: "pending", createdAt: now,
+          }));
           continue;
         }
-        await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now, firstSeenAt: now, ...scoreFields });
+        await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now, firstSeenAt: now,
+          ...(price !== undefined && price !== null ? { firstPriceEur: price } : {}), ...scoreFields });
         // First check: only remember what is already there. (Unscored listings never arrive here: the API
         // reports the whole watch as failed instead, so they stay unseen and are scored on the retry.)
         if (!watch.seeded || !item || item.wanted_ad || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
@@ -272,7 +302,7 @@ const escape = (s: string) =>
 
 type EmailContent = {
   watchId?: string; label: string; summary: string; notify: Notify; catchUp?: boolean;
-  alerts: { title: string; priceEur?: number; city?: string; url: string; score?: number; reason: string;
+  alerts: { title: string; priceEur?: number; dropFromEur?: number; city?: string; url: string; score?: number; reason: string;
             _id?: string; rateToken?: string | null }[];
 };
 
@@ -284,12 +314,18 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const best = top[0];  // alerts arrive sorted by score, best first
   const bestText = best && [best.score !== undefined ? `best ${best.score}/10` : "", best.priceEur ? `at €${best.priceEur}` : ""]
     .filter(Boolean).join(" ");
+  const dropCount = c.alerts.filter((a) => a.dropFromEur !== undefined).length;
   // The watch name first: with several watches, that's what the eye looks for in an inbox
-  const subject = c.catchUp ? `Matches we missed for ${c.label}` : `${c.label}: ${n} new match${n === 1 ? "" : "es"}${bestText ? `, ${bestText}` : ""}`;
+  const subject = c.catchUp ? `Matches we missed for ${c.label}`
+    : `${c.label}: ${dropCount === n ? `${n} price drop${n === 1 ? "" : "s"}`
+      : dropCount ? `${n} alerts, including ${dropCount} price drop${dropCount === 1 ? "" : "s"}`
+        : `${n} new match${n === 1 ? "" : "es"}`}${bestText ? `, ${bestText}` : ""}`;
   const preheader = best ? `Best: ${best.title}. ${best.reason}` : "";
   const facts = (a: (typeof top)[number]) =>
     [a.score !== undefined ? `Scored ${a.score}/10 (${scoreLevel(a.score)})` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
       .filter(Boolean).join(", ");
+  const dropBadge = (a: (typeof top)[number]) => a.dropFromEur !== undefined && a.priceEur !== undefined
+    ? `Price dropped €${a.dropFromEur} → €${a.priceEur}` : "";
   const manageUrl = c.watchId ? `${appUrl.replace(/\/$/, "")}/watch/?id=${encodeURIComponent(c.watchId)}` : appUrl;
   const footer = `You get this because you watch "${c.label}", checked ${c.summary}, and asked for ${NOTIFY_LABEL[c.notify]}: ${NOTIFY_SHORT[c.notify]}. ` +
     "Marktplaats Watcher is a portfolio project, not affiliated with Marktplaats. Replies to this address aren't read.";
@@ -303,7 +339,7 @@ export function renderEmail(c: EmailContent, appUrl: string) {
     ? `${appUrl.replace(/\/$/, "")}/alerts/?offer=${encodeURIComponent(a._id)}` : null;
   const text = [
     heading, ...(c.catchUp ? [apology] : []), "",
-    ...top.flatMap((a) => [a.title, facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
+    ...top.flatMap((a) => [a.title, ...(dropBadge(a) ? [dropBadge(a)] : []), facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
       ...(offerUrl(a) ? [`Help me make an offer: ${offerUrl(a)}`] : []),
       ...(rateUrl(a, "good") ? [`Good match? Yes: ${rateUrl(a, "good")}  ·  Not right: ${rateUrl(a, "not_right")}`] : []), ""]),
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
@@ -325,6 +361,7 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="mw-card" style="border:1px solid #e4e0da;border-radius:10px;background:#ffffff;">
 <tr>${badge(a.score)}<td valign="top" style="padding:14px 16px 16px 16px;">
 <a href="${escape(a.url)}" class="mw-text mw-title" style="color:#1b1a18;font-family:${sans};font-size:16px;line-height:22px;font-weight:600;text-decoration:underline;text-decoration-color:#e4e0da;">${escape(a.title)}</a>
+${dropBadge(a) ? `<div style="display:inline-block;margin:6px 0;padding:4px 8px;border-radius:6px;background:#d9f4e7;color:#105d3c;font-family:${sans};font-size:13px;font-weight:600;">${escape(dropBadge(a))}</div>` : ""}
 <div class="mw-text2" style="color:#5b5751;font-family:${sans};font-size:14px;line-height:20px;margin:4px 0 0 0;">${escape(facts(a))}</div>
 <div class="mw-text" style="color:#1b1a18;font-family:${sans};font-size:15px;line-height:22px;margin:4px 0 12px 0;">${escape(a.reason)}</div>${
   rateUrl(a, "good") ? `
