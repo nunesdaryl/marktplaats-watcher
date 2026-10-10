@@ -143,6 +143,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
 - **Positioning audit (29 Sep 2026):** `docs/marketing/positioning-audit-2026-09-29.md`: how this differs from
   Marktplaats' own saved search (verified from its help pages and a logged-in account), the USP, and every step of
   the journey before and after the copy fixes.
+- **Launch videos:** `docs/marketing/media/` (original, why) and their source in `marketing/video/`; render any variant with `scripts/render-video.sh <variant> all all` (pinned Hyperframes, never `init`). Rules and review: the project skill `.claude/skills/marktplaats-video/`.
 - **When something breaks:** `RUNBOOK.md` (kill switch, rollback, key rotation, alerts not arriving).
 - **Demo:** `docs/demo/` (problem statement, 3-minute script, pre-demo checklist).
 
