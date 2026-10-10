@@ -115,7 +115,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           setF({ ...f, ...s });
           if (s.schedule !== f.schedule) { hasChanged.current = true; setVolumeNote(null); setEstimateDelay(800); }
         }} />
-        {volumeNote && !broadMessage && <p className="hint" role="status">{volumeNote}</p>}
+        {volumeNote && <p className="hint" role="status">{volumeNote}</p>}
         <BroadWatchWarning message={broadMessage}
           onPrice={() => priceInput.current?.focus()} onGood={() => setF({ ...f, notify: "good" })}
           showGood={f.notify !== "good"} />

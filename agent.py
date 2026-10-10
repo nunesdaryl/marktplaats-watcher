@@ -740,7 +740,7 @@ def read_canary(query, filters, watermark):
 
 
 def estimate_volume_note(w):
-    """Estimate arrivals per check from today's and yesterday's dated search results."""
+    """Show the search's total and today's arrivals from one results page."""
     schedule = w.get("schedule") or {}
     kind = schedule.get("kind")
     if kind == "interval":
@@ -762,33 +762,33 @@ def estimate_volume_note(w):
     def read_estimate():
         deadline = time.monotonic() + ESTIMATE_BUDGET_SECONDS
         must_include = re.sub(r"\s+", "", (w.get("mustInclude") or "").lower())
-        counts, seen = [0, 0], set()
-        capped = False
         try:
-            for page in range(2):
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    return
-                data = fetch_search(w["query"], filters, page * PAGE_SIZE, timeout=remaining, retry=False)
-                batch = data["listings"]
-                for item in batch:
-                    item_id = item.get("itemId")
-                    age = days_old(item.get("date"), today)
-                    title = re.sub(r"\s+", "", (item.get("title") or "").lower())
-                    if item_id not in seen and age in (0, 1) and (not must_include or must_include in title):
-                        counts[age] += 1
-                    seen.add(item_id)
-                ages = [days_old(item.get("date"), today) for item in batch
-                        if item.get("priorityProduct", "NONE") == "NONE"]
-                if any(age is not None and age > 1 for age in ages) or len(batch) < PAGE_SIZE:
-                    break
-                capped = page == 1
-                if page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
-                    break
+            data = fetch_search(w["query"], filters, 0, timeout=ESTIMATE_BUDGET_SECONDS, retry=False)
+            total = data.get("totalResultCount")
+            if not isinstance(total, int) or total < 0:
+                return
+            dated = False
+            today_ids = set()
+            for item in data["listings"]:
+                age = days_old(item.get("date"), today)
+                if age is not None:
+                    dated = True
+                title = re.sub(r"\s+", "", (item.get("title") or "").lower())
+                if age == 0 and (not must_include or must_include in title):
+                    today_ids.add(item.get("itemId"))
+            organic = [item for item in data["listings"] if item.get("priorityProduct", "NONE") == "NONE"]
+            # A full first page dated today means today's arrivals do not fit on one page: say "at least".
+            saturated = len(data["listings"]) >= PAGE_SIZE and bool(organic) and all(
+                days_old(item.get("date"), today) == 0 for item in organic)
+            qualifier = "at least" if saturated else "about"
             if time.monotonic() < deadline:
-                per_check = math.ceil(max(counts) / checks_per_day)
+                note = f"About {total} listings match now"
+                if dated:
+                    note += f"; {qualifier} {len(today_ids)} new per day"
+                result.append(note)
+                # Coverage safeguard kept from 30 Sep 2026: warn when one check could not score every new listing.
+                per_check = math.ceil(len(today_ids) / checks_per_day) if dated else 0
                 if per_check > MAX_RANK_PER_CHECK:
-                    qualifier = "at least" if capped else "about"
                     result.append(f"This search gets {qualifier} {per_check} new listings per check; one check can read "
                                   f"{MAX_RANK_PER_CHECK}. Add a word or a max price so nothing is missed.")
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
@@ -797,7 +797,7 @@ def estimate_volume_note(w):
     worker = threading.Thread(target=read_estimate, daemon=True)
     worker.start()
     worker.join(ESTIMATE_BUDGET_SECONDS)
-    return result[0] if not worker.is_alive() and result else None
+    return ". ".join(result) if not worker.is_alive() and result else None
 
 
 def check_query(query, watches, now=None):

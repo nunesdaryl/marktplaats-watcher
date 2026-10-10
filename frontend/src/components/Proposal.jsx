@@ -56,7 +56,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
         message={broadMessage}
         onPrice={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify, volumeNote: p.volumeNote, focusMaxPrice: true })}
         onGood={() => setNotify("good")} showGood={notify !== "good"} />}
-      {p.volumeNote && !broadMessage && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
+      {p.volumeNote && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {state === "saved" ? (
         <p className="done">{p.type === "create" ? "Watch saved. The first check only notes what's listed now; after that, new ones that fit are e-mailed with the reason." : "Change saved."}</p>

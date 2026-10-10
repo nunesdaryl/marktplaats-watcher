@@ -10,6 +10,21 @@ vi.stubGlobal("React", React);
 
 const schedule = { kind: "daily", times: ["08:00"] };
 const note = "This search gets about 25 new listings per check; one check can read 20. Add a word or a max price so nothing is missed.";
+const countNote = "About 1200 listings match now; about 30 new per day";
+
+test("a broad chat proposal shows the count and narrowing hint", () => {
+  const html = renderToStaticMarkup(<Proposal p={{ type: "create", query: "iphone", maxPriceEur: 500,
+    schedule, notify: "good", volumeNote: countNote }} onAdjust={() => {}} />);
+  expect(html).toContain(countNote);
+  expect(html).toContain("This search is broad");
+});
+
+test("a broad watch sheet shows the count and narrowing hint", () => {
+  const html = renderToStaticMarkup(<WatchSheet mode="create"
+    initial={{ query: "iphone", maxPriceEur: 500, schedule, volumeNote: countNote }} onClose={() => {}} />);
+  expect(html).toContain(countNote);
+  expect(html).toContain("This search is broad");
+});
 
 test("a broad proposal shows the warning with enabled Save and Adjust", () => {
   const html = renderToStaticMarkup(<Proposal p={{ type: "create", query: "iphone", maxPriceEur: null,
