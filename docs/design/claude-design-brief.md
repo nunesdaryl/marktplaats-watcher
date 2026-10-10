@@ -296,7 +296,7 @@ Real copy is quoted. Use it and don't invent new copy.
 ## 12. Claims guardrails (for every mockup)
 
 **Allowed, with their exact qualifiers:**
-- "Great-match precision 100% and recall 78% (median of 3 runs) on 53 listings from 6 watches (9 Oct 2026 report)"
+- "Great-match precision 100% and recall 74% (median of 3 runs) on 53 listings from 6 watches (10 Oct 2026 report)"
 - "23/23 chat test cases passed (9 Oct 2026 report)"
 - "An hourly watch finding one new listing an hour costs about €0.33 a month in AI cost (9 Oct 2026 report)"
 - "Free, up to 5 watches"

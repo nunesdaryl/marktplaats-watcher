@@ -1,6 +1,6 @@
 # Marktplaats Watcher, an FDE case study
 
-This is the engineering account of a working portfolio MVP, with the operating limits a prospective pilot owner would need to decide what to test next. **Evaluation snapshot:** Scorer run: 2026-10-09; chat run: 2026-10-09. The [evaluation report](../evals/report.md) is the source of truth when results change. The VP summary remains for the operator to write.
+This is the engineering account of a working portfolio MVP, with the operating limits a prospective pilot owner would need to decide what to test next. **Evaluation snapshot:** Scorer run: 2026-10-10; chat run: 2026-10-09. The [evaluation report](../evals/report.md) is the source of truth when results change. The VP summary remains for the operator to write.
 
 <!-- VP summary: operator writes this; no stack words -->
 
@@ -33,7 +33,7 @@ The decision order is **delete → plain code → agent → human**. Delete repe
 | Ranking and routing | The configured OpenAI model is **gpt-5.4-mini** in the cited run; ranker and chat use the same provider. Chat routes by mode to search plus proposal tools or proposal-only tools; ranking uses structured scores. The saved report names **gpt-5.5** as judge, with a human spot-check. | Code validates output, caps calls and applies bidding and alert rules. [evals/report.md §1. Does the AI e-mail the right listings? (scorer vs corrected labels)](../evals/report.md#1-does-the-ai-e-mail-the-right-listings-scorer-vs-corrected-labels) |
 | Harness and eval gate | Versioned prompts, tool-call limits, timeouts, structured ranking output, offline tests, a saved listing fixture and chat golden set. CI reruns the eval gate on relevant changes and weekly; the gate checks chat and great-match precision. | Operator reviews failures and signs off; [ADR 0013](adr/0013-prompt-versions-and-eval-gate.md). |
 | Human surface | Save confirmation, alert ratings and owner dashboard; pause through the dashboard or kill switch. A rating can become a reviewed case. | Buyer and owner retain control; [README](../README.md#evaluation-cost-and-operations), [runbook](../RUNBOOK.md). |
-| Cost per run | **€0.0299 per 100 listings** for scoring; **€0.0019 per chat question** in the saved run. Empty checks make no model call. | Code meters usage and enforces allowances; [evals/report.md §3. Cost](../evals/report.md#3-cost), [evals/report.md §4. Running cost per watch (measured)](../evals/report.md#4-running-cost-per-watch-measured). |
+| Cost per run | **€0.0302 per 100 listings** for scoring; **€0.0019 per chat question** in the saved run. Empty checks make no model call. | Code meters usage and enforces allowances; [evals/report.md §3. Cost](../evals/report.md#3-cost), [evals/report.md §4. Running cost per watch (measured)](../evals/report.md#4-running-cost-per-watch-measured). |
 
 The data path is: user confirms a watch → Convex schedules a due check → code reads and deduplicates new listings → model ranks the bounded candidate set → code applies the user's notify rule → Convex stores an alert and sends mail. The [system design](system-design.html) and [README architecture map](../README.md) give component detail. The scheduled read of Marktplaats' date-sorted endpoint has an acknowledged access risk; [README Limits](../README.md#limits) names it. Official access is part of the [Marktplaats ask](marketing/MARKTPLAATS-PITCH-PACK.md#4-what-were-actually-asking-for-in-stages), not a feature already obtained.
 
@@ -47,7 +47,7 @@ The data path is: user confirms a watch → Convex schedules a due check → cod
 
 The reproducible chain is [frozen listings](../evals/data/listings.json) and [chat cases](../evals/chat_cases.py) → agent runs → saved outcome and trajectory grades → failure categories → [cost script](../evals/cost.py) and report. The 20-case learner floor was expanded to a **23-case** chat golden set; the cited run scored **23/23 outcome** and **23/23 trajectory**. This remains a selected regression set, not a population estimate. [evals/report.md §2. Does the chat do the right thing? (23-case golden set)](../evals/report.md#2-does-the-chat-do-the-right-thing-23-case-golden-set), [evals/report.md §Chat strata and abstention](../evals/report.md#chat-strata-and-abstention)
 
-The scorer fixture holds **53 real Marktplaats listings from 6 watches**. In the **9 Oct 2026** run, great-match precision was **100%** (median range **95.0–100.0%**) and recall **78%** (range **73.9–82.6%**); good-match precision/recall were **91%/87%**. Human overrides correct some judge labels. These are *median of 3 runs*, and misses remain visible in the report. [evals/report.md §1. Does the AI e-mail the right listings? (scorer vs corrected labels)](../evals/report.md#1-does-the-ai-e-mail-the-right-listings-scorer-vs-corrected-labels)
+The scorer fixture holds **53 real Marktplaats listings from 6 watches**. In the **10 Oct 2026** run, great-match precision was **100%** (median range **94.1–100.0%**) and recall **74%** (range **69.6–73.9%**); good-match precision/recall were **86%/78%**. Human overrides correct some judge labels. These are *median of 3 runs*, and misses remain visible in the report. [evals/report.md §1. Does the AI e-mail the right listings? (scorer vs corrected labels)](../evals/report.md#1-does-the-ai-e-mail-the-right-listings-scorer-vs-corrected-labels)
 
 The operational mapping below uses the report's saved representative scorer run at both notify levels **plus** operator-confirmed delivery-audit misses. A listing can appear at both levels, so counts are category occurrences, not distinct production incidents. [evals/report.md §Failure mapping](../evals/report.md#failure-mapping)
 
@@ -55,8 +55,8 @@ The operational mapping below uses the report's saved representative scorer run 
 |---|---:|---|
 | missing context | 3 | Delivery-audit reconstruction lacked some listing fields. |
 | wrong tool | 0 | None observed in these saved results. |
-| wrong record | 7 | Human override, variant or accessory mismatch. |
-| invalid output | 3 | A mismatch between expected and produced scoring/chat result. |
+| wrong record | 8 | Human override, variant or accessory mismatch. |
+| invalid output | 6 | A mismatch between expected and produced scoring/chat result. |
 | unsafe action | 0 | None observed in these saved results. |
 | timeout | 0 | None observed in these saved results. |
 
@@ -66,7 +66,7 @@ The chat eval p95 was **2.92 s** over the saved cases; a live production latency
 
 ## Economics and operator decision
 
-The saved run costs **€0.0299 per 100 listings** for scoring and about **€0.0019 per question** for chat. A check with no new listings costs **€0.00000** in model calls; a check with **20** new listings costs **€0.00511** before a possible retry. At **720 checks/month**, the report's hourly, 20-new-listing scenario is **€3.68/month**; at **2880 checks/month**, the 15-minute scenario is **€14.73/month**. These are workload scenarios, not customer prices or full commercial unit economics. [evals/report.md §3. Cost](../evals/report.md#3-cost), [evals/report.md §4. Running cost per watch (measured)](../evals/report.md#4-running-cost-per-watch-measured)
+The saved run costs **€0.0302 per 100 listings** for scoring and about **€0.0019 per question** for chat. A check with no new listings costs **€0.00000** in model calls; a check with **20** new listings costs **€0.00511** before a possible retry. At **720 checks/month**, the report's hourly, 20-new-listing scenario is **€3.68/month**; at **2880 checks/month**, the 15-minute scenario is **€14.73/month**. These are workload scenarios, not customer prices or full commercial unit economics. [evals/report.md §3. Cost](../evals/report.md#3-cost), [evals/report.md §4. Running cost per watch (measured)](../evals/report.md#4-running-cost-per-watch-measured)
 
 ### Varick-bar scorecard
 

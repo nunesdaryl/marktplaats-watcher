@@ -47,7 +47,7 @@ def score_once(data, labels, model):
         for item in items:
             item.pop("watch")
         t0 = time.time()
-        ranked = agent.rank_listings(w["description"], items)       # production code path
+        ranked = agent.score_listings(w["description"], items, w.get("max_price_eur"))       # production code path
         ms = round((time.time() - t0) * 1000)
         for item in ranked:
             if item["id"] in labels:
@@ -81,8 +81,8 @@ def score_once(data, labels, model):
     }
     price_type_cases = []
     for case in read(PRICE_TYPE_CASES):
-        listing = agent.cap_bidding_scores(agent.rank_listings(case["watch_description"], [dict(case["listing"])], raise_on_failure=True),
-                                           watch_max_price(case["watch_description"]))[0]
+        listing = agent.score_listings(case["watch_description"], [dict(case["listing"])],
+                                       watch_max_price(case["watch_description"]), raise_on_failure=True)[0]
         price_type_cases.append({"id": case["id"], "label": case["label"],
                                  "score": listing["score"], "reason": listing["reason"]})
     case_usage = agent.RANK_USAGE[result["tokens"]["calls"]:]
@@ -93,8 +93,8 @@ def score_once(data, labels, model):
     audit_cases = []
     for case in read(AUDIT_MISSES)["cases"]:
         listing = {key: value for key, value in case["listing"].items() if value is not None}
-        ranked = agent.cap_bidding_scores(agent.rank_listings(case["watch_description"], [listing]),
-                                          watch_max_price(case["watch_description"]))[0]
+        ranked = agent.score_listings(case["watch_description"], [listing],
+                                     watch_max_price(case["watch_description"]))[0]
         audit_cases.append({"id": case["id"], "score": ranked["score"], "reason": ranked["reason"]})
     result["audit_misses"] = audit_cases
     audit_usage = agent.RANK_USAGE[audit_usage_start:]

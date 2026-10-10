@@ -577,6 +577,20 @@ def test_check_query_returns_only_unseen_listings_ranked(monkeypatch):
     assert result["listings"][0]["price_type"] == "fixed price"
 
 
+def test_check_query_scores_wanted_ad_zero_without_sending_it_to_model(monkeypatch):
+    raw = [{"itemId": "m2451247849", "title": "GEZOCHT: prarie laminaat licht eiken",
+            "vipUrl": "/v/m2451247849", "date": "Vandaag",
+            "priceInfo": {"priceCents": 10000, "priceType": "FIXED"}}]
+    monkeypatch.setattr(agent, "fetch_search", lambda *args: {"listings": raw, "maxAllowedPageNumber": 1})
+    monkeypatch.setattr(agent, "ranker", type("NoModel", (), {"invoke": lambda self, _: pytest.fail("wanted ad sent to model")})())
+    [result] = agent.check_query("prarie laminaat", [{"id": "w", "watermark": 0, "seen_ids": []}])
+    assert result["ok"] and result["listings"][0]["score"] == 0
+    assert result["listings"][0]["reason"] == "This is a wanted ad (someone looking to buy), not a listing for sale."
+    assert result["listings"][0]["wanted_ad"] is True
+    assert "aiCall" not in result
+    assert result.get("usage", {"calls": []})["calls"] == []
+
+
 def test_search_url_uses_plus_for_spaces_like_the_site():
     # "mac-mini" searches for the literal word "mac-mini": 163 results, nearly all shop ads, instead of 622
     assert agent.search_url("Mac Mini ") == "https://www.marktplaats.nl/q/mac+mini/"
@@ -1091,6 +1105,7 @@ def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT
     assert "bidding from" in agent.RANK_PROMPT
     assert "score the listing on fit" in agent.RANK_PROMPT
+    assert "wanted ad" not in agent.RANK_PROMPT.lower()  # MW-121: handled in code before ranking
 
 
 def test_scorer_loads_and_counts_accessory_cases(monkeypatch, tmp_path):
@@ -1698,6 +1713,19 @@ def test_audit_watch_finds_handled_and_never_read_with_margin(monkeypatch):
     assert result["missCount"] == 2
 
 
+def test_audit_watch_does_not_report_wanted_ad_as_miss(monkeypatch):
+    now = agent.datetime(2026, 10, 10, 12, tzinfo=agent.AMSTERDAM)
+    raw = [{"itemId": "m2451247849", "title": "GEZOCHT: prarie laminaat licht eiken",
+            "vipUrl": "/v/m2451247849", "date": "Vandaag",
+            "priceInfo": {"priceCents": 10000, "priceType": "FIXED"}}]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+    monkeypatch.setattr(agent, "ranker", type("NoModel", (), {"invoke": lambda self, _: pytest.fail("wanted ad sent to model")})())
+    result = agent.audit_watch({"id": "w", "query": "prarie laminaat", "notify": "good",
+                                "seen_ids": ["m2451247849"], "seen_scores": {"m2451247849": 0}}, now)
+    assert result["ok"] and result["candidates"] == result["scored"] == 1
+    assert result["missCount"] == 0 and result["misses"] == []
+
+
 def test_audit_watch_caps_scoring_and_reports_empty_and_failure(monkeypatch):
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -1889,6 +1917,49 @@ def test_capped_bid_explains_the_budget_rule_in_the_reason():
     assert items[0]["score"] == 7 and "Starting bid of €200 is close to your €200 limit" in items[0]["reason"]
     assert items[1]["reason"] == "Starting bid at the limit."           # already explains the bid
     assert items[2]["score"] == 9 and items[2]["reason"] == "Great fit."  # room under the limit: untouched
+
+
+@pytest.mark.parametrize("title", [
+    "GEZOCHT: prarie laminaat licht eiken", "🛒 Gevraagd: Mac mini", "...zoek Mac mini",
+    "Wanted: Switch OLED", "Looking for a PS5", "Te koop gevraagd: laminaat",
+])
+def test_wanted_ad_title_prefixes(title):
+    assert agent.is_wanted_ad({"title": title})
+
+
+@pytest.mark.parametrize("title", [
+    "Zoekt u een Mac mini? Deze is te koop", "Mac mini gezocht? Hier te koop",
+    "Ruilen: Nintendo Switch OLED", "Switch OLED te koop",
+])
+def test_wanted_ad_does_not_match_sale_or_swap_titles(title):
+    assert not agent.is_wanted_ad({"title": title})
+
+
+def test_wanted_ad_type_from_search_data_survives_parsing():
+    raw = {"itemId": "m1", "title": "Mac mini", "vipUrl": "/v/m1",
+           "priceInfo": {"priceCents": 10000, "priceType": "FIXED"},
+           "attributes": [{"key": "adType", "value": "WANTED"}]}
+    [listing], _ = agent.parse_listings([raw])
+    assert agent.is_wanted_ad(listing)
+    assert agent.is_wanted_ad({"title": "Mac mini", "adType": "REQUEST"})
+    assert not agent.is_wanted_ad({"title": "Mac mini", "attributes": [{"key": "condition", "value": "WANTED"}]})
+    assert not agent.is_wanted_ad({"title": "Ruilen: Mac mini", "price_type": "swap", "ad_type": "SWAP"})
+
+
+def test_wanted_ad_is_zero_without_model_call_and_sale_still_ranked(monkeypatch):
+    sent = []
+    class CaptureRanker:
+        def invoke(self, messages):
+            ids = [item["id"] for item in json.loads(messages[-1]["content"])["listings"]]
+            sent.extend(ids)
+            return agent.Ranking(ranks=[{"id": ident, "score": 9, "reason": "Match"} for ident in ids])
+    monkeypatch.setattr(agent, "ranker", CaptureRanker())
+    listings = [{"id": "wanted", "title": "GEZOCHT: prarie laminaat licht eiken"},
+                {"id": "sale", "title": "Prarie laminaat te koop"}]
+    scored = agent.score_listings("Prarie laminaat", listings, None)
+    assert sent == ["sale"]
+    assert [(item["score"], item["reason"]) for item in scored] == [
+        (0, "This is a wanted ad (someone looking to buy), not a listing for sale."), (9, "Match")]
 
 
 def test_exclude_words_filter_titles_before_ranking():
