@@ -103,6 +103,8 @@ export const dashboard = query({
         .map(([day, rows]) => ({ day, summary: summarizeAlerts(rows) })).sort((a, b) => a.day.localeCompare(b.day));
     const audits = annotateAudits((await readRows(ctx, "audits") ?? await ctx.db.query("audits").withIndex("by_at").order("desc").take(LIMIT))
       .sort(newest((a) => a.at)).slice(0, LIMIT));
+    const runs = (await readRows(ctx, "runs", since) ?? await ctx.db.query("runs")
+      .withIndex("by_at", (q) => q.gte("at", since)).take(LIMIT)).filter((r) => r.at >= since);
     const loadedEvents = await readSummaries(ctx, "events", since);
     const eventRows = loadedEvents === null
       ? await ctx.db.query("events").withIndex("by_at", (q) => q.gte("at", since)).order("desc").take(LIMIT) : null;
@@ -146,6 +148,8 @@ export const dashboard = query({
     const daily = series.map((day) => ({
       day, active: activePerDay[day] ?? 0, searches: searches[day] ?? 0, watchChats: watchChats[day] ?? 0,
       watches: newWatches[day] ?? 0, alerts: newAlerts[day] ?? 0, signups: signups[day] ?? 0,
+      paidRemoved: runs.filter((r) => dayKey(r.at) === day).reduce((n, r) => n + (r.paidRemoved ?? 0), 0),
+      businessRemoved: runs.filter((r) => dayKey(r.at) === day).reduce((n, r) => n + (r.businessRemoved ?? 0), 0),
     }));
 
     // Funnel: every account ever, then how far each got

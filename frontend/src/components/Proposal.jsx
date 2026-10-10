@@ -7,7 +7,7 @@ import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
 
 const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 export const watchFields = (p) => defined({ query: p.query, mustInclude: p.mustInclude, maxPriceEur: p.maxPriceEur,
-  postcode: p.postcode, maxDistanceKm: p.maxDistanceKm });
+  postcode: p.postcode, maxDistanceKm: p.maxDistanceKm, includeBusinessSellers: p.includeBusinessSellers });
 
 function searchText(p) {
   return [p.query, p.mustInclude, p.maxPriceEur && `under €${p.maxPriceEur}`,
@@ -17,7 +17,8 @@ function searchText(p) {
 function changeText(p) {
   return [p.schedule && `check it ${describe(p.schedule)}`, p.notify && `e-mail you ${NOTIFY_LABEL[p.notify]} (${NOTIFY_SHORT[p.notify]})`,
     p.maxPriceEur && `set the max price to €${p.maxPriceEur}`, p.active === false && "pause it",
-    p.active === true && "resume it"].filter(Boolean).join(", ");
+    p.active === true && "resume it", p.includeBusinessSellers === true && "also show shops and dealers",
+    p.includeBusinessSellers === false && "hide shops and dealers"].filter(Boolean).join(", ");
 }
 
 /** A watch the chat suggested. Nothing is saved until you press the button. */
@@ -35,7 +36,8 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
     setError("");
     try {
       if (p.type === "create") await create({ ...watchFields(p), schedule: p.schedule, notify });
-      else await update(defined({ id: p.watchId, schedule: p.schedule, notify: p.notify, active: p.active, maxPriceEur: p.maxPriceEur }));
+      else await update(defined({ id: p.watchId, schedule: p.schedule, notify: p.notify, active: p.active, maxPriceEur: p.maxPriceEur,
+        includeBusinessSellers: p.includeBusinessSellers }));
       setState("saved");
       if (p.type === "create") track("watch_saved", { kind: scheduleKind(p.schedule), value: notify, mode: "from chat" });
       onSaved?.();
@@ -48,7 +50,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
   return (
     <div className="proposal">
       {p.type === "create" ? (
-        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[notify]} ({NOTIFY_SHORT[notify]}).</p>
+        <p>Watch <strong>{searchText(p)}</strong>, checked <strong>{describe(p.schedule)}</strong>, and e-mail you {NOTIFY_LABEL[notify]} ({NOTIFY_SHORT[notify]}). {p.includeBusinessSellers ? "Also show shops and dealers." : "Hide shops and dealers."}</p>
       ) : (
         <p>For <strong>{p.label}</strong>: {changeText(p)}.</p>
       )}

@@ -47,6 +47,7 @@ export const groups = internalQuery({
         id: w._id, query, description: w.label, max_price_eur: w.maxPriceEur ?? null,
         must_include: w.mustInclude ?? null, exclude_words: w.excludeWords ?? [], postcode: w.postcode ?? null,
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
+        include_business_sellers: w.includeBusinessSellers ?? false,
         seen_ids: seen.map((s) => s.listingId), baseline_ids: baseline.map((s) => s.listingId),
         ...(w.seededAt === undefined && createdMark !== undefined ? { created_mark: createdMark } : {}),
         alerted_ids: alerts.map((a) => a.listingId), last_read_at: w.lastReadAt ?? null,
@@ -63,7 +64,8 @@ export const groups = internalQuery({
 });
 
 const miss = v.object({ id: v.string(), title: v.string(), url: v.string(), score: v.number(),
-  kind: v.string(), price_eur: v.optional(v.union(v.number(), v.null())) });
+  kind: v.string(), price_eur: v.optional(v.union(v.number(), v.null())),
+  seller_type: v.optional(v.union(v.literal("private"), v.literal("shop"), v.literal("unverified"))) });
 const result = v.object({ watchId: v.string(), ok: v.boolean(), misses: v.array(miss) });
 
 export const record = internalMutation({
@@ -72,7 +74,7 @@ export const record = internalMutation({
     const mails: { userEmail: string; watchLabel: string;
       listings: { score: number; title: string; price: number | null; url: string }[];
       items: { watchId: Id<"watches">; userId: Id<"users">; listingId: string; title: string;
-        url: string; priceEur?: number; score: number }[] }[] = [];
+        url: string; priceEur?: number; score: number; sellerType?: "private" | "shop" | "unverified" }[] }[] = [];
     for (const r of results) {
       const watchId = ctx.db.normalizeId("watches", r.watchId);
       const watch = watchId && await ctx.db.get(watchId);
@@ -87,7 +89,8 @@ export const record = internalMutation({
       mails.push({ userEmail: user.email, watchLabel: watch.name ?? watch.label,
         listings: selected.map((m) => ({ score: m.score, title: m.title, price: m.price_eur ?? null, url: m.url })),
         items: selected.map((m) => ({ watchId: watch._id, userId: watch.userId, listingId: m.id,
-          title: m.title, url: m.url, priceEur: m.price_eur ?? undefined, score: m.score })) });
+          title: m.title, url: m.url, priceEur: m.price_eur ?? undefined, score: m.score,
+          sellerType: m.seller_type })) });
     }
     return mails;
   },
@@ -140,6 +143,7 @@ export const claimPlan = internalMutation({
         userId: item.userId, watchId: item.watchId, listingId: item.listingId,
         title: item.title, url: item.url, priceEur: item.priceEur, score: item.score,
         city: item.city, image: item.image, reason: "Match we missed.", channel: "email",
+        sellerType: item.sellerType,
         catchUp: true, emailStatus: "pending", createdAt: Date.now(),
       });
       byWatch.set(item.watchId, [...(byWatch.get(item.watchId) ?? []), alertId]);

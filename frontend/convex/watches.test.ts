@@ -39,6 +39,17 @@ test("a watch is listed with its schedule in plain English", async () => {
   expect(watch.summary).toBe("every day at 08:00");
 });
 
+test("shop option defaults off and can be changed for one watch", async () => {
+  const { t, alice } = setup();
+  const privateWatch = await alice.mutation(api.watches.create, macMini);
+  const mixedWatch = await alice.mutation(api.watches.create, { ...macMini, query: "bike", includeBusinessSellers: true });
+  expect((await t.run((ctx) => ctx.db.get(privateWatch)))?.includeBusinessSellers).toBe(false);
+  expect((await t.run((ctx) => ctx.db.get(mixedWatch)))?.includeBusinessSellers).toBe(true);
+  await alice.mutation(api.watches.update, { id: privateWatch, includeBusinessSellers: true });
+  expect((await t.run((ctx) => ctx.db.get(privateWatch)))?.includeBusinessSellers).toBe(true);
+  expect((await t.run((ctx) => ctx.db.get(mixedWatch)))?.includeBusinessSellers).toBe(true);
+});
+
 test("backfillSeededAt previews and writes the earliest seen listing only for eligible watches", async () => {
   const { t, alice } = setup();
   const target = await alice.mutation(api.watches.create, macMini);

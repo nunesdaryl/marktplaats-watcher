@@ -14,7 +14,9 @@ const newest = <T extends { _id: string }>(at: (row: T) => number) => (a: T, b: 
   at(b) - at(a) || b._id.localeCompare(a._id);
 
 export const logRun = internalMutation({
-  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()), requestId: v.optional(v.string()) },
+  args: { at: v.number(), checked: v.number(), failed: v.number(), emails: v.number(), emailFailures: v.number(), timeouts: v.optional(v.number()), paused: v.optional(v.boolean()), requestId: v.optional(v.string()),
+    paidRemoved: v.optional(v.number()), businessRemoved: v.optional(v.number()), businessSignaled: v.optional(v.number()),
+    websiteUrlPresent: v.optional(v.number()), showWebsiteTrue: v.optional(v.number()) },
   handler: async (ctx, run) => {
     await insertTracked(ctx, "runs", run);
     for (const old of await ctx.db.query("runs").withIndex("by_at", (q) => q.lt("at", run.at - 30 * DAY)).take(200))

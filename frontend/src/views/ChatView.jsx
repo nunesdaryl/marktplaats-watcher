@@ -82,7 +82,8 @@ export default function ChatView({ chatId, watches, onWatch, onAdjust }) {
           body: { message, chatId: id, history, mode: sendMode,
                   watches: watches.map((w) => ({ id: w._id, label: w.title, summary: w.summary, active: w.active,
                     query: w.query, maxPriceEur: w.maxPriceEur, mustInclude: w.mustInclude, postcode: w.postcode,
-                    maxDistanceKm: w.maxDistanceKm, schedule: w.schedule })) },
+                    maxDistanceKm: w.maxDistanceKm, includeBusinessSellers: w.includeBusinessSellers ?? false,
+                    schedule: w.schedule })) },
           onEvent: (e) => {
             if (e.type === "status") setLive((l) => ({ ...l, status: e.text }));
             else if (e.type === "listings") setLive((l) => ({ ...l, listings: e.listings }));

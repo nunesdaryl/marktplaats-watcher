@@ -2,6 +2,10 @@
 
 Tell it what you want on Marktplaats, pick how often to check, and get an e-mail when a good one shows up.
 
+We hide paid placements and, unless you choose otherwise, shops and dealers. We use only whether a seller has a website, never who they are. The shop filter is enabled after its live signal review.
+
+Before setting `BUSINESS_SELLER_FILTER_ENABLED=1` on the search service, review 24 hours of normal scheduled runs in the owner dashboard's Runs view. It records counts for website URL present, show website true, and the combined signal; no seller identity is logged. Hand-check at least 20 flagged listings during those existing reads and record precision in the review. Leave the flag at `0` if the signal is weak.
+
 **Live:** https://marktplaats-watcher.vercel.app (https://marktplaatswatcher.vercel.app, without the hyphen, redirects there).
 
 - **Sign in** with Clerk (your e-mail address is where alerts go).
@@ -96,7 +100,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.33/month with 1 new listing per check and €3.68 with 20; a busy 15-minute
   watch (20 new listings every check) is €14.73/month, within the $110/month OpenAI project cap but far above each user's €1 AI budget per 30 days, which pauses it first; a chat question about
-  €0.0019 (9 Oct 2026 report, `evals/report.md` §3–4); scoring costs €0.0302 per 100 listings.
+  €0.0020 (9 Oct 2026 report, `evals/report.md` §3–4); scoring costs €0.0302 per 100 listings.
 - **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the
   page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;

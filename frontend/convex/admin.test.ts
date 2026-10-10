@@ -64,6 +64,18 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("owner dashboard sums removed listings by day and run", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await t.mutation(internal.health.logRun, { at: Date.now(), checked: 2, failed: 0, emails: 0,
+    emailFailures: 0, paidRemoved: 3, businessRemoved: 2, businessSignaled: 4 });
+  const data = await owner.query(api.admin.dashboard, {});
+  expect(data?.daily.at(-1)).toMatchObject({ paidRemoved: 3, businessRemoved: 2 });
+  expect((await owner.query(api.admin.runs, {}))?.rows[0]).toMatchObject({
+    paidRemoved: 3, businessRemoved: 2, businessSignaled: 4,
+  });
+});
+
 test("owner dashboard counts places and lists only the owner's waitlist", async () => {
   process.env.MAX_USERS = "1";
   const t = convexTest(schema, modules);

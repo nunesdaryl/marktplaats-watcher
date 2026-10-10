@@ -97,7 +97,19 @@ def listing_image(item):
     return url
 
 
-def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10, exclude_words=None):
+def is_business_seller(item):
+    """Website flags are the only seller signals we use; never retain the website itself."""
+    seller = item.get("sellerInformation") or {}
+    return bool(seller.get("sellerWebsiteUrl") or seller.get("showWebsiteUrl") is True)
+
+
+def business_filter_enabled():
+    # Enable only after the station's 24-hour live signal review and hand-checked sample.
+    return os.getenv("BUSINESS_SELLER_FILTER_ENABLED") == "1"
+
+
+def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_include=None, limit=10, exclude_words=None,
+                   include_business_sellers=False):
     """Filtered listings from a search page (at most `limit`; None = all). stats["readable"] is False when the page
     has no listings data at all (a maintenance page or a redesign), which is not the same as zero results."""
     if isinstance(html, list):     # listings already read from the search (read_since)
@@ -109,9 +121,22 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         except ValueError:  # the page changed shape: treat as "no listings", don't crash
             listings = None
     results = []
-    stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None}
+    stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None,
+             "paid_removed": 0, "business_removed": 0, "business_signaled": 0,
+             "website_url_present": 0, "show_website_true": 0}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
     for item in listings or []:
+        if item.get("priorityProduct", "NONE") != "NONE":
+            stats["paid_removed"] += 1
+            continue
+        business = is_business_seller(item)
+        stats["business_signaled"] += business
+        seller = item.get("sellerInformation") or {}
+        stats["website_url_present"] += bool(seller.get("sellerWebsiteUrl"))
+        stats["show_website_true"] += seller.get("showWebsiteUrl") is True
+        if business and not include_business_sellers and business_filter_enabled():
+            stats["business_removed"] += 1
+            continue
         if item.get("reserved") is True:
             continue
         vip = item.get("vipUrl") or ""
@@ -161,6 +186,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             "date": item.get("date"),
             "url": "https://www.marktplaats.nl" + vip,
             "image": listing_image(item),
+            "seller_type": "shop" if business else "private" if business_filter_enabled() else "unverified",
             **({"ad_type": ad_type} if ad_type is not None else {}),
         })
     return (results[:limit] if limit else results), stats
@@ -273,7 +299,8 @@ def make_tools(ctx):
                       every_minutes: int | None = None, times: list[str] | None = None,
                       days: list[Day] | None = None, notify: Notify = "good",
                       max_price_eur: int | None = None, must_include: str | None = None,
-                      postcode: str | None = None, max_distance_km: int | None = None) -> str:
+                      postcode: str | None = None, max_distance_km: int | None = None,
+                      include_business_sellers: bool = False) -> str:
         """Propose a new watch: a saved search that is re-checked on a schedule, and the user gets an
         e-mail when a good new listing appears. The user still has to click Save.
         Search fields are the same as search_marktplaats.
@@ -285,7 +312,8 @@ def make_tools(ctx):
         proposal = {"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
                               "mustInclude": must_include, "postcode": postcode,
                               "maxDistanceKm": max_distance_km if postcode else None,
-                              "schedule": schedule, "notify": notify}
+                              "schedule": schedule, "notify": notify,
+                              "includeBusinessSellers": include_business_sellers}
         proposal["volumeNote"] = estimate_volume_note(proposal)
         ctx.proposals.append(proposal)
         return "Proposal shown to the user with a Save button. Tell them in one sentence what it will do."
@@ -294,7 +322,8 @@ def make_tools(ctx):
     def propose_watch_change(watch_id: str, schedule_kind: Literal["interval", "daily", "weekly"] | None = None,
                              every_minutes: int | None = None, times: list[str] | None = None,
                              days: list[Day] | None = None, notify: Notify | None = None,
-                             active: bool | None = None, max_price_eur: int | None = None) -> str:
+                             active: bool | None = None, max_price_eur: int | None = None,
+                             include_business_sellers: bool | None = None) -> str:
         """Propose a change to one of the user's existing watches: its schedule, notify level,
         pause (active=false) / resume (active=true) or max price. Changing which listings
         trigger e-mails (only great matches, good matches, all listings, fewer e-mails)
@@ -308,7 +337,8 @@ def make_tools(ctx):
                 change["schedule"] = make_schedule(schedule_kind, every_minutes, times, days)
             except ValueError as e:
                 return f"Invalid schedule: {e}"
-        for key, value in (("notify", notify), ("active", active), ("maxPriceEur", max_price_eur)):
+        for key, value in (("notify", notify), ("active", active), ("maxPriceEur", max_price_eur),
+                           ("includeBusinessSellers", include_business_sellers)):
             if value is not None:
                 change[key] = value
         if len(change) == 3:
@@ -906,9 +936,10 @@ def check_query(query, watches, now=None):
                             "readCount": sum(n is not None and n > previous for n in numbers)})
             continue
         # Every listing read counts, not only the 10 the chat shows: otherwise the 11th looks "new" later
-        listings, _ = parse_listings(raw, w.get("max_price_eur"), home,
+        listings, stats = parse_listings(raw, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None, w.get("must_include"), limit=None,
-                                     exclude_words=w.get("exclude_words"))
+                                     exclude_words=w.get("exclude_words"),
+                                     include_business_sellers=w.get("include_business_sellers", False))
         newest = max((n for i in raw if (n := listing_number(i.get("itemId"))) is not None), default=None)
         seen = set(w.get("seen_ids") or [])
         # New = not seen by this watch; Convex dedupes against its full seen table.
@@ -936,7 +967,7 @@ def check_query(query, watches, now=None):
         waiting_numbers = [n for i in waiting if (n := listing_number(i)) is not None]
         candidates = fresh[:MAX_RANK_PER_CHECK] + drops[:max(0, MAX_RANK_PER_CHECK - len(fresh[:MAX_RANK_PER_CHECK]))]
         to_rank.append((w, listings, candidates, min(waiting_numbers) - 1 if waiting_numbers else newest,
-                        len(waiting), capped, reserved_ids))
+                        len(waiting), capped, reserved_ids, stats))
 
     # Rank the watches in parallel, including a retry for any ids a response omitted
     def rank(job):
@@ -953,7 +984,7 @@ def check_query(query, watches, now=None):
 
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = list(pool.map(rank, to_rank))
-    for (w, listings, fresh_candidates, newest, waiting, capped, reserved_ids), (fresh, usage) in zip(to_rank, ranked):
+    for (w, listings, fresh_candidates, newest, waiting, capped, reserved_ids, stats), (fresh, usage) in zip(to_rank, ranked):
         tokens = {"input_tokens": sum(x[0] for x in usage), "output_tokens": sum(x[1] for x in usage),
                   "calls": [{"input_tokens": x[0], "output_tokens": x[1]} for x in usage]}
         if isinstance(fresh, str):
@@ -968,6 +999,9 @@ def check_query(query, watches, now=None):
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
         results.append({"watchId": w["id"], "ok": True,
+                        "paidRemoved": stats["paid_removed"], "businessRemoved": stats["business_removed"],
+                        "businessSignaled": stats["business_signaled"],
+                        "websiteUrlPresent": stats["website_url_present"], "showWebsiteTrue": stats["show_website_true"],
                         **({"reservedIds": reserved_ids} if reserved_ids else {}),
                         **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),
                         "currentIds": [i["id"] for i in listings if i["id"]],
@@ -1001,7 +1035,8 @@ def audit_watch(w, now=None):
         reserved_count = sum(item.get("reserved") is True for item in eligible)
         listings, _ = parse_listings(eligible, w.get("max_price_eur"), home,
                                      w.get("max_distance_km") if home else None,
-                                     w.get("must_include"), limit=None, exclude_words=w.get("exclude_words"))
+                                     w.get("must_include"), limit=None, exclude_words=w.get("exclude_words"),
+                                     include_business_sellers=w.get("include_business_sellers", False))
         result["read"] = len(listings)
         seen, alerted = set(w.get("seen_ids") or []), set(w.get("alerted_ids") or [])
         seen_scores = w.get("seen_scores") or {}
@@ -1039,6 +1074,7 @@ def audit_watch(w, now=None):
                 if item.get("score") is None or item["score"] < threshold:
                     continue
                 miss = {"id": item["id"], "title": item["title"], "url": item["url"], "score": item["score"],
+                        "seller_type": item["seller_type"],
                         **({"price_eur": item.get("price_eur")} if w.get("check_alive") else {})}
                 if kind == "handled" and item["id"] in seen_scores:
                     check_score = seen_scores[item["id"]]
