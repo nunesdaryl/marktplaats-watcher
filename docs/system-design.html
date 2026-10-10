@@ -1564,6 +1564,22 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   in-app feedback pricing chart is now named "App feedback: pricing". MW-113 moved Status to the first column so "new"
   is visible on a phone without scrolling the table. Review caught one contradiction before merge: the first MW-112 build
   labelled an older first report "new" next to a "(1 new)" title.</p>
+<p><b>Bidding, the Marktplaats ask and course polish (9–10 October).</b> Daryl asked how far reverse engineering
+  Marktplaats could take the product, including automated bidding through his own account. Agreed ground rules: automated
+  bidding runs only in each person's own browser (a planned Chrome extension with one-tap bids and opt-in auto-bid rules);
+  no one's Marktplaats session is ever copied to our servers; checks stay at a 15-minute minimum; server-side delegated
+  bidding only through Marktplaats' official consent (the pitch ask). MW-114 shipped the first route for everyone: "Bid €X
+  on Marktplaats" copies the amount and message and opens the listing in one tap (only real marktplaats.nl pages, a review
+  fix), and counts hand-offs as evidence. MW-115 made official, revocable delegated buyer access the headline pitch ask
+  and removed a false claim that listings are read through a signed-in session. The REA reverse-engineering toolkit
+  (morluto/rea) passed a station security review before install (checksum, no install scripts, no telemetry, loopback-only
+  browser control, no prompt injection; pinned version, manual MCP registration, separate Chrome profile). Course polish:
+  MW-103 jittered backoff with Retry-After (scheduled reads keep exactly one retry, a review fix) and per-turn tool trails;
+  MW-102 the evaluation report with operating rules, failure categories, outcome and trajectory grades on a 23-case golden
+  set (23/23) and chat p95 2.92 s; MW-104 one setting switches the chat, scorer and judge provider (production requirements
+  unchanged, a review fix); MW-105 the <a href="case-study.md">FDE case study</a>, which also corrected the OpenAI cap to
+  $110 and the €1 per-user budget in the report, README and NFRs. Review sent two builds back and caught one station error
+  (a PASS posted while tests failed, withdrawn within minutes).</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October; earlier snapshot).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"

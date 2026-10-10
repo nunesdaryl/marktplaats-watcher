@@ -93,7 +93,7 @@ This is a self-check against [Vas's published list](https://x.com/vasuman/status
 | 7 | Legal, security and finance too late | Partial | Access risk is recorded in [README Limits](../README.md#limits) and costs in the [report](../evals/report.md); external pilot sign-offs are absent. |
 | 8 | Exceptions outside the happy path | Partial | Failure categories, abstention cases, retries and delivery audit exist; exception share in actual user work is unknown. |
 | 9 | No shadow period | Partial | Silent first checks and non-mutating dry runs provide shadow behavior; the [report](../evals/report.md#open-risks) has no sustained pilot shadow-result series. |
-| 10 | One model provider | Gap | Chat, scorer and judge use OpenAI in the [saved report](../evals/report.md); provider-swap evidence is absent. |
+| 10 | One model provider | Partial | Chat, scorer and judge switch provider through one setting ([ADR 0015](adr/0015-model-swap-evaluation.md), [Model swap](../evals/report.md#model-swap)); the default OpenAI path was re-proven (23/23 chat), but a second-provider comparison has not been run yet. |
 | 11 | Vanity metrics over business metrics | Partial | Precision, recall, misses, latency and cost are measured; buyer time saved or completed purchases are not. |
 | 12 | No month-seven owner or funding | Gap | This remains a portfolio MVP; no approved long-term service owner or commercial funding. |
 | 13 | Subject matter experts not engaged | Partial | Buyer ratings and a human judge-label spot-check exist; no documented buyer SME review of pilot rules. |
