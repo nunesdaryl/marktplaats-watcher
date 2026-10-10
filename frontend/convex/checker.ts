@@ -118,6 +118,7 @@ const listing = v.object({
   id: v.string(), title: v.string(), description: v.optional(v.string()), price_eur: v.union(v.number(), v.null()), city: v.union(v.string(), v.null()),
   price_type: v.optional(v.string()),
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
+  condition: v.optional(v.string()),
   image: v.optional(v.union(v.string(), v.null())),
   score: v.union(v.number(), v.null()), reason: v.string(), wanted_ad: v.optional(v.boolean()),
   drop_from_eur: v.optional(v.number()),
@@ -162,12 +163,14 @@ export const record = internalMutation({
           const item = r.listings?.find((l) => l.id === id);
           if (!seen && item && !item.wanted_ad && item.score !== null && item.score >= MIN_SCORE[watch.notify])
             fresh.push({ title: item.title, priceEur: item.price_eur ?? undefined, city: item.city ?? undefined,
+              condition: item.condition, distanceKm: item.distance_km ?? undefined,
               url: item.url, score: item.score, reason: item.reason });
           if (seen && item && !item.wanted_ad && item.drop_from_eur !== undefined &&
               item.price_eur !== null && item.score !== null && item.score >= MIN_SCORE[watch.notify] &&
               priceDropped(seen.alertedDropPriceEur ?? seen.firstPriceEur, item.price_eur))
             fresh.push({ title: item.title, priceEur: item.price_eur, dropFromEur: seen.alertedDropPriceEur ?? seen.firstPriceEur,
-              city: item.city ?? undefined, url: item.url, score: item.score, reason: item.reason });
+              city: item.city ?? undefined, condition: item.condition, distanceKm: item.distance_km ?? undefined,
+              url: item.url, score: item.score, reason: item.reason });
         }
         const user = await ctx.db.get(watch.userId);
         if (fresh.length && user) emails.push({ watchId: watch._id, alertIds: [], to: user.email, preview: {
@@ -207,7 +210,8 @@ export const record = internalMutation({
           if (alertDrop) newAlerts.push(await insertTracked(ctx, "alerts", {
             userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
             description: item.description, priceEur: price!, dropFromEur: dropFrom,
-            priceType: item.price_type, city: item.city ?? undefined, url: item.url,
+            priceType: item.price_type, city: item.city ?? undefined,
+            condition: item.condition, distanceKm: item.distance_km ?? undefined, url: item.url,
             image: item.image ?? undefined, score: item.score!, reason: item.reason,
             channel: "email", emailStatus: "pending", createdAt: now,
           }));
@@ -221,7 +225,8 @@ export const record = internalMutation({
         newAlerts.push(await insertTracked(ctx, "alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           description: item.description,
-          priceEur: item.price_eur ?? undefined, priceType: item.price_type, city: item.city ?? undefined, url: item.url,
+          priceEur: item.price_eur ?? undefined, priceType: item.price_type, city: item.city ?? undefined,
+          condition: item.condition, distanceKm: item.distance_km ?? undefined, url: item.url,
           image: item.image ?? undefined,
           score: item.score ?? undefined, reason: item.reason, channel: "email",
           emailStatus: "pending", createdAt: now,
@@ -309,7 +314,7 @@ const escape = (s: string) =>
 
 type EmailContent = {
   watchId?: string; label: string; summary: string; notify: Notify; catchUp?: boolean;
-  alerts: { title: string; priceEur?: number; dropFromEur?: number; city?: string; url: string; score?: number; reason: string;
+  alerts: { title: string; priceEur?: number; dropFromEur?: number; city?: string; condition?: string; distanceKm?: number; url: string; score?: number; reason: string;
             _id?: string; rateToken?: string | null }[];
 };
 
@@ -331,6 +336,8 @@ export function renderEmail(c: EmailContent, appUrl: string) {
   const facts = (a: (typeof top)[number]) =>
     [a.score !== undefined ? `Scored ${a.score}/10 (${scoreLevel(a.score)})` : "", a.priceEur ? `€${a.priceEur}` : "", a.city ?? ""]
       .filter(Boolean).join(", ");
+  const conditionDistance = (a: (typeof top)[number]) =>
+    [a.condition, a.distanceKm !== undefined ? `${a.distanceKm} km` : ""].filter(Boolean).join(" · ");
   const dropBadge = (a: (typeof top)[number]) => a.dropFromEur !== undefined && a.priceEur !== undefined
     ? `Price dropped €${a.dropFromEur} → €${a.priceEur}` : "";
   const manageUrl = c.watchId ? `${appUrl.replace(/\/$/, "")}/watch/?id=${encodeURIComponent(c.watchId)}` : appUrl;
@@ -346,7 +353,8 @@ export function renderEmail(c: EmailContent, appUrl: string) {
     ? `${appUrl.replace(/\/$/, "")}/alerts/?offer=${encodeURIComponent(a._id)}` : null;
   const text = [
     heading, ...(c.catchUp ? [apology] : []), "",
-    ...top.flatMap((a) => [a.title, ...(dropBadge(a) ? [dropBadge(a)] : []), facts(a), a.reason, `Open on Marktplaats: ${a.url}`,
+    ...top.flatMap((a) => [a.title, ...(dropBadge(a) ? [dropBadge(a)] : []), facts(a),
+      ...(conditionDistance(a) ? [conditionDistance(a)] : []), a.reason, `Open on Marktplaats: ${a.url}`,
       ...(offerUrl(a) ? [`Help me make an offer: ${offerUrl(a)}`] : []),
       ...(rateUrl(a, "good") ? [`Good match? Yes: ${rateUrl(a, "good")}  ·  Not right: ${rateUrl(a, "not_right")}`] : []), ""]),
     ...(more > 0 ? [`…and ${more} more in the app, under Alerts.`, ""] : []),
@@ -370,6 +378,7 @@ export function renderEmail(c: EmailContent, appUrl: string) {
 <a href="${escape(a.url)}" class="mw-text mw-title" style="color:#1b1a18;font-family:${sans};font-size:16px;line-height:22px;font-weight:600;text-decoration:underline;text-decoration-color:#e4e0da;">${escape(a.title)}</a>
 ${dropBadge(a) ? `<div style="display:inline-block;margin:6px 0;padding:4px 8px;border-radius:6px;background:#d9f4e7;color:#105d3c;font-family:${sans};font-size:13px;font-weight:600;">${escape(dropBadge(a))}</div>` : ""}
 <div class="mw-text2" style="color:#5b5751;font-family:${sans};font-size:14px;line-height:20px;margin:4px 0 0 0;">${escape(facts(a))}</div>
+${conditionDistance(a) ? `<div class="mw-text2" style="color:#5b5751;font-family:${sans};font-size:14px;line-height:20px;margin:4px 0 0 0;">${escape(conditionDistance(a))}</div>` : ""}
 <div class="mw-text" style="color:#1b1a18;font-family:${sans};font-size:15px;line-height:22px;margin:4px 0 12px 0;">${escape(a.reason)}</div>${
   rateUrl(a, "good") ? `
 <div class="mw-text2 mw-rule" style="margin:0 0 12px 0;padding:10px 0 0 0;border-top:1px solid #eeebe6;font-family:${sans};font-size:14px;line-height:20px;color:#5b5751;">Good match?<br>

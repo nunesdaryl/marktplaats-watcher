@@ -54,6 +54,12 @@ test("an alert marked reserved on a later check shows Reserved", () => {
   expect(html).toContain("Reserved");
 });
 
+test("the Alerts page shows stored condition and distance", () => {
+  responses[0] = [{ ...alert("bike", 100), condition: "Zo goed als nieuw", distanceKm: 12 }];
+  const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} />);
+  expect(html).toContain("Zo goed als nieuw · 12 km");
+});
+
 test("an email offer link opens the sheet for its matching alert", () => {
   const html = renderToStaticMarkup(<AlertsView actions={{ archiveAlert: vi.fn(), archiveAllAlerts: vi.fn() }} offerId="Fresh" />);
   expect(html).toContain('data-offer-for="Fresh"');

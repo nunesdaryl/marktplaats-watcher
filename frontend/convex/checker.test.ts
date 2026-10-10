@@ -71,6 +71,16 @@ test("record stores scores and reasons for alerted and non-alerted listings", as
   expect(await alerts(t)).toHaveLength(1);
 });
 
+test("record preserves condition and distance in alerts and dry-run e-mail previews", async () => {
+  const { t, id } = await seededWatch();
+  const item = { ...listing("bike"), condition: "Zo goed als nieuw", distance_km: 12 };
+  const result = { watchId: id, ok: true, currentIds: ["bike"], listings: [item] };
+  const preview = await t.mutation(internal.checker.record, { now: Date.now(), dryRun: true, results: [result] });
+  expect(preview[0].preview?.alerts[0]).toMatchObject({ condition: "Zo goed als nieuw", distanceKm: 12 });
+  await t.mutation(internal.checker.record, { now: Date.now(), dryRun: false, results: [result] });
+  expect((await alerts(t))[0]).toMatchObject({ condition: "Zo goed als nieuw", distanceKm: 12 });
+});
+
 test("price drops alert once at either threshold, ignore rises, and keep the first price", async () => {
   const { t, id } = await seededWatch();
   let now = Date.now();
