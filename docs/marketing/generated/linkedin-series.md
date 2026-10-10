@@ -41,7 +41,7 @@
 | Day | Date | Platform | Pillar | Content type | Topic | Status |
 |---|---|---|---|---|---|---|
 | Mon | 5 Oct | LinkedIn | P4 | Text + photo | 5. Demo day recap | ☐ |
-| Tue | 6 Oct | LinkedIn | P3 | Text-only or stat card | 6. The limits I chose: $10 cap, 15 minutes, 5 watches, 30 days | ☐ |
+| Tue | 6 Oct | LinkedIn | P3 | Text-only or stat card | 6. The limits I chose: €1 AI budget per person, $110 project cap, 15 minutes, 5 watches, 30 days | ☐ |
 | Wed | 7 Oct | LinkedIn | P3 | Text + comparison graphic | 7. What the competitor research taught me | ☐ |
 | Fri | 9 Oct | LinkedIn | P2 | Text + logo grid | 8. From one sentence to a scored e-mail: the stack and 95 tests | ☐ |
 
@@ -54,7 +54,7 @@
 | 3 | "Nobody should have to write "0 8,18 * * *" to get an e-mail about a Mac mini." | Schedules should be a sentence, not a syntax. | #27 Visueel Bewijs / #7 Herkenbaarheid | `schedule-picker.jpg`, cropped to the "When to check" box | "Cron is for me. A sentence is for users." |
 | 4 | "The best feature in my Marktplaats watcher sends you nothing." | A good alert system is defined by what it doesn't send. | #13 Het "Geheim" / #3 Curiosity Gap | `schedule-picker.jpg`, cropped to the line "The first check only notes what's already listed..." | "The first check of a new watch e-mails nothing. On purpose." |
 | 5 | "On Saturday I demoed an agent that isn't allowed to save anything." `[DARYL: adjust to what you actually showed]` | What demoing a real product (not slides) taught me. | #18 Reis Documenteren / #4 Story Tease | `[DARYL: demo-day photo, if you have one and may share it]` | One line on the best question asked at the demo `[DARYL]` |
-| 6 | "My app has a $10 a month hard spending cap on its AI." | Limits are design decisions, stated up front. | #21 Radicale Transparantie / #7 Herkenbaarheid | Text-only (pack: works best for #21), or a stat card "$10/month hard cap" | "$10 a month hard cap. Model allow-list. That's my AI budget policy." |
+| 6 | "Every user of my app gets an AI budget of one euro a month. Then it stops." | Limits are design decisions, stated up front. | #21 Radicale Transparantie / #7 Herkenbaarheid | Text-only (pack: works best for #21), or a stat card "€1 per person, per month" | "€1 AI budget per person. A $110 hard cap on the whole project. Model allow-list. That's my AI budget policy." |
 | 7 | "Marktplaats alerts already sell for up to €39.95 a month. I looked at what none of them do." | Don't compete on speed; compete on explanation. | #22 David vs. Goliath / #2 Resultaten | Simple 3-row comparison graphic you make yourself (Marktplaats saved search / MarktAlert / MPAlerts: price, speed, reason shown?) | "Every alert app competes on speed. None shows a reason." |
 | 8 | "From one sentence to a scored e-mail: 6 services, 95 tests." | How the parts fit, and what keeps it honest (tests, CI, cap). | #7 Tech Stack / #10 Proces Onthullen | Logo grid: Next.js, FastAPI, LangChain, OpenAI, Convex, Clerk, AgentMail, Vercel | "34 Python tests, 61 TypeScript tests, an evaluation, CI on every push." |
 
@@ -64,8 +64,8 @@
   change. Facts available: demo day was Saturday 3 October 2026; the live flow (search, watch, propose, refuse,
   scored e-mail). `[DARYL: what you demoed, one audience question, one thing you'd change]`. Do not write this
   one until after the demo.
-- **6. The limits I chose (Tue 6 Oct).** A list of limits, each a decision: OpenAI project with a **$10/month hard
-  spend cap and a model allow-list**; checks no more often than **every 15 minutes**; **max 5 watches** per user;
+- **6. The limits I chose (Tue 6 Oct).** A list of limits, each a decision: an AI budget of **€1 per person per 30 days** (the AI pauses and tells them), an OpenAI project **hard cap of $110/month** with
+  spend alerts, and a **model allow-list**; checks no more often than **every 15 minutes**; **max 5 watches** per user;
   each check reads **every listing placed since the last one** (the chat shows the first page); data kept **30 days**, with **delete-my-data**; not
   affiliated with Marktplaats. `[DARYL: actual OpenAI spend so far, from the usage page]`
   `[DARYL: the reason for the 15-minute floor and the 5-watch cap, in your words]`. Do not state a cost per check
