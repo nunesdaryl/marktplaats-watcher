@@ -1,5 +1,5 @@
 {
-  "source": "Owner dashboard delivery audits, 2026-10-07 and 2026-10-09 Europe/Amsterdam",
+  "source": "Owner dashboard delivery audits, 2026-10-07, 2026-10-09 and 2026-10-10 Europe/Amsterdam",
   "note": "Only fields present in the issue evidence are filled. Null means the audit summary did not provide that listing field; it is not an inferred listing value. Notify thresholds are inferred from which score counted as a miss. Each case carries an operator-confirmed expected outcome (should_alert); the gate counts correct outcomes, not raw scores. The 9 October bid case has no recorded audit score.",
   "cases": [
     {
@@ -107,6 +107,20 @@
       "diagnosis": "The Switch OLED matches the watch and the €130 starting bid is below the €170 cap threshold.",
       "should_alert": true,
       "decision": "Real miss (Daryl, 9 Oct): this matching Switch OLED should score great despite the starting bid being well below the watch maximum."
+    },
+    {
+      "id": "m2451247849",
+      "watch_description": "Ikea Prarie laminaat, within 80 km",
+      "notify_threshold": 6,
+      "listing": {
+        "id": "m2451247849",
+        "title": "GEZOCHT: prarie laminaat licht eiken"
+      },
+      "check_score": 0,
+      "audit_score": 10,
+      "diagnosis": "The advertiser is looking to buy laminate, not offering it for sale.",
+      "should_alert": false,
+      "decision": "Not a miss (Daryl, 10 Oct): wanted ads cannot satisfy a buyer's watch and score 0."
     }
   ],
   "earlier_observations": [

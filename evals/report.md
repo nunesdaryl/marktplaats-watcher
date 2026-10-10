@@ -1,6 +1,6 @@
 # Evaluation report
 
-Scorer run 2026-10-09 21:04, chat run 2026-10-09 21:03. Model under test: **gpt-5.4-mini** (provider: **openai**). Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
+Scorer run 2026-10-10 10:36, chat run 2026-10-09 21:03. Model under test: **gpt-5.4-mini** (provider: **openai**). Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
 Prompt versions: chat **chat-2026-10-06.1**, rank **rank-2026-10-09.2**.
 UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-2026-09-30.2 / rank-2026-10-01.1
 
@@ -10,33 +10,37 @@ UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-20
 
 | Notify level | E-mailed when | Precision | Recall |
 |---|---|---|---|
-| great | score ≥ 8 | **100%** | **78%** |
-| good | score ≥ 6 | **91%** | **87%** |
+| great | score ≥ 8 | **100%** | **74%** |
+| good | score ≥ 6 | **86%** | **78%** |
 
-Median of 3 runs; great precision range 95.0–100.0%, great recall range 73.9–82.6%. TP/FP/FN/TN counts are omitted; misses below use the saved representative run.
+Median of 3 runs; great precision range 94.1–100.0%, great recall range 69.6–73.9%. TP/FP/FN/TN counts are omitted; misses below use the saved representative run.
 
 *Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*
 
 **Misses at 'great':**
-- Missed a match (match): Gazelle herenfietsen — scored 3; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 0; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (match): Gazelle Orange herenfiets met zeven versnellingen — scored 7; judge: Gazelle Orange men's bicycle with seven gears at €45, within budget.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 0; original judge: This is a sled-base chair and not listed as an IKEA office chair.
+- Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 3; judge: Apple Mac Mini itself and under €500.
+- Missed a match (match): Gazelle herenfietsen — scored 2; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
+- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
+- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
 - Missed a match (human_override): IKEA Bureau en Bureaustoel Set — scored 7; original judge: Set includes an IKEA office chair, but the listed price is €100, not under €100.
+- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 0; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
 **Failure categories at 'great':**
 
 | Category | False positives | False negatives |
 |---|---|---|
 | human_override | 0 | 3 |
-| match | 0 | 2 |
+| match | 0 | 3 |
 
 **Misses at 'good':**
-- E-mailed but not a match (wrong_model_or_spec): Apple iPhone 13 Pro Max 128GB Groen / Garantie / Nette staat — scored 6: It’s an iPhone 13 Pro Max, a different variant that does not match the base iPhone 13 watch.
-- E-mailed but not a match (accessory_or_part): Raspberry Pi - Maker & IoT Hardware Lot — scored 6: It’s a Raspberry Pi-related hardware lot, but it’s a bundle of makers/IoT parts rather than a clearly identified Pi, so fit is partial.
-- Missed a match (match): Gazelle herenfietsen — scored 3; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 0; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 0; original judge: This is a sled-base chair and not listed as an IKEA office chair.
+- E-mailed but not a match (wrong_model_or_spec): Apple iPhone 13 mini - refurbished - 128GB - Blauw - A grade — scored 6: It is an iPhone 13 mini, which is a smaller variant rather than the base iPhone 13.
+- E-mailed but not a match (wrong_model_or_spec): iPhone 13 Mini 128GB - Blauw - 12mnd garantie — scored 6: It is an iPhone 13 mini, so it’s not the exact model the watch is for.
+- E-mailed but not a match (accessory_or_part): Raspberry Pi - Maker & IoT Hardware Lot — scored 7: It includes Raspberry Pi-related maker hardware at a fair price under budget, but the exact Pi model is not confirmed.
+- Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 3; judge: Apple Mac Mini itself and under €500.
+- Missed a match (match): Gazelle herenfietsen — scored 2; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
+- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
+- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
+- Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 0; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
 **Failure categories at 'good':**
 
@@ -44,8 +48,8 @@ Median of 3 runs; great precision range 95.0–100.0%, great recall range 73.9�
 |---|---|---|
 | accessory_or_part | 1 | 0 |
 | human_override | 0 | 2 |
-| match | 0 | 1 |
-| wrong_model_or_spec | 1 | 0 |
+| match | 0 | 3 |
+| wrong_model_or_spec | 2 | 0 |
 
 ## 1a. Price type regression cases
 
@@ -53,21 +57,21 @@ Four Switch OLED listings from 3 October were bidding from €200 at a €200 wa
 
 | Run | Listing | Label | Score | Reason |
 |---|---|---|---:|---|
-| 1 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED with 3 games at the €200 ceiling, so it fits very well. Starting bid of €200 is close to your €200 limit, so the final price will likely go over budget. |
-| 1 | m2449235953 | not great: bidding from the cap | 7 | It is the exact Switch OLED model and the starting bid is at the €200 budget limit, with 'nieuwstaat' suggesting very good condition. |
-| 1 | m2449231794 | not great: bidding from the cap | 7 | Exact Switch OLED model in near-new condition and right at the €200 budget line, though it’s a starting bid rather than a fixed low price. |
-| 1 | m2449225496 | not great: bidding from the cap | 7 | Exact model and condition look good, and €200 is right at the watch budget though it’s a bidding starting price. |
-| 1 | fixed-160-control | great: fixed price below the cap | 10 | Exactly the requested Switch OLED, in near-new condition, and well under the €200 budget. |
-| 2 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED match with 3 games, and the starting bid is right at the €200 budget cap. |
-| 2 | m2449235953 | not great: bidding from the cap | 7 | Exact Switch OLED match and €200 starting bid is right at the budget cap, with condition described as like new. |
-| 2 | m2449231794 | not great: bidding from the cap | 7 | Exact Switch OLED model in nearly new condition at the top of the budget, so it fits very well. Starting bid of €200 is close to your €200 limit, so the final price will likely go over budget. |
-| 2 | m2449225496 | not great: bidding from the cap | 7 | Exact Nintendo Switch OLED match and the starting bid is right at the €200 ceiling, so it fits well if the final price stays low. |
-| 2 | fixed-160-control | great: fixed price below the cap | 10 | Matches the requested Switch OLED exactly and €160 is well under the €200 budget. |
-| 3 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED bundle with games, and the bidding start is at the €200 budget ceiling. |
-| 3 | m2449235953 | not great: bidding from the cap | 7 | Correct Switch OLED model and at the budget ceiling; condition is very good, though it’s a bidding-from price so the final price may rise. |
-| 3 | m2449231794 | not great: bidding from the cap | 7 | Exact Switch OLED model in near-new condition, and €200 is right at the budget ceiling, though it’s a starting bid rather than a fixed price |
-| 3 | m2449225496 | not great: bidding from the cap | 7 | Exact Switch OLED match at the top of the budget, with complete set and good condition. Starting bid of €200 is close to your €200 limit, so the final price will likely go over budget. |
-| 3 | fixed-160-control | great: fixed price below the cap | 10 | Exact Switch OLED match, in near-new condition, and €160 is well under the €200 budget. |
+| 1 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED match with 3 games, and the €200 starting bid is right at the top of the budget. |
+| 1 | m2449235953 | not great: bidding from the cap | 7 | It’s the exact Switch OLED model and the bidding starts at the €200 budget ceiling, so it’s a strong fit if it stays at or under budget. |
+| 1 | m2449231794 | not great: bidding from the cap | 7 | Exact Switch OLED match and the bidding start is at the €200 budget ceiling, with near-new condition. |
+| 1 | m2449225496 | not great: bidding from the cap | 7 | Exact Switch OLED match and the €200 starting bid is right at the budget limit. |
+| 1 | fixed-160-control | great: fixed price below the cap | 10 | Exact Switch OLED match and €160 is well under the €200 budget, with condition stated as nieuwstaat. |
+| 2 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED model with 3 games and the bidding starts at the €200 budget ceiling, so it looks like a strong fit if the final price is  |
+| 2 | m2449235953 | not great: bidding from the cap | 7 | Matches the exact Switch OLED model and condition looks excellent; at €200 it is right at the budget limit, though bidding means the final価格 |
+| 2 | m2449231794 | not great: bidding from the cap | 7 | It’s the exact Switch OLED model and the €200 starting bid is right at the user’s budget, with nearly new condition. |
+| 2 | m2449225496 | not great: bidding from the cap | 7 | Exact Switch OLED match and the bidding price starts at the €200 budget ceiling, with completeness adding value. |
+| 2 | fixed-160-control | great: fixed price below the cap | 10 | Exact requested model in near-new condition and well under the €200 budget. |
+| 3 | m2448861737 | not great: bidding from the cap | 7 | Exact Switch OLED match with games included, and the starting bid is right at the €200 budget. |
+| 3 | m2449235953 | not great: bidding from the cap | 7 | It is the exact Switch OLED model and the bidding-from €200 price is right at the target budget, with 'nieuwstaat' suggesting excellent used |
+| 3 | m2449231794 | not great: bidding from the cap | 7 | Exact Switch OLED model in nearly new condition at the target budget, with only the bid format keeping it from a perfect 10. |
+| 3 | m2449225496 | not great: bidding from the cap | 7 | It’s the exact Switch OLED model and the bidding start is right at the €200 budget ceiling, with complete/nice condition helping value. |
+| 3 | fixed-160-control | great: fixed price below the cap | 10 | Exact Switch OLED match in nearly new condition and well under the €200 budget. |
 
 ## 1b. Delivery audit misses (7 and 9 October)
 
@@ -76,23 +80,26 @@ The six frozen cases record the check score and, where known, the daily audit sc
 | Run | Listing | Check | Audit | New score | Notify bar |
 |---|---|---:|---:|---:|---:|
 | 1 | Nintendo Switch OLED Wit met extra controllers en hoes | 6 | 9 | 7 | 8 |
-| 1 | PS5 Zo goed als nieuw | 7 | 10 | 9 | 8 |
+| 1 | PS5 Zo goed als nieuw | 7 | 10 | 8 | 8 |
 | 1 | Apple Mac Mini M2 16GB 512GB | 5 | 7 | 10 | 6 |
-| 1 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 3 | 8 |
-| 1 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 2 | 6 |
+| 1 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 0 | 8 |
+| 1 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 1 | 6 |
 | 1 | Nintendo Switch OLED met accessoires | 7 | — | 9 | 8 |
+| 1 | GEZOCHT: prarie laminaat licht eiken | 0 | 10 | 0 | 6 |
 | 2 | Nintendo Switch OLED Wit met extra controllers en hoes | 6 | 9 | 7 | 8 |
 | 2 | PS5 Zo goed als nieuw | 7 | 10 | 8 | 8 |
 | 2 | Apple Mac Mini M2 16GB 512GB | 5 | 7 | 10 | 6 |
-| 2 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 2 | 8 |
-| 2 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 6 | 6 |
+| 2 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 1 | 8 |
+| 2 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 4 | 6 |
 | 2 | Nintendo Switch OLED met accessoires | 7 | — | 10 | 8 |
+| 2 | GEZOCHT: prarie laminaat licht eiken | 0 | 10 | 0 | 6 |
 | 3 | Nintendo Switch OLED Wit met extra controllers en hoes | 6 | 9 | 7 | 8 |
 | 3 | PS5 Zo goed als nieuw | 7 | 10 | 8 | 8 |
 | 3 | Apple Mac Mini M2 16GB 512GB | 5 | 7 | 10 | 6 |
-| 3 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 5 | 8 |
-| 3 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 0 | 6 |
-| 3 | Nintendo Switch OLED met accessoires | 7 | — | 9 | 8 |
+| 3 | GRATIS LAMINAAT 50M2 INCL ONDERVLOER (zelf eruit halen) | 2 | 8 | 1 | 8 |
+| 3 | IKEA Slätten Laminaatvloer ~30 m² | 4 | 7 | 2 | 6 |
+| 3 | Nintendo Switch OLED met accessoires | 7 | — | 10 | 8 |
+| 3 | GEZOCHT: prarie laminaat licht eiken | 0 | 10 | 0 | 6 |
 
 ## 1c. What users said about their alerts
 
@@ -108,8 +115,8 @@ Counts below use the saved representative scorer run at both notification levels
 |---|---|---:|---|
 | missing context | unclear; delivery audit missing fields | 3 | PS5 Zo goed als nieuw |
 | wrong tool | chat tool mismatch | 0 | None observed in these saved results |
-| wrong record | human_override; wrong_model_or_spec; different_product; accessory_or_part | 7 | Alle damesfietsen €80 // uitverkoop! |
-| invalid output | over_budget; chat wrong result | 3 | Gazelle herenfietsen |
+| wrong record | human_override; wrong_model_or_spec; different_product; accessory_or_part | 8 | Alle damesfietsen €80 // uitverkoop! |
+| invalid output | over_budget; chat wrong result | 6 | Apple Mac Mini (Mid 2011) - Macintosh |
 | unsafe action | forbidden watch or notify call | 0 | None observed in these saved results |
 | timeout | chat timeout | 0 | None observed in these saved results |
 
@@ -224,7 +231,7 @@ Offline price normalization on `evals/data/offer_golden.json`; this does not cal
 
 ## 3. Cost
 
-- Scoring: €0.0299 per 100 listings (11964 input + 1828 output tokens for 53 listings).
+- Scoring: €0.0302 per 100 listings (11964 input + 1866 output tokens for 53 listings).
 - CI scorer evaluation: 3 scorer runs at about $0.025 each; about $0.076 total.
 - Chat: €0.0019 per question on average.
 - Chat output is capped at 1,500 tokens per model call.
@@ -271,3 +278,4 @@ If a 20-listing check sends one alert, ranking costs €0.00511 per alert; if it
 The busiest case, a 15-minute watch with 20 new listings every check, costs €14.73 per month, within the OpenAI project's $110/month hard cap (about €101.20). Each admitted user also has an AI budget of €1.00 per 30 days, so a watch this busy is paused by its owner's budget long before the project cap.
 
 Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. When the OpenAI cap is reached, the AI stops and nothing unscored is e-mailed.
+

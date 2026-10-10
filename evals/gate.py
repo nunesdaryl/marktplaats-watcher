@@ -29,8 +29,9 @@ def corrected_great_recall(scorer, listings, spotcheck):
 def audit_misses_pass(scorer):
     cases = {case["id"]: case for case in read(AUDIT_MISSES)["cases"]}
     bid_id = "m2451390076"
+    wanted_id = "m2451247849"   # MW-121: a wanted ad must never alert; it is scored 0 in code, so it holds every run
     runs = scorer.get("runs", [scorer])
-    if len(runs) != 3 or len(cases) != 6 or bid_id not in cases:
+    if len(runs) != 3 or len(cases) < 6 or bid_id not in cases:
         return False
     for run in runs:
         rows = {row["id"]: row for row in run.get("audit_misses", [])}
@@ -42,7 +43,9 @@ def audit_misses_pass(scorer):
             return alerts == case.get("should_alert", True)
         if not correct(bid_id, cases[bid_id]):
             return False
-        if sum(correct(id, case) for id, case in cases.items() if id != bid_id) < 4:
+        if wanted_id in cases and not correct(wanted_id, cases[wanted_id]):
+            return False
+        if sum(correct(id, case) for id, case in cases.items() if id not in (bid_id, wanted_id)) < 4:
             return False
     return True
 

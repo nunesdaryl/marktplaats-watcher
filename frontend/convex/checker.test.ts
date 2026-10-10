@@ -56,6 +56,20 @@ test("record stores scores and reasons for alerted and non-alerted listings", as
   expect(await alerts(t)).toHaveLength(1);
 });
 
+test("all-listings watch records wanted score zero without alerting in live or preview checks", async () => {
+  const { t, id } = await seededWatch();
+  await t.run((ctx) => ctx.db.patch(id, { notify: "all" }));
+  const wanted = { ...listing("wanted"), title: "GEZOCHT: prarie laminaat licht eiken", score: 0,
+    reason: "This is a wanted ad (someone looking to buy), not a listing for sale.", wanted_ad: true };
+  const results = [{ watchId: id, ok: true, currentIds: ["wanted"], listings: [wanted] }];
+  const preview = await t.mutation(internal.checker.record, { now: Date.now(), dryRun: true, results });
+  expect(preview).toEqual([]);
+  await t.mutation(internal.checker.record, { now: Date.now(), dryRun: false, results });
+  const seen = await t.run((ctx) => ctx.db.query("seenListings").collect());
+  expect(seen[0]).toMatchObject({ listingId: "wanted", score: 0, reason: wanted.reason });
+  expect(await alerts(t)).toEqual([]);
+});
+
 test("first successful look records its baseline time only once", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });

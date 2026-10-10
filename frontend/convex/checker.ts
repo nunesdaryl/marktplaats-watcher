@@ -112,7 +112,7 @@ const listing = v.object({
   price_type: v.optional(v.string()),
   distance_km: v.union(v.number(), v.null()), date: v.optional(v.any()), url: v.string(),
   image: v.optional(v.union(v.string(), v.null())),
-  score: v.union(v.number(), v.null()), reason: v.string(),
+  score: v.union(v.number(), v.null()), reason: v.string(), wanted_ad: v.optional(v.boolean()),
 });
 const result = v.object({
   watchId: v.string(), ok: v.boolean(), error: v.optional(v.string()),
@@ -149,7 +149,7 @@ export const record = internalMutation({
           const seen = await ctx.db.query("seenListings")
             .withIndex("by_watch_listing", (q) => q.eq("watchId", watch._id).eq("listingId", id)).unique();
           const item = r.listings?.find((l) => l.id === id);
-          if (!seen && item && item.score !== null && item.score >= MIN_SCORE[watch.notify])
+          if (!seen && item && !item.wanted_ad && item.score !== null && item.score >= MIN_SCORE[watch.notify])
             fresh.push({ title: item.title, priceEur: item.price_eur ?? undefined, city: item.city ?? undefined,
               url: item.url, score: item.score, reason: item.reason });
         }
@@ -180,7 +180,7 @@ export const record = internalMutation({
         await ctx.db.insert("seenListings", { watchId: watch._id, listingId: id, lastSeenAt: now, firstSeenAt: now, ...scoreFields });
         // First check: only remember what is already there. (Unscored listings never arrive here: the API
         // reports the whole watch as failed instead, so they stay unseen and are scored on the retry.)
-        if (!watch.seeded || !item || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
+        if (!watch.seeded || !item || item.wanted_ad || item.score === null || item.score < MIN_SCORE[watch.notify]) continue;
         newAlerts.push(await insertTracked(ctx, "alerts", {
           userId: watch.userId, watchId: watch._id, listingId: id, title: item.title,
           description: item.description,

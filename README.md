@@ -92,11 +92,11 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   [failure mapping](evals/report.md#failure-mapping), outcome and trajectory grades, abstention strata, latency,
   and prompt versions. A pull request changing `agent.py` or `evals/**`, a Monday 06:00 UTC
   schedule, or a manual dispatch reruns the evals; the gate requires all but one chat case (22 of 23) and 90% precision for
-  "great" matches. The 9 Oct 2026 report records 100% great precision, 78% recall (median of 3 runs) on 53 listings from 6 watches, and 23/23 chat cases. The operator fills in the report's UAT sign-off after review. Rerun locally with
+  "great" matches. The 10 Oct 2026 report records 100% great precision, 74% recall (median of 3 runs) on 53 listings from 6 watches, and 23/23 chat cases. The operator fills in the report's UAT sign-off after review. Rerun locally with
   `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.33/month with 1 new listing per check and €3.68 with 20; a busy 15-minute
   watch (20 new listings every check) is €14.73/month, within the $110/month OpenAI project cap but far above each user's €1 AI budget per 30 days, which pauses it first; a chat question about
-  €0.0019 (9 Oct 2026 report, `evals/report.md` §3–4); scoring costs €0.0299 per 100 listings.
+  €0.0019 (9 Oct 2026 report, `evals/report.md` §3–4); scoring costs €0.0302 per 100 listings.
 - **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the
   page, screen size, browser, app version and the last few errors in that tab. It's e-mailed to `OWNER_EMAIL`;

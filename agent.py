@@ -134,6 +134,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         if max_km is not None and (km is None or km > max_km):
             continue  # too far, or no location on the listing
         # Keep only listing facts; seller details are never stored or sent to the model
+        ad_type = listing_ad_type(item)
         results.append({
             "id": item.get("itemId"),
             "title": item.get("title", "")[:100],
@@ -149,6 +150,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
             "date": item.get("date"),
             "url": "https://www.marktplaats.nl" + vip,
             "image": listing_image(item),
+            **({"ad_type": ad_type} if ad_type is not None else {}),
         })
     return (results[:limit] if limit else results), stats
 
@@ -542,6 +544,25 @@ RANK_WORKERS = 6
 RANK_BATCH = 10
 
 BIDDING_NEAR_MAX = 0.85   # a 'bidding from' price at 85% or more of the watch's maximum is likely to end over budget
+WANTED_REASON = "This is a wanted ad (someone looking to buy), not a listing for sale."
+WANTED_TITLE = re.compile(r"^[^\w]*(?:te\s+koop\s+gevraagd|looking\s+for|gezocht|gevraagd|zoek|wanted)\b", re.IGNORECASE)
+
+
+def listing_ad_type(listing):
+    """Read an ad type only from search fields that identify the ad, not unrelated attributes."""
+    if listing.get("ad_type") is not None or listing.get("adType") is not None:
+        return listing.get("ad_type", listing.get("adType"))
+    for attribute in (listing.get("attributes") or []) + (listing.get("extendedAttributes") or []):
+        if str(attribute.get("key", "")).lower() in {"adtype", "ad_type"}:
+            return attribute.get("value")
+    return None
+
+
+def is_wanted_ad(listing):
+    """Wanted/request ads cannot satisfy a buyer's watch, regardless of price or model score."""
+    ad_type = listing_ad_type(listing)
+    return bool(WANTED_TITLE.match(listing.get("title") or "")) or (
+        isinstance(ad_type, str) and ad_type.strip().casefold() in {"wanted", "request", "gezocht", "gevraagd"})
 
 
 def cap_bidding_scores(listings, max_price_eur):
@@ -598,6 +619,21 @@ def rank_listings(description, listings, raise_on_failure=False, rating_examples
         r = by_id.get(item["id"])
         item["score"], item["reason"] = (r.score, r.reason) if r else (None, "Not ranked: the AI was unavailable.")
     return listings
+
+
+def score_listings(description, listings, max_price_eur, raise_on_failure=False, rating_examples=None):
+    """Apply deterministic rules around model ranking while preserving listing order."""
+    sales = [item for item in listings if not is_wanted_ad(item)]
+    options = {"raise_on_failure": True} if raise_on_failure else {}
+    if rating_examples:
+        options["rating_examples"] = rating_examples
+    ranked_sales = rank_listings(description, sales, **options)
+    for item, ranked in zip(sales, ranked_sales):
+        item.update(ranked)
+    for item in listings:
+        if is_wanted_ad(item):
+            item["score"], item["reason"] = 0, WANTED_REASON
+    return cap_bidding_scores(listings, max_price_eur)
 
 
 MAX_RANK_PER_CHECK = 20
@@ -882,9 +918,8 @@ def check_query(query, watches, now=None):
         token = _rank_usage_for_check.set(usage)
         try:
             examples = job[0].get("rating_examples")
-            return cap_bidding_scores(rank_listings(job[0].get("description") or query, job[2], raise_on_failure=True,
-                                                  **({"rating_examples": examples} if examples else {})),
-                                      job[0].get("max_price_eur")), usage
+            return score_listings(job[0].get("description") or query, job[2], job[0].get("max_price_eur"),
+                                  raise_on_failure=True, **({"rating_examples": examples} if examples else {})), usage
         except Exception as e:
             return classify_openai_failure(e), usage
         finally:
@@ -905,8 +940,11 @@ def check_query(query, watches, now=None):
         for item in fresh:
             if item["score"] is None:
                 print(json.dumps({"event": "rank_skipped", "id": item["id"]}))
-        results.append({"watchId": w["id"], "ok": True, **({"aiCall": True} if fresh_candidates else {}), "currentIds": [i["id"] for i in listings if i["id"]],
-                        "listings": [{k: v for k, v in item.items() if k != "price_type" or isinstance(v, str)}
+        results.append({"watchId": w["id"], "ok": True,
+                        **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),
+                        "currentIds": [i["id"] for i in listings if i["id"]],
+                        "listings": [{k: v for k, v in (item | ({"wanted_ad": True} if is_wanted_ad(item) else {})).items()
+                                      if (k != "price_type" or isinstance(v, str)) and k != "ad_type"}
                                      for item in fresh if item["score"] is not None], "newestId": newest,
                         "waiting": waiting, "capped": capped, **({"usage": tokens} if usage else {})})
     return results
@@ -953,10 +991,9 @@ def audit_watch(w, now=None):
         chosen = candidates[:40]
         if chosen:
             examples = w.get("rating_examples")
-            ranked = cap_bidding_scores(rank_listings(w.get("description") or w["query"],
-                                                      [item for item, _ in chosen], raise_on_failure=True,
-                                                      **({"rating_examples": examples} if examples else {})),
-                                        w.get("max_price_eur"))
+            ranked = score_listings(w.get("description") or w["query"], [item for item, _ in chosen],
+                                    w.get("max_price_eur"), raise_on_failure=True,
+                                    **({"rating_examples": examples} if examples else {}))
             if len(ranked) != len(chosen):
                 raise ValueError("The AI did not return every candidate.")
             result["unscored"] = sum(item.get("score") is None for item in ranked)
