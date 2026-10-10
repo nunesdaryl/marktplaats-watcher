@@ -236,6 +236,8 @@ export function FeedbackDetail({ f, close, open }) {
   const [sha, setSha] = useState(f.releaseSha ?? "");
   const [releaseDate, setReleaseDate] = useState(f.releaseAt ? new Date(f.releaseAt).toISOString().slice(0, 10) : "");
   const [featureUrl, setFeatureUrl] = useState(f.featureUrl?.startsWith("/") ? f.featureUrl : "");
+  const [publicTitle, setPublicTitle] = useState(f.publicTitle ?? "");
+  const [showOnWhatsNew, setShowOnWhatsNew] = useState(f.showOnWhatsNew);
   const [draft, setDraft] = useState(f.replyDraft ?? "");
   useEffect(() => { if (f.replyDraft && !draft) setDraft(f.replyDraft); }, [f.replyDraft]);
   const [channel, setChannel] = useState(f.source === "app" ? "email" : f.source);
@@ -247,13 +249,15 @@ export function FeedbackDetail({ f, close, open }) {
     e.preventDefault(); setBusy(true); setError("");
     try { await update({ id: f._id, status, note, declinedReason: reason, issues: issues.split(/[\s,]+/).filter(Boolean),
       releaseSha: sha || undefined, releaseAt: releaseDate ? Date.parse(`${releaseDate}T12:00:00`) : undefined,
-      replyDraft: draft || undefined, featureUrl: featureUrl || undefined }); }
+      replyDraft: draft || undefined, featureUrl: featureUrl || undefined,
+      publicTitle, showOnWhatsNew }); }
     catch (err) { setError(adminError(err)); } finally { setBusy(false); }
   };
   const reply = async (method) => {
     setBusy(true); setError("");
     try { if (draft !== f.replyDraft) await update({ id: f._id, status: f.status, note: f.note, declinedReason: f.declinedReason,
-      issues: f.issues, releaseSha: f.releaseSha, releaseAt: f.releaseAt, replyDraft: draft });
+      issues: f.issues, releaseSha: f.releaseSha, releaseAt: f.releaseAt, replyDraft: draft,
+      publicTitle: f.publicTitle, showOnWhatsNew: f.showOnWhatsNew });
       if (method === "send") await send({ id: f._id });
       else await mark({ id: f._id, channel, text: draft, replyUrl: replyUrl || undefined });
     } catch (err) { setError(adminError(err)); } finally { setBusy(false); }
@@ -278,6 +282,8 @@ export function FeedbackDetail({ f, close, open }) {
       {status === "declined" && <label>Reason <textarea value={reason} onChange={(e) => setReason(e.target.value)} required /></label>}
       <label>Linked issues <input value={issues} onChange={(e) => setIssues(e.target.value)} placeholder="MW-48, MW-51" /></label>
       <label>Where to try it <input value={featureUrl} onChange={(e) => setFeatureUrl(e.target.value)} placeholder="/watches/" /></label>
+      <label>Public title <input maxLength={80} value={publicTitle} onChange={(e) => setPublicTitle(e.target.value)} placeholder="What shipped, in plain words" required={status === "shipped" && showOnWhatsNew} /></label>
+      <label><input type="checkbox" checked={!!showOnWhatsNew} onChange={(e) => setShowOnWhatsNew(e.target.checked)} /> Show on What's new</label>
       {f.issues.map((id) => <a key={id} href={`https://linear.app/software-factory-ai/issue/${id}`} target="_blank" rel="noopener noreferrer">{id}</a>)}
       <label>Release SHA <input value={sha} onChange={(e) => setSha(e.target.value)} placeholder="Short merge SHA" /></label>
       <label>Release date <input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} /></label>

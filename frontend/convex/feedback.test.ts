@@ -124,13 +124,57 @@ test("factory advances only linked planned feedback and ships once with a useful
   expect((await t.run((ctx) => ctx.db.query("feedbackEvents").collect())).filter((e) => e.feedbackId === linked)).toHaveLength(2);
 });
 
+test("factory public title removes tracker wording and preserves an owner's edit", async () => {
+  const t = convexTest(schema, modules);
+  const [id, edited] = await t.run(async (ctx) => [
+    await ctx.db.insert("feedback", { status: "in_progress", issues: ["MW-123"], createdAt: 1 }),
+    await ctx.db.insert("feedback", { status: "in_progress", issues: ["MW-123"], createdAt: 2,
+      publicTitle: "An owner's better title" }),
+  ]);
+  await t.mutation(internal.feedback.shipByIssue, { issue: "MW-123", sha: "a".repeat(40), releaseAt: 100,
+    title: "[factory] MW-123 Help me make an offer: MW-90 follow-up" });
+  expect((await t.run((ctx) => ctx.db.get(id)))?.publicTitle).toBe("Help me make an offer");
+  expect((await t.run((ctx) => ctx.db.get(edited)))?.publicTitle).toBe("An owner's better title");
+  expect((await t.query(api.feedback.whatsNew, {})).map((row) => row.title)).toContain("Help me make an offer");
+});
+
+test("hidden or untitled shipped feedback stays off What's new, and the notice uses its public title", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const user = await alice.mutation(api.users.store, {});
+  if (user.status !== "admitted") throw new Error("Test account was not admitted");
+  await t.run(async (ctx) => {
+    await ctx.db.insert("feedback", { status: "shipped", issues: ["MW-1"], releaseAt: 1, createdAt: 1,
+      publicTitle: "Private test", showOnWhatsNew: false });
+    await ctx.db.insert("feedback", { status: "shipped", issues: ["MW-2"], releaseAt: 2, createdAt: 2 });
+    await ctx.db.insert("feedback", { userId: user.id, status: "shipped", issues: ["MW-3"], releaseAt: 3, createdAt: 3,
+      publicTitle: "Help me make an offer", showOnWhatsNew: true });
+  });
+  expect((await t.query(api.feedback.whatsNew, {})).map((row) => row.title)).toEqual(["Help me make an offer"]);
+  expect((await alice.query(api.feedback.myShippedNotice, {}))?.title).toBe("Help me make an offer");
+});
+
+test("the owner's own account defaults to hidden when factory ships it", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  const user = await owner.mutation(api.users.store, {});
+  if (user.status !== "admitted") throw new Error("Test account was not admitted");
+  const id = await t.run((ctx) => ctx.db.insert("feedback", { userId: user.id, status: "in_progress",
+    issues: ["MW-45"], createdAt: 1 }));
+  await t.mutation(internal.feedback.shipByIssue, { issue: "MW-45", sha: "a".repeat(40), releaseAt: 100,
+    title: "[factory] Test item" });
+  expect((await t.run((ctx) => ctx.db.get(id)))?.showOnWhatsNew).toBe(false);
+  expect(await t.query(api.feedback.whatsNew, {})).toEqual([]);
+});
+
 test("a shipped idea is shown once to its submitter and public credit requires consent", async () => {
   const t = convexTest(schema, modules);
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
   const user = await alice.mutation(api.users.store, {});
   if (user.status !== "admitted") throw new Error("Test account was not admitted");
   const id = await t.run((ctx) => ctx.db.insert("feedback", { userId: user.id, personName: "Alice", creditName: false,
-    message: "Better bids", note: "Bidding help", status: "shipped", issues: ["MW-90"], releaseAt: 100, createdAt: 1 }));
+    message: "Better bids", note: "Bidding help", status: "shipped", issues: ["MW-90"], releaseAt: 100, createdAt: 1,
+    publicTitle: "Bidding help" }));
   expect((await alice.query(api.feedback.myShippedNotice, {}))?._id).toBe(id);
   expect((await t.query(api.feedback.whatsNew, {}))[0].credit).toBe("a founding user");
   await alice.mutation(api.feedback.dismissShippedNotice, { id });
@@ -157,7 +201,7 @@ test("What's new and the personal notice never expose triage notes, messages or 
   await t.run(async (ctx) => {
     await ctx.db.insert("feedback", { source: "linkedin" as any, personName: "Vinodkumar Bhovi", personEmail: "v@example.test",
       message: "private message", note: "PRIVATE TRIAGE NOTE", status: "shipped", issues: ["MW-114"], releaseSha: "a".repeat(40),
-      releaseAt: Date.now(), createdAt: Date.now() } as any);
+      releaseAt: Date.now(), createdAt: Date.now(), publicTitle: "Better bids" } as any);
   });
   const rows = await t.query(api.feedback.whatsNew, {});
   const text = JSON.stringify(rows);

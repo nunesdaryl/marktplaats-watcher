@@ -140,6 +140,8 @@ export default defineSchema({
     creditName: v.optional(v.boolean()),
     noticeDismissedAt: v.optional(v.number()),
     releaseTitle: v.optional(v.string()),
+    publicTitle: v.optional(v.string()),
+    showOnWhatsNew: v.optional(v.boolean()),
     featureUrl: v.optional(v.string()),
     replyUrl: v.optional(v.string()),
     source: v.optional(feedbackSource),

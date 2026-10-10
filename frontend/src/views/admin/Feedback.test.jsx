@@ -36,6 +36,8 @@ test("outside intake and shipped item show their required controls and timeline"
   const detail = renderToStaticMarkup(<FeedbackDetail f={row} close={vi.fn()} open={vi.fn()} />);
   for (const label of ["Received", "planned", "in progress", "shipped", "MW-48", "Shipped in", "Reply draft", "Copy reply", "Mark as replied"])
     expect(detail).toContain(label);
+  expect(detail).toContain("Public title");
+  expect(detail).toContain("Show on What&#x27;s new");
   expect(detail).not.toContain('>Send</button>');
 });
 

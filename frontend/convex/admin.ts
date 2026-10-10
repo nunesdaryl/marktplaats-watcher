@@ -9,7 +9,7 @@ import type { Doc } from "./_generated/dataModel";
 import { describe, describeWhen } from "./schedule";
 import { feedbackSource, feedbackStatus } from "./schema";
 import { activePatch } from "./watches";
-import { WOULD_PAY } from "./feedback";
+import { WOULD_PAY, defaultShowOnWhatsNew, validatePublicTitle } from "./feedback";
 import { healthReport } from "./health";
 import { usageDay } from "./usage";
 import { budgetFor } from "./aiBudget";
@@ -264,7 +264,9 @@ export const feedback = query({
         source: f.source ?? "app", status: f.status ?? (f.handledAt ? "planned" : "new"), paraphrase: f.paraphrase,
         note: f.note, declinedReason: f.declinedReason, issues: f.issues ?? [], releaseSha: f.releaseSha,
         sourceUrl: f.sourceUrl, creditName: f.creditName ?? false, replyUrl: f.replyUrl,
-        releaseAt: f.releaseAt, replyDraft: f.replyDraft, replyText: f.replyText, repliedAt: f.repliedAt,
+        releaseAt: f.releaseAt, publicTitle: f.publicTitle,
+        showOnWhatsNew: f.showOnWhatsNew ?? defaultShowOnWhatsNew(user, f.personEmail),
+        replyDraft: f.replyDraft, replyText: f.replyText, repliedAt: f.repliedAt,
         replyChannel: f.replyChannel, repliedBy: f.repliedBy, sending: f.sending, timeline,
         message: f.message,
         wouldPay: f.wouldPay ? WOULD_PAY[f.wouldPay] : undefined, page: f.page, context: f.context,
@@ -917,7 +919,8 @@ export function draftFeedbackReply({ personName, email, receivedAt, note }: {
 export const updateFeedback = mutation({
   args: { id: v.id("feedback"), status: feedbackStatus, note: v.optional(v.string()),
     declinedReason: v.optional(v.string()), issues: v.array(v.string()), releaseSha: v.optional(v.string()),
-    releaseAt: v.optional(v.number()), replyDraft: v.optional(v.string()), featureUrl: v.optional(v.string()) },
+    releaseAt: v.optional(v.number()), replyDraft: v.optional(v.string()), featureUrl: v.optional(v.string()),
+    publicTitle: v.optional(v.string()), showOnWhatsNew: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     await requireOwner(ctx);
     const row = await ctx.db.get(args.id);
@@ -936,13 +939,17 @@ export const updateFeedback = mutation({
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
     const user = row.userId ? await ctx.db.get(row.userId) : null;
+    const showOnWhatsNew = args.showOnWhatsNew ?? row.showOnWhatsNew ?? defaultShowOnWhatsNew(user, row.personEmail);
+    const publicTitle = args.publicTitle === undefined ? row.publicTitle : args.publicTitle.trim() || undefined;
+    if (publicTitle) validatePublicTitle(publicTitle);
+    if (args.status === "shipped" && showOnWhatsNew) validatePublicTitle(publicTitle ?? "");
     const draft = args.status === "shipped" ? (args.replyDraft?.trim() || row.replyDraft ||
       draftFeedbackReply({ personName: row.personName, email: row.personEmail ?? user?.email,
         receivedAt: row.createdAt, note: args.note! })) : args.replyDraft?.trim();
     await patchTracked(ctx, "feedback", args.id, { status: args.status, note: args.note?.trim() || undefined,
       declinedReason: args.status === "declined" ? args.declinedReason?.trim() : undefined, issues,
       releaseSha: args.releaseSha?.trim() || undefined, releaseAt: args.releaseAt,
-      featureUrl: args.featureUrl?.trim() || row.featureUrl,
+      featureUrl: args.featureUrl?.trim() || row.featureUrl, publicTitle, showOnWhatsNew,
       replyDraft: draft, handledAt: args.status === "new" ? undefined : row.handledAt ?? now });
     if (current !== args.status)
       await ctx.db.insert("feedbackEvents", { feedbackId: args.id, status: args.status, at: now, by: identity!.email!, note: args.note?.trim() || undefined });
