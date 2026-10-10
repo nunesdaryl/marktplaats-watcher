@@ -32,7 +32,8 @@ def test_running_cost_uses_measured_batches_and_prices(monkeypatch, tmp_path):
     assert "€31.80 |" in section  # hourly, 20 listings plus one retry
     assert "€127.18 |" in section  # every 15 minutes, 20 listings plus one retry
     assert "€0.02208 per alert" in section
-    assert "$10/month hard cap" in section
+    assert f"${cost.OPENAI_PROJECT_CAP_USD}/month hard cap" in section
+    assert "AI budget of €1.00 per 30 days" in section
 
 
 def test_running_cost_rejects_unknown_model_before_calling_ranker(monkeypatch):
@@ -53,6 +54,7 @@ def test_running_cost_compares_busiest_watch_with_cap(
     report.write_text("")
     monkeypatch.setattr(cost, "REPORT", report)
     monkeypatch.setattr(cost, "USD_TO_EUR", 1)
+    monkeypatch.setattr(cost, "OPENAI_PROJECT_CAP_USD", 10)  # a small cap keeps both branches testable
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
 
     def fake_rank(description, listings):
@@ -66,3 +68,4 @@ def test_running_cost_compares_busiest_watch_with_cap(
 
     assert (f"costs {monthly_cost} per month, {comparison} the OpenAI project's "
             "$10/month hard cap (about €10.00).") in report.read_text()
+    assert "paused by its owner's budget long before the project cap" in report.read_text()

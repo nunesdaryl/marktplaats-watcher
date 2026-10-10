@@ -90,10 +90,21 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 ## 9. Supporting artifacts (all in this repo / course folder)
 
 - Live app: https://marktplaats-watcher.vercel.app
+- Engineering case study and pilot scorecard: [Marktplaats Watcher, an FDE case study](../case-study.md), especially its [Varick-bar scorecard](../case-study.md#varick-bar-scorecard). The scorecard names gaps in baseline, production latency, run volume, code:LLM ratio and exception approval; it is evidence for a pilot conversation, not a claim of measured buyer impact.
 - System design: `docs/architecture.excalidraw` + the 46-page system design (`docs/system-design.html`; PDF exports in the course Deliverables folder)
 - Evals: `evals/report.md` · NFRs: `docs/nfr.md` · ADRs: `docs/adr/`
 - Runbook incl. kill switch: `RUNBOOK.md`
 - FDE certificate: DBG-FDE-2026-009 (issued 3 Oct 2026, DataBag)
+
+### Pilot evidence scorecard
+
+| Evidence | State |
+|---|---|
+| Named failure harness | Present: [failure categories and operating rules](../case-study.md#evals-from-cases-to-decisions). |
+| Cost and latency | Eval-run measures present; production alert latency is a [known gap](../case-study.md#varick-bar-scorecard). |
+| Run volume and frequency | Schedules and cost scenarios present; a production volume series is a [known gap](../case-study.md#varick-bar-scorecard). |
+| Code:LLM ratio and model calls per run | Chat model calls are recorded; aggregate ratio and production distribution are [known gaps](../case-study.md#varick-bar-scorecard). |
+| Operator controls | Pause, change rule and pull in the owner are present; a dedicated exception-approval queue is a [known gap](../case-study.md#varick-bar-scorecard). |
 
 ---
 _Next actions: 1) send the Vinod ask (7c), 2) fire 2–3 LinkedIn connects (7b), 3) e-mail on first accept (7a). Track responses in this file._

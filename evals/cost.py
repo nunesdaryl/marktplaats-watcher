@@ -2,6 +2,11 @@
 import agent
 from evals.common import CHAT_RESULTS, LISTINGS, REPORT, USD_TO_EUR, cost_usd, model_under_test, read
 
+# Mirrors of the production settings (set 5 Oct 2026): the OpenAI project hard cap (Convex OPENAI_MONTHLY_CAP_USD)
+# and the per-user AI budget (Convex USER_AI_BUDGET_EUR). Update both here when the operator changes them.
+OPENAI_PROJECT_CAP_USD = 110
+USER_AI_BUDGET_EUR = 1.00
+
 CHECKS_PER_MONTH = {"every hour": 720, "every 15 minutes": 2880}
 
 
@@ -22,7 +27,7 @@ def main():
     chat_results = read(CHAT_RESULTS)
     chat = cost_usd(model, chat_results["tokens"]["input"], chat_results["tokens"]["output"]) / chat_results["total"] * USD_TO_EUR
     retry = 2 * per_check[20]
-    budget_eur = 10 * USD_TO_EUR
+    budget_eur = OPENAI_PROJECT_CAP_USD * USD_TO_EUR
     busiest_monthly_cost = CHECKS_PER_MONTH["every 15 minutes"] * per_check[20]
     cap_comparison = "above" if busiest_monthly_cost > budget_eur else "within"
     rows = ["## 4. Running cost per watch (measured)", "",
@@ -45,7 +50,9 @@ def main():
              f"A chat question costs about €{chat:.4f}.", "",
              f"The busiest case, a 15-minute watch with 20 new listings every check, costs "
              f"€{busiest_monthly_cost:.2f} per month, "
-             f"{cap_comparison} the OpenAI project's $10/month hard cap (about €{budget_eur:.2f}).", "",
+             f"{cap_comparison} the OpenAI project's ${OPENAI_PROJECT_CAP_USD}/month hard cap (about €{budget_eur:.2f}). "
+             f"Each admitted user also has an AI budget of €{USER_AI_BUDGET_EUR:.2f} per 30 days, so a watch this busy "
+             "is paused by its owner's budget long before the project cap.", "",
              "Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. "
              "When the OpenAI cap is reached, the AI stops and nothing unscored is e-mailed.", ""]
     text = REPORT.read_text()

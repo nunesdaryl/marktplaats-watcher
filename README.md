@@ -66,6 +66,7 @@ The design system (colours, type, spacing, motion, components, states, voice, wi
 [`docs/design/DESIGN-SYSTEM.md`](docs/design/DESIGN-SYSTEM.md): the one source of truth for the app's look.
 
 Architecture decisions are indexed in [docs/adr/](docs/adr/README.md); current non-functional requirements are in [docs/nfr.md](docs/nfr.md).
+The [Case study](docs/case-study.md) traces the buyer problem, architecture, production failure, evaluation evidence, costs and pilot gaps.
 The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) traces user signals through evaluation, release and reply.
 The [3 October prompt templates, MCP and RAG audit](docs/audit/2026-10-03-prompt-templates-mcp-rag.md) maps the course material to the planned demo-day work.
 The [weekly listening loop](RUNBOOK.md#weekly-listening-loop) gives the Monday routine and its read-only `scripts/factory/loop-status.sh` checkpoint.
@@ -84,7 +85,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   "great" matches. The 9 Oct 2026 report records 100% great precision, 78% recall (median of 3 runs) on 53 listings from 6 watches, and 23/23 chat cases. The operator fills in the report's UAT sign-off after review. Rerun locally with
   `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.33/month with 1 new listing per check and €3.68 with 20; a busy 15-minute
-  watch (20 new listings every check) is €14.73/month, above the hard $10/month OpenAI cap; a chat question about
+  watch (20 new listings every check) is €14.73/month, within the $110/month OpenAI project cap but far above each user's €1 AI budget per 30 days, which pauses it first; a chat question about
   €0.0019 (9 Oct 2026 report, `evals/report.md` §3–4); scoring costs €0.0299 per 100 listings.
 - **Feedback and "would you pay?":** a slim "Free beta · Give feedback & suggestions" strip sits on top of every signed-in
   page. Each message comes with a screenshot of the page it was sent from (opt-out, e-mail addresses blanked), the

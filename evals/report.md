@@ -257,7 +257,7 @@ If the ranker omits all 20 ids, one retry of those ids costs up to 2× the measu
 
 If a 20-listing check sends one alert, ranking costs €0.00511 per alert; if it sends several alerts, divide that check's cost by the number sent. A chat question costs about €0.0019.
 
-The busiest case, a 15-minute watch with 20 new listings every check, costs €14.73 per month, above the OpenAI project's $10/month hard cap (about €9.20).
+The busiest case, a 15-minute watch with 20 new listings every check, costs €14.73 per month, within the OpenAI project's $110/month hard cap (about €101.20). Each admitted user also has an AI budget of €1.00 per 30 days, so a watch this busy is paused by its owner's budget long before the project cap.
 
 Hosting (Vercel, Convex, Clerk, AgentMail) runs on free tiers today: €0 fixed. When the OpenAI cap is reached, the AI stops and nothing unscored is e-mailed.
 
