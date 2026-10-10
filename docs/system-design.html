@@ -1598,7 +1598,13 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   build (a gate step that could derail live merges, a private note on a public page, a removed coverage warning, a
   prompt sentence spliced into another instruction, a misleading distance, a gate fixed at six cases). Evals on the
   real model: great precision 100% (median of 3), recall 74%, chat 23/23; recall varies from run to run (61–87% this
-  week with the same prompt), a known gap to fix.</p>
+  week with the same prompt), a known gap to fix. The live dashboard review that afternoon found the new "Listings
+  removed" chart at 0 while checks had removed 52 paid placements: the dashboard reads slim per-day run summaries
+  (MW-99) that did not carry the new counters. MW-124 added them (and a missing timeouts count), backfilled the
+  summaries (dry run first: 23 to rebuild, then 0 drift) and limited the "Your idea is live" notice to public, titled
+  items, never the owner's own. Live after the fix: 75 paid placements removed that day, and the seller-website flag
+  seen on 0 of the first 155 listings, an early sign that this signal may not exist in the search data; the
+  24-hour review decides whether the shop filter is switched on or needs another signal.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October; earlier snapshot).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"
