@@ -45,12 +45,13 @@ Every Monday, allow about 20 minutes to close the loop. Run `scripts/factory/loo
 
 1. Read the 05:00 UTC health digest in `OWNER_EMAIL`; investigate any problems before taking new work. Open `/admin` → Feedback, add outside-channel observations, and triage each new item with its screenshot and context. Record a plan or a reason to decline it.
 2. Run `scripts/factory/feedback_drafts.py` from the repo root. Read its evidence and proposed scope. File only useful drafts through its explicit `--file` flow, review and edit the resulting Linear issues, then mark the chosen issues `agent-ready`. The script only reads production by default; filing is a separate decision. If it is not installed yet, continue triage in the tracker and return to drafts when MW-50 lands.
-3. Dispatch one ready issue with `scripts/factory/dispatch.sh MW-<number>`. Have the reviewer run and review the exact committed branch tip. After a PASS verdict and `ready-to-merge` label, get the per-issue `Operator merge approval:` comment. Merge from a clean main checkout with `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` and check its production evidence.
-4. For each released change, open its linked feedback item, enter the merge SHA and release date, then mark it shipped. Review the reply draft and send it from the tracker, or record the reply and channel after answering outside the app. Check the timeline and sent record.
+3. Dispatch one ready issue with `scripts/factory/dispatch.sh MW-<number>`. Have the reviewer run and review the exact committed branch tip, and print `Feedback to close: N` using `scripts/factory/feedback-to-close.sh MW-<number>`. After a PASS verdict and `ready-to-merge` label, get the per-issue `Operator merge approval:` comment. Merge from a clean main checkout with `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>` and check its production evidence.
+4. Close the loop: after the merge gate reports `Feedback to close: N`, open each linked feedback item. Review its release draft and approve the reply. Send app/e-mail replies from the tracker; for LinkedIn, WhatsApp or in-person feedback, copy the draft, answer personally, then record the channel, time and reply link. Check the timeline and sent record. Every feedback-born issue ends with a reply.
 5. Pull pending user evaluation cases with `.venv/bin/python -m evals.feedback_cases`. Inspect each candidate and confirm only sound labels as in §11a. Check the latest Monday evaluation run; rerun the scorer and report after confirmed cases or model changes.
 6. Note three numbers for the past week: people who started (new signups), finished (new users who completed setup), and came back (users active again after their first day). Use `/admin` account dates and activity for the same seven-day window; record the window and numbers together so the next Monday is comparable.
 
 About step 2: run `.venv/bin/python scripts/factory/feedback_drafts.py` from the repo root each week. It reads new tracker items, the last 30 days of Not right ratings, and the latest delivery-audit misses from Convex Production, checks open MW issues in Linear, and prints evidence-cited draft specs. Review each draft and its cited records before filing. Use `.venv/bin/python scripts/factory/feedback_drafts.py --file <draft-id> [<draft-id> ...]` to file selected drafts. Filing adds `draft` and one `engine:gpt-6-sol` label, then links each selected feedback item as planned. The operator alone applies `agent-ready` after reviewing the spec; a draft is never a build authorization. A failed tracker update after issue creation needs manual reconciliation using the printed Linear issue ID.
+When writing a feedback-born spec manually, put `Feedback: <id>` for every source item in the Linear description and link each item to the MW issue in Feedback.
 
 The [feedback loop audit](docs/audit/2026-10-02-feedback-loop.md) explains why each handoff exists.
 
@@ -267,13 +268,14 @@ Every number on `/admin` opens its records: click an account to see its watches 
 conversation), alerts, feedback and activity; click a watch to see its alerts and pause/resume it (two taps, as in the
 app); click a chart bar to see that day. The address holds the view, so a link to a record can be kept in a note.
 
-For feedback triage, open Feedback. Add feedback received by e-mail, WhatsApp, in person or another channel with its
-received date, person and original words or a marked paraphrase. Use the status and source filters to find open items.
-Open an item to record the plan, linked MW issues and notes. Mark a decline with its reason. When a linked issue ships,
-enter the merge SHA and release date, then mark the item shipped. Review and edit the drafted reply. Send sends an
-e-mail through AgentMail only when pressed; for an outside conversation, Mark as replied records the text and channel
-after you have answered there. Check the timeline and sent record before treating the loop as closed. The daily digest
-includes new and open feedback counts.
+For feedback triage, open Feedback. Add feedback received by e-mail, LinkedIn, WhatsApp, in person or another channel
+with its received date, person, original words or marked paraphrase, and optional post/message link. Leave public name
+credit off unless the person agreed. Link the item to its MW issue when planning it and enter the app path where the
+person can try the feature. The factory marks linked feedback
+in progress when a build is claimed and shipped after successful production checks. Review and edit the drafted reply.
+Send e-mail replies through AgentMail only when pressed. For LinkedIn, WhatsApp and in-person conversations, copy the
+reply, answer personally, then record the channel and optional reply link. Check the timeline and sent record before
+treating the loop as closed. The daily digest includes new and open feedback counts.
 
 ## 11a. Alert ratings ("Good match?")
 Ratings arrive from the e-mail links and the Alerts page; see them on `/admin` → "Are the scores right?". If e-mails

@@ -16,11 +16,11 @@ test("account choices include descriptions and keep Clerk profile and active-ses
   const clerk = { session: { id: "session-1" }, openUserProfile: vi.fn(), signOut: vi.fn() };
   const onPrivacy = vi.fn();
   const items = accountMenuItems({ clerk, onPrivacy, showArchive: true, pref: "system", reset: vi.fn() });
-  expect(items.map(({ label }) => label)).toEqual(["Manage account", "Privacy and your data", "Archived", "Sign out"]);
+  expect(items.map(({ label }) => label)).toEqual(["Manage account", "Privacy and your data", "Archived", "What's new", "Sign out"]);
   expect(items.every(({ description }) => !!description)).toBe(true);
   items[0].action();
   items[1].action();
-  items[3].action();
+  items[4].action();
   expect(clerk.openUserProfile).toHaveBeenCalledOnce();
   expect(onPrivacy).toHaveBeenCalledOnce();
   expect(clerk.signOut).toHaveBeenCalledWith("session-1");
@@ -30,7 +30,7 @@ test("device theme reset appears only after a manual theme choice", () => {
   const clerk = { signOut: vi.fn(), openUserProfile: vi.fn() };
   const reset = vi.fn();
   const system = accountMenuItems({ clerk, pref: "system", reset, showArchive: false });
-  expect(system.map(({ label }) => label)).toEqual(["Manage account", "Sign out"]);
+  expect(system.map(({ label }) => label)).toEqual(["Manage account", "What's new", "Sign out"]);
   const manual = accountMenuItems({ clerk, pref: "dark", reset, showArchive: false });
   const theme = manual.find(({ label }) => label === "Match device theme");
   expect(theme.description).toContain("device's light or dark mode");

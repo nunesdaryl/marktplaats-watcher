@@ -20,7 +20,7 @@ export function useRoute() {
   if (page === "chat" && id) return { section: "c", id };
   if (page === "watch" && id) return { section: "w", id };
   if (page === "alerts") return { section: page, offerId: params.get("offer") ?? undefined };
-  if (page === "watches" || page === "archived" || page === "admin" || page === "rate") return { section: page };
+  if (page === "watches" || page === "archived" || page === "admin" || page === "rate" || page === "whats-new") return { section: page };
   return { section: "" };
 }
 

@@ -33,6 +33,7 @@ def test_groups_sources_and_cites_evidence():
     assert feedback["feedback_ids"] == ["fd1", "fd2"]
     assert "2 new tracker item" in feedback["problem"]
     assert "feedback:fd1 (2026-10-02; source app)" in feedback["problem"]
+    assert "Feedback: fd1" in feedback_drafts.spec(feedback)
     assert "rating:r1" in next(row for row in result if row["key"].startswith("rating-"))["problem"]
     assert "listing:l2" in next(row for row in result if row["key"].startswith("audit-"))["problem"]
 

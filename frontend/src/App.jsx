@@ -33,6 +33,7 @@ import PrivacySheet from "./views/PrivacySheet.jsx";
 import RateView from "./views/RateView.jsx";
 import WatchesView from "./views/WatchesView.jsx";
 import WatchView from "./views/WatchView.jsx";
+import WhatsNew from "./views/WhatsNew.jsx";
 
 // The owner dashboard's code is only downloaded by the owner (see the /admin branch below)
 const AdminView = lazy(() => import("./views/admin/AdminView.jsx").catch((error) => {
@@ -84,6 +85,8 @@ function Toast({ message, onDone }) {
 
 function Workspace() {
   const me = useQuery(api.users.me);
+  const shippedNotice = useQuery(api.feedback.myShippedNotice);
+  const dismissNotice = useMutation(api.feedback.dismissShippedNotice);
   const founding = useQuery(api.founding.mine);
   const foundingNow = useNow(60_000);
   const budget = useQuery(api.aiBudget.mine);
@@ -155,6 +158,7 @@ function Workspace() {
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
   else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
   else if (route.section === "watches") content = <WatchesView watches={watchesOrLoading} actions={actions} onNew={() => newWatch()} />;
+  else if (route.section === "whats-new") content = <WhatsNew />;
   else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;
 
   const sheets = (
@@ -171,6 +175,12 @@ function Workspace() {
     </>
   );
 
+  const ideaNotice = shippedNotice && <section className="idea-notice" aria-label="Your idea is live">
+    <div><strong>Your idea is live: {shippedNotice.title}</strong><p>Thanks for helping improve Marktplaats Watcher.</p>
+      <a href={shippedNotice.featureUrl}>Try it</a></div>
+    <button type="button" aria-label="Dismiss your idea notice" onClick={() => dismissNotice({ id: shippedNotice._id })}>Dismiss</button>
+  </section>;
+
   if (founding && foundingNow >= founding.freeUntil) return <FoundingPrompt key={founding.freeUntil} state={{ ...founding, ended: true }} />;
   const survey = founding && (founding.showSurvey || foundingNow >= founding.freeUntil - 16 * 86_400_000 && !founding.disappointed && !founding.dismissed) || foundingOpen;
   const foundingCard = survey && founding && <FoundingPrompt key={founding.freeUntil} state={founding} keepOpen={foundingOpen} onClose={() => setFoundingOpen(false)} />;
@@ -184,6 +194,7 @@ function Workspace() {
         <main className="main">
           <BetaBanner onFeedback={openFeedback} onPrivacy={() => setSheet({ type: "privacy" })} busy={capturing} withToggle freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
           {foundingCard}
+          {ideaNotice}
           {content}
         </main>
         {sheets}
@@ -193,7 +204,7 @@ function Workspace() {
 
   const inChat = route.section === "" || route.section === "c";
   const currentChat = chats.find((c) => c._id === route.id);
-  const pageTitle = { w: watch?.title ?? "Watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: isOwner ? "Dashboard" : "" }[route.section];
+  const pageTitle = { w: watch?.title ?? "Watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: isOwner ? "Dashboard" : "", "whats-new": "What's new" }[route.section];
   return (
     <div className="shell phone">
       <header className="topbar">
@@ -216,6 +227,7 @@ function Workspace() {
       <main className="main">
         <BetaBanner onFeedback={openFeedback} busy={capturing} freeUntil={me?.freeUntil} budget={budget} onKeep={founding ? () => setFoundingOpen(true) : undefined} />
         {foundingCard}
+        {ideaNotice}
         {content}
       </main>
       <TabBar route={route} newAlerts={newAlerts} isOwner={isOwner} />
@@ -275,6 +287,7 @@ function SignedOut() {
 
 export default function App() {
   const route = useRoute();
+  if (route.section === "whats-new") return <WhatsNew />;
   // The e-mail's rating links work without signing in (the link's code is the permission)
   if (route.section === "rate") return <RateView />;
   return (

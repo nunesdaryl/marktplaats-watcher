@@ -197,6 +197,11 @@ export const dashboard = query({
         feedbackOpen: feedback.filter((f) => !["shipped", "declined"].includes(f.status ?? (f.handledAt ? "planned" : "new"))).length,
         feedbackShipped: feedback.filter((f) => f.status === "shipped").length,
         feedbackReplied: feedback.filter((f) => !!f.repliedAt).length,
+        repliesWaiting: feedback.filter((f) => f.status === "shipped" && !f.repliedAt).length,
+        feedbackMedianReplyDays: (() => {
+          const days = feedback.filter((f) => f.repliedAt).map((f) => (f.repliedAt! - f.createdAt) / 86_400_000).sort((a, b) => a - b);
+          return days.length ? (days[Math.floor((days.length - 1) / 2)] + days[Math.floor(days.length / 2)]) / 2 : null;
+        })(),
         events: summed(selected),
       },
       daily,
@@ -226,10 +231,10 @@ export const dashboard = query({
 
 /** Feedback, newest first: message, would-pay answer, screenshot, context and what the person did just before. */
 export const feedback = query({
-  args: { limit: v.optional(v.number()), at: v.optional(v.number()), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
+  args: { limit: v.optional(v.number()), at: v.optional(v.number()), id: v.optional(v.id("feedback")), wouldPay: v.optional(v.string()), userId: v.optional(v.id("users")),
           handled: v.optional(v.boolean()), status: v.optional(feedbackStatus), feedbackSource: v.optional(feedbackSource), since: v.optional(v.number()), until: v.optional(v.number()),
           search: v.optional(v.string()) },
-  handler: async (ctx, { limit = 50, wouldPay, userId, handled, status, feedbackSource, since, until, search }) => {
+  handler: async (ctx, { limit = 50, id, wouldPay, userId, handled, status, feedbackSource, since, until, search }) => {
     if (!(await isOwner(ctx))) return null;
     const needle = search?.trim().toLowerCase();
     const source = userId ? ctx.db.query("feedback").withIndex("by_user_created", (q) => {
@@ -240,7 +245,8 @@ export const feedback = query({
       const lower = since !== undefined ? q.gte("createdAt", since) : q;
       return until !== undefined ? lower.lt("createdAt", until) : lower;
     });
-    const page = await listPage(source.order("desc"), async (f) =>
+    const direct = id ? await ctx.db.get(id) : null;
+    const page = id ? { rows: direct ? [direct] : [], more: false } : await listPage(source.order("desc"), async (f) =>
       (!wouldPay || f.wouldPay === wouldPay) && (!userId || f.userId === userId)
         && (handled === undefined || !!f.handledAt === handled) && inRange(f.createdAt, since, until)
         && (!status || (f.status ?? (f.handledAt ? "planned" : "new")) === status)
@@ -257,6 +263,7 @@ export const feedback = query({
         email: f.personEmail ?? user?.email ?? f.personName ?? "(deleted user)", personName: f.personName,
         source: f.source ?? "app", status: f.status ?? (f.handledAt ? "planned" : "new"), paraphrase: f.paraphrase,
         note: f.note, declinedReason: f.declinedReason, issues: f.issues ?? [], releaseSha: f.releaseSha,
+        sourceUrl: f.sourceUrl, creditName: f.creditName ?? false, replyUrl: f.replyUrl,
         releaseAt: f.releaseAt, replyDraft: f.replyDraft, replyText: f.replyText, repliedAt: f.repliedAt,
         replyChannel: f.replyChannel, repliedBy: f.repliedBy, sending: f.sending, timeline,
         message: f.message,
@@ -865,13 +872,14 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const addFeedback = mutation({
   args: { userId: v.optional(v.id("users")), personName: v.optional(v.string()), personEmail: v.optional(v.string()),
     receivedAt: v.number(), source: feedbackSource, message: v.string(), paraphrase: v.boolean(),
-    screenshotId: v.optional(v.id("_storage")) },
+    screenshotId: v.optional(v.id("_storage")), sourceUrl: v.optional(v.string()), creditName: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     await requireOwner(ctx);
     if (args.source === "app") throw new ConvexError("Use an outside channel.");
     if (args.userId && !(await ctx.db.get(args.userId))) throw new ConvexError("Choose an existing account.");
     if (!args.userId && !args.personName?.trim() && !args.personEmail?.trim()) throw new ConvexError("Add a person or choose an account.");
     if (args.personEmail?.trim() && !emailPattern.test(args.personEmail.trim())) throw new ConvexError("Enter a valid e-mail address.");
+    if (args.sourceUrl?.trim() && !/^https?:\/\/[^\s]+$/i.test(args.sourceUrl.trim())) throw new ConvexError("Enter a valid post or message URL.");
     const message = args.message.trim();
     if (!message || message.length > 2000) throw new ConvexError("Write feedback under 2000 characters.");
     if (!Number.isFinite(args.receivedAt) || args.receivedAt > Date.now() || args.receivedAt < 0) throw new ConvexError("Choose a valid received date.");
@@ -882,7 +890,8 @@ export const addFeedback = mutation({
     }
     const id = await insertTracked(ctx, "feedback", { userId: args.userId, personName: args.personName?.trim() || undefined,
       personEmail: args.personEmail?.trim() || undefined, createdAt: args.receivedAt, source: args.source,
-      message, paraphrase: args.paraphrase, screenshotId: args.screenshotId, status: "new" });
+      message, paraphrase: args.paraphrase, screenshotId: args.screenshotId, status: "new",
+      sourceUrl: args.sourceUrl?.trim() || undefined, creditName: args.creditName ?? false });
     const identity = await ctx.auth.getUserIdentity();
     await ctx.db.insert("feedbackEvents", { feedbackId: id, status: "new", at: Date.now(), by: identity!.email! });
     return id;
@@ -908,7 +917,7 @@ export function draftFeedbackReply({ personName, email, receivedAt, note }: {
 export const updateFeedback = mutation({
   args: { id: v.id("feedback"), status: feedbackStatus, note: v.optional(v.string()),
     declinedReason: v.optional(v.string()), issues: v.array(v.string()), releaseSha: v.optional(v.string()),
-    releaseAt: v.optional(v.number()), replyDraft: v.optional(v.string()) },
+    releaseAt: v.optional(v.number()), replyDraft: v.optional(v.string()), featureUrl: v.optional(v.string()) },
   handler: async (ctx, args) => {
     await requireOwner(ctx);
     const row = await ctx.db.get(args.id);
@@ -919,6 +928,7 @@ export const updateFeedback = mutation({
     if (args.status !== current && !next[current]?.includes(args.status)) throw new ConvexError("Move feedback through the status line in order.");
     const issues = [...new Set(args.issues.map((s) => s.trim().toUpperCase()).filter(Boolean))];
     if (issues.some((s) => !issuePattern.test(s))) throw new ConvexError("Use issue IDs such as MW-48.");
+    if (args.featureUrl?.trim() && !/^\/(?!\/)[^\s]*$/.test(args.featureUrl.trim())) throw new ConvexError("Use an app path such as /watches/.");
     if (args.status === "declined" && !args.declinedReason?.trim()) throw new ConvexError("Give a reason for declining.");
     if (args.status === "shipped" && (!issues.length || !args.releaseSha || !/^[a-f0-9]{7,40}$/i.test(args.releaseSha)
       || !args.releaseAt || !Number.isFinite(args.releaseAt))) throw new ConvexError("Add an issue, release SHA and date before shipping.");
@@ -932,21 +942,40 @@ export const updateFeedback = mutation({
     await patchTracked(ctx, "feedback", args.id, { status: args.status, note: args.note?.trim() || undefined,
       declinedReason: args.status === "declined" ? args.declinedReason?.trim() : undefined, issues,
       releaseSha: args.releaseSha?.trim() || undefined, releaseAt: args.releaseAt,
+      featureUrl: args.featureUrl?.trim() || row.featureUrl,
       replyDraft: draft, handledAt: args.status === "new" ? undefined : row.handledAt ?? now });
     if (current !== args.status)
       await ctx.db.insert("feedbackEvents", { feedbackId: args.id, status: args.status, at: now, by: identity!.email!, note: args.note?.trim() || undefined });
   },
 });
 
+export const linkFeedbackIssue = mutation({
+  args: { id: v.id("feedback"), issue: v.string() },
+  handler: async (ctx, { id, issue }) => {
+    await requireOwner(ctx);
+    const normalized = issue.trim().toUpperCase();
+    if (!issuePattern.test(normalized)) throw new ConvexError("Use an issue ID such as MW-48.");
+    const row = await ctx.db.get(id);
+    if (!row || !["new", "planned"].includes(row.status ?? "new")) throw new ConvexError("Link feedback while it is new or planned.");
+    if (row.issues?.includes(normalized)) return;
+    const now = Date.now();
+    await patchTracked(ctx, "feedback", id, { issues: [...(row.issues ?? []), normalized], status: "planned", handledAt: row.handledAt ?? now });
+    const identity = await ctx.auth.getUserIdentity();
+    await ctx.db.insert("feedbackEvents", { feedbackId: id, status: "planned", at: now, by: identity!.email!, note: `Linked to ${normalized}.` });
+  },
+});
+
 export const markFeedbackReplied = mutation({
-  args: { id: v.id("feedback"), channel: feedbackSource, text: v.string() },
-  handler: async (ctx, { id, channel, text }) => {
+  args: { id: v.id("feedback"), channel: feedbackSource, text: v.string(), replyUrl: v.optional(v.string()) },
+  handler: async (ctx, { id, channel, text, replyUrl }) => {
     await requireOwner(ctx);
     const row = await ctx.db.get(id);
     if (!row || row.status !== "shipped" || row.repliedAt || row.sending || channel === "app" || (row.source ?? "app") === "app")
       throw new ConvexError("This reply cannot be marked as sent.");
     if (!text.trim()) throw new ConvexError("Write the reply that was sent.");
+    if (replyUrl?.trim() && !/^https?:\/\/[^\s]+$/i.test(replyUrl.trim())) throw new ConvexError("Enter a valid reply URL.");
     const identity = await ctx.auth.getUserIdentity();
-    await patchTracked(ctx, "feedback", id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel, repliedBy: identity!.email! });
+    await patchTracked(ctx, "feedback", id, { replyText: text.trim(), repliedAt: Date.now(), replyChannel: channel,
+      replyUrl: replyUrl?.trim() || undefined, repliedBy: identity!.email! });
   },
 });

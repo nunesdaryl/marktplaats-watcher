@@ -10,6 +10,7 @@ export function accountMenuItems({ clerk, onPrivacy, showArchive, pref, reset })
     { label: "Manage account", description: "Profile, email and security", icon: "edit", action: () => clerk.openUserProfile() },
     onPrivacy && { label: "Privacy and your data", description: "Review how your data is used", icon: "shield", action: onPrivacy },
     showArchive && { label: "Archived", description: "Find saved watches, chats and alerts", icon: "archive", action: () => go("/archived") },
+    { label: "What's new", description: "Improvements built from feedback", action: () => go("/whats-new") },
     pref !== "system" && { label: "Match device theme", description: "Follow your device's light or dark mode", icon: "refresh", action: () => { reset(); track("theme_changed", { value: "system" }); } },
     { label: "Sign out", description: "End this session", action: () => clerk.signOut(clerk.session?.id) },
   ].filter(Boolean);

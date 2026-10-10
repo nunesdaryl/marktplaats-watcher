@@ -327,6 +327,7 @@ export default function Overview({ open, onSearch, ask }) {
             ["Checks failed", h.stats.checksFailed, "Last 24 hours", () => go("runs", "Checks failed", { since: now - DAY, status: "failed" })],
             ["Watches falling behind", t.watchesFallingBehind, "Active watches", () => go("watches", "Watches falling behind", { status: "active", behind: "yes" })],
             ["Delivery misses", data.deliveryAudit.misses, "Latest audit", () => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })],
+            ["Replies waiting", t.repliesWaiting, "Shipped feedback", () => go("feedback", "Replies waiting", { status: "shipped" })],
           ].map(([name, value, note, onOpen]) => (
             <button className="stat door" key={name} onClick={onOpen} title={`Show ${name.toLowerCase()}`}>
               <span className="stat-value">{value}</span>
@@ -374,7 +375,7 @@ export default function Overview({ open, onSearch, ask }) {
           onOpen={() => go("errors", "Errors (24 h)", { since: now - DAY })} />
         <Stat value={data.deliveryAudit.misses} name="Delivery audit" note={`${data.deliveryAudit.checked} watches checked · ${data.deliveryAudit.lastRunAt ? when(data.deliveryAudit.lastRunAt) : "No run yet"}`}
           onOpen={() => go("audits", "Delivery audit", { since: data.deliveryAudit.lastRunAt })} />
-        <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied`} onOpen={() => go("feedback", "Feedback and suggestions")} />
+        <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied · median ${t.feedbackMedianReplyDays == null ? "—" : t.feedbackMedianReplyDays.toFixed(1)} days to reply`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
       <OpenAiSpendCard open={go} />
       {founding && <section className="panel founding-summary">

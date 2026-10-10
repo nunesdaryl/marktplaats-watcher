@@ -22,6 +22,8 @@ setup_repo() {
 import sys
 if sys.argv[1] == "ready":
     print('{"approver":"Test Operator"}')
+elif sys.argv[1] == "issue":
+    print('{"title":"Test feature"}')
 PY
     printf 'base\n' > requirements.txt
     printf 'base\n' > file.txt
@@ -66,6 +68,10 @@ exec "$REAL_GIT" "$@"
 SH
     cat > mockbin/npx <<'SH'
 #!/usr/bin/env bash
+if [[ $1 == convex && $2 == run ]]; then
+    printf '%s\n' "$4" >> "$TEST_EVENTS"
+    printf '0\n'
+fi
 exit 0
 SH
     cat > mockbin/npm <<'SH'
@@ -102,6 +108,7 @@ run_gate() {
 
 setup_repo success
 run_gate FAIL_GH_ONCE=1
+[[ $(grep -Fc 'feedback:shipByIssue' "$events") == 1 ]]
 [[ $(git branch --show-current) == main ]]
 [[ $(git ls-remote --heads origin factory/MW-999) == '' ]]
 [[ $(git branch --list factory/MW-999) == '' ]]
@@ -154,6 +161,11 @@ fi
 [[ $(git branch --show-current) == main ]]
 [[ $(git rev-parse wave1-demo-ready) == $(git rev-parse origin/wave1-demo-ready) ]]
 echo 'PASS failed checks reset local wave branch and return to main'
+if grep -Fq 'feedback:shipByIssue' "$events"; then
+    echo 'FAIL failed checks touched feedback' >&2
+    exit 1
+fi
+echo 'PASS failed checks do not ship feedback'
 
 setup_repo merge_conflict file.txt
 git checkout -q wave1-demo-ready

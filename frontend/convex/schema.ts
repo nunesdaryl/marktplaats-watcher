@@ -18,7 +18,7 @@ export const listingCard = v.object({
 
 // The answers to "Would you pay for this?" (labels in feedback.ts)
 export const wouldPayValidator = v.union(v.literal("no"), v.literal("maybe"), v.literal("eur2"), v.literal("eur5"), v.literal("eur10"));
-export const feedbackSource = v.union(v.literal("app"), v.literal("email"), v.literal("whatsapp"), v.literal("in_person"), v.literal("other"));
+export const feedbackSource = v.union(v.literal("app"), v.literal("email"), v.literal("linkedin"), v.literal("whatsapp"), v.literal("in_person"), v.literal("other"));
 export const feedbackStatus = v.union(v.literal("new"), v.literal("planned"), v.literal("in_progress"), v.literal("shipped"), v.literal("declined"));
 
 // What the app adds to feedback so a bug can be reproduced: where it was sent from and what the screen was like
@@ -136,6 +136,12 @@ export default defineSchema({
     userId: v.optional(v.id("users")),
     personName: v.optional(v.string()),
     personEmail: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    creditName: v.optional(v.boolean()),
+    noticeDismissedAt: v.optional(v.number()),
+    releaseTitle: v.optional(v.string()),
+    featureUrl: v.optional(v.string()),
+    replyUrl: v.optional(v.string()),
     source: v.optional(feedbackSource),
     paraphrase: v.optional(v.boolean()),
     status: v.optional(feedbackStatus),

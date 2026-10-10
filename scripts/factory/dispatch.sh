@@ -44,6 +44,12 @@ trap 'rm -f "$brief"' EXIT
     python3 scripts/factory/lin.py spec "$issue"
 } > "$brief"
 claim=$(python3 scripts/factory/lin.py claim "$issue")
+# MW-116: linked feedback moves to in_progress; a failure only warns so a claimed build is never left stuck.
+if feedback_count=$(cd frontend && npx convex run --prod feedback:advanceByIssue "{\"issue\":\"$issue\",\"status\":\"in_progress\"}" 2>/dev/null); then
+    printf 'factory: feedback advanced for %s: %s\n' "$issue" "$feedback_count"
+else
+    printf 'factory: WARNING could not advance feedback for %s (build continues)\n' "$issue" >&2
+fi
 version=$([[ $launcher == codex ]] && /opt/homebrew/bin/codex --version || claude --version)
 printf 'engine routed: %s model=%s context=%s foreground commit-owner=station binary-version=%s effort=%s claim=%s base=%s\n' "$engine" "$model" "$launcher" "$version" "$effort" "$claim" "$(git -C "$worktree" rev-parse HEAD)" | python3 scripts/factory/lin.py comment "$issue" >/dev/null
 cd "$worktree"
