@@ -14,6 +14,7 @@ Draft pack for Daryl to review. No posting, messages or paid launch are authoriz
 - [Warm and cold funnel, activation and UTM plan](generated/funnel.md)
 - [Dutch and English screen demo VSL](generated/vsl-demo-script.md)
 - [Two-week content calendar, 12–25 October](generated/content-calendar.md)
+- [Launch posts for 11 October: LinkedIn, cohort WhatsApp and Vinod](generated/launch-posts-2026-10-10.md)
 - [Community, DM and interview drafts](generated/community-and-dm.md)
 - [Meta test briefs and launch gate](generated/ads-meta-test.md)
 - [10 October launch video drafts, posters, captions and storyboard](media/launch-2026-10-10/README.md)
