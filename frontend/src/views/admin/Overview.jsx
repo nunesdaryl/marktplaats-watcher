@@ -57,7 +57,7 @@ function HealthIssue({ issue, go }) {
 }
 
 /** Daily bars: one column per day, the busiest day is full height. Each day opens that day's records. */
-function DayChart({ title, daily, keys, onDay, onTitle, hideSum }) {
+function DayChart({ title, daily, keys, onDay, onTitle, hideSum, note }) {
   const total = (d) => keys.reduce((n, k) => n + d[k.key], 0);
   const max = Math.max(1, ...daily.map(total));
   const sum = daily.reduce((n, d) => n + total(d), 0);
@@ -82,6 +82,7 @@ function DayChart({ title, daily, keys, onDay, onTitle, hideSum }) {
       {keys.length > 1 && (
         <div className="legend">{keys.map((k) => <span key={k.key}><i className={`swatch ${k.tone ?? ""}`} />{k.name}</span>)}</div>
       )}
+      {note && <p className="hint">{note}</p>}
     </figure>
   );
 }
@@ -442,7 +443,8 @@ export default function Overview({ open, onSearch, ask }) {
 
       <div className="charts">
         <DayChart title="Listings removed" daily={data.daily} keys={[{ key: "paidRemoved", name: "paid placements" },
-          { key: "businessRemoved", name: "shops/dealers", tone: "tag" }]} />
+          { key: "businessRemoved", name: "shops/dealers", tone: "tag" }]}
+          note={data.sellerSignal24h && `Seller website flag seen on ${data.sellerSignal24h.showWebsiteTrue} of ${data.sellerSignal24h.sellerListingsChecked} listings (since ${new Date(data.sellerSignal24h.since).toLocaleString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })})`} />
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}
                   onTitle={() => go("users", `Active in the last ${days} days`, { activeSince: since })} />
         <DayChart title="Chat messages" daily={data.daily} onDay={(day) => go("events", `Chat messages ${dayLabel(day)}`, { ...dayRange(day), name: "chat_sent" })}

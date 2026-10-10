@@ -1,8 +1,9 @@
 import { convexTest } from "convex-test";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
-import { insertTracked, patchTracked } from "./totals";
+import { insertTracked, patchTracked, projection } from "./totals";
 
 const modules = import.meta.glob("./**/*.ts");
 const DAY = 86_400_000;
@@ -15,6 +16,41 @@ beforeEach(() => {
   process.env.CANARY_DISABLED = "1";
 });
 afterEach(() => { vi.useRealTimers(); delete process.env.CANARY_DISABLED; });
+
+test("run projection retains every numeric dashboard counter written by a check", () => {
+  const counters = { at: 1, checked: 2, failed: 3, emails: 4, emailFailures: 5, timeouts: 6,
+    paidRemoved: 6, businessRemoved: 7, businessSignaled: 8, websiteUrlPresent: 9, showWebsiteTrue: 10,
+    sellerListingsChecked: 11 };
+  const checker = readFileSync(new URL("./checker.ts", import.meta.url), "utf8");
+  const calls = [...checker.matchAll(/ctx\.runMutation\(internal\.health\.logRun,\s*\{([^}]*)\}/g)];
+  const finalCall = calls.at(-1)?.[1];
+  expect(finalCall).toBeDefined();
+  const written = [...finalCall!.matchAll(/(?:^|,)\s*(\w+)\s*(?=[:,])/g)].map((match) => match[1])
+    .filter((key) => key !== "requestId");
+  expect(Object.keys(counters).sort()).toEqual(written.sort());
+  expect(projection("runs", { _id: "run", ...counters })).toMatchObject(counters);
+});
+
+test("backfill repairs existing run summaries without changing source runs", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  const run = { at: Date.now(), checked: 2, failed: 0, emails: 0, emailFailures: 0,
+    paidRemoved: 52, businessRemoved: 3, businessSignaled: 4, websiteUrlPresent: 3, showWebsiteTrue: 2 };
+  const id = await t.run((ctx) => ctx.db.insert("runs", run));
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  const key = `runs:${new Date().toISOString().slice(0, 10)}`;
+  await t.run(async (ctx) => {
+    const bucket = await ctx.db.query("dashboardTotals").withIndex("by_key", (q) => q.eq("key", key)).unique();
+    await ctx.db.patch(bucket!._id, { rows: [{ _id: id, at: run.at, checked: 2, failed: 0, emails: 0, emailFailures: 0 }] });
+  });
+  expect((await owner.query(api.admin.dashboard, {}))?.daily.at(-1)?.paidRemoved).toBe(0);
+  expect((await t.mutation(internal.totals.backfill, { dryRun: true })).drift).toContain(key);
+  expect((await owner.query(api.admin.dashboard, {}))?.daily.at(-1)?.paidRemoved).toBe(0);
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  expect((await t.run((ctx) => ctx.db.get(id)))?.paidRemoved).toBe(52);
+  expect((await owner.query(api.admin.dashboard, {}))?.daily.at(-1)).toMatchObject({ paidRemoved: 52, businessRemoved: 3 });
+  expect((await t.mutation(internal.totals.backfill, { dryRun: true })).drift).toEqual([]);
+});
 
 test("backfilled overview matches the original across every window and health detail", async () => {
   const t = convexTest(schema, modules);

@@ -123,12 +123,13 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
     results = []
     stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None,
              "paid_removed": 0, "business_removed": 0, "business_signaled": 0,
-             "website_url_present": 0, "show_website_true": 0}
+             "website_url_present": 0, "show_website_true": 0, "seller_listings_checked": 0}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
     for item in listings or []:
         if item.get("priorityProduct", "NONE") != "NONE":
             stats["paid_removed"] += 1
             continue
+        stats["seller_listings_checked"] += 1
         business = is_business_seller(item)
         stats["business_signaled"] += business
         seller = item.get("sellerInformation") or {}
@@ -1002,6 +1003,7 @@ def check_query(query, watches, now=None):
                         "paidRemoved": stats["paid_removed"], "businessRemoved": stats["business_removed"],
                         "businessSignaled": stats["business_signaled"],
                         "websiteUrlPresent": stats["website_url_present"], "showWebsiteTrue": stats["show_website_true"],
+                        "sellerListingsChecked": stats["seller_listings_checked"],
                         **({"reservedIds": reserved_ids} if reserved_ids else {}),
                         **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),
                         "currentIds": [i["id"] for i in listings if i["id"]],

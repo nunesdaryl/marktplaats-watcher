@@ -88,6 +88,20 @@ test("the attention row names every zero state without adding a query", () => {
   expect(audited).not.toContain("No audit run yet");
 });
 
+test("listings removed chart displays the summed paid and shop counts", () => {
+  responses[0].daily = [{ day: "2026-10-01", active: 0, searches: 0, watchChats: 0,
+    watches: 0, alerts: 0, paidRemoved: 52, businessRemoved: 3 }];
+  const { html } = render();
+  expect(html).toContain('aria-label="Listings removed: 55 in 1 days"');
+  expect(html).toContain('52 paid placements, 3 shops/dealers');
+});
+
+test("24-hour review shows the seller website flag numerator and inspected listing count", () => {
+  responses[0].sellerSignal24h = { showWebsiteTrue: 5, sellerListingsChecked: 20, since: oldNow - 24 * 60 * 60 * 1000 };
+  const { html } = render();
+  expect(html).toContain("Seller website flag seen on 5 of 20 listings (since");
+});
+
 test("the refresh icon reruns all three queries and keeps old figures until all return", () => {
   const first = render();
   expect(first.html).toContain('class="admin-refresh"');

@@ -29,7 +29,8 @@ export function projection(table: Tracked, row: Record<string, any>): Row {
     audits: ["_creationTime", "at", "watchId", "userId", "requestId", "ok", "missCount", "deduplicated", "misses", "error"],
     events: ["at", "userId", "name", "props", "device"],
     feedback: ["status", "handledAt", "repliedAt", "wouldPay", "createdAt"],
-    runs: ["at", "checked", "failed", "emails", "emailFailures", "paused", "requestId"],
+    runs: ["at", "checked", "failed", "emails", "emailFailures", "timeouts", "paused", "requestId",
+      "paidRemoved", "businessRemoved", "businessSignaled", "websiteUrlPresent", "showWebsiteTrue", "sellerListingsChecked"],
     errors: ["at", "kind", "requestId", "message"],
     ratings: ["updatedAt"],
   };

@@ -79,6 +79,7 @@ def test_paid_and_business_filters_keep_only_boolean_seller_type(monkeypatch):
     observed, stats = agent.parse_listings(raw, limit=None)
     assert [item["id"] for item in observed] == ["private", "shop", "shown"]
     assert stats["paid_removed"] == 1 and stats["business_signaled"] == 2 and stats["business_removed"] == 0
+    assert stats["seller_listings_checked"] == 3
     assert all("Do not store" not in json.dumps(item) and "shop.invalid" not in json.dumps(item) for item in observed)
     monkeypatch.setenv("BUSINESS_SELLER_FILTER_ENABLED", "1")
     private, stats = agent.parse_listings(raw, limit=None)
@@ -103,6 +104,7 @@ def test_scheduled_check_filters_before_ranking(monkeypatch):
     [result] = agent.check_query("bike", [{"id": "w", "seeded": True, "watermark": 0}])
     assert ranked == ["m1"] and result["currentIds"] == ["m1"]
     assert result["paidRemoved"] == 1 and result["businessRemoved"] == 1
+    assert result["sellerListingsChecked"] == 2
 
 
 def test_chat_search_and_audit_use_the_same_listing_filter(monkeypatch):
@@ -1649,7 +1651,7 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
     assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "currentPrices": [], "listings": [], "newestId": None,
                      "waiting": 0, "capped": False, "paidRemoved": 0, "businessRemoved": 0, "businessSignaled": 0,
-                     "websiteUrlPresent": 0, "showWebsiteTrue": 0}
+                     "websiteUrlPresent": 0, "showWebsiteTrue": 0, "sellerListingsChecked": 0}
 
 
 def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):
