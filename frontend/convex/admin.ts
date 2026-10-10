@@ -191,6 +191,7 @@ export const dashboard = query({
         chats: chats.length,
         chatsToday: todayUsage.reduce((sum, row) => sum + row.chats, 0),
         alerts: summed(alertSummaries), alerts7d: summed(await alertsInWindow(now - 7 * DAY)),
+        priceDropAlerts: alertSummaries.reduce((n, a) => n + (a.summary.priceDrops ?? 0), 0),
         emailsSent: alertSummaries.reduce((n, a) => n + a.summary.sent, 0),
         emailsFailed: alertSummaries.reduce((n, a) => n + a.summary.failed, 0),
         feedback: feedback.length,
@@ -319,7 +320,7 @@ function watchRow(w: Doc<"watches">, email: string | undefined, alertCount: numb
 function alertRow(a: Doc<"alerts">, email: string | undefined, watchTitle: string | undefined) {
   return {
     _id: a._id, userId: a.userId, watchId: a.watchId, email: email ?? "(deleted user)", watch: watchTitle ?? "Deleted watch",
-    title: a.title, priceEur: a.priceEur, city: a.city, url: a.url, image: a.image, score: a.score, reason: a.reason,
+    title: a.title, priceEur: a.priceEur, dropFromEur: a.dropFromEur, city: a.city, url: a.url, image: a.image, score: a.score, reason: a.reason,
     emailStatus: a.emailStatus, catchUp: !!a.catchUp, listingId: a.listingId,
     attempts: a.attempts ?? 1, createdAt: a.createdAt,
   };

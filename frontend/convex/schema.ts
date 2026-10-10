@@ -328,7 +328,7 @@ export default defineSchema({
     recentReads: v.array(v.object({ at: v.number(), count: v.number() })),
   }),
 
-  // Listings a watch has already seen, so each one is only ever alerted once.
+  // Listings a watch has already seen, with the price baseline for later drops.
   seenListings: defineTable({
     watchId: v.id("watches"),
     listingId: v.string(),
@@ -339,6 +339,8 @@ export default defineSchema({
     scoredAt: v.optional(v.number()),
     title: v.optional(v.string()),
     url: v.optional(v.string()),
+    firstPriceEur: v.optional(v.number()),
+    alertedDropPriceEur: v.optional(v.number()),
   })
     .index("by_watch_listing", ["watchId", "listingId"])
     .index("by_watch_lastSeen", ["watchId", "lastSeenAt"])
@@ -359,6 +361,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     priceEur: v.optional(v.number()),
+    dropFromEur: v.optional(v.number()),
     priceType: v.optional(v.string()),
     city: v.optional(v.string()),
     url: v.string(),

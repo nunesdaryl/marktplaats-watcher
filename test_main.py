@@ -113,6 +113,7 @@ def post_check(monkeypatch, watches):
                 "score": 8, "reason": "Matches the watch.",
             }],
             "newestId": 9999999, "waiting": 0, "capped": False,
+            "currentPrices": [{"id": LISTING_ID, "priceEur": 400}],   # MW-117: remembered for price-drop alerts
         }
 
 

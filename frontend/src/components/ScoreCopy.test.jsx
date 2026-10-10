@@ -30,6 +30,12 @@ test("offer action appears only for a priced listing and stays outside the listi
   expect(unpriced).not.toContain("Help me make an offer");
 });
 
+test("a price-drop card shows the previous and new prices", () => {
+  const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test",
+    priceEur: 400, dropFromEur: 450 }} score={8} />);
+  expect(html).toContain("Price dropped €450 → €400");
+});
+
 test.each(["MIN_BID", "BID", "FAST_BID", "FIXED", "bidding from", "make an offer", "fixed price"])("%s listings offer help", (price_type) => {
   const html = renderToStaticMarkup(<ListingCard listing={{ title: "Bike", url: "https://example.test", price_eur: 100, price_type }} score={8} />);
   expect(html).toContain("Help me make an offer");

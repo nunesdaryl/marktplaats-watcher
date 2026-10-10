@@ -367,7 +367,7 @@ export default function Overview({ open, onSearch, ask }) {
               onOpen={() => go("watches", "Watches", { status: "active" })} />
         <Stat value={t.watchesFallingBehind} name="Watches falling behind" note={data.fallingBehindLabels.join(", ") || "None"}
           onOpen={() => go("watches", "Watches falling behind", { status: "active", behind: "yes" })} />
-        <Stat value={t.alerts7d} name="Alerts this week" note={`${t.alerts} kept · ${t.emailsFailed} e-mails failed`}
+        <Stat value={t.alerts7d} name="Alerts this week" note={`${t.alerts} kept · ${t.priceDropAlerts ?? 0} price drops · ${t.emailsFailed} e-mails failed`}
               onOpen={() => go("alerts", "Alerts this week", { since: now - 7 * DAY })} />
         <Stat value={t.chats} name="Saved chats" note="kept 30 days after last use" onOpen={() => go("chats", "Saved chats")} />
         <Stat value={t.chatsToday} name="Chats today" note="Amsterdam time" onOpen={() => go("chats", "Chats today", { when: "today" })} />

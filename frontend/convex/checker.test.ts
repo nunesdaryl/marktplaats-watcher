@@ -56,6 +56,61 @@ test("record stores scores and reasons for alerted and non-alerted listings", as
   expect(await alerts(t)).toHaveLength(1);
 });
 
+test("price drops alert once at either threshold, ignore rises, and keep the first price", async () => {
+  const { t, id } = await seededWatch();
+  let now = Date.now();
+  const record = async (price: number, score = 9, reason = `Scored at €${price}`) => {
+    const item = { ...listing("bike"), price_eur: price, score, reason, drop_from_eur: 450 };
+    const sent = await t.mutation(internal.checker.record, { now, dryRun: false,
+      results: [{ watchId: id, ok: true, currentIds: ["bike"], currentPrices: [{ id: "bike", priceEur: price }],
+        listings: [item] }] });
+    now += 60_000;
+    return sent;
+  };
+  await record(450); // existing alert, with its first observed price
+  expect((await t.run((ctx) => ctx.db.query("seenListings").first()))?.firstPriceEur).toBe(450);
+  expect(await record(446)).toEqual([]);
+  expect(await record(445, 5)).toEqual([]); // below the notify level; keep the baseline
+  expect(await record(445)).toHaveLength(1);
+  expect(await record(445)).toEqual([]);
+  expect(await record(460)).toEqual([]);
+  expect(await record(445)).toEqual([]); // returning from a rise is not a new low
+  expect(await record(440)).toHaveLength(1);
+  const rows = await alerts(t);
+  expect(rows.map((a: any) => [a.priceEur, a.dropFromEur, a.reason])).toEqual([
+    [450, undefined, "Scored at €450"], [445, 450, "Scored at €445"], [440, 445, "Scored at €440"],
+  ]);
+  expect((await t.run((ctx) => ctx.db.query("seenListings").first()))).toMatchObject({
+    firstPriceEur: 450, alertedDropPriceEur: 440,
+  });
+});
+
+test("price-drop previews include the badge without writing alerts", async () => {
+  const { t, id } = await seededWatch();
+  const now = Date.now();
+  await t.mutation(internal.checker.record, { now, dryRun: false, results: [{ ...found(id, ["bike"]),
+    currentPrices: [{ id: "bike", priceEur: 450 }], listings: [{ ...listing("bike"), price_eur: 450 }] }] });
+  const result = { watchId: id, ok: true, currentIds: ["bike"], currentPrices: [{ id: "bike", priceEur: 400 }],
+    listings: [{ ...listing("bike"), drop_from_eur: 450, price_eur: 400 }] };
+  const preview = await t.mutation(internal.checker.record, { now: now + 60_000, dryRun: true, results: [result] });
+  expect(preview[0].preview?.alerts[0]).toMatchObject({ dropFromEur: 450, priceEur: 400 });
+  expect(await alerts(t)).toHaveLength(1);
+});
+
+test("a capped bidding score does not reach a great-only watch's drop alert level", async () => {
+  const { t, id } = await seededWatch();
+  await t.run((ctx) => ctx.db.patch(id, { notify: "great" }));
+  const now = Date.now();
+  await t.mutation(internal.checker.record, { now, dryRun: false, results: [{ ...found(id, ["bid"]),
+    currentPrices: [{ id: "bid", priceEur: 200 }], listings: [{ ...listing("bid"), price_eur: 200 }] }] });
+  const mails = await t.mutation(internal.checker.record, { now: now + 60_000, dryRun: false,
+    results: [{ watchId: id, ok: true, currentIds: ["bid"], currentPrices: [{ id: "bid", priceEur: 190 }],
+      listings: [{ ...listing("bid"), price_eur: 190, price_type: "bidding from", drop_from_eur: 200,
+        score: 7, reason: "Starting bid near the watch limit." }] }] });
+  expect(mails).toEqual([]);
+  expect(await alerts(t)).toHaveLength(1);
+});
+
 test("all-listings watch records wanted score zero without alerting in live or preview checks", async () => {
   const { t, id } = await seededWatch();
   await t.run((ctx) => ctx.db.patch(id, { notify: "all" }));
