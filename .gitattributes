@@ -11,3 +11,6 @@
 *.ttf binary
 *.otf binary
 *.ico binary
+
+docs/marketing/media/launch-2026-10-10/*.mp4 binary
+docs/marketing/media/launch-2026-10-10/*.jpg binary

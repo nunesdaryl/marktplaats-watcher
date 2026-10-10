@@ -16,6 +16,7 @@ Draft pack for Daryl to review. No posting, messages or paid launch are authoriz
 - [Two-week content calendar, 12–25 October](generated/content-calendar.md)
 - [Community, DM and interview drafts](generated/community-and-dm.md)
 - [Meta test briefs and launch gate](generated/ads-meta-test.md)
+- [10 October launch video drafts, posters, captions and storyboard](media/launch-2026-10-10/README.md)
 
 Older [LinkedIn series](generated/linkedin-series.md) and [6 October outreach drafts](outreach-drafts-2026-10-06.md) are historical drafts; use the dated pack above for the founding campaign. Competitor notes and the [Marktplaats pitch pack](MARKTPLAATS-PITCH-PACK.md) remain reference material.
 

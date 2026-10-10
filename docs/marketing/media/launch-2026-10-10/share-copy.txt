@@ -1,0 +1,5 @@
+EN:
+Introducing Marktplaats Watcher: tell it what you want in plain words, pick when it checks Marktplaats, and get an e-mail only for the new listings worth a look, with the reason. Free for 30 days for the first 100 users at marktplaats-watcher.vercel.app (a portfolio project, not affiliated with Marktplaats).
+
+NL:
+Maak kennis met Marktplaats Watcher: zeg in gewone woorden wat je zoekt, kies wanneer hij Marktplaats checkt, en krijg alleen een e-mail over nieuwe advertenties die de moeite waard zijn, met de reden. 30 dagen gratis voor de eerste 100 gebruikers via marktplaats-watcher.vercel.app (een portfolioproject, niet verbonden aan Marktplaats; de app is in het Engels).
