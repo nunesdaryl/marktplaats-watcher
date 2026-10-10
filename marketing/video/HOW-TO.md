@@ -11,8 +11,8 @@ scripts/render-video.sh cohort1 all all          # 4 videos: landscape/vertical 
 scripts/render-video.sh animated-logo landscape en
 ```
 
-- **variant**: `original`, `animated-logo`, `cohort1` or `why` (see below).
-- **format**: `landscape` (1920x1080), `vertical` (1080x1920) or `all`.
+- **variant**: `original`, `animated-logo`, `cohort1`, `why`, `pack` or `bumper` (see below).
+- **format**: `landscape` (1920x1080), `vertical` (1080x1920) or `all`. `pack` takes `reels-stories` (1080x1920), `meta-feed` (1080x1350), `x` (1920x1080) or `all`; `bumper` takes `yt-bumper` (1920x1080) or `all`.
 - **lang**: `en`, `nl` or `all`. The app screens stay in English in both; captions, claims and the outro change.
 
 It writes `marketing/video/out/brag-<format>-<lang>[-<variant>].mp4` and a matching `.jpg` poster. The poster frame is baked in as frame 0 (same duration, frame count and audio), so every platform's thumbnail shows it. `out/` and `.build/` are gitignored. It needs `npx` (Node), `ffmpeg` and `python3`, and stops with a clear message if one is missing.
@@ -52,11 +52,16 @@ Under the hood it runs `python3 -I marketing/video/build.py` (template to `.buil
 
 | `why` | 40.6 s | 1218 | hook 0, pain 3.0, turn 8.9, outcome cards 15.4 / 18.15 / 21.5 / 24.5, proof 28.6, outro 35.11 (loop from 36.8 s) | Its own timeline (no nested film). PAS: the cohort1 hook, three pain lines from our dated 29 Sep check, the 8-10 Oct own-account contrast, four outcome cards (plain words, worth a look with the reason, no paid/wanted/reserved, your schedule), proof, free founding offer. Music offset 1.365 s like `cohort1`; glow data from `audio_data.py`. Poster 1.0 s (hook, before the badge). Committed in `docs/marketing/media/why-2026-10-10/`. |
 
-Open work: a platform pack of cut-downs (MW-130), which can add `why` cuts later.
+
+### Platform pack (MW-130)
+
+`pack` (15.0 s, 450 frames) and `bumper` (6.0 s, 180 frames) have their own template, `src/pack.html`, because they need per-format safe boxes (reels-stories: top 14%, bottom 35%, sides 6%; meta-feed, x, yt-bumper: 5%). It takes the shared scene CSS and the logo SVG from `template.html` (so they cannot drift) and its own timeline: hook 0 to 3 s, plain words 3 to 6 s, alert e-mail 6 to 9.6 s, 100% and footnote 9.6 to 12.3 s, outro from 12.15 s with one H-to-I raise at 12.5 s that holds. The bumper is hook 0 to 2 s, alert card 2 to 4.5 s, robot, name and URL 4.5 to 6 s (raise at 4.9 s). Output is `marketing/video/out/<format>-<lang>.mp4` and `.jpg` (poster 1.0 s). Music offset 1.365 s like `cohort1`; the glow data is `shared/audio-data/pack.json` and `bumper.json`.
+
+Review overlay: `SAFE_ZONE_OVERLAY=1 scripts/render-video.sh pack all all` writes to `out/safe-zone/` with a white page and a red tint outside the safe box (variable `debug=on`); any text or logo showing outside the tint's clean area is a violation. Exits are opacity-only, because a slide would leave the box. `hyperframes check` cannot take variables, so the script checks the Dutch copy from a copy of the project whose default language is `nl`. Committed renders: `docs/marketing/media/platform-pack-2026-10-11/`.
 
 ## Add a variant or a format
 
-- **Variant.** Add a row to `VARIANTS` in `build.py` (length, `shift`, scene 5 and 6 timings, logo sound time, music offset), put its lines in the template under `@only <name>` or add the name to an existing `@only` list, and put its per-frame music energy in `shared/audio-data/<name>.json` (30 fps, 8 bands, from the music at the same offset; `python3 -I marketing/video/audio_data.py <name> <total_s> <music_offset_s>` writes it). Add its poster time to `render-video.sh`. Then render all formats and languages and review frame by frame.
+- **Variant.** (A cut that needs safe boxes or a new format goes in `src/pack.html` and a `VARIANTS` row with `template`, `formats`, `mail`, `outro` and `l0`.) Add a row to `VARIANTS` in `build.py` (length, `shift`, scene 5 and 6 timings, logo sound time, music offset), put its lines in the template under `@only <name>` or add the name to an existing `@only` list, and put its per-frame music energy in `shared/audio-data/<name>.json` (30 fps, 8 bands, from the music at the same offset; `python3 -I marketing/video/audio_data.py <name> <total_s> <music_offset_s>` writes it). Add its poster time to `render-video.sh`. Then render all formats and languages and review frame by frame.
 - **Format.** Add the size to `FORMATS` in `build.py` and the format name to the `case` in `render-video.sh`; the CSS has `.fmt-<name>` rules next to `.fmt-landscape` and `.fmt-vertical` (caption width, text sizes, `.ui` zoom) that need a matching set. Check every scene at 1:1.
 - **Language.** Add a block to the `T` object in the template and the code to `render-video.sh`.
 

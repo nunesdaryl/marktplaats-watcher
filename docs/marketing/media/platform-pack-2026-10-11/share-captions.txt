@@ -1,0 +1,25 @@
+Drafts, not posted. Ads launch only after the Marktplaats call and Daryl's go. Paid placements need "Ad" / "Advertentie" labelling (see ../../generated/ads-meta-test.md). URL: marktplaats-watcher.vercel.app
+
+== INSTAGRAM / FACEBOOK REELS AND STORIES (reels-stories) ==
+EN:
+Always just too late for that Marktplaats deal? Tell Marktplaats Watcher what you want in plain words and get an e-mail only for the new listings worth a look, with the reason. Free for 30 days for the first 100 users. A free portfolio project, not affiliated with Marktplaats. marktplaats-watcher.vercel.app
+
+NL:
+Altijd net te laat voor die ene Marktplaats-deal? Zeg Marktplaats Watcher in gewone woorden wat je zoekt en krijg alleen een e-mail over nieuwe advertenties die de moeite waard zijn, met uitleg waarom. 30 dagen gratis voor de eerste 100 gebruikers. Een gratis portfolioproject, niet verbonden aan Marktplaats; de app is in het Engels. marktplaats-watcher.vercel.app
+
+== META FEED, 4:5 (meta-feed) ==
+EN:
+Too late for that Marktplaats deal? Marktplaats Watcher checks for you and e-mails only the new listings worth a look, with a score and the reason. In our test of 53 listings from 6 watches, 100% of 'great match' picks were real matches (median of 3 runs, report of 10 Oct 2026). Free for 30 days for the first 100 users. Not affiliated with Marktplaats. marktplaats-watcher.vercel.app
+
+NL:
+Te laat voor die Marktplaats-deal? Marktplaats Watcher checkt voor je en mailt alleen de nieuwe advertenties die de moeite waard zijn, met score en uitleg waarom. In onze test met 53 advertenties uit 6 zoekopdrachten was 100% van de 'great match'-keuzes echt raak (mediaan van 3 testrondes, rapport van 10 okt 2026). 30 dagen gratis voor de eerste 100 gebruikers. Niet verbonden aan Marktplaats; de app is in het Engels. marktplaats-watcher.vercel.app
+
+== X, 16:9 (x), 280 characters or fewer (a link counts as 23) ==
+EN:
+Always just too late for that Marktplaats deal? Marktplaats Watcher e-mails only the new listings worth a look, with the reason. Free for 30 days for the first 100 users. Not affiliated with Marktplaats. marktplaats-watcher.vercel.app
+
+NL:
+Altijd net te laat voor die ene Marktplaats-deal? Marktplaats Watcher mailt alleen nieuwe advertenties die de moeite waard zijn, met uitleg waarom. 30 dagen gratis voor de eerste 100 gebruikers. Niet verbonden aan Marktplaats. marktplaats-watcher.vercel.app
+
+== YOUTUBE BUMPER, 6 s (yt-bumper) ==
+Bumpers have no caption. Destination URL: marktplaats-watcher.vercel.app (the video shows it). Ad label as the placement requires.
