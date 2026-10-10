@@ -14,3 +14,7 @@
 
 docs/marketing/media/launch-2026-10-10/*.mp4 binary
 docs/marketing/media/launch-2026-10-10/*.jpg binary
+
+marketing/video/shared/assets/music/*.mp3 binary
+marketing/video/shared/assets/sfx/*.ogg binary
+marketing/video/shared/assets/sfx/*.wav binary
