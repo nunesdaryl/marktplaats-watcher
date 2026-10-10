@@ -5,6 +5,7 @@ import { ownerMatches } from "./admin";
 import { maxUsers } from "./beta";
 import { deleteChat } from "./chats";
 import { deleteAlertEmbedding } from "./embeddings";
+import { internal } from "./_generated/api";
 import { insertTracked, patchTracked, deleteTracked } from "./totals";
 
 /** The signed-in user's row, or null. */
@@ -22,6 +23,7 @@ const attributionArgs = {
   utm_source: v.optional(v.string()), utm_medium: v.optional(v.string()),
   utm_campaign: v.optional(v.string()),
   landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
+  browserLanguage: v.optional(v.string()),
 };
 
 function attribution(args: { utm_source?: string; utm_medium?: string; utm_campaign?: string; landingLanguage?: "nl" | "en" }) {
@@ -55,7 +57,7 @@ async function position(ctx: QueryCtx, createdAt: number, id: Id<"waitlist">) {
   return earlier.filter((row) => row.createdAt < createdAt || row._id <= id).length;
 }
 
-async function admit(ctx: MutationCtx, lookingFor?: string, firstTouch?: ReturnType<typeof attribution>) {
+async function admit(ctx: MutationCtx, lookingFor?: string, firstTouch?: ReturnType<typeof attribution> & { browserLanguage?: "nl" | "en" }) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new ConvexError("Please sign in first.");
   const existing = await currentUser(ctx);
@@ -81,9 +83,11 @@ async function admit(ctx: MutationCtx, lookingFor?: string, firstTouch?: ReturnT
   const id = await insertTracked(ctx, "users", { clerkId: identity.subject, email, createdAt: now,
     admittedAt: now, freeUntil: now + FREE_PERIOD,
     ...(waiting ? { utmSource: waiting.utmSource, utmMedium: waiting.utmMedium,
-      utmCampaign: waiting.utmCampaign, landingLanguage: waiting.landingLanguage } : firstTouch) });
+      utmCampaign: waiting.utmCampaign, landingLanguage: waiting.landingLanguage,
+      browserLanguage: waiting.browserLanguage } : firstTouch) });
   if (!ownerMatches(identity)) await ctx.db.patch(total._id, { admitted: total.admitted! + 1 });
   if (waiting) await ctx.db.delete(waiting._id);
+  if (!ownerMatches(identity)) await ctx.scheduler.runAfter(0, internal.nurture.sendDue, {});
   return { status: "admitted" as const, user: (await ctx.db.get(id))! };
 }
 
@@ -98,7 +102,7 @@ export async function requireUser(ctx: MutationCtx) {
 export const store = mutation({
   args: attributionArgs,
   handler: async (ctx, args) => {
-    const result = await admit(ctx, undefined, attribution(args));
+    const result = await admit(ctx, undefined, { ...attribution(args), browserLanguage: args.browserLanguage?.toLowerCase().startsWith("nl") ? "nl" : "en" });
     return result.status === "admitted" ? { status: result.status, id: result.user._id }
       : { status: result.status, position: result.position };
   },
@@ -199,6 +203,8 @@ export const deleteMyData = mutation({
     for (const row of await ctx.db.query("aiBudgets").withIndex("by_user_window", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(row._id);
     for (const row of await ctx.db.query("foundingRounds").withIndex("by_user_round", (q) => q.eq("userId", user._id)).collect())
+      await ctx.db.delete(row._id);
+    for (const row of await ctx.db.query("nurtureEmails").withIndex("by_user", (q) => q.eq("userId", user._id)).collect())
       await ctx.db.delete(row._id);
     for (const row of await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).collect()) {
       if (row.screenshotId) await ctx.storage.delete(row.screenshotId);

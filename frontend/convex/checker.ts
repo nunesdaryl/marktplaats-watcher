@@ -314,6 +314,7 @@ export const markEmailed = internalMutation({
   args: { alertIds: v.array(v.id("alerts")), status: v.union(v.literal("sent"), v.literal("failed"), v.literal("dry-run")) },
   handler: async (ctx, { alertIds, status }) => {
     for (const id of alertIds) if (await ctx.db.get(id)) await patchTracked(ctx, "alerts", id, { emailStatus: status });
+    if (status === "sent" && alertIds.length) await ctx.scheduler.runAfter(0, internal.nurture.sendDue, {});
   },
 });
 
@@ -442,13 +443,13 @@ ${escape(footer)}<br>
   return { subject, text, html };
 }
 
-export async function sendEmail(to: string, email: { subject: string; text: string; html: string }) {
+export async function sendEmail(to: string, email: { subject: string; text: string; html: string }, label = "alert") {
   const key = process.env.AGENTMAIL_API_KEY, inbox = process.env.AGENTMAIL_INBOX_ID;
   if (!key || !inbox) throw new Error("AGENTMAIL_API_KEY / AGENTMAIL_INBOX_ID are not set in Convex.");
   const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inbox)}/messages/send`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ to: [to], ...email, labels: ["alert"] }),
+    body: JSON.stringify({ to: [to], ...email, labels: [label] }),
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) throw new Error(`AgentMail answered ${res.status}: ${(await res.text()).slice(0, 200)}`);

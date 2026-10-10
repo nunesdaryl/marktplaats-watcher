@@ -76,6 +76,9 @@ export default defineSchema({
     utmMedium: v.optional(v.string()),
     utmCampaign: v.optional(v.string()),
     landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
+    browserLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
+    nurtureToken: v.optional(v.string()),
+    nurtureUnsubscribedAt: v.optional(v.number()),
     admittedAt: v.optional(v.number()),
     freeUntil: v.optional(v.number()),
     aiBudgetEur: v.optional(v.number()),
@@ -84,7 +87,12 @@ export default defineSchema({
     ratingNudgeShownAt: v.optional(v.number()),
     ratingNudgeDismissedAt: v.optional(v.number()),
     ratingNudgeRatedAt: v.optional(v.number()),
-  }).index("by_clerkId", ["clerkId"]),
+  }).index("by_clerkId", ["clerkId"]).index("by_nurtureToken", ["nurtureToken"]),
+
+  nurtureEmails: defineTable({
+    userId: v.id("users"), step: v.union(v.literal("welcome"), v.literal("no_watch"), v.literal("first_alert"), v.literal("tips")),
+    claimedAt: v.number(), sentAt: v.optional(v.number()), openedLinkAt: v.optional(v.number()), unsubscribedAt: v.optional(v.number()),
+  }).index("by_user", ["userId"]).index("by_user_step", ["userId", "step"]),
 
   waitlist: defineTable({
     clerkId: v.string(), email: v.string(), createdAt: v.number(),
@@ -92,6 +100,7 @@ export default defineSchema({
     utmMedium: v.optional(v.string()),
     utmCampaign: v.optional(v.string()),
     landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
+    browserLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
     lookingFor: v.optional(v.string()),
   }).index("by_clerkId", ["clerkId"]).index("by_createdAt", ["createdAt"]),
 

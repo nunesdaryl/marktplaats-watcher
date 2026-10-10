@@ -272,7 +272,7 @@ function AdmissionGate() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
-    store(signupAttribution()).then((value) => { clearSignupAttribution(); setResult(value); })
+    store({ ...signupAttribution(), browserLanguage: navigator.language }).then((value) => { clearSignupAttribution(); setResult(value); })
       .catch(() => setError("We couldn't load your account. Refresh to try again."));
     try { localStorage.setItem(SIGNED_IN_FLAG, "1"); sessionStorage.removeItem(SIGNING_IN_FLAG); } catch {}
   }, [store]);

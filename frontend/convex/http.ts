@@ -1,8 +1,36 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 const http = httpRouter();
+
+const nurtureStep = (value: string | null) => value === "welcome" || value === "no_watch" || value === "first_alert" || value === "tips" ? value : null;
+http.route({ path: "/nurture/open", method: "GET", handler: httpAction(async (ctx, request) => {
+  const params = new URL(request.url).searchParams;
+  const step = nurtureStep(params.get("step")), token = params.get("token");
+  if (!step || !token || token.length > 100) return new Response("Invalid link.", { status: 400 });
+  const found = await ctx.runMutation(internal.nurture.openLink, { step, token });
+  if (!found) return new Response("Link no longer available.", { status: 404 });
+  const to = params.get("to");
+  const path = to === "/alerts/" || to === "/watches/" ? to : "/";
+  return Response.redirect(`${(process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app").replace(/\/$/, "")}${path}`, 302);
+}) });
+
+http.route({ path: "/nurture/unsubscribe", method: "GET", handler: httpAction(async (_ctx, request) => {
+  const params = new URL(request.url).searchParams;
+  const step = nurtureStep(params.get("step")), token = params.get("token");
+  if (!step || !token || token.length > 100) return new Response("Invalid link.", { status: 400 });
+  const action = `${new URL(request.url).origin}/nurture/unsubscribe`;
+  return new Response(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font:16px/1.5 Arial,sans-serif;max-width:36rem;margin:4rem auto;padding:1rem"><h1>Stop onboarding emails / Stop de introductiemails</h1><p>Alerts blijven werken. Your alerts will continue.</p><form method="post" action="${action}"><input type="hidden" name="token" value="${token}"><input type="hidden" name="step" value="${step}"><button type="submit">Afmelden / Unsubscribe</button></form></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+}) });
+
+http.route({ path: "/nurture/unsubscribe", method: "POST", handler: httpAction(async (ctx, request) => {
+  const form = await request.formData();
+  const token = form.get("token"), step = nurtureStep(String(form.get("step") ?? ""));
+  if (typeof token !== "string" || !token || token.length > 100 || !step) return new Response("Invalid link.", { status: 400 });
+  const found = await ctx.runMutation(api.nurture.unsubscribe, { token, step });
+  return new Response(found ? "Unsubscribed from onboarding emails. Alerts continue. / Afgemeld voor introductiemails. Alerts blijven werken." : "Link no longer available.", { status: found ? 200 : 404 });
+}) });
 
 http.route({ path: "/api/offer/context", method: "POST", handler: httpAction(async (ctx, request) => {
   const secret = process.env.API_TO_CONVEX_SECRET;

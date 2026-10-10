@@ -286,3 +286,19 @@ test("the health issue copy icon copies the request ID and briefly confirms it",
   expect(copyElement.type(copyElement.props).props.children.props.children).toBe("Copied");
   vi.unstubAllGlobals();
 });
+
+test("owner overview shows nurture delivery, link clicks and unsubscribes by step", () => {
+  vi.stubGlobal("React", React);
+  responses[0].nurture = {
+    welcome: { sent: 4, openedLink: 2, unsubscribed: 1 },
+    no_watch: { sent: 3, openedLink: 1, unsubscribed: 0 },
+    first_alert: { sent: 2, openedLink: 1, unsubscribed: 0 },
+    tips: { sent: 1, openedLink: 0, unsubscribed: 0 },
+  };
+  const { html } = render();
+  expect(html).toContain("Onboarding emails");
+  expect(html).toContain("Opened link");
+  expect(html).toContain("Unsubscribed");
+  expect(html).toMatch(/Welcome<\/th><td>4<\/td><td>2<\/td><td>1<\/td>/);
+  expect(html).toContain("No tracking pixels");
+});

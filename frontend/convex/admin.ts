@@ -201,8 +201,15 @@ export const dashboard = query({
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     const fallingBehind = watches.filter((w) => w.active && live(w) && ((w.backlog ?? 0) >= 20 || w.coverageCapped));
     const sellerRuns = runs.filter((r) => r.at >= now - DAY && r.sellerListingsChecked !== undefined);
+    const nurture = Object.fromEntries(["welcome", "no_watch", "first_alert", "tips"].map((step) => [step, { sent: 0, openedLink: 0, unsubscribed: 0 }])) as Record<string, { sent: number; openedLink: number; unsubscribed: number }>;
+    for await (const row of ctx.db.query("nurtureEmails")) {
+      if (row.sentAt) nurture[row.step].sent++;
+      if (row.openedLinkAt) nurture[row.step].openedLink++;
+      if (row.unsubscribedAt) nurture[row.step].unsubscribed++;
+    }
     return {
       now, days,
+      nurture,
       totals: {
         users: users.length,
         places, waitlistCount,

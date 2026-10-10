@@ -10,6 +10,7 @@ export default function PrivacySheet({ email, waitlisted = false, onClose }) {
       <div className="stack prose">
         {waitlisted ? <p>We keep your waitlist e-mail address and what you're hunting for until you're admitted or delete your data. We use your e-mail to tell you when a place opens.</p> : <>
         <p>Alerts go to <strong data-private>{email}</strong>, from marktplaats-watcher@agentmail.to.</p>
+        <p>After sign-up we may email a short set of tips in your landing page language, or your browser language. Each tip has a link to stop these tips; alerts still arrive. We count sent tips and clicks on their app links, without tracking pixels.</p>
         <p>We hide paid placements and, unless you choose otherwise, shops and dealers. We use only whether a seller has a website, never who they are.</p>
         <p>We keep your e-mail address and your watches until you delete them. Chats and checked listings are deleted
           30 days after they were last used. Your messages, searches and listing details (titles, prices, places)

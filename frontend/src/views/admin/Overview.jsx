@@ -391,6 +391,14 @@ export default function Overview({ open, onSearch, ask }) {
         </div>
       </section>}
 
+      {data.nurture && <section className="panel" aria-label="Onboarding emails">
+        <h2>Onboarding emails</h2>
+        <table><thead><tr><th>Step</th><th>Sent</th><th>Opened link</th><th>Unsubscribed</th></tr></thead>
+          <tbody>{[["welcome", "Welcome"], ["no_watch", "No watch"], ["first_alert", "First alert"], ["tips", "Day 7 tips"]].map(([key, name]) =>
+            <tr key={key}><th scope="row">{name}</th><td>{data.nurture[key].sent}</td><td>{data.nurture[key].openedLink}</td><td>{data.nurture[key].unsubscribed}</td></tr>)}</tbody></table>
+        <p className="hint">Opened link counts clicks to the app. No tracking pixels.</p>
+      </section>}
+
       {founding && <section className="panel founding-summary">
         <h2>Founding survey</h2>
         <div className="breakdowns">
