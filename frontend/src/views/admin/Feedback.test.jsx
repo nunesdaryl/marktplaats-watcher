@@ -34,8 +34,16 @@ test("outside intake and shipped item show their required controls and timeline"
   expect(add).toContain("Attach screenshot");
   expect(add).not.toContain("Choose File");
   const detail = renderToStaticMarkup(<FeedbackDetail f={row} close={vi.fn()} open={vi.fn()} />);
-  for (const label of ["Received", "planned", "in progress", "shipped", "MW-48", "Shipped in", "Reply draft", "Send", "Mark as replied"])
+  for (const label of ["Received", "planned", "in progress", "shipped", "MW-48", "Shipped in", "Reply draft", "Copy reply", "Mark as replied"])
     expect(detail).toContain(label);
+  expect(detail).not.toContain('>Send</button>');
+});
+
+test("intake offers LinkedIn, a source link and opt-in public credit", () => {
+  const html = renderToStaticMarkup(<AddFeedback onDone={vi.fn()} />);
+  expect(html).toContain('value="linkedin"');
+  expect(html).toContain('name="sourceUrl"');
+  expect(html).toContain('name="creditName"');
 });
 
 test("received date uses now for today and Amsterdam noon for past days", () => {

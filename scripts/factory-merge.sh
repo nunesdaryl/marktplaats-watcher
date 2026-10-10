@@ -121,6 +121,15 @@ git push origin wave1-demo-ready
 git checkout main
 wait_production "$(git rev-parse HEAD)"
 python3 scripts/factory/lin.py finish "$issue" "$reviewed_sha" "$merge_sha" "$approval" "$checks"
+# Close the feedback loop (MW-116). The merge is already live and recorded, so a failure here only warns:
+# it must never stop the Linear close or trigger the failure restore. Re-run the printed command to retry.
+feedback_args=$(python3 -c 'import json,sys,time; print(json.dumps({"issue":sys.argv[1],"sha":sys.argv[2],"releaseAt":int(time.time()*1000),"title":sys.argv[3]}))' "$issue" "$merge_sha" "$(python3 scripts/factory/lin.py issue "$issue" 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["title"])' 2>/dev/null || echo "$issue")")
+if (cd frontend && npx convex run --prod feedback:shipByIssue "$feedback_args" >/dev/null); then
+    feedback_to_close=$(cd frontend && npx convex run --prod feedback:feedbackToClose "{\"issue\":\"$issue\"}" 2>/dev/null) || feedback_to_close="unknown"
+    echo "Feedback to close: $feedback_to_close"
+else
+    echo "factory: WARNING feedback shipping failed for $issue; retry: (cd frontend && npx convex run --prod feedback:shipByIssue '$feedback_args')" >&2
+fi
 worktree="$repo/.factory-worktrees/$issue"
 if git worktree list --porcelain | grep -Fqx "worktree $worktree"; then
     git worktree remove --force "$worktree"

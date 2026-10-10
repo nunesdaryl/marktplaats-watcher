@@ -3,13 +3,13 @@
 // OWNER_EMAIL so a real person reads it, and listed on the owner dashboard (/admin). `npx convex run feedback:summary`
 // counts the answers.
 import { ConvexError, v } from "convex/values";
-import { action, internalAction, internalMutation, internalQuery, mutation, type MutationCtx } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { sendEmail } from "./checker";
 import { feedbackContext, wouldPayValidator } from "./schema";
 import { ownerMatches } from "./admin";
-import { requireUser } from "./users";
+import { currentUser, requireUser } from "./users";
 import { insertTracked, patchTracked } from "./totals";
 
 export const WOULD_PAY = {
@@ -110,6 +110,93 @@ export const planDraft = internalMutation({
   },
 });
 
+const issuePattern = /^MW-\d+$/;
+
+/** A claimed factory build advances feedback that was linked at spec time. */
+export const advanceByIssue = internalMutation({
+  args: { issue: v.string(), status: v.literal("in_progress") },
+  handler: async (ctx, { issue }) => {
+    if (!issuePattern.test(issue)) throw new ConvexError("Use an MW issue ID.");
+    const rows = await ctx.db.query("feedback").withIndex("by_status_created", (q) => q.eq("status", "planned")).collect();
+    const linked = rows.filter((row) => row.issues?.includes(issue));
+    const now = Date.now();
+    for (const row of linked) {
+      await patchTracked(ctx, "feedback", row._id, { status: "in_progress" });
+      await ctx.db.insert("feedbackEvents", { feedbackId: row._id, status: "in_progress", at: now, by: "factory dispatch", note: `${issue} build claimed.` });
+    }
+    return linked.length;
+  },
+});
+
+export function shippedReply({ personName, email, receivedAt, title, featureUrl }: {
+  personName?: string; email?: string; receivedAt: number; title: string; featureUrl: string;
+}) {
+  const name = personName?.trim().split(/\s+/)[0] || email?.split("@")[0] || "there";
+  const received = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long" }).format(receivedAt);
+  return `Hi ${name}, thanks for your suggestion on ${received}. We shipped ${title}. You can try it here: ${featureUrl}\n\nThanks for helping make Marktplaats Watcher better.\nDaryl`;
+}
+
+/** Called by the merge gate only after production and smoke checks pass. */
+export const shipByIssue = internalMutation({
+  args: { issue: v.string(), sha: v.string(), releaseAt: v.number(), title: v.string(), featureUrl: v.optional(v.string()) },
+  handler: async (ctx, { issue, sha, releaseAt, title, featureUrl }) => {
+    if (!issuePattern.test(issue) || !/^[a-f0-9]{40}$/.test(sha) || !Number.isFinite(releaseAt) || !title.trim())
+      throw new ConvexError("Provide an MW issue, merge SHA, date and title.");
+    const rows = await ctx.db.query("feedback").collect();
+    const linked = rows.filter((row) => row.issues?.includes(issue));
+    if (linked.some((row) => row.status !== "in_progress" && !(row.status === "shipped" && row.releaseSha === sha)))
+      throw new ConvexError("Linked feedback must be in progress before shipping.");
+    const now = Date.now();
+    const base = (process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app").replace(/\/$/, "");
+    const releaseTitle = title.trim().replace(/^\[factory\]\s*/i, "");
+    let changed = 0;
+    for (const row of linked) {
+      if (row.status === "shipped") continue;
+      const user = row.userId ? await ctx.db.get(row.userId) : null;
+      const path = row.featureUrl?.startsWith("/") ? row.featureUrl : row.context?.path?.startsWith("/") ? row.context.path : "/";
+      const url = featureUrl ?? `${base}${path}`;
+      await patchTracked(ctx, "feedback", row._id, { status: "shipped", releaseSha: sha, releaseAt,
+        releaseTitle, featureUrl: url, note: releaseTitle,
+        replyDraft: shippedReply({ personName: row.personName, email: row.personEmail ?? user?.email,
+          receivedAt: row.createdAt, title: releaseTitle, featureUrl: url }) });
+      await ctx.db.insert("feedbackEvents", { feedbackId: row._id, status: "shipped", at: now,
+        by: "factory merge", note: `${issue} shipped as ${sha}.` });
+      changed++;
+    }
+    if (changed) await ctx.scheduler.runAfter(0, internal.feedback.notifyRepliesReady, { issue });
+    return changed;
+  },
+});
+
+export const myShippedNotice = query({
+  args: {}, handler: async (ctx) => {
+    const user = await currentUser(ctx);
+    if (!user) return null;
+    const rows = await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).order("desc").collect();
+    const row = rows.find((f) => f.status === "shipped" && !f.noticeDismissedAt);
+    return row ? { _id: row._id, title: row.releaseTitle ?? "Your suggestion", featureUrl: row.featureUrl ?? "/" } : null;
+  },
+});
+
+export const dismissShippedNotice = mutation({
+  args: { id: v.id("feedback") }, handler: async (ctx, { id }) => {
+    const user = await requireUser(ctx);
+    const row = await ctx.db.get(id);
+    if (!row || row.userId !== user._id || row.status !== "shipped") throw new ConvexError("Notice not found.");
+    if (!row.noticeDismissedAt) await ctx.db.patch(id, { noticeDismissedAt: Date.now() });
+  },
+});
+
+// Public: only release titles, dates, links and consented first names; never messages, notes or e-mail addresses.
+export const whatsNew = query({
+  args: {}, handler: async (ctx) => {
+    const rows = await ctx.db.query("feedback").withIndex("by_status_created", (q) => q.eq("status", "shipped")).collect();
+    return rows.filter((row) => row.releaseAt && row.issues?.length).sort((a, b) => b.releaseAt! - a.releaseAt!)
+      .map((row) => ({ id: row._id, title: row.releaseTitle ?? "An improvement", date: row.releaseAt!,
+        featureUrl: row.featureUrl ?? "/", credit: row.creditName && row.personName?.trim() ? row.personName.trim() : "a founding user" }));
+  },
+});
+
 export const claimReply = internalMutation({
   args: { id: v.id("feedback"), by: v.string() },
   handler: async (ctx, { id, by }) => {
@@ -142,13 +229,49 @@ export const sendReply = action({
     const by = identity!.email!;
     const { to, text } = await ctx.runMutation(internal.feedback.claimReply, { id, by });
     try {
-      await sendEmail(to, { subject: "An update on your feedback", text, html: `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!).replace(/\n/g, "<br>")}</p>` });
+      await sendEmail(to, { subject: "Your idea is live", text, html: replyEmailHtml(text) });
     } catch (error) {
       await ctx.runMutation(internal.feedback.finishReply, { id, text, by, sent: false });
       throw error;
     }
     // If recording fails after AgentMail accepts the message, keep the claim so a retry cannot send twice.
     await ctx.runMutation(internal.feedback.finishReply, { id, text, by, sent: true });
+  },
+});
+
+function escapeHtml(text: string) { return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!); }
+
+export function replyEmailHtml(text: string) {
+  return `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><style>@media (prefers-color-scheme:dark){body{background:#0f0e0d!important;color:#ece9e4!important}.card{background:#1e1c1a!important;color:#ece9e4!important}}</style></head><body style="margin:0;background:#f4f2ee;color:#1b1a18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif"><table role="presentation" width="100%"><tr><td align="center" style="padding:24px"><table role="presentation" width="100%" style="max-width:560px"><tr><td style="padding:0 0 16px;color:#0d6b62;font-weight:600">Marktplaats Watcher</td></tr><tr><td class="card" style="padding:24px;background:#ffffff;border:1px solid #e4e0da;border-radius:12px;color:#1b1a18;line-height:1.6;white-space:pre-line">${escapeHtml(text)}</td></tr></table></td></tr></table></body></html>`;
+}
+
+export const repliesReady = internalQuery({
+  args: { issue: v.string() }, handler: async (ctx, { issue }) =>
+    (await ctx.db.query("feedback").withIndex("by_status_created", (q) => q.eq("status", "shipped")).collect())
+      .filter((row) => row.issues?.includes(issue) && !row.repliedAt)
+      .map((row) => row._id),
+});
+
+/** Read-only review count for feedback linked to a factory issue. */
+export const feedbackToClose = internalQuery({
+  args: { issue: v.string() }, handler: async (ctx, { issue }) => {
+    if (!issuePattern.test(issue)) throw new ConvexError("Use an MW issue ID.");
+    return (await ctx.db.query("feedback").collect()).filter((row) => row.issues?.includes(issue)
+      && (row.status === "in_progress" || row.status === "shipped") && !row.repliedAt).length;
+  },
+});
+
+export const notifyRepliesReady = internalAction({
+  args: { issue: v.string() }, handler: async (ctx, { issue }) => {
+    const to = process.env.OWNER_EMAIL;
+    if (!to) return;
+    const ids: Id<"feedback">[] = await ctx.runQuery(internal.feedback.repliesReady, { issue });
+    if (!ids.length) return;
+    const base = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
+    const links = ids.map((id) => `${base}/admin/?view=feedback&id=${id}`);
+    const text = `Ready to close the loop: ${ids.length} replies\n\n${links.join("\n")}`;
+    await sendEmail(to, { subject: `Ready to close the loop: ${ids.length} replies`, text,
+      html: replyEmailHtml(text) });
   },
 });
 

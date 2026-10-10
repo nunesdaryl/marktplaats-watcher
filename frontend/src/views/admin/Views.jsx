@@ -154,9 +154,9 @@ export function Events({ params, open, update }) {
 }
 
 export function Feedback({ params, open, update }) {
-  const rows = useQuery(api.admin.feedback, { limit: 200, wouldPay: params.wouldPay, userId: params.userId,
+  const rows = useQuery(api.admin.feedback, { limit: 200, id: params.id, wouldPay: params.wouldPay, userId: params.userId,
     status: params.status, feedbackSource: params.feedbackSource, search: params.q, ...useDateFilters(params) });
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(params.id ?? null);
   const [adding, setAdding] = useState(false);
   const shown = rows?.rows;
   const item = shown?.find((f) => f._id === selected);
@@ -164,7 +164,7 @@ export function Feedback({ params, open, update }) {
     <button className="button tinted" onClick={() => setAdding(!adding)}>Add feedback</button>
     {adding && <AddFeedback onDone={() => setAdding(false)} />}
     <FilterBar params={params} update={update} status={{ key: "status", label: "Status", options: [["new", "New"], ["planned", "Planned"], ["in_progress", "In progress"], ["shipped", "Shipped"], ["declined", "Declined"]] }}
-      source={{ key: "feedbackSource", label: "Source", options: [["app", "App"], ["email", "Email"], ["whatsapp", "WhatsApp"], ["in_person", "In person"], ["other", "Other"]] }} />
+      source={{ key: "feedbackSource", label: "Source", options: [["app", "App"], ["email", "Email"], ["linkedin", "LinkedIn"], ["whatsapp", "WhatsApp"], ["in_person", "In person"], ["other", "Other"]] }} />
     {rows?.more && <p className="dt-count">Showing {shown.length} of {shown.length}+ — narrow the filters</p>}
     {shown === undefined ? <p className="hint">Loading…</p> : <Table name="feedback" rows={shown} empty="No feedback here." onOpen={(f) => setSelected(f._id)}
       columns={[
@@ -202,7 +202,8 @@ export function AddFeedback({ onDone }) {
       }
       await add({ userId: form.get("userId") || undefined, personName: form.get("personName") || undefined,
         personEmail: form.get("personEmail") || undefined, receivedAt: receivedTimestamp(form.get("receivedAt")),
-        source: form.get("source"), message: form.get("message"), paraphrase: form.has("paraphrase"), screenshotId });
+        source: form.get("source"), message: form.get("message"), paraphrase: form.has("paraphrase"), screenshotId,
+        sourceUrl: form.get("sourceUrl") || undefined, creditName: form.has("creditName") });
       onDone();
     } catch (err) { setError(adminError(err)); } finally { setBusy(false); }
   }
@@ -211,7 +212,9 @@ export function AddFeedback({ onDone }) {
     <label>Name <input name="personName" maxLength="120" /></label>
     <label>E-mail <input name="personEmail" type="email" /></label>
     <label>Received <input name="receivedAt" type="date" defaultValue={amsterdamDay(Date.now())} max={amsterdamDay(Date.now())} required /></label>
-    <label>Channel <select name="source">{["email", "whatsapp", "in_person", "other"].map((source) => <option key={source} value={source}>{source.replace("_", " ")}</option>)}</select></label>
+    <label>Channel <select name="source">{["email", "linkedin", "whatsapp", "in_person", "other"].map((source) => <option key={source} value={source}>{source.replace("_", " ")}</option>)}</select></label>
+    <label>Link to the post/message <input name="sourceUrl" type="url" placeholder="https://" /></label>
+    <label><input name="creditName" type="checkbox" /> They agreed to be named publicly</label>
     <label>Their words or paraphrase <textarea name="message" maxLength="2000" required /></label>
     <label><input name="paraphrase" type="checkbox" /> Paraphrase</label>
     <div className="fb-attachment"><span>Screenshot</span><input ref={fileInput} name="screenshot" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Screenshot" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} />
@@ -225,22 +228,26 @@ export function FeedbackDetail({ f, close, open }) {
   const update = useMutation(api.admin.updateFeedback);
   const send = useAction(api.feedback.sendReply);
   const mark = useMutation(api.admin.markFeedbackReplied);
+  const linkIssue = useMutation(api.admin.linkFeedbackIssue);
   const [status, setStatus] = useState(f.status);
   const [note, setNote] = useState(f.note ?? "");
   const [reason, setReason] = useState(f.declinedReason ?? "");
   const [issues, setIssues] = useState(f.issues.join(", "));
   const [sha, setSha] = useState(f.releaseSha ?? "");
   const [releaseDate, setReleaseDate] = useState(f.releaseAt ? new Date(f.releaseAt).toISOString().slice(0, 10) : "");
+  const [featureUrl, setFeatureUrl] = useState(f.featureUrl?.startsWith("/") ? f.featureUrl : "");
   const [draft, setDraft] = useState(f.replyDraft ?? "");
   useEffect(() => { if (f.replyDraft && !draft) setDraft(f.replyDraft); }, [f.replyDraft]);
   const [channel, setChannel] = useState(f.source === "app" ? "email" : f.source);
+  const [linkId, setLinkId] = useState("");
+  const [replyUrl, setReplyUrl] = useState(f.replyUrl ?? "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const save = async (e) => {
     e.preventDefault(); setBusy(true); setError("");
     try { await update({ id: f._id, status, note, declinedReason: reason, issues: issues.split(/[\s,]+/).filter(Boolean),
       releaseSha: sha || undefined, releaseAt: releaseDate ? Date.parse(`${releaseDate}T12:00:00`) : undefined,
-      replyDraft: draft || undefined }); }
+      replyDraft: draft || undefined, featureUrl: featureUrl || undefined }); }
     catch (err) { setError(adminError(err)); } finally { setBusy(false); }
   };
   const reply = async (method) => {
@@ -248,7 +255,7 @@ export function FeedbackDetail({ f, close, open }) {
     try { if (draft !== f.replyDraft) await update({ id: f._id, status: f.status, note: f.note, declinedReason: f.declinedReason,
       issues: f.issues, releaseSha: f.releaseSha, releaseAt: f.releaseAt, replyDraft: draft });
       if (method === "send") await send({ id: f._id });
-      else await mark({ id: f._id, channel, text: draft });
+      else await mark({ id: f._id, channel, text: draft, replyUrl: replyUrl || undefined });
     } catch (err) { setError(adminError(err)); } finally { setBusy(false); }
   };
   return <section className="stack fb-editor" aria-label="Feedback timeline">
@@ -256,12 +263,21 @@ export function FeedbackDetail({ f, close, open }) {
     <ul className="fb-list"><FeedbackItem f={f} onPerson={f.userId ? () => open({ view: "user", title: f.email, params: { id: f.userId } }) : undefined} /></ul>
     <ol className="fb-timeline"><li>Received {when(f.createdAt)} · {f.source}</li>
       {f.timeline.map((event) => <li key={event._id}>{event.status.replace("_", " ")} · {when(event.at)} · {event.by}</li>)}
-      {f.repliedAt && <li>Replied · {when(f.repliedAt)} · {f.replyChannel} · {f.repliedBy}</li>}</ol>
+      {f.repliedAt && <li>Replied · {when(f.repliedAt)} · {f.replyChannel} · {f.repliedBy}{f.replyUrl && <> · <a href={f.replyUrl} target="_blank" rel="noopener noreferrer">Reply</a></>}</li>}</ol>
+    {f.sourceUrl && <a href={f.sourceUrl} target="_blank" rel="noopener noreferrer">Open the post</a>}
+    {(f.status === "new" || f.status === "planned") && <div className="stack">
+      <label>Link to MW issue <input value={linkId} onChange={(e) => setLinkId(e.target.value)} placeholder="MW-116" /></label>
+      <button type="button" className="button tinted" disabled={busy || !linkId.trim()} onClick={async () => {
+        setBusy(true); setError(""); try { await linkIssue({ id: f._id, issue: linkId }); setLinkId(""); }
+        catch (err) { setError(adminError(err)); } finally { setBusy(false); }
+      }}>Link to MW issue</button>
+    </div>}
     <form className="stack" onSubmit={save}>
       <label>Status <select value={status} onChange={(e) => setStatus(e.target.value)}>{["new", "planned", "in_progress", "shipped", "declined"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select></label>
       <label>Note <textarea value={note} onChange={(e) => setNote(e.target.value)} /></label>
       {status === "declined" && <label>Reason <textarea value={reason} onChange={(e) => setReason(e.target.value)} required /></label>}
       <label>Linked issues <input value={issues} onChange={(e) => setIssues(e.target.value)} placeholder="MW-48, MW-51" /></label>
+      <label>Where to try it <input value={featureUrl} onChange={(e) => setFeatureUrl(e.target.value)} placeholder="/watches/" /></label>
       {f.issues.map((id) => <a key={id} href={`https://linear.app/software-factory-ai/issue/${id}`} target="_blank" rel="noopener noreferrer">{id}</a>)}
       <label>Release SHA <input value={sha} onChange={(e) => setSha(e.target.value)} placeholder="Short merge SHA" /></label>
       <label>Release date <input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} /></label>
@@ -271,9 +287,12 @@ export function FeedbackDetail({ f, close, open }) {
       <button className="button tinted" disabled={busy}>Save changes</button>
     </form>
     {f.status === "shipped" && !f.repliedAt && <div className="stack">
-      <button className="button" disabled={busy || !draft.trim() || f.sending} onClick={() => reply("send")}>Send</button>
+      {(f.source === "app" || f.source === "email") && <button className="button" disabled={busy || !draft.trim() || f.sending} onClick={() => reply("send")}>Send</button>}
       {f.source !== "app" && <>
-        <label>Outside channel <select value={channel} onChange={(e) => setChannel(e.target.value)}>{["email", "whatsapp", "in_person", "other"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select></label>
+        <label>Outside channel <select value={channel} onChange={(e) => setChannel(e.target.value)}>{["email", "linkedin", "whatsapp", "in_person", "other"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select></label>
+        <button type="button" className="button" disabled={!draft.trim()} onClick={() => navigator.clipboard.writeText(draft)}>Copy reply</button>
+        {f.sourceUrl && <a href={f.sourceUrl} target="_blank" rel="noopener noreferrer">Open the post</a>}
+        <label>Link to your reply <input type="url" value={replyUrl} onChange={(e) => setReplyUrl(e.target.value)} placeholder="https://" /></label>
         <button className="button" disabled={busy || !draft.trim()} onClick={() => reply("mark")}>Mark as replied</button>
       </>}
     </div>}

@@ -103,3 +103,66 @@ test("factory draft intake reads new feedback and links a filed issue once", asy
   ]);
   await expect(t.mutation(internal.feedback.planDraft, { id, issue: "MW-61" })).rejects.toThrow(/no longer new/);
 });
+
+test("factory advances only linked planned feedback and ships once with a useful draft", async () => {
+  const t = convexTest(schema, modules);
+  const [linked, other] = await t.run(async (ctx) => [
+    await ctx.db.insert("feedback", { message: "Better bids", personName: "Vinod", source: "linkedin", status: "planned", issues: ["MW-90"], featureUrl: "/watches/", createdAt: 1 }),
+    await ctx.db.insert("feedback", { message: "Other", status: "planned", issues: ["MW-91"], createdAt: 1 }),
+  ]);
+  await expect(t.mutation(internal.feedback.shipByIssue, { issue: "MW-90", sha: "a".repeat(40), releaseAt: 100, title: "Bidding help" })).rejects.toThrow(/in progress/);
+  expect(await t.mutation(internal.feedback.advanceByIssue, { issue: "MW-90", status: "in_progress" })).toBe(1);
+  expect(await t.query(internal.feedback.feedbackToClose, { issue: "MW-90" })).toBe(1);
+  expect(await t.mutation(internal.feedback.advanceByIssue, { issue: "MW-90", status: "in_progress" })).toBe(0);
+  expect(await t.mutation(internal.feedback.shipByIssue, { issue: "MW-90", sha: "a".repeat(40), releaseAt: 100, title: "Bidding help" })).toBe(1);
+  expect(await t.mutation(internal.feedback.shipByIssue, { issue: "MW-90", sha: "a".repeat(40), releaseAt: 100, title: "Bidding help" })).toBe(0);
+  const row = await t.run((ctx) => ctx.db.get(linked));
+  expect(row).toMatchObject({ status: "shipped", releaseSha: "a".repeat(40), releaseAt: 100 });
+  expect(row?.replyDraft).toContain("Bidding help");
+  expect(row?.replyDraft).toContain("https://marktplaats-watcher.vercel.app/watches/");
+  expect((await t.run((ctx) => ctx.db.get(other)))?.status).toBe("planned");
+  expect((await t.run((ctx) => ctx.db.query("feedbackEvents").collect())).filter((e) => e.feedbackId === linked)).toHaveLength(2);
+});
+
+test("a shipped idea is shown once to its submitter and public credit requires consent", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
+  const user = await alice.mutation(api.users.store, {});
+  if (user.status !== "admitted") throw new Error("Test account was not admitted");
+  const id = await t.run((ctx) => ctx.db.insert("feedback", { userId: user.id, personName: "Alice", creditName: false,
+    message: "Better bids", note: "Bidding help", status: "shipped", issues: ["MW-90"], releaseAt: 100, createdAt: 1 }));
+  expect((await alice.query(api.feedback.myShippedNotice, {}))?._id).toBe(id);
+  expect((await t.query(api.feedback.whatsNew, {}))[0].credit).toBe("a founding user");
+  await alice.mutation(api.feedback.dismissShippedNotice, { id });
+  expect(await alice.query(api.feedback.myShippedNotice, {})).toBeNull();
+  await t.run((ctx) => ctx.db.patch(id, { creditName: true }));
+  expect((await t.query(api.feedback.whatsNew, {}))[0].credit).toBe("Alice");
+});
+
+test("shipping alerts the owner with a link for each reply to approve", async () => {
+  const t = convexTest(schema, modules);
+  const sent: any[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => { sent.push(JSON.parse(init.body as string)); return new Response("{}"); }));
+  const id = await t.run((ctx) => ctx.db.insert("feedback", { status: "in_progress", issues: ["MW-90"],
+    message: "Bids", personName: "Vinod", createdAt: 1 }));
+  await t.mutation(internal.feedback.shipByIssue, { issue: "MW-90", sha: "a".repeat(40), releaseAt: 100, title: "Bidding help" });
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect(sent).toHaveLength(1);
+  expect(sent[0].subject).toBe("Ready to close the loop: 1 replies");
+  expect(sent[0].text).toContain(`/admin/?view=feedback&id=${id}`);
+});
+
+test("What's new and the personal notice never expose triage notes, messages or e-mail addresses", async () => {
+  const t = convexTest(schema, modules);
+  await t.run(async (ctx) => {
+    await ctx.db.insert("feedback", { source: "linkedin" as any, personName: "Vinodkumar Bhovi", personEmail: "v@example.test",
+      message: "private message", note: "PRIVATE TRIAGE NOTE", status: "shipped", issues: ["MW-114"], releaseSha: "a".repeat(40),
+      releaseAt: Date.now(), createdAt: Date.now() } as any);
+  });
+  const rows = await t.query(api.feedback.whatsNew, {});
+  const text = JSON.stringify(rows);
+  expect(text).not.toContain("PRIVATE TRIAGE NOTE");
+  expect(text).not.toContain("private message");
+  expect(text).not.toContain("v@example.test");
+  expect(text).toContain("a founding user");
+});

@@ -5,6 +5,7 @@ import Sheet from "../components/Sheet.jsx";
 import { recentErrors } from "../lib/errors.js";
 import { feedbackContext } from "../lib/screenshot.js";
 import { track } from "../lib/track.js";
+import { linkTo } from "../lib/router.js";
 
 const WOULD_PAY = [
   ["no", "No, only if it's free"],
@@ -81,6 +82,7 @@ export default function FeedbackSheet({ page, screenshot, onClose, toast }) {
         <button className="button primary wide" disabled={!ready || busy}>{busy ? "Sending…" : "Send"}</button>
         <p className="small muted">Sent with your e-mail address, so Daryl can reply, plus the page, screen size and browser
           to help fix bugs.</p>
+        <a {...linkTo("/whats-new")}>See what we built from your feedback</a>
       </form>
     </Sheet>
   );

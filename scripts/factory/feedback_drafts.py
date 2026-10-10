@@ -83,7 +83,8 @@ def drafts(feedback, ratings, audits, now=None):
 
 def spec(draft):
     return (f"## Problem\n{draft['problem']}\n\n"
-            "## Acceptance Criteria\n- [ ] Investigate the cited evidence and reproduce the problem.\n"
+            + ("## Feedback\n" + "\n".join(f"Feedback: {id}" for id in draft["feedback_ids"]) + "\n\n" if draft["feedback_ids"] else "")
+            + "## Acceptance Criteria\n- [ ] Investigate the cited evidence and reproduce the problem.\n"
             "- [ ] Fix the confirmed problem and verify the affected path.\n\n"
             f"## Relevant files\n- Evidence: {', '.join(draft['evidence'])}\n\n"
             "## Non-goals\n- Unrelated product changes.\n\n"

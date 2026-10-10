@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 # Bump a version when its prompt text changes.
-PROMPT_VERSION = {"chat": "chat-2026-10-06.1", "rank": "rank-2026-10-09.2", "admin": "admin-2026-10-03.1", "offer": "offer-2026-10-06.1"}
+PROMPT_VERSION = {"chat": "chat-2026-10-06.1", "rank": "rank-2026-10-09.2", "admin": "admin-2026-10-10.1", "offer": "offer-2026-10-06.1"}
 
 OFFER_PROMPT = ("Help a buyer make a fair opening offer for this Marktplaats listing. Return one opening price, "
                 "one walk-away maximum, one short plain-English reason for the prices, and short polite messages "
@@ -86,7 +86,7 @@ ADMIN_INTENT_PROMPT = ("Choose the owner dashboard list and filters requested. Y
                        "A score request 'above 8' uses minScore=8, as the dashboard's score control means at least. "
                        "Use status='behind' for watches that cannot keep up, status='failed' for failed runs, "
                        "status='active'/'paused'/'archived' for watches or chats, and status='pending'/'sent'/'failed' "
-                       "for alert e-mail status. For feedback status is 'yes' (handled) or 'no' (to do). "
+                       "for alert e-mail status. For feedback use new, planned, in_progress, shipped or declined. "
                        "Error kind is chat or check. Audit kind is handled, never_read, "
                        "rescored, or never_scored. For missed matches choose audits without a kind unless specified. "
                        "Only use a filter supported by the chosen list. "

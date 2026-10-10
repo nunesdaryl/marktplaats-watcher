@@ -20,6 +20,8 @@ test("ask maps list specific filters and leaves unknown intent on overview", () 
     .toEqual({ kind: "never_read" });
   expect(intentToDrill({ view: "catchups", title: "Catch-up e-mails", status: "sent" }, users, watches).params)
     .toEqual({ emailStatus: "sent" });
+  expect(intentToDrill({ view: "feedback", title: "Shipped feedback", status: "shipped" }, users, watches).params)
+    .toEqual({ status: "shipped" });
   expect(intentToDrill({ view: "overview", title: "I couldn't tell what to show" }, users, watches)).toBeNull();
 });
 

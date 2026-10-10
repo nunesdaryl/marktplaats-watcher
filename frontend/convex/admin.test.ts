@@ -109,6 +109,24 @@ test("outside feedback tracks owner decisions, release and a manually recorded r
   expect((await t.query(internal.health.report, { now: Date.now() })).summary).toContain("Feedback: 0 new, 0 open.");
 });
 
+test("owner links a LinkedIn item with a consent choice and keeps reply proof", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  const id = await owner.mutation(api.admin.addFeedback, { personName: "Vinod", receivedAt: Date.now(),
+    source: "linkedin", sourceUrl: "https://linkedin.com/posts/example", creditName: false,
+    message: "Please improve bids", paraphrase: false });
+  await owner.mutation(api.admin.linkFeedbackIssue, { id, issue: "mw-90" });
+  await owner.mutation(api.admin.linkFeedbackIssue, { id, issue: "MW-90" });
+  expect((await owner.query(api.admin.feedback, { id }))!.rows[0]).toMatchObject({ status: "planned", issues: ["MW-90"],
+    sourceUrl: "https://linkedin.com/posts/example", creditName: false });
+  await t.mutation(internal.feedback.advanceByIssue, { issue: "MW-90", status: "in_progress" });
+  await t.mutation(internal.feedback.shipByIssue, { issue: "MW-90", sha: "a".repeat(40), releaseAt: Date.now(), title: "Bidding help" });
+  await owner.mutation(api.admin.markFeedbackReplied, { id, channel: "linkedin", text: "The feature is live.",
+    replyUrl: "https://linkedin.com/posts/reply" });
+  expect((await owner.query(api.admin.feedback, { id }))!.rows[0]).toMatchObject({ replyChannel: "linkedin",
+    replyUrl: "https://linkedin.com/posts/reply" });
+});
+
 test("a shipped app reply is sent only on owner action and recorded", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
@@ -126,6 +144,8 @@ test("a shipped app reply is sent only on owner action and recorded", async () =
   await owner.action(api.feedback.sendReply, { id });
   expect(sent).toHaveLength(1);
   expect(sent[0].to).toEqual(["user@example.com"]);
+  expect(sent[0].html).toContain("Marktplaats Watcher");
+  expect(sent[0].html).toContain("prefers-color-scheme:dark");
   expect((await owner.query(api.admin.feedback, {}))!.rows[0]).toMatchObject({ replyChannel: "email", repliedBy: "owner@example.com" });
   await expect(owner.action(api.feedback.sendReply, { id })).rejects.toThrow(/not ready/);
 });

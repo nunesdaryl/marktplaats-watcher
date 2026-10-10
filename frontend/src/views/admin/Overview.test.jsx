@@ -64,12 +64,13 @@ test("the first dashboard row opens the matching review lists", () => {
   expect(row).toContain('class="stat-value">4</span>');
   const summary = tree.props.children.find((child) => child?.props?.className === "attention");
   const buttons = summary.props.children[1].props.children;
-  expect(buttons).toHaveLength(3);
+  expect(buttons).toHaveLength(4);
   buttons.forEach((button) => button.props.onClick());
   expect(open.mock.calls).toEqual([
     [{ view: "runs", title: "Checks failed", params: { since: oldNow - 24 * 60 * 60 * 1000, status: "failed" } }, { fresh: true }],
     [{ view: "watches", title: "Watches falling behind", params: { status: "active", behind: "yes" } }, { fresh: true }],
     [{ view: "audits", title: "Delivery audit", params: { since: oldNow - 1000 } }, { fresh: true }],
+    [{ view: "feedback", title: "Replies waiting", params: { status: "shipped" } }, { fresh: true }],
   ]);
 });
 

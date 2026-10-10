@@ -27,7 +27,7 @@ export function intentToDrill(intent, users, watches) {
   if (intent.status) {
     const key = intent.view === "watches" && intent.status === "behind" ? "behind"
       : ["alerts", "catchups"].includes(intent.view) ? "emailStatus"
-        : intent.view === "feedback" ? "handled" : intent.view === "users" ? "stage"
+        : intent.view === "feedback" ? "status" : intent.view === "users" ? "stage"
           : intent.view === "ratings" ? "verdict" : "status";
     params[key] = key === "behind" ? "yes" : intent.status;
   }
