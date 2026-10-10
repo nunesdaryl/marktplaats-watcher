@@ -18,6 +18,7 @@ import WatchSheet from "./components/WatchSheet.jsx";
 import Boot from "./Boot.jsx";
 import { useItemActions } from "./lib/actions.js";
 import { SIGNED_IN_FLAG, SIGNING_IN_FLAG } from "./lib/boot.js";
+import { clearSignupAttribution, signupAttribution } from "./lib/landingAttribution.js";
 import { groupByDate } from "./lib/dates.js";
 import Landing from "./Landing.jsx";
 import { go, useMediaQuery, useRoute, linkTo, useNow } from "./lib/router.js";
@@ -271,7 +272,8 @@ function AdmissionGate() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
-    store().then(setResult).catch(() => setError("We couldn't load your account. Refresh to try again."));
+    store(signupAttribution()).then((value) => { clearSignupAttribution(); setResult(value); })
+      .catch(() => setError("We couldn't load your account. Refresh to try again."));
     try { localStorage.setItem(SIGNED_IN_FLAG, "1"); sessionStorage.removeItem(SIGNING_IN_FLAG); } catch {}
   }, [store]);
   if (error) return <p className="banner" role="alert">{error}</p>;

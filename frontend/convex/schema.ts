@@ -72,6 +72,10 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     createdAt: v.number(),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
     admittedAt: v.optional(v.number()),
     freeUntil: v.optional(v.number()),
     aiBudgetEur: v.optional(v.number()),
@@ -84,6 +88,10 @@ export default defineSchema({
 
   waitlist: defineTable({
     clerkId: v.string(), email: v.string(), createdAt: v.number(),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    landingLanguage: v.optional(v.union(v.literal("nl"), v.literal("en"))),
     lookingFor: v.optional(v.string()),
   }).index("by_clerkId", ["clerkId"]).index("by_createdAt", ["createdAt"]),
 

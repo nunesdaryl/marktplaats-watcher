@@ -27,6 +27,8 @@ let renderCount;
 let responses;
 let queryCount;
 let foundingResponse;
+let signupSourcesResponse;
+let emptyCount;
 
 function render() {
   renderCount = 0;
@@ -46,8 +48,11 @@ beforeEach(() => {
   vi.mocked(useRef).mockImplementation(() => previous);
   responses = [dashboard(oldNow, 3), ratings, { rows: [] }];
   foundingResponse = undefined;
+  signupSourcesResponse = undefined;
+  emptyCount = 0;
   queryCount = 0;
-  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0 ? foundingResponse : responses[(queryCount++) % 3]);
+  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0
+    ? (emptyCount++ === 0 ? foundingResponse : signupSourcesResponse) : responses[(queryCount++) % 3]);
 });
 
 test("the first dashboard row opens the matching review lists", () => {
@@ -74,6 +79,14 @@ test("the first dashboard row opens the matching review lists", () => {
   ]);
 });
 
+test("owner overview shows sign-up source and language groups", () => {
+  signupSourcesResponse = { sources: [{ source: "linkedin", medium: "post", campaign: "launch", count: 2 }],
+    languages: [{ language: "nl", count: 2 }] };
+  const { html } = render();
+  expect(html).toContain("linkedin / post / launch");
+  expect(html).toContain("nl: <strong>2</strong>");
+});
+
 test("the attention row names every zero state without adding a query", () => {
   const { html } = render();
   const row = html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
@@ -81,7 +94,7 @@ test("the attention row names every zero state without adding a query", () => {
   expect(row).toContain("0</span>");
   expect(row.match(/Nothing to review/g)).toHaveLength(2);
   expect(row).toContain("No audit run yet");
-  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(5);
+  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(6);
   responses[0].deliveryAudit.lastRunAt = oldNow - 1000;
   const audited = render().html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
   expect(audited.match(/Nothing to review/g)).toHaveLength(3);

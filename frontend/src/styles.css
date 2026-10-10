@@ -1170,3 +1170,38 @@ button.door-row:hover { background: var(--fill); }
 .whats-new ol { list-style:none;padding:0; }
 .whats-new li { padding:22px 0;border-top:1px solid var(--border, #d7d2ca); }
 .whats-new h2 { margin:8px 0; }
+
+/* Public campaign pages: the same Sieve palette, with a quieter reading layout. */
+.public-landing { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font); }
+.public-landing a { color: var(--accent); }
+.public-bar, .public-landing main, .public-footer { width: min(100% - 48px, 1060px); margin-inline: auto; }
+.public-bar { min-height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.public-brand { text-decoration: none; font-size: 20px; letter-spacing: -.025em; color: var(--text) !important; }
+.public-brand strong { color: var(--accent); }
+.public-landing main > section { padding-block: 72px; border-bottom: 1px solid var(--line); }
+.public-landing main > section:not(.public-hero) { max-width: 760px; }
+.public-landing h1 { max-width: 750px; font-size: clamp(42px, 6vw, 76px); line-height: 1.04; letter-spacing: -.055em; margin: 0 0 28px; }
+.public-landing h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.15; letter-spacing: -.035em; margin: 0 0 20px; }
+.public-landing p, .public-landing li { font-size: 18px; line-height: 1.65; color: var(--text-2); }
+.public-hero { min-height: 560px; display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 48px; }
+.public-hero p { max-width: 620px; }
+.public-visual { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 14px; transform: rotate(2deg); box-shadow: var(--shadow); }
+.public-visual span { display: flex; justify-content: space-between; gap: 16px; background: var(--elevated); padding: 18px; border-radius: 8px; font-size: 14px; }
+.public-visual b { white-space: nowrap; color: var(--accent); }
+.public-action { margin: 24px 0 10px; }
+.public-places { font-size: 15px !important; font-weight: 600; color: var(--accent) !important; }
+.public-cta { display: inline-block; padding: 16px 24px; background: var(--accent); color: var(--accent-ink) !important; border-radius: 8px; font-weight: 600; text-decoration: none; }
+.public-cta:hover { filter: brightness(1.1); }
+.public-landing :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.public-landing small { display: block; margin-top: 12px; color: var(--text-3); }
+.public-video { aspect-ratio: 16 / 9; display: grid; place-content: center; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.public-video span { font-size: 42px; color: var(--accent); }
+.public-video p { margin: 4px 16px 0; font-size: 16px; }
+.public-steps { display: grid; gap: 20px; padding-left: 32px; }
+.public-steps li { padding-left: 8px; }
+.public-proof blockquote { margin: 36px 0 0; padding: 24px 32px; border-left: 4px solid var(--accent); background: var(--surface); font-size: 22px; line-height: 1.45; }
+.public-proof blockquote footer { margin-top: 16px; font-size: 14px; color: var(--text-2); }
+.public-landing details { border-top: 1px solid var(--line); padding: 18px 0; }
+.public-landing summary { cursor: pointer; font-weight: 600; font-size: 18px; }
+.public-footer { padding-block: 32px; font-size: 14px; color: var(--text-3); }
+@media (max-width: 720px) { .public-bar, .public-landing main, .public-footer { width: min(100% - 32px, 1060px); } .public-hero { grid-template-columns: 1fr; min-height: 0; gap: 36px; } .public-visual { transform: none; } .public-landing main > section { padding-block: 48px; } .public-landing p, .public-landing li { font-size: 16px; } }

@@ -80,6 +80,25 @@ const ranked = (rows: { summary: Record<string, any> }[], field: string) => {
   return Object.entries(out).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 };
 
+export const signupSources = query({ args: {}, handler: async (ctx) => {
+  if (!(await isOwner(ctx))) return null;
+  const sources = new Map<string, { source: string; medium: string; campaign: string; count: number }>();
+  const languages = new Map<string, number>();
+  for await (const user of ctx.db.query("users")) {
+    const source = user.utmSource ?? "(none)";
+    const medium = user.utmMedium ?? "(none)";
+    const campaign = user.utmCampaign ?? "(none)";
+    const key = JSON.stringify([source, medium, campaign]);
+    const row = sources.get(key) ?? { source, medium, campaign, count: 0 };
+    row.count++;
+    sources.set(key, row);
+    const language = user.landingLanguage ?? "(none)";
+    languages.set(language, (languages.get(language) ?? 0) + 1);
+  }
+  return { sources: [...sources.values()].sort((a, b) => b.count - a.count),
+    languages: [...languages].map(([language, count]) => ({ language, count })).sort((a, b) => b.count - a.count) };
+} });
+
 export const dashboard = query({
   args: { days: v.optional(v.number()), at: v.optional(v.number()) },
   handler: async (ctx, { days = 30 }) => {

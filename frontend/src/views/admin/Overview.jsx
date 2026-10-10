@@ -282,6 +282,7 @@ export default function Overview({ open, onSearch, ask }) {
   const ratingResult = useQuery(api.admin.ratingStats, { days, at });
   const feedbackResult = useQuery(api.admin.feedback, { limit: 5, at });
   const founding = useQuery(api.founding.ownerSummary, {});
+  const signupSources = useQuery(api.admin.signupSources, {});
   const previous = useRef(null);
   const refreshing = at !== undefined && (dashboardResult === undefined || ratingResult === undefined || feedbackResult === undefined);
   if (!refreshing) {
@@ -379,6 +380,17 @@ export default function Overview({ open, onSearch, ask }) {
         <Stat value={t.feedback} name="Feedback" note={`${t.feedbackOpen} open · ${t.feedbackShipped} shipped · ${t.feedbackReplied} replied · median ${t.feedbackMedianReplyDays == null ? "—" : t.feedbackMedianReplyDays.toFixed(1)} days to reply`} onOpen={() => go("feedback", "Feedback and suggestions")} />
       </div>
       <OpenAiSpendCard open={go} />
+      {signupSources && <section className="panel" aria-label="Sign-up attribution">
+        <h2>Sign-ups by landing source</h2>
+        <div className="admin-grid">
+          <div><h3>Source / medium / campaign</h3>
+            <ul>{signupSources.sources.map((row) => <li key={`${row.source}/${row.medium}/${row.campaign}`}>
+              {row.source} / {row.medium} / {row.campaign}: <strong>{row.count}</strong></li>)}</ul></div>
+          <div><h3>Landing language</h3>
+            <ul>{signupSources.languages.map((row) => <li key={row.language}>{row.language}: <strong>{row.count}</strong></li>)}</ul></div>
+        </div>
+      </section>}
+
       {founding && <section className="panel founding-summary">
         <h2>Founding survey</h2>
         <div className="breakdowns">

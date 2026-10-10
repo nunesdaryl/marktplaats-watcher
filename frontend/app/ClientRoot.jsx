@@ -16,5 +16,6 @@ export default function ClientRoot() {
   const pathname = usePathname();
   // Decided once, on the first render: switching components later would remount the app
   const [landing] = useState(() => pathname === "/");
+  if (pathname === "/nl" || pathname === "/nl/" || pathname === "/en" || pathname === "/en/") return null;
   return landing ? <RootWithLanding /> : <RootWithPlaceholder />;
 }
