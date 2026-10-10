@@ -24,6 +24,26 @@ const MAX_LENGTH = 2000;
 const PER_DAY = 10;
 const MAX_SCREENSHOT = 1_500_000;   // bytes; a 1280px JPEG of a page is ~100–400 kB
 
+export function defaultShowOnWhatsNew(user?: { clerkId: string; email: string } | null, personEmail?: string) {
+  const ownerId = process.env.OWNER_CLERK_ID?.trim();
+  const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  return !((ownerId && user?.clerkId === ownerId) || (ownerEmail && (user?.email ?? personEmail)?.trim().toLowerCase() === ownerEmail));
+}
+
+export function validatePublicTitle(title: string) {
+  const clean = title.trim();
+  if (!clean || clean.length > 80 || /\bMW-\d+\b|[<>\r\n]/i.test(clean))
+    throw new ConvexError("Public title must be plain words, at most 80 characters, with no MW issue IDs.");
+  return clean;
+}
+
+export function publicTitleFromIssue(title: string) {
+  const clean = title.trim().replace(/^\[factory\]\s*/i, "").replace(/\bMW-\d+\b\s*[-:–—]?\s*/gi, "")
+    .split(":", 1)[0].trim().replace(/\s+/g, " ");
+  const clipped = clean.length > 80 ? (clean.slice(0, 80).replace(/\s+\S*$/, "").trim() || clean.slice(0, 80)) : clean;
+  return validatePublicTitle(clipped);
+}
+
 async function sentToday(ctx: MutationCtx, userId: Id<"users">, now: number) {
   return (await ctx.db.query("feedback")
     .withIndex("by_user_created", (q) => q.eq("userId", userId).gte("createdAt", now - 86_400_000)).take(PER_DAY)).length;
@@ -144,19 +164,24 @@ export const shipByIssue = internalMutation({
       throw new ConvexError("Provide an MW issue, merge SHA, date and title.");
     const rows = await ctx.db.query("feedback").collect();
     const linked = rows.filter((row) => row.issues?.includes(issue));
+    if (!linked.length) return 0;
     if (linked.some((row) => row.status !== "in_progress" && !(row.status === "shipped" && row.releaseSha === sha)))
       throw new ConvexError("Linked feedback must be in progress before shipping.");
     const now = Date.now();
     const base = (process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app").replace(/\/$/, "");
     const releaseTitle = title.trim().replace(/^\[factory\]\s*/i, "");
+    const suggestedPublicTitle = publicTitleFromIssue(title);
     let changed = 0;
     for (const row of linked) {
       if (row.status === "shipped") continue;
       const user = row.userId ? await ctx.db.get(row.userId) : null;
+      const showOnWhatsNew = row.showOnWhatsNew ?? defaultShowOnWhatsNew(user, row.personEmail);
+      const publicTitle = row.publicTitle ?? suggestedPublicTitle;
+      if (showOnWhatsNew) validatePublicTitle(publicTitle);
       const path = row.featureUrl?.startsWith("/") ? row.featureUrl : row.context?.path?.startsWith("/") ? row.context.path : "/";
       const url = featureUrl ?? `${base}${path}`;
       await patchTracked(ctx, "feedback", row._id, { status: "shipped", releaseSha: sha, releaseAt,
-        releaseTitle, featureUrl: url, note: releaseTitle,
+        releaseTitle, publicTitle, showOnWhatsNew, featureUrl: url, note: releaseTitle,
         replyDraft: shippedReply({ personName: row.personName, email: row.personEmail ?? user?.email,
           receivedAt: row.createdAt, title: releaseTitle, featureUrl: url }) });
       await ctx.db.insert("feedbackEvents", { feedbackId: row._id, status: "shipped", at: now,
@@ -174,7 +199,7 @@ export const myShippedNotice = query({
     if (!user) return null;
     const rows = await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).order("desc").collect();
     const row = rows.find((f) => f.status === "shipped" && !f.noticeDismissedAt);
-    return row ? { _id: row._id, title: row.releaseTitle ?? "Your suggestion", featureUrl: row.featureUrl ?? "/" } : null;
+    return row ? { _id: row._id, title: row.publicTitle ?? "Your suggestion", featureUrl: row.featureUrl ?? "/" } : null;
   },
 });
 
@@ -191,8 +216,11 @@ export const dismissShippedNotice = mutation({
 export const whatsNew = query({
   args: {}, handler: async (ctx) => {
     const rows = await ctx.db.query("feedback").withIndex("by_status_created", (q) => q.eq("status", "shipped")).collect();
-    return rows.filter((row) => row.releaseAt && row.issues?.length).sort((a, b) => b.releaseAt! - a.releaseAt!)
-      .map((row) => ({ id: row._id, title: row.releaseTitle ?? "An improvement", date: row.releaseAt!,
+    const visible = await Promise.all(rows.map(async (row) => ({ row,
+      show: row.showOnWhatsNew ?? defaultShowOnWhatsNew(row.userId ? await ctx.db.get(row.userId) : null, row.personEmail) })));
+    return visible.filter(({ row, show }) => show && row.publicTitle?.trim() && row.releaseAt && row.issues?.length)
+      .sort((a, b) => b.row.releaseAt! - a.row.releaseAt!)
+      .map(({ row }) => ({ id: row._id, title: row.publicTitle!, date: row.releaseAt!,
         featureUrl: row.featureUrl ?? "/", credit: row.creditName && row.personName?.trim() ? row.personName.trim() : "a founding user" }));
   },
 });

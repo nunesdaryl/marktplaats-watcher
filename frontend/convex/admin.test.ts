@@ -98,8 +98,15 @@ test("outside feedback tracks owner decisions, release and a manually recorded r
   await owner.mutation(api.admin.updateFeedback, { ...change, status: "in_progress" });
   await expect(other.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() }))
     .rejects.toThrow(/Not found/);
-  await owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() });
+  await expect(owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now() }))
+    .rejects.toThrow(/Public title/);
+  await owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0", releaseAt: Date.now(), publicTitle: "Better alerts" });
   const shipped = (await owner.query(api.admin.feedback, { status: "shipped" }))!.rows[0];
+  expect(shipped).toMatchObject({ publicTitle: "Better alerts", showOnWhatsNew: true });
+  await expect(owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0",
+    releaseAt: Date.now(), publicTitle: "MW-48 Better alerts" })).rejects.toThrow(/Public title/);
+  await expect(owner.mutation(api.admin.updateFeedback, { ...change, status: "shipped", releaseSha: "abcdef0",
+    releaseAt: Date.now(), publicTitle: "x".repeat(81) })).rejects.toThrow(/Public title/);
   expect(shipped.replyDraft).toBe("Hi Instructor, thanks for your feedback on 28 September. Review for next release. It's live in the app now. Daryl, Marktplaats Watcher");
   expect(shipped.timeline.map((e) => e.status)).toEqual(["new", "planned", "in_progress", "shipped"]);
   await owner.mutation(api.admin.markFeedbackReplied, { id, channel: "whatsapp", text: "I told them where to find it." });
@@ -134,7 +141,7 @@ test("a shipped app reply is sent only on owner action and recorded", async () =
   const sent: any[] = [];
   vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => { sent.push(JSON.parse(init.body as string)); return new Response("{}"); }));
   const id = await user.mutation(api.feedback.submit, { message: "Please add this" });
-  const args = { id, issues: ["MW-48"], releaseSha: "123abcd", releaseAt: Date.now(), status: "shipped" as const, note: "the alert settings" };
+  const args = { id, issues: ["MW-48"], releaseSha: "123abcd", releaseAt: Date.now(), status: "shipped" as const, note: "the alert settings", publicTitle: "Better alerts" };
   await expect(owner.mutation(api.admin.updateFeedback, args)).rejects.toThrow(/status line/);
   await owner.mutation(api.admin.updateFeedback, { id, status: "planned", issues: ["MW-48"] });
   await owner.mutation(api.admin.updateFeedback, { id, status: "in_progress", issues: ["MW-48"] });
