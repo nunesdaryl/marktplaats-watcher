@@ -104,6 +104,7 @@ def post_check(monkeypatch, watches):
     assert len(results) == len(watches)
     for result, sent in zip(results, watches):
         # MW-122: seller-signal counts (yes/no only) and the seller type; business filtering is off until reviewed.
+        assert isinstance(result.pop("sellerListingsChecked"), int)   # MW-124: denominator for the signal review
         stats = {key: result.pop(key) for key in ("paidRemoved", "businessRemoved", "businessSignaled",
                                                   "websiteUrlPresent", "showWebsiteTrue")}
         assert stats == {"paidRemoved": 0, "businessRemoved": 0, "businessSignaled": 0,

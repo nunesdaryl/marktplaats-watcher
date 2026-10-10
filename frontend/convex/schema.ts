@@ -226,6 +226,7 @@ export default defineSchema({
     businessSignaled: v.optional(v.number()),
     websiteUrlPresent: v.optional(v.number()),
     showWebsiteTrue: v.optional(v.number()),
+    sellerListingsChecked: v.optional(v.number()),
   }).index("by_at", ["at"]),
 
   audits: defineTable({

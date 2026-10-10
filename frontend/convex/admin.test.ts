@@ -76,6 +76,36 @@ test("owner dashboard sums removed listings by day and run", async () => {
   });
 });
 
+test("owner dashboard sums removed listings from projected runs", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  for (const paidRemoved of [24, 28]) await t.mutation(internal.health.logRun, {
+    at: Date.now(), checked: 1, failed: 0, emails: 0, emailFailures: 0,
+    paidRemoved, businessRemoved: 1, businessSignaled: 2, websiteUrlPresent: 1, showWebsiteTrue: 1,
+  });
+  expect((await owner.query(api.admin.dashboard, {}))?.daily.at(-1)).toMatchObject({
+    paidRemoved: 52, businessRemoved: 2,
+  });
+});
+
+test("seller website signal counts only inspected listings in the last 24 hours", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await t.mutation(internal.totals.backfill, { dryRun: false });
+  for (const [at, checked, flagged] of [
+    [Date.now() - 25 * 60 * 60_000, 100, 30],
+    [Date.now() - 60 * 60_000, 12, 3],
+    [Date.now(), 8, 2],
+  ]) await t.mutation(internal.health.logRun, { at, checked: 1, failed: 0, emails: 0, emailFailures: 0,
+    sellerListingsChecked: checked, showWebsiteTrue: flagged });
+  await t.mutation(internal.health.logRun, { at: Date.now(), checked: 1, failed: 0, emails: 0,
+    emailFailures: 0, showWebsiteTrue: 7 }); // older run format has no inspected-listing denominator
+  expect((await owner.query(api.admin.dashboard, {}))?.sellerSignal24h).toMatchObject({
+    since: Date.now() - 60 * 60_000, showWebsiteTrue: 5, sellerListingsChecked: 20,
+  });
+});
+
 test("owner dashboard counts places and lists only the owner's waitlist", async () => {
   process.env.MAX_USERS = "1";
   const t = convexTest(schema, modules);

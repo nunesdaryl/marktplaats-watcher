@@ -10,7 +10,7 @@ beforeEach(() => {
   process.env.AGENTMAIL_API_KEY = "am_test";
   process.env.AGENTMAIL_INBOX_ID = "inbox@test";
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); delete process.env.OWNER_CLERK_ID; });
 
 test("feedback is stored, e-mailed to the owner and counted", async () => {
   const t = convexTest(schema, modules);
@@ -174,13 +174,35 @@ test("a shipped idea is shown once to its submitter and public credit requires c
   if (user.status !== "admitted") throw new Error("Test account was not admitted");
   const id = await t.run((ctx) => ctx.db.insert("feedback", { userId: user.id, personName: "Alice", creditName: false,
     message: "Better bids", note: "Bidding help", status: "shipped", issues: ["MW-90"], releaseAt: 100, createdAt: 1,
-    publicTitle: "Bidding help" }));
+    publicTitle: "Bidding help", showOnWhatsNew: true }));
   expect((await alice.query(api.feedback.myShippedNotice, {}))?._id).toBe(id);
   expect((await t.query(api.feedback.whatsNew, {}))[0].credit).toBe("a founding user");
   await alice.mutation(api.feedback.dismissShippedNotice, { id });
   expect(await alice.query(api.feedback.myShippedNotice, {})).toBeNull();
   await t.run((ctx) => ctx.db.patch(id, { creditName: true }));
   expect((await t.query(api.feedback.whatsNew, {}))[0].credit).toBe("Alice");
+});
+
+test("personal notice skips hidden, untitled, and owner feedback", async () => {
+  process.env.OWNER_CLERK_ID = "owner";
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
+  const aliceUser = await alice.mutation(api.users.store, {});
+  const ownerUser = await owner.mutation(api.users.store, {});
+  if (aliceUser.status !== "admitted" || ownerUser.status !== "admitted") throw new Error("Test accounts were not admitted");
+  await t.run(async (ctx) => {
+    await ctx.db.insert("feedback", { userId: aliceUser.id, status: "shipped", createdAt: 4,
+      publicTitle: "Hidden", showOnWhatsNew: false });
+    await ctx.db.insert("feedback", { userId: aliceUser.id, status: "shipped", createdAt: 3,
+      showOnWhatsNew: true });
+    await ctx.db.insert("feedback", { userId: aliceUser.id, status: "shipped", createdAt: 2,
+      publicTitle: "Visible", showOnWhatsNew: true });
+    await ctx.db.insert("feedback", { userId: ownerUser.id, status: "shipped", createdAt: 1,
+      publicTitle: "Owner test", showOnWhatsNew: true });
+  });
+  expect((await alice.query(api.feedback.myShippedNotice, {}))?.title).toBe("Visible");
+  expect(await owner.query(api.feedback.myShippedNotice, {})).toBeNull();
 });
 
 test("shipping alerts the owner with a link for each reply to approve", async () => {

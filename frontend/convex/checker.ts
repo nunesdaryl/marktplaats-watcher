@@ -135,7 +135,7 @@ const result = v.object({
   newestId: v.optional(v.union(v.number(), v.null())),   // the watermark for the next check
   waiting: v.optional(v.number()), capped: v.optional(v.boolean()),
   paidRemoved: v.optional(v.number()), businessRemoved: v.optional(v.number()), businessSignaled: v.optional(v.number()),
-  websiteUrlPresent: v.optional(v.number()), showWebsiteTrue: v.optional(v.number()),
+  websiteUrlPresent: v.optional(v.number()), showWebsiteTrue: v.optional(v.number()), sellerListingsChecked: v.optional(v.number()),
   usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(), model: v.optional(v.string()),
     calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number() })) })),
 });
@@ -466,7 +466,7 @@ export const checkDue = internalAction({
     }
     const appUrl = process.env.APP_URL ?? "https://marktplaats-watcher.vercel.app";
     let checked = 0, emails = 0, failed = 0, emailFailures = 0, timeouts = 0;
-    let paidRemoved = 0, businessRemoved = 0, businessSignaled = 0, websiteUrlPresent = 0, showWebsiteTrue = 0;
+    let paidRemoved = 0, businessRemoved = 0, businessSignaled = 0, websiteUrlPresent = 0, showWebsiteTrue = 0, sellerListingsChecked = 0;
 
     /** Send one watch's alert e-mail and record the outcome; a failure is retried at the next ticks. */
     const deliver = async (mail: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string }) => {
@@ -513,12 +513,13 @@ export const checkDue = internalAction({
       checked += group.watches.length;
       failed += results.filter((r: { ok: boolean }) => !r.ok).length;
       for (const r of results as { paidRemoved?: number; businessRemoved?: number; businessSignaled?: number;
-        websiteUrlPresent?: number; showWebsiteTrue?: number }[]) {
+        websiteUrlPresent?: number; showWebsiteTrue?: number; sellerListingsChecked?: number }[]) {
         paidRemoved += r.paidRemoved ?? 0;
         businessRemoved += r.businessRemoved ?? 0;
         businessSignaled += r.businessSignaled ?? 0;
         websiteUrlPresent += r.websiteUrlPresent ?? 0;
         showWebsiteTrue += r.showWebsiteTrue ?? 0;
+        sellerListingsChecked += r.sellerListingsChecked ?? 0;
       }
       const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
       if (!dryRun) {
@@ -577,7 +578,7 @@ export const checkDue = internalAction({
     }
     if (dryRun) return { checked, emails: 0 };    // a preview: nothing was stored, nothing sent
     await ctx.runMutation(internal.health.logRun, { at: now, checked, failed, emails, emailFailures, timeouts,
-      paidRemoved, businessRemoved, businessSignaled, websiteUrlPresent, showWebsiteTrue, requestId: runId });
+      paidRemoved, businessRemoved, businessSignaled, websiteUrlPresent, showWebsiteTrue, sellerListingsChecked, requestId: runId });
     if (checked || emails || emailFailures)
       console.log(JSON.stringify({ event: "check_run", checked, failed, emails, emailFailures, timeouts, ms: Date.now() - now, requestId: runId }));
     return { checked, emails };

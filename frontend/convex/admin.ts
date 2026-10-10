@@ -181,6 +181,7 @@ export const dashboard = query({
     }).slice(0, 5);
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     const fallingBehind = watches.filter((w) => w.active && live(w) && ((w.backlog ?? 0) >= 20 || w.coverageCapped));
+    const sellerRuns = runs.filter((r) => r.at >= now - DAY && r.sellerListingsChecked !== undefined);
     return {
       now, days,
       totals: {
@@ -210,6 +211,9 @@ export const dashboard = query({
         events: summed(selected),
       },
       daily,
+      sellerSignal24h: { since: sellerRuns.length ? Math.min(...sellerRuns.map((r) => r.at)) : now - DAY,
+        showWebsiteTrue: sellerRuns.reduce((n, r) => n + (r.showWebsiteTrue ?? 0), 0),
+        sellerListingsChecked: sellerRuns.reduce((n, r) => n + r.sellerListingsChecked!, 0) },
       fallingBehindLabels: fallingBehind.map((w) => w.name ?? w.label),
       funnel,
       features: ranked(selected, "names"),

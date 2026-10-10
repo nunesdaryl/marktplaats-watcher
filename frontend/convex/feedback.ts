@@ -196,10 +196,11 @@ export const shipByIssue = internalMutation({
 export const myShippedNotice = query({
   args: {}, handler: async (ctx) => {
     const user = await currentUser(ctx);
-    if (!user) return null;
+    if (!user || !defaultShowOnWhatsNew(user)) return null;
     const rows = await ctx.db.query("feedback").withIndex("by_user_created", (q) => q.eq("userId", user._id)).order("desc").collect();
-    const row = rows.find((f) => f.status === "shipped" && !f.noticeDismissedAt);
-    return row ? { _id: row._id, title: row.publicTitle ?? "Your suggestion", featureUrl: row.featureUrl ?? "/" } : null;
+    const row = rows.find((f) => f.status === "shipped" && !f.noticeDismissedAt
+      && f.showOnWhatsNew === true && !!f.publicTitle?.trim());
+    return row ? { _id: row._id, title: row.publicTitle!, featureUrl: row.featureUrl ?? "/" } : null;
   },
 });
 
