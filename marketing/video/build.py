@@ -19,10 +19,12 @@ FORMATS = {"landscape": (1920, 1080), "vertical": (1080, 1920)}
 # poster = the settled frame baked in as frame 0 and written as the .jpg (see scripts/render-video.sh).
 VARIANTS = {
     "original": dict(total=24.5, shift=0.0, s5=(17.47, 3.81), s6=(21.28, 3.22), logo_sfx=21.4, music_offset=None),
-    "animated-logo": dict(total=29.0, shift=0.0, s5=(17.47, 5.81), s6=(23.28, 5.72), logo_sfx=23.3, music_offset=None),
+    # station review (MW-134): score scene +0.6 s (NL reading time, finished state held 1.26 s), e-mail scene +0.2 s (NL reading
+    # time), proof scene +0.4 s (footnote readable 5.0 s or more); every later cue and the H-to-I loop move +1.2 s
+    "animated-logo": dict(total=30.2, shift=0.0, s3d=4.97, s4=(13.71, 4.56), s5=(18.27, 6.21), s6=(24.48, 5.72), logo_sfx=24.5, music_offset=None, l0=26.2),
     # the 3.0 s problem hook goes in front: every cue and scene moves +3.0 s, and the music starts 1.365 s into the
     # track (8 beats = 2 bars at 109.96 BPM, minus 3 s) so the beat locks keep their grid
-    "cohort1": dict(total=32.0, shift=3.0, s5=(17.47, 5.81), s6=(23.28, 5.72), logo_sfx=23.3, music_offset=1.365),
+    "cohort1": dict(total=33.2, shift=3.0, s3d=4.97, s4=(13.71, 4.56), s5=(18.27, 6.21), s6=(24.48, 5.72), logo_sfx=24.5, music_offset=1.365, l0=26.2),
     # the `why` film is its own timeline (scene times live in the template): same 3.0 s hook, then pain, turn, four outcome
     # cards and proof, and the outro from 35.11 s; the H-to-I loop starts at l0 and the music offset is the cohort1 one
     "why": dict(total=40.6, shift=0.0, s5=(28.6, 6.51), s6=(35.11, 5.49), logo_sfx=35.13, music_offset=1.365, l0=36.8),
@@ -60,7 +62,7 @@ def sfx_cues(name, v):
         ("sfx-row-1", "drop_001.ogg", 8.84, 0.11, 0.40),
         ("sfx-row-2", "drop_002.ogg", 9.83, 0.19, 0.32),
         ("sfx-row-3", "drop_003.ogg", 10.93, 0.19, 0.32),
-        ("sfx-mail", "card-slide-1.ogg", 13.11, 0.6, 0.38),
+        ("sfx-mail", "card-slide-1.ogg", v.get("s4", (13.11,))[0], 0.6, 0.38),
         ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45),
     ]
     cues = [(i, f, round(s + v["shift"], 3), d, vol) for (i, f, s, d, vol) in cues]
@@ -129,7 +131,7 @@ def build(name, fmt, template):
         for n, (i, f, s, d, vol) in enumerate(sfx_cues(name, v)))
     fills = {
         "__TOTAL__": f"{v['total']:g}", "__W__": str(w), "__H__": str(h), "__FMT__": fmt,
-        "__S1__": num(0 + sh), "__S2__": num(4.4 + sh), "__S3__": num(8.74 + sh), "__S4__": num(13.11 + sh),
+        "__S1__": num(0 + sh), "__S2__": num(4.4 + sh), "__S3__": num(8.74 + sh), "__S3D__": num(v.get("s3d", 4.37)), "__S4__": num(v.get("s4", (13.11, 4.36))[0] + sh), "__S4D__": num(v.get("s4", (13.11, 4.36))[1]),
         "__S5__": num(v["s5"][0] + sh), "__S5D__": num(v["s5"][1]), "__S6__": num(v["s6"][0] + sh), "__S6D__": num(v["s6"][1]),
         "__L0__": num(v.get("l0", 25.0)), "__MUSIC__": music_tag(name, v), "__SFX__": sfx_html,
         "__AUDIO__": json.dumps(audio_energy(name), separators=(",", ":")),
