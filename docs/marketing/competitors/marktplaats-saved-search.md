@@ -29,3 +29,9 @@ Official, free, full result coverage, no ToS risk, already in every buyer's app.
 
 ## Customer Sentiment
 Works, but late and repetitive ("En constant hetzelfde plaatje in de melding", Viafora 2024).
+
+## Notifications observed in our own account (10 Oct 2026)
+Daryl's signed-in Marktplaats account, "Meldingen" page, photographed 10 Oct 2026 around 21:20 (cropped to the notification list; no account name): [2026-10-10-marktplaats-notifications.png](evidence/2026-10-10-marktplaats-notifications.png).
+- Two saved searches, "playstation 5" and "mac mini", each produced **one notification per day**, each a single round-up: "Er zijn 812 / 834 / 653 nieuwe advertenties voor je zoekopdracht: playstation 5" and "Er zijn 26 / 28 / 25 nieuwe advertenties voor je zoekopdracht: mac mini" ("ongeveer 3 uur geleden", "1 dag geleden", "2 dagen geleden"; earlier days seen 8-10 Oct).
+- This matches the PC, Android and iOS help pages ("dagelijks", checked 29 Sep 2026). The general help page still says "direct ... als eerste", so any claim must say "in our own account" with the dates, never "Marktplaats only alerts once a day".
+- Used by the `why` launch video (MW-131) as the footnote for the daily-list contrast.

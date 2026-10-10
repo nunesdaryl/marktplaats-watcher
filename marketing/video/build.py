@@ -23,6 +23,9 @@ VARIANTS = {
     # the 3.0 s problem hook goes in front: every cue and scene moves +3.0 s, and the music starts 1.365 s into the
     # track (8 beats = 2 bars at 109.96 BPM, minus 3 s) so the beat locks keep their grid
     "cohort1": dict(total=32.0, shift=3.0, s5=(17.47, 5.81), s6=(23.28, 5.72), logo_sfx=23.3, music_offset=1.365),
+    # the `why` film is its own timeline (scene times live in the template): same 3.0 s hook, then pain, turn, four outcome
+    # cards and proof, and the outro from 34.81 s; the H-to-I loop starts at l0 and the music offset is the cohort1 one
+    "why": dict(total=40.3, shift=0.0, s5=(28.3, 6.51), s6=(34.81, 5.49), logo_sfx=34.83, music_offset=1.365, l0=36.5),
 }
 
 # SFX cues: (id, file, start, duration, volume), times for the film without the hook.
@@ -30,7 +33,25 @@ TYPE_START, TYPE_STEP, N_CHARS = 1.0, 0.048, 50
 KEYS = ["keypress-003.wav", "keypress-011.wav", "keypress-019.wav", "keypress-024.wav"]
 
 
+def why_sfx_cues(v):
+    return [
+        ("sfx-stamp", "impactSoft_medium_002.ogg", 1.6, 0.14, 0.40),
+        ("sfx-pain-1", "drop_001.ogg", 3.05, 0.11, 0.40),
+        ("sfx-pain-2", "drop_002.ogg", 4.3, 0.19, 0.32),
+        ("sfx-pain-3", "drop_003.ogg", 5.5, 0.19, 0.32),
+        ("sfx-turn", "card-slide-1.ogg", 8.62, 0.6, 0.38),
+        ("sfx-chip", "click2.ogg", 9.9, 0.06, 0.40),
+        ("sfx-card-a", "click2.ogg", 15.1, 0.06, 0.40),
+        ("sfx-card-b", "click2.ogg", 17.85, 0.06, 0.40),
+        ("sfx-card-c", "click2.ogg", 21.2, 0.06, 0.40),
+        ("sfx-card-d", "click2.ogg", 24.2, 0.06, 0.40),
+        ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45),
+    ]
+
+
 def sfx_cues(name, v):
+    if name == "why":
+        return why_sfx_cues(v)
     cues = [(f"sfx-key-{k}", KEYS[k % len(KEYS)], round(TYPE_START + i * TYPE_STEP, 3), 0.25, 0.22)
             for k, i in enumerate(range(0, N_CHARS, 4))]  # a soft tick on every 4th character
     cues += [
@@ -110,7 +131,7 @@ def build(name, fmt, template):
         "__TOTAL__": f"{v['total']:g}", "__W__": str(w), "__H__": str(h), "__FMT__": fmt,
         "__S1__": num(0 + sh), "__S2__": num(4.4 + sh), "__S3__": num(8.74 + sh), "__S4__": num(13.11 + sh),
         "__S5__": num(v["s5"][0] + sh), "__S5D__": num(v["s5"][1]), "__S6__": num(v["s6"][0] + sh), "__S6D__": num(v["s6"][1]),
-        "__MUSIC__": music_tag(name, v), "__SFX__": sfx_html,
+        "__L0__": num(v.get("l0", 25.0)), "__MUSIC__": music_tag(name, v), "__SFX__": sfx_html,
         "__AUDIO__": json.dumps(audio_energy(name), separators=(",", ":")),
     }
     html = keep_variant_lines(template, name)

@@ -1,0 +1,5 @@
+EN:
+Always just too late for that Marktplaats deal? In our check, about 1 in 3 results for 'mac mini' wasn't a Mac mini, and in our own account (8–10 Oct) the saved-search alert came as one daily list (812 new listings for 'playstation 5'). Marktplaats Watcher checks as often as every 15 minutes and e-mails only the new listings worth a look, with the reason; free for 30 days for the first 100 users at marktplaats-watcher.vercel.app (a portfolio project, not affiliated with Marktplaats).
+
+NL:
+Altijd net te laat voor die ene Marktplaats-deal? In onze check was zo'n 1 op de 3 resultaten voor 'mac mini' geen Mac mini, en in ons eigen account (8–10 okt) kwam de melding van een bewaarde zoekopdracht als één dagelijkse lijst (812 nieuwe advertenties voor 'playstation 5'). Marktplaats Watcher checkt, als je wilt elk kwartier, en mailt alleen de nieuwe advertenties die de moeite waard zijn, met uitleg waarom; 30 dagen gratis voor de eerste 100 gebruikers via marktplaats-watcher.vercel.app (een portfolioproject, niet verbonden aan Marktplaats; de app is in het Engels).

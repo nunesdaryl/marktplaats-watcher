@@ -2,7 +2,7 @@
 # Render the Marktplaats Watcher launch video from marketing/video/ (see marketing/video/HOW-TO.md).
 #
 #   scripts/render-video.sh <variant> [format|all] [lang|all]
-#     variant: original | animated-logo | cohort1
+#     variant: original | animated-logo | cohort1 | why
 #     format:  landscape (1920x1080) | vertical (1080x1920) | all   (default all)
 #     lang:    en | nl | all                                         (default all)
 #
@@ -18,12 +18,12 @@ VIDEO="$ROOT/marketing/video"
 OUT="$VIDEO/out"
 
 usage() {
-  echo "usage: scripts/render-video.sh <original|animated-logo|cohort1> [landscape|vertical|all] [en|nl|all]" >&2
+  echo "usage: scripts/render-video.sh <original|animated-logo|cohort1|why> [landscape|vertical|all] [en|nl|all]" >&2
   exit 2
 }
 
 variant="${1:-}"; format="${2:-all}"; lang="${3:-all}"
-case "$variant" in original) poster=12.5 ;; animated-logo) poster=12.5 ;; cohort1) poster=1.0 ;; *) usage ;; esac
+case "$variant" in original) poster=12.5 ;; animated-logo) poster=12.5 ;; cohort1) poster=1.0 ;; why) poster=1.0 ;; *) usage ;; esac
 case "$format" in landscape|vertical|all) ;; *) usage ;; esac
 case "$lang" in en|nl|all) ;; *) usage ;; esac
 

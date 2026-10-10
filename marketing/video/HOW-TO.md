@@ -11,7 +11,7 @@ scripts/render-video.sh cohort1 all all          # 4 videos: landscape/vertical 
 scripts/render-video.sh animated-logo landscape en
 ```
 
-- **variant**: `original`, `animated-logo` or `cohort1` (see below).
+- **variant**: `original`, `animated-logo`, `cohort1` or `why` (see below).
 - **format**: `landscape` (1920x1080), `vertical` (1080x1920) or `all`.
 - **lang**: `en`, `nl` or `all`. The app screens stay in English in both; captions, claims and the outro change.
 
@@ -50,11 +50,13 @@ Under the hood it runs `python3 -I marketing/video/build.py` (template to `.buil
 | `animated-logo` | 29.0 s | 870 | same, proof held longer (17.47 to 23.28), outro 23.28 | No tilt; the logo does the H-to-I loop once from 25.0 s (keyframes from `frontend/src/brand/logo.js`). Footnote and Dutch wording polished. Poster 12.5 s. |
 | `cohort1` | 32.0 s | 960 | problem hook 0, then the animated-logo film shifted by 3.0 s (loop from 28.0 s) | From FDE cohort feedback: a "too late" hook with a Reserved badge (badge at 1.6 s). Music starts 1.365 s into the track to keep the beat grid. Poster 1.0 s (hook, before the badge). |
 
-Open work: a platform pack of cut-downs (MW-130) and a `why` variant (MW-131). Both are added to this template.
+| `why` | 40.3 s | 1209 | hook 0, pain 3.0, turn 8.6, outcome cards 15.1 / 17.85 / 21.2 / 24.2, proof 28.3, outro 34.81 (loop from 36.5 s) | Its own timeline (no nested film). PAS: the cohort1 hook, three pain lines from our dated 29 Sep check, the 8-10 Oct own-account contrast, four outcome cards (plain words, worth a look with the reason, no paid/wanted/reserved, your schedule), proof, free founding offer. Music offset 1.365 s like `cohort1`; glow data from `audio_data.py`. Poster 1.0 s (hook, before the badge). Committed in `docs/marketing/media/why-2026-10-10/`. |
+
+Open work: a platform pack of cut-downs (MW-130), which can add `why` cuts later.
 
 ## Add a variant or a format
 
-- **Variant.** Add a row to `VARIANTS` in `build.py` (length, `shift`, scene 5 and 6 timings, logo sound time, music offset), put its lines in the template under `@only <name>` or add the name to an existing `@only` list, and put its per-frame music energy in `shared/audio-data/<name>.json` (30 fps, 8 bands, from the music at the same offset). Add its poster time to `render-video.sh`. Then render all formats and languages and review frame by frame.
+- **Variant.** Add a row to `VARIANTS` in `build.py` (length, `shift`, scene 5 and 6 timings, logo sound time, music offset), put its lines in the template under `@only <name>` or add the name to an existing `@only` list, and put its per-frame music energy in `shared/audio-data/<name>.json` (30 fps, 8 bands, from the music at the same offset; `python3 -I marketing/video/audio_data.py <name> <total_s> <music_offset_s>` writes it). Add its poster time to `render-video.sh`. Then render all formats and languages and review frame by frame.
 - **Format.** Add the size to `FORMATS` in `build.py` and the format name to the `case` in `render-video.sh`; the CSS has `.fmt-<name>` rules next to `.fmt-landscape` and `.fmt-vertical` (caption width, text sizes, `.ui` zoom) that need a matching set. Check every scene at 1:1.
 - **Language.** Add a block to the `T` object in the template and the code to `render-video.sh`.
 
@@ -66,6 +68,7 @@ Open work: a platform pack of cut-downs (MW-130) and a `why` variant (MW-131). B
 | `build.py` | Variant table, sound cues, music volume lane; writes `.build/` |
 | `shared/assets/` | Geist fonts (with OFL.txt), music, Kenney sound effects, GSAP, brand SVGs |
 | `shared/audio-data/` | Per-variant music energy that drives the background glow |
+| `audio_data.py` | Writes `shared/audio-data/<variant>.json` for a new variant |
 | `compare.sh` | Duration, frame count and PSNR comparison with a reference render |
 | `CREDITS.md` | Music, sound, font and tool credits |
 | `out/`, `.build/` | Generated, gitignored |
