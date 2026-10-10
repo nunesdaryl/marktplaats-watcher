@@ -18,6 +18,7 @@ Draft pack for Daryl to review. No posting, messages or paid launch are authoriz
 - [Community, DM and interview drafts](generated/community-and-dm.md)
 - [Meta test briefs and launch gate](generated/ads-meta-test.md)
 - [10 October launch video drafts, posters, captions and storyboard](media/launch-2026-10-10/README.md)
+- [`animated-logo` and FDE Cohort 1 launch video drafts (8 videos, posters, claims and sources)](media/variants-2026-10-10/README.md)
 - [`why` launch video drafts (pain, outcomes, proof, free founding offer), posters, captions, claims and sources](media/why-2026-10-10/README.md)
 - [Launch-video source, one-command render and how-to](../../marketing/video/HOW-TO.md) (credits in [CREDITS.md](../../marketing/video/CREDITS.md); project skill `.claude/skills/marktplaats-video`)
 
