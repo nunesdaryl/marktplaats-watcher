@@ -1580,6 +1580,25 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   unchanged, a review fix); MW-105 the <a href="case-study.md">FDE case study</a>, which also corrected the OpenAI cap to
   $110 and the €1 per-user budget in the report, README and NFRs. Review sent two builds back and caught one station error
   (a PASS posted while tests failed, withdrawn within minutes).</p>
+<p><b>Closing the feedback loop and genuine listings (10 October).</b> Daryl asked that the loop just finished with
+  Vinod (asked on LinkedIn on 5 October, built as MW-90 and MW-114, told on 10 October) become a standard part of the
+  factory. MW-116: feedback from any channel (LinkedIn added) is linked to its MW issue; a build moves it to in progress
+  and the merge gate marks it shipped with an auto-drafted reply after the Linear close (warn-only, so a live merge is
+  never derailed); the owner approves every reply (Send for app or e-mail, Copy reply and Mark as replied for other
+  channels); the submitter sees a one-time "Your idea is live" card and a public What's new page lists improvements,
+  crediting "a founding user" unless the person agreed to be named. MW-123 added a plain public title per item and a
+  "Show on What's new" switch (off for the owner's own feedback). Vinod's request is the first loop recorded end to end
+  and the first public entry: "Help me make an offer, then bid in one tap". The same day: "About N listings match" at
+  setup from one request (MW-119, keeping the 30 September coverage warning), wanted ads ("Gezocht") are never matches
+  (MW-121, which also ended a false delivery-miss alarm), price-drop alerts for listings a check re-reads (MW-117),
+  reserved listings skipped with fewer audit page fetches (MW-118), condition and Marktplaats' own distance on alerts
+  (MW-120, distance only when the watch has a postcode) and genuine listings only (MW-122): paid placements never shown;
+  shops and dealers hidden by default, per watch "Also show shops and dealers", the filter switched on only after a
+  24-hour review of the seller-website signal; no seller names or ids stored. Review fixed a real problem in nearly every
+  build (a gate step that could derail live merges, a private note on a public page, a removed coverage warning, a
+  prompt sentence spliced into another instruction, a misleading distance, a gate fixed at six cases). Evals on the
+  real model: great precision 100% (median of 3), recall 74%, chat 23/23; recall varies from run to run (61–87% this
+  week with the same prompt), a known gap to fix.</p>
 <p><b>A fairer scorer and a steadier dashboard (7 October; earlier snapshot).</b> The 7 October delivery audit listed five good listings the
   check had scored too low. MW-98 investigated them: two were real misses (a nearly new PS5, a Mac mini M2 16GB) and are
   fixed by a new rank prompt (<code>rank-2026-10-07.1</code>: bundles with extras are still the item, "zo goed als nieuw"

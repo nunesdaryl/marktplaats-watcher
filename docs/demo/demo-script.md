@@ -143,6 +143,11 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
 - **"How do you know the scores are right?"** "Every morning an audit re-checks yesterday's listings with a second look.
   When it found good listings we'd scored too low, we fixed the scorer and proved it on real data: great-match precision
   is 100% with 74% recall (median of 3 runs); good-match precision is 86% with 78% recall (10 Oct 2026 report)."
+- **"Do I see ads or shops?"** "No paid placements, ever. Shops and dealers are hidden too, unless you switch on
+  'Also show shops and dealers' for a watch, say when you want a warranty. And it tells you when something you've seen
+  drops in price."
+- **"What happens with my feedback?"** "It goes into the same factory: built, shipped, and I tell you it's live. The
+  first one took five days, from Vinod's bidding request to the feature, and it's on the What's new page."
 - **"Does it learn what I like?"** "Yes, per watch. Say 'Not right, not what I asked for' and it offers one tap to skip
   that word, with Undo. And it remembers your last ratings for that watch: one 'not right' on a Mac mini M1 took the next
   similar listing from 9 to 2."
