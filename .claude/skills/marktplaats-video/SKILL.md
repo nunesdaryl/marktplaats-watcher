@@ -8,7 +8,7 @@ description: Use when making, changing, rendering or reviewing a Marktplaats Wat
 One template makes every variant, format and language. Detail: [`marketing/video/HOW-TO.md`](../../../marketing/video/HOW-TO.md). Credits: [`marketing/video/CREDITS.md`](../../../marketing/video/CREDITS.md).
 
 ```bash
-scripts/render-video.sh <original|animated-logo|cohort1|why> [landscape|vertical|all] [en|nl|all]
+scripts/render-video.sh <original|animated-logo|cohort1|why|pack|bumper> [landscape|vertical|reels-stories|meta-feed|x|yt-bumper|all] [en|nl|all]
 marketing/video/compare.sh <new.mp4> <reference.mp4>   # duration, frame count, PSNR >= 35 dB
 ```
 
@@ -32,7 +32,10 @@ Output goes to the gitignored `marketing/video/out/`; the poster is also baked i
 | `cohort1` | 33.2 s (problem hook first; loop from 29.2 s) | Committed: `docs/marketing/media/variants-2026-10-10/` |
 | `why` | 45.7 s (pain, outcomes, proof, offer; loop from 41.9 s) | Committed: `docs/marketing/media/why-2026-10-10/` |
 
-Open: the platform pack of cut-downs (MW-130), which can add `why` cuts later. It builds on this template.
+| `pack` | 15.0 s | `reels-stories`, `meta-feed`, `x`; committed in `docs/marketing/media/platform-pack-2026-10-11/` (own template `pack.html`, safe boxes) |
+| `bumper` | 6.0 s | `yt-bumper`, 180 frames |
+
+`SAFE_ZONE_OVERLAY=1 scripts/render-video.sh pack all all` writes the review overlay to `out/safe-zone/`.
 
 ## Change something
 
