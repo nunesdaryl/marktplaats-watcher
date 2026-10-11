@@ -150,6 +150,10 @@
       .newchip { display: inline-flex; margin-top: 16px; padding: 14px 24px; border-radius: 999px; background: var(--tag); color: var(--tag-ink); font-size: 20px; line-height: 26px; font-weight: 600; }
       .chips { display: flex; gap: 8px; flex-wrap: wrap; }
       .chip { padding: 6px 12px; border-radius: 999px; background: var(--fill); color: var(--text-2); font-size: 14px; line-height: 20px; font-weight: 500; }
+      .swap { display: grid; align-items: center; }
+      .fmt-vertical .swap { align-items: start; }
+      .swap > * { grid-area: 1 / 1; }
+      #ob-mailwrap { opacity: 0; }
       .chip.on { background: var(--tag); color: var(--tag-ink); }
       /*@end*/
       /*@only animated-logo, cohort1, why*/
@@ -311,19 +315,42 @@
         </div>
       </section>
 
-      <!-- Outcome b (18.15 - 21.5): worth a look, with the reason -->
-      <section id="ob" class="scene clip" data-start="18.15" data-duration="3.35" data-track-index="4">
+      <!-- Outcome b (18.15 - 26.6): worth a look, with the reason: the scored list, then the alert e-mail -->
+      <section id="ob" class="scene clip" data-start="18.15" data-duration="8.45" data-track-index="4">
         <div class="inner wide" id="ob-in">
           <div class="col"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><h2 class="cap sm"><p data-t="ob"></p></h2></div>
-          <div class="stage"><div class="ui sample z-__FMT__">
-            <div class="rows"><div class="row good" id="ob-row"><span class="score"><b>9/10</b><i>great</i></span>
-              <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, <span class="price">€230</span>. A Mac mini with 16GB and a price well under €500.</span></div></div>
+          <div class="stage"><div class="swap">
+            <div class="ui sample z-__FMT__" id="ob-list">
+              <h3>From a real check for "Mac mini, 16GB, under €500"</h3>
+              <div class="rows">
+                <div class="row good" id="ob-r1"><span class="score"><b>9/10</b><i>great</i></span>
+                  <span><strong>Apple Mac mini, Intel Core i5, 16 GB RAM, 512 GB</strong>, <span class="price">€230</span>. A Mac mini with 16GB and a price well under €500. <span class="mailed" id="ob-mailed">E-mailed.</span></span></div>
+                <div class="row" id="ob-r2"><span class="score"><b>0/10</b><i>low</i></span>
+                  <span><strong class="xs" id="ob-x2">Mac Mini M4 Docking Station 1TB</strong>, <span class="price">€74</span>. A docking station, not a Mac mini.</span></div>
+                <div class="row" id="ob-r3"><span class="score"><b>0/10</b><i>low</i></span>
+                  <span><strong class="xs" id="ob-x3">Also found: SSDs, a tracker and a Cisco switch</strong>. All scored 0/10.</span></div>
+              </div>
+            </div>
+            <div class="ui z-__FMT__" id="ob-mailwrap">
+              <div class="mail" id="ob-mail">
+                <p class="mail-subject"><b>Mac mini, 16GB, under €500: 1 new match, best 9/10 at €230</b></p>
+                <div class="mail-head"><img src="assets/brand/robot-mail.svg" alt="" />Marktplaats Watcher</div>
+                <div class="mail-card">
+                  <h4>Mac mini, 16GB, under €500</h4>
+                  <p class="sub">1 new match</p>
+                  <div class="hit"><span class="badge">9/10</span>
+                    <div><p class="title">Mac mini i5, 16 GB</p><p class="meta">Scored 9/10, €230, Utrecht</p><p class="why">Well under €500.</p><span class="open">Open on Marktplaats</span></div>
+                  </div>
+                </div>
+                <p class="mail-foot">Not affiliated with Marktplaats.</p>
+              </div>
+            </div>
           </div></div>
         </div>
       </section>
 
-      <!-- Outcome c (21.5 - 24.5): no paid placements, wanted or reserved -->
-      <section id="oc" class="scene clip" data-start="21.5" data-duration="3" data-track-index="7">
+      <!-- Outcome c (26.4 - 29.4): no paid placements, wanted or reserved -->
+      <section id="oc" class="scene clip" data-start="26.6" data-duration="3" data-track-index="7">
         <div class="inner wide" id="oc-in">
           <div class="col"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.1 8-7.5 9.5-4.4-1.5-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg></span><h2 class="cap sm"><p data-t="oc"></p></h2></div>
           <div class="stage"><div class="ui z-__FMT__"><div class="rows">
@@ -334,8 +361,8 @@
         </div>
       </section>
 
-      <!-- Outcome d (24.5 - 28.6): your schedule -->
-      <section id="od" class="scene clip" data-start="24.5" data-duration="4.1" data-track-index="8">
+      <!-- Outcome d (29.4 - 33.5): your schedule -->
+      <section id="od" class="scene clip" data-start="29.6" data-duration="4.1" data-track-index="8">
         <div class="inner wide" id="od-in">
           <div class="col"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><h2 class="cap sm"><p data-t="od"></p></h2></div>
           <div class="stage"><div class="ui z-__FMT__"><div class="proposal" id="od-card">
@@ -620,32 +647,41 @@ __SFX__
           body.fromTo("#" + id + "-in", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, t + 0.03);
           body.to("#" + id + "-in", { opacity: 0, duration: 0.25, ease: "power2.in" }, t + d - 0.25);
         }
-        card("oa", 15.4, 2.75); card("ob", 18.15, 3.35); card("oc", 21.5, 3.0); card("od", 24.5, 4.1);
+        card("oa", 15.4, 2.75); card("ob", 18.15, 8.45); card("oc", 26.6, 3.0); card("od", 29.6, 4.1);
         body.to(chars, { opacity: 1, duration: 0.01, stagger: 0.04 }, 16); // types 16 - 17.2 s
-        body.fromTo("#ob-row", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 18.35);
-        body.fromTo("#cr1", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 21.6);
-        body.fromTo("#cr2", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 21.85);
-        body.fromTo("#cr3", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 22.1);
-        body.fromTo("#cx1", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 22.35);
-        body.fromTo("#cx2", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 22.6);
-        body.fromTo("#cx3", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 22.85);
-        body.to(["#cr1", "#cr2", "#cr3"], { opacity: 0.65, duration: 0.3 }, 22.9);
-        body.fromTo("#od-card", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 24.7);
-        body.to("#ch1", { backgroundColor: "rgba(94,84,72,0.08)", color: "#5b5751", duration: 0.25 }, 26.3);
-        body.to("#ch2", { backgroundColor: "#ddd0ff", color: "#25124f", duration: 0.25 }, 26.3);
+        // card b: the FDE score-list sequence (rows 18.3 / 19.29 / 20.39, strikes, "E-mailed." solid by 21.45, held 1.55 s), then the alert e-mail (settled 2.5 s)
+        body.fromTo("#ob-r1", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 18.3);
+        body.fromTo("#ob-r2", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 19.29);
+        body.fromTo("#ob-r3", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: E }, 20.39);
+        body.fromTo("#ob-x2", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.35, ease: "power2.out" }, 20.95);
+        body.fromTo("#ob-x3", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.35, ease: "power2.out" }, 21.05);
+        body.to(["#ob-r2", "#ob-r3"], { opacity: 0.65, duration: 0.35 }, 21.0);
+        body.fromTo("#ob-mailed", { opacity: 0.35 }, { opacity: 1, duration: 0.3 }, 21.15);
+        body.to("#ob-list", { opacity: 0, duration: 0.2, ease: "power1.in" }, 23.0);
+        body.fromTo("#ob-mailwrap", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 23.2);
+        body.fromTo("#cr1", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 26.7);
+        body.fromTo("#cr2", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 26.95);
+        body.fromTo("#cr3", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: E }, 27.2);
+        body.fromTo("#cx1", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 27.45);
+        body.fromTo("#cx2", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 27.7);
+        body.fromTo("#cx3", { backgroundSize: "0% 1.5px" }, { backgroundSize: "100% 1.5px", duration: 0.3, ease: "power2.out" }, 27.95);
+        body.to(["#cr1", "#cr2", "#cr3"], { opacity: 0.65, duration: 0.3 }, 28.0);
+        body.fromTo("#od-card", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 29.8);
+        body.to("#ch1", { backgroundColor: "rgba(94,84,72,0.08)", color: "#5b5751", duration: 0.25 }, 31.4);
+        body.to("#ch2", { backgroundColor: "#ddd0ff", color: "#25124f", duration: 0.25 }, 31.4);
 
-        // Proof (28.6 - 35.11): the 100% scene, footnote readable 5.4 s
-        body.fromTo("#big", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.6, ease: E }, 28.6);
-        body.fromTo("#s5-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 28.88);
-        body.fromTo("#s5-foot", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 29.1);
-        body.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 34.76);
+        // Proof (33.7 - 40.21): the 100% scene, footnote readable 5.4 s
+        body.fromTo("#big", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.6, ease: E }, 33.7);
+        body.fromTo("#s5-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 33.98);
+        body.fromTo("#s5-foot", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 34.2);
+        body.to("#s5-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 39.86);
 
-        // Outro (35.11 - 40.6): logo appears still (pose H), then one full H-to-I loop from 36.8 s
-        body.fromTo("#robot", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 35.13);
-        body.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 35.5);
-        body.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 36.15);
-        body.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 36.38);
-        body.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 36.58);
+        // Outro (40.21 - 45.7): logo appears still (pose H), then one full H-to-I loop from 41.9 s
+        body.fromTo("#robot", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 40.23);
+        body.fromTo("#wm", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 40.6);
+        body.fromTo("#offer", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 41.25);
+        body.fromTo("#url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 41.48);
+        body.fromTo("#fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 41.68);
         //@end
         //@only animated-logo, cohort1, why
         // Logo "H to I", once, from L0 (25.0 s in this film, +3.0 s with the hook): the 4 s loop from frontend/src/brand/logo.js (ANIMATION / raiseAt),

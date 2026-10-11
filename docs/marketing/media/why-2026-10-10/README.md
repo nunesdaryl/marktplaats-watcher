@@ -4,10 +4,10 @@ Drafts for review. **Nothing has been posted.** One variant of the launch video 
 
 | Video | Poster | Format | Language | Duration |
 |---|---|---|---|---|
-| [brag-landscape-en-why.mp4](brag-landscape-en-why.mp4) | [jpg](brag-landscape-en-why.jpg) | 1920×1080, 30 fps | English | 40.6 s (1218 frames) |
-| [brag-landscape-nl-why.mp4](brag-landscape-nl-why.mp4) | [jpg](brag-landscape-nl-why.jpg) | 1920×1080, 30 fps | Dutch | 40.6 s |
-| [brag-vertical-en-why.mp4](brag-vertical-en-why.mp4) | [jpg](brag-vertical-en-why.jpg) | 1080×1920, 30 fps | English | 40.6 s |
-| [brag-vertical-nl-why.mp4](brag-vertical-nl-why.mp4) | [jpg](brag-vertical-nl-why.jpg) | 1080×1920, 30 fps | Dutch | 40.6 s |
+| [brag-landscape-en-why.mp4](brag-landscape-en-why.mp4) | [jpg](brag-landscape-en-why.jpg) | 1920×1080, 30 fps | English | 45.7 s (1371 frames) |
+| [brag-landscape-nl-why.mp4](brag-landscape-nl-why.mp4) | [jpg](brag-landscape-nl-why.jpg) | 1920×1080, 30 fps | Dutch | 45.7 s |
+| [brag-vertical-en-why.mp4](brag-vertical-en-why.mp4) | [jpg](brag-vertical-en-why.jpg) | 1080×1920, 30 fps | English | 45.7 s |
+| [brag-vertical-nl-why.mp4](brag-vertical-nl-why.mp4) | [jpg](brag-vertical-nl-why.jpg) | 1080×1920, 30 fps | Dutch | 45.7 s |
 
 Captions (EN and NL): [share-copy-why.txt](share-copy-why.txt). Made with `scripts/render-video.sh why all all` (Hyperframes 0.8.145; see [HOW-TO](../../../../marketing/video/HOW-TO.md)). The poster is the hook frame without the "Reserved" badge (1.0 s) and is also baked in as frame 0.
 
@@ -18,11 +18,11 @@ Captions (EN and NL): [share-copy-why.txt](share-copy-why.txt). Made with `scrip
 | 0–3.0 s | Hook (as the FDE Cohort 1 version), badge at 1.6 s | Always just too late for that Marktplaats deal? |
 | 3.0–8.9 s | Pain, three lines, footnote | About 1 in 3 results isn't what you searched for. · 10 paid ads on the first page. · Wanted ads and reserved ones in between. |
 | 8.9–15.4 s | Turn, footnote | Hear about it when your dream item pops up. Checked for you, as often as every 15 minutes. Not one daily list of 812 new ads. |
-| 15.4–28.6 s | Four outcome cards | Say it in plain words — no filters. · Only the ones worth a look, with the reason. · No paid placements, wanted ads or reserved ones. · On your schedule — from every 15 minutes to once a day. |
-| 28.6–35.11 s | Proof | 100% of 'great match' picks were real matches (footnote) |
-| 35.11–40.6 s | Offer | Logo (still, then one H→I loop from 36.8 s), "Free for 30 days for the first 100 users.", URL, fine print |
+| 15.4–33.7 s | Four outcome cards | Say it in plain words — no filters. · Only the ones worth a look, with the reason (the FDE Cohort 1 scored list: 9/10 "E-mailed.", two 0/10 struck through; then the alert e-mail slides in). · No paid placements, wanted ads or reserved ones. · On your schedule — from every 15 minutes to once a day. |
+| 33.7–40.21 s | Proof | 100% of 'great match' picks were real matches (footnote) |
+| 40.21–45.7 s | Offer | Logo (still, then the H→I loop starts at 41.9 s and the logo visibly lifts about 0.9 s later, at about 42.8 s), "Free for 30 days for the first 100 users.", URL, fine print |
 
-Outcome cards start at 15.4 / 18.15 / 21.5 / 24.5 s. Footnotes are fully visible about 5.2 s or longer (pain 5.3 at 97% opacity or more, turn 6.1, proof 5.4). Dutch lines are in the template (`marketing/video/src/template.html`) and in the captions file.
+Outcome cards start at 15.4 / 18.15 / 26.6 / 29.6 s. Card (b) runs 8.45 s: rows arrive at 18.3 / 19.29 / 20.39 s, strikes at 20.95 s, "E-mailed." solid by 21.45 s and held 1.55 s; the list then fades out completely (23.0–23.2 s, no overlap with the e-mail, one near-blank frame) and the alert e-mail slides in at 23.2 s (settled 2.7 s before the card fades). The e-mail is the product's own example mail, no new figures. Footnotes are fully visible about 5.2 s or longer (pain 5.3 at 97% opacity or more, turn 6.1, proof 5.4). Dutch lines are in the template (`marketing/video/src/template.html`) and in the captions file.
 
 ## Claims and sources
 
@@ -40,4 +40,4 @@ Comparative-advertising basics: every statement about Marktplaats is a dated fac
 
 ## Checks
 
-Builder self-checks after the station's first review: `hyperframes@0.8.145 check` 0 errors for landscape and vertical; durations, sizes and frame counts by ffprobe (1218 frames, 30 fps); 1:1 frames of the pain, turn, outcome and outro scenes for orphans and line breaks. The `original`, `animated-logo` and `cohort1` generated HTML is unchanged except for an equivalent element lookup. The full frame-by-frame review (contact sheets, logo centroid, end audio) is repeated by the station.
+Builder self-checks after the station's first review: `hyperframes@0.8.145 check` 0 errors for landscape and vertical; durations, sizes and frame counts by ffprobe (1371 frames, 30 fps); 1:1 frames of the pain, turn, outcome and outro scenes for orphans and line breaks. The `original`, `animated-logo` and `cohort1` generated HTML is unchanged except for an equivalent element lookup. The full frame-by-frame review (contact sheets, logo centroid, end audio) is repeated by the station.

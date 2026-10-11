@@ -30,7 +30,7 @@ Output goes to the gitignored `marketing/video/out/`; the poster is also baked i
 | `original` | 24.5 s | Committed: `docs/marketing/media/launch-2026-10-10/` |
 | `animated-logo` | 30.2 s (H-to-I loop from 26.2 s) | Committed: `docs/marketing/media/variants-2026-10-10/` |
 | `cohort1` | 33.2 s (problem hook first; loop from 29.2 s) | Committed: `docs/marketing/media/variants-2026-10-10/` |
-| `why` | 40.3 s (pain, outcomes, proof, offer; loop from 36.5 s) | Committed: `docs/marketing/media/why-2026-10-10/` |
+| `why` | 45.7 s (pain, outcomes, proof, offer; loop from 41.9 s) | Committed: `docs/marketing/media/why-2026-10-10/` |
 
 Open: the platform pack of cut-downs (MW-130), which can add `why` cuts later. It builds on this template.
 
