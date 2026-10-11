@@ -13,7 +13,9 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FORMATS = {"landscape": (1920, 1080), "vertical": (1080, 1920)}
+FORMATS = {"landscape": (1920, 1080), "vertical": (1080, 1920),
+           "reels-stories": (1080, 1920), "meta-feed": (1080, 1350), "x": (1920, 1080), "yt-bumper": (1920, 1080)}
+CLASSIC_FORMATS = ("landscape", "vertical")
 
 # Scene starts (s1..s4 keep their 4.4 / 4.34 / 4.37 / 4.36 s lengths), s5 start + length, s6 start + length.
 # poster = the settled frame baked in as frame 0 and written as the .jpg (see scripts/render-video.sh).
@@ -28,6 +30,12 @@ VARIANTS = {
     # the `why` film is its own timeline (scene times live in the template): same 3.0 s hook, then pain, turn, four outcome
     # cards and proof, and the outro from 35.11 s; the H-to-I loop starts at l0 and the music offset is the cohort1 one
     "why": dict(total=40.6, shift=0.0, s5=(28.6, 6.51), s6=(35.11, 5.49), logo_sfx=35.13, music_offset=1.365, l0=36.8),
+    # platform pack (MW-130): own template src/pack.html with safe boxes per format; the logo raise (H to I, 0.72 s) is
+    # a one-way raise that starts at l0 and holds. mail = (start, length), outro = (start, length), fade = music fade-out.
+    "pack": dict(total=15.0, template="pack.html", formats=("reels-stories", "meta-feed", "x"), mail=(6.05, 4.95),
+                 outro=(11.0, 4.0), mailkey="p3", l0=12.0, logo_sfx=12.0, music_offset=1.365, fade=1.5),
+    "bumper": dict(total=6.0, template="pack.html", formats=("yt-bumper",), mail=(1.85, 2.7),
+                   outro=(4.5, 1.5), mailkey="b1", l0=4.9, logo_sfx=4.9, music_offset=1.365, fade=1.2),
 }
 
 # SFX cues: (id, file, start, duration, volume), times for the film without the hook.
@@ -51,7 +59,19 @@ def why_sfx_cues(v):
     ]
 
 
+def pack_sfx_cues(name, v):
+    if name == "bumper":
+        return [("sfx-mail", "card-slide-1.ogg", 1.85, 0.6, 0.38), ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
+    cues = [("sfx-stamp", "impactSoft_medium_002.ogg", 1.6, 0.14, 0.40)]
+    cues += [(f"sfx-key-{k}", KEYS[k % len(KEYS)], round(3.5 + i * 0.04, 3), 0.25, 0.22) for k, i in enumerate(range(0, 32, 4))]
+    cues += [("sfx-send", "click2.ogg", 5.2, 0.06, 0.40), ("sfx-mail", "card-slide-1.ogg", 6.05, 0.6, 0.38),
+             ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
+    return cues
+
+
 def sfx_cues(name, v):
+    if name in ("pack", "bumper"):
+        return pack_sfx_cues(name, v)
     if name == "why":
         return why_sfx_cues(v)
     cues = [(f"sfx-key-{k}", KEYS[k % len(KEYS)], round(TYPE_START + i * TYPE_STEP, 3), 0.25, 0.22)
@@ -98,7 +118,7 @@ def music_tag(name, v):
                 'data-volume="0.30" data-fade-in="0.4" data-fade-out="1.6"></audio>')
     offset = f' data-media-start="{v["music_offset"]}"' if v["music_offset"] else ""
     return (f'<audio id="music" src="{src}" data-start="0" data-duration="{v["total"]:g}"{offset} data-track-index="10" '
-            f"data-volume=\"0.30\" data-fade-in=\"0.4\" data-automation='{music_lane(v['total'])}'></audio>")
+            f"data-volume=\"0.30\" data-fade-in=\"0.4\" data-automation='{music_lane(v['total'], fade=v.get('fade', 2.1))}'></audio>")
 
 
 def keep_variant_lines(text, name):
@@ -121,9 +141,33 @@ def num(x):
     return f"{round(x, 3):g}"
 
 
+def pack_html(name, fmt, template, v, w, h):
+    """The platform-pack template: shared component CSS and the logo come from template.html, so they cannot drift."""
+    classic = (HERE / "src/template.html").read_text()
+    css = classic[classic.index("      /* Scene 1: chat start screen"):classic.index("      /* Scene 5: proof */")]
+    logo = re.search(r'<div class="robot" id="robot">.*?</svg></div>', classic, re.S).group(0)
+    sfx_html = "\n".join(
+        f'      <audio id="{i}" src="assets/sfx/{f}" data-start="{s}" data-duration="{d}" '
+        f'data-track-index="{11 + n}" data-volume="{vol}"></audio>'
+        for n, (i, f, s, d, vol) in enumerate(sfx_cues(name, v)))
+    fills = {
+        "__COMPONENT_CSS__": css, "__LOGO__": logo, "__TOTAL__": f"{v['total']:g}", "__W__": str(w), "__H__": str(h), "__FMT__": fmt,
+        "__SC__": num(v["mail"][0]), "__SCD__": num(v["mail"][1]), "__SE__": num(v["outro"][0]), "__SED__": num(v["outro"][1]),
+        "__MAILKEY__": v["mailkey"], "__L0__": num(v["l0"]), "__MUSIC__": music_tag(name, v), "__SFX__": sfx_html,
+        "__AUDIO__": json.dumps(audio_energy(name), separators=(",", ":")),
+    }
+    html = keep_variant_lines(template, name)
+    for token, value in fills.items():
+        html = html.replace(token, value)
+    return html
+
+
 def build(name, fmt, template):
     v = VARIANTS[name]
     w, h = FORMATS[fmt]
+    if "template" in v:
+        assert fmt in v["formats"], f"{name} renders only {', '.join(v['formats'])}"
+        return write_project(name, fmt, pack_html(name, fmt, (HERE / "src" / v["template"]).read_text(), v, w, h), w, h, v)
     sh = v["shift"]
     sfx_html = "\n".join(
         f'      <audio id="{i}" src="assets/sfx/{f}" data-start="{s}" data-duration="{d}" '
@@ -139,6 +183,10 @@ def build(name, fmt, template):
     html = keep_variant_lines(template, name)
     for token, value in fills.items():
         html = html.replace(token, value)
+    write_project(name, fmt, html, w, h, v)
+
+
+def write_project(name, fmt, html, w, h, v):
     left = re.findall(r"__[A-Z0-9]+__", html)
     assert not left, f"unfilled tokens: {left}"
     out = HERE / ".build" / name / fmt
@@ -165,10 +213,12 @@ def main(argv):
     if not argv or argv[0] not in (*VARIANTS, "all") or (len(argv) > 1 and argv[1] not in (*FORMATS, "all")):
         sys.exit(f"usage: build.py <{'|'.join(VARIANTS)}|all> [{'|'.join(FORMATS)}|all]")
     names = list(VARIANTS) if argv[0] == "all" else [argv[0]]
-    fmts = list(FORMATS) if len(argv) < 2 or argv[1] == "all" else [argv[1]]
     template = (HERE / "src/template.html").read_text()
     for name in names:
-        for fmt in fmts:
+        own = VARIANTS[name].get("formats", CLASSIC_FORMATS)
+        if len(argv) > 1 and argv[1] not in ("all", *own):
+            sys.exit(f"{name} renders only {', '.join(own)}")
+        for fmt in (own if len(argv) < 2 or argv[1] == "all" else [argv[1]]):
             build(name, fmt, template)
 
 

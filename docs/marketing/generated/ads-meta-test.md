@@ -11,6 +11,8 @@
 
 Destination for all: a future landing explanation with 60–90 s demo, terms, limits and sign-up. Until that separate landing issue ships, use the live app only if the same terms are clear there. Creative IDs: `nl_meta_pas_a`, `en_meta_pas_a`, `nl_meta_bab_b`, `en_meta_bab_b`, `nl_meta_hso_c`, `en_meta_hso_c` in `utm_content`; see [UTM scheme](funnel.md).
 
+**Video creatives (drafts, not posted):** the [platform pack](../media/platform-pack-2026-10-11/README.md) has 15 s Reels/Stories (9:16), Meta feed (4:5) and X (16:9) cuts plus a 6 s YouTube bumper, each in NL and EN, with captions. They open with the problem hook, use only the claims in the pack README and are not tied to hooks A, B or C yet; Daryl picks which hook each cut tests.
+
 ## 3-2-2 test protocol
 1. **Three hooks:** A, B, C in each language at **€5–10/day per variant** if Daryl approves. Keep language-specific results separate. A full six-creative run is €30–60/day; Daryl may stagger languages to cap spend. Hold audience, destination, placement and budget steady enough to compare hooks. Measure 3-second video view rate, outbound CTR, landing views, sign-ups, watch saves and first alerts where consented measurement exists.
 2. **Two bodies:** Keep the strongest *observed* hook in each language and compare a problem-focused body against a screen-demo body. Keep terms and CTA constant.

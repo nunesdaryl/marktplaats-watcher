@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"lang","type":"enum","label":"On-screen language","default":"en","options":[{"value":"en","label":"English"},{"value":"nl","label":"Nederlands"}]},{"id":"debug","type":"enum","label":"Safe-zone overlay (review only)","default":"off","options":[{"value":"off","label":"Off"},{"value":"on","label":"On"}]}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=__W__, height=__H__" />
+    <title>Marktplaats Watcher · platform cut (__FMT__)</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; }
+      @font-face { font-family: "Geist"; src: url("assets/fonts/geist-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-style: normal; }
+      @font-face { font-family: "Geist Mono"; src: url("assets/fonts/geist-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+      @font-face { font-family: "Geist Mono"; src: url("assets/fonts/geist-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; }
+
+      :root {
+        --bg: #fbfaf7; --surface: #eeebe6; --elevated: #ffffff; --fill: rgba(94,84,72,0.08); --fill-strong: rgba(94,84,72,0.15);
+        --line: rgba(42,36,30,0.11); --text: #1b1a18; --text-2: #5b5751; --text-3: #6e6a63;
+        --accent: #0d6b62; --accent-ink: #ffffff; --accent-soft: rgba(13,107,98,0.10);
+        --tag: #ddd0ff; --tag-ink: #25124f; --great: #157346; --great-ink: #ffffff;
+        --logo-bar: #4fd1bf; --logo-dot: #bca8ff;
+        --shadow: 0 1px 2px rgba(40,30,20,.05), 0 8px 28px rgba(40,30,20,.08);
+        --font: "Geist", -apple-system, "Segoe UI", sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: __W__px; height: __H__px; overflow: hidden; background: #fbfaf7; }
+      body { font-family: var(--font); color: var(--text); -webkit-font-smoothing: antialiased; }
+      #root { position: relative; width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
+
+      .glow { position: absolute; inset: 0; pointer-events: none; }
+      .glow-a, .glow-b { position: absolute; border-radius: 50%; filter: blur(90px); }
+      .glow-a { width: 900px; height: 900px; background: rgba(79,209,191,0.20); right: -260px; top: -320px; }
+      .glow-b { width: 760px; height: 760px; background: rgba(188,168,255,0.22); left: -280px; bottom: -340px; }
+
+      /* Safe boxes: all text and the logo live inside (px insets). reels-stories: top 14%, bottom 35%, sides 6%; the rest 5%. */
+      .fmt-reels-stories { --sl: 66px; --sr: 66px; --st: 270px; --sb: 673px; --zoom: 1.68; --cap: 66px; --rob: 210px; --wm: 74px; --offer: 44px; --url: 30px; --fine: 28px; --solo: 96px; }
+      .fmt-meta-feed { --sl: 55px; --sr: 55px; --st: 68px; --sb: 68px; --zoom: 1.7; --cap: 70px; --rob: 220px; --wm: 78px; --offer: 46px; --url: 32px; --fine: 28px; --solo: 100px; }
+      .fmt-x { --sl: 97px; --sr: 97px; --st: 55px; --sb: 55px; --zoom: 1.5; --cap: 62px; --rob: 190px; --wm: 76px; --offer: 42px; --url: 30px; --fine: 26px; --solo: 112px; }
+      .fmt-yt-bumper { --sl: 97px; --sr: 97px; --st: 55px; --sb: 55px; --zoom: 1.5; --cap: 64px; --rob: 210px; --wm: 84px; --offer: 42px; --url: 36px; --fine: 28px; --solo: 118px; }
+
+      .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .pk { position: absolute; left: var(--sl); right: var(--sr); top: var(--st); bottom: var(--sb); display: flex; align-items: center; justify-content: center; }
+      .fmt-reels-stories .pk, .fmt-meta-feed .pk { flex-direction: column; gap: 56px; }
+      .fmt-x .pk, .fmt-yt-bumper .pk { flex-direction: row; gap: 80px; }
+
+      .cap { flex: none; font-weight: 600; letter-spacing: -0.035em; color: var(--text); font-size: var(--cap); line-height: 1.1; text-wrap: balance; }
+      .fmt-reels-stories .cap, .fmt-meta-feed .cap { width: 100%; padding: 0 8px; }
+      .fmt-x .cap, .fmt-yt-bumper .cap { width: 660px; }
+      .cap .hl { background: var(--tag); color: var(--tag-ink); border-radius: 10px; padding: 0 0.16em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+      .pk.solo { flex-direction: column; }
+      .pk.solo .cap { width: 100%; max-width: 100%; text-align: center; font-size: var(--solo); padding: 0; }
+
+      .stage { display: flex; align-items: center; justify-content: center; min-width: 0; }
+      .fmt-reels-stories .stage, .fmt-meta-feed .stage { flex: none; width: 100%; }
+      .fmt-x .stage, .fmt-yt-bumper .stage { flex: 1; }
+      .ui { width: 560px; position: relative; zoom: var(--zoom); }
+
+__COMPONENT_CSS__
+      .pk.center { flex-direction: column; gap: 0; text-align: center; }
+
+      /* Outro */
+      .robot { width: var(--rob); height: var(--rob); display: block; }
+      .robot svg { width: 100%; height: 100%; display: block; }
+      .wordmark { margin-top: 30px; font-size: var(--wm); line-height: 1.05; letter-spacing: -0.035em; }
+      .wordmark .m { font-weight: 400; color: var(--text-2); }
+      .wordmark .w { font-weight: 600; color: var(--text); }
+      .offer { margin-top: 28px; font-size: var(--offer); line-height: 1.2; font-weight: 500; letter-spacing: -0.015em; text-wrap: balance; }
+      .fmt-reels-stories .offer, .fmt-meta-feed .offer { max-width: 860px; }
+      .url { display: inline-block; margin-top: 26px; padding: 12px 26px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font: 500 var(--url)/1.2 var(--mono); }
+      .fineprint { margin-top: 30px; font-size: var(--fine); line-height: 1.4; color: var(--text-3); max-width: 900px; text-wrap: balance; }
+
+      /* Review overlay (variable debug=on): no glow, white page, red tint over every area outside the safe box. */
+      .dbg { display: none; position: absolute; background: rgba(255,0,0,0.22); }
+      .debug .dbg { display: block; }
+      .debug .glow { display: none; }
+      .debug #root, .debug html, .debug body { background: #ffffff; }
+      #dbg-t { left: 0; right: 0; top: 0; height: var(--st); }
+      #dbg-b { left: 0; right: 0; bottom: 0; height: var(--sb); }
+      #dbg-l { left: 0; width: var(--sl); top: var(--st); bottom: var(--sb); }
+      #dbg-r { right: 0; width: var(--sr); top: var(--st); bottom: var(--sb); }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="fmt-__FMT__" data-composition-id="main" data-start="0" data-duration="__TOTAL__" data-width="__W__" data-height="__H__">
+
+      <div class="glow" id="glow" data-layout-ignore><div class="glow-a" id="glow-a"></div><div class="glow-b" id="glow-b"></div></div>
+
+      <!--@only pack-->
+      <!-- A (0 - 3): the problem, the cohort hook. Caption and card are fully visible from frame 0. -->
+      <section id="sa" class="scene clip" data-start="0" data-duration="3" data-track-index="0">
+        <div class="pk" id="sa-in">
+          <h1 class="cap" id="sa-cap" data-t="s0"></h1>
+          <div class="stage"><div class="ui">
+            <div class="row lost" id="sa-card">
+              <span><strong>Mac mini, 16GB</strong>, <span class="price">€230</span><span class="lost-meta">Utrecht</span></span>
+              <span class="reserved" id="sa-badge" data-t="reserved"></span>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- B (3 - 6): tell it what you want -->
+      <section id="sb" class="scene clip" data-start="3" data-duration="3.15" data-track-index="1">
+        <div class="pk" id="sb-in">
+          <h1 class="cap" id="sb-cap" data-t="p1"></h1>
+          <div class="stage"><div class="ui" id="sb-ui">
+            <div class="hello"><h2>What are you looking for?</h2></div>
+            <div class="composer">
+              <div class="mode-switch"><span>Search now</span><span class="on">Watch it</span></div>
+              <div class="composer-row">
+                <div class="typed" id="typed"></div>
+                <div class="send" id="send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </section>
+      <!--@end-->
+
+      <!--@only bumper-->
+      <!-- A (0 - 2): the problem, one line, no card -->
+      <section id="sa" class="scene clip" data-start="0" data-duration="2" data-track-index="0">
+        <div class="pk solo" id="sa-in">
+          <h1 class="cap" id="sa-cap" data-t="b0"></h1>
+        </div>
+      </section>
+      <!--@end-->
+
+      <!-- The alert e-mail: score and reason -->
+      <section id="sc" class="scene clip" data-start="__SC__" data-duration="__SCD__" data-track-index="2">
+        <div class="pk" id="sc-in">
+          <h1 class="cap" id="sc-cap" data-t="__MAILKEY__"></h1>
+          <div class="stage"><div class="ui" id="sc-ui">
+            <div class="mail" id="mail">
+              <p class="mail-subject"><b>Mac mini, 16GB, under €500: 1 new match, best 9/10 at €230</b></p>
+              <div class="mail-head"><img src="assets/brand/robot-mail.svg" alt="" />Marktplaats Watcher</div>
+              <div class="mail-card">
+                <h4>Mac mini, 16GB, under €500</h4>
+                <p class="sub">1 new match</p>
+                <div class="hit"><span class="badge">9/10</span>
+                  <div><p class="title">Mac mini i5, 16 GB</p><p class="meta">Scored 9/10, €230, Utrecht</p><p class="why">Well under €500.</p><span class="open">Open on Marktplaats</span></div>
+                </div>
+              </div>
+              <p class="mail-foot">Not affiliated with Marktplaats.</p>
+            </div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- Outro: logo, name, offer, URL -->
+      <section id="se" class="scene clip" data-start="__SE__" data-duration="__SED__" data-track-index="4">
+        <div class="pk center" id="se-in" data-layout-allow-overlap>
+          __LOGO__
+          <p class="wordmark" id="wm"><span class="m">Marktplaats </span><span class="w">Watcher</span></p>
+          <!--@only pack-->
+          <p class="offer" id="offer" data-t="offer"></p>
+          <!--@end-->
+          <span class="url" id="url">marktplaats-watcher.vercel.app</span>
+          <p class="fineprint" id="fine" data-t="fine"></p>
+        </div>
+      </section>
+
+      <div class="dbg" id="dbg-t" data-layout-ignore></div><div class="dbg" id="dbg-b" data-layout-ignore></div><div class="dbg" id="dbg-l" data-layout-ignore></div><div class="dbg" id="dbg-r" data-layout-ignore></div>
+
+      __MUSIC__
+__SFX__
+    </div>
+
+    <script>
+      (function () {
+        var T = {
+          en: {
+            s0: 'Always just <span class="hl nowrap">too late</span> for that <span class="nowrap">Marktplaats deal?</span>',
+            b0: 'Too late for that <span class="hl nowrap">Marktplaats deal?</span>',
+            reserved: 'Reserved',
+            p1: 'Tell it what you want, <span class="hl nowrap">in plain words.</span>',
+            p3: 'Only the ones worth a look reach your inbox, <span class="hl nowrap">with the reason.</span>',
+            b1: 'It e-mails you the ones <span class="hl nowrap">worth a look.</span>',
+            offer: 'Free for 30 days for the first 100 users.',
+            fine: 'Not affiliated with Marktplaats'
+          },
+          nl: {
+            s0: 'Altijd net <span class="hl nowrap">te laat</span> voor die ene <span class="nowrap">Marktplaats-deal?</span>',
+            b0: 'Te laat voor die <span class="hl nowrap">Marktplaats-deal?</span>',
+            reserved: 'Gereserveerd',
+            p1: 'Zeg in <span class="hl nowrap">gewone woorden</span> wat je zoekt.',
+            p3: 'Alleen wat de moeite waard is, komt in je inbox, <span class="hl nowrap">met uitleg waarom.</span>',
+            b1: 'Hij mailt alleen wat <span class="hl nowrap">de moeite waard is.</span>',
+            offer: '30 dagen gratis voor de eerste 100 gebruikers.',
+            fine: 'Niet verbonden aan Marktplaats · App in het Engels'
+          }
+        };
+        var vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+        var lang = vars.lang === "nl" ? "nl" : "en";
+        document.documentElement.lang = lang;
+        if (vars.debug === "on") document.getElementById("root").classList.add("debug"), document.documentElement.classList.add("debug"), document.body.classList.add("debug");
+        document.querySelectorAll("[data-t]").forEach(function (el) { el.innerHTML = T[lang][el.getAttribute("data-t")]; });
+
+        //@only pack
+        var typedText = "A Mac mini with 16GB, under €500";
+        var typed = document.getElementById("typed");
+        typedText.split("").forEach(function (c) { var s = document.createElement("span"); s.className = "ch"; s.textContent = c; typed.appendChild(s); });
+        var chars = typed.querySelectorAll(".ch");
+        //@end
+
+        var AUDIO = __AUDIO__; // per-frame 0..1 energy at 30 fps (music RMS + bass), pre-extracted
+        var tl = gsap.timeline({ paused: true });
+        var E = "power3.out";
+
+        var ga = document.getElementById("glow-a"), gb = document.getElementById("glow-b");
+        for (var f = 0; f < AUDIO.length; f++) {
+          tl.call((function (v) { return function () { ga.style.opacity = (0.55 + 0.45 * v).toFixed(3); gb.style.opacity = (0.5 + 0.4 * v).toFixed(3); }; })(AUDIO[f]), [], f / 30);
+        }
+
+        //@only pack
+        // A (0 - 3): hook, visible from frame 0; the 'Reserved' badge lands at 1.6 s
+        tl.fromTo("#sa-badge", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.2, ease: "back.out(2)" }, 1.6);
+        tl.to("#sa-in", { opacity: 0, duration: 0.35, ease: "power2.in" }, 2.65);
+
+        // B (3 - 6.5): caption, composer, typing 3.5 - 4.8 s, send at 5.2 s
+        tl.fromTo("#sb-cap", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.4, ease: E }, 3.05);
+        tl.fromTo("#sb-ui", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.4, ease: E }, 3.15);
+        tl.to(chars, { opacity: 1, duration: 0.01, stagger: 0.04 }, 3.5);
+        tl.fromTo("#send", { scale: 1 }, { scale: 0.86, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, 5.2);
+        tl.to("#sb-in", { opacity: 0, duration: 0.15, ease: "power2.in" }, 5.9);
+
+        // C (6.05 - 11): the alert e-mail with the score and the reason (caption 0.3 s/word or more, e-mail settled 1.5 s or more)
+        tl.fromTo("#sc-cap", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.4, ease: E }, 6.1);
+        tl.fromTo("#mail", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.45, ease: E }, 6.05);
+        tl.to("#sc-in", { opacity: 0, duration: 0.3, ease: "power2.in" }, 10.7);
+
+        // E (11 - 15): the whole outro fades in at rest (pose H); the logo raises at 12.0 s and holds
+        tl.fromTo("#se-in", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "power1.out" }, 11.0);
+        //@end
+        //@only bumper
+        // A (0 - 2): one line, visible from frame 0
+        tl.to("#sa-in", { opacity: 0, duration: 0.15, ease: "power2.in" }, 1.85);
+
+        // C (1.85 - 4.55): the answer over the alert e-mail card
+        tl.fromTo("#sc-cap", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.15, ease: E }, 1.9);
+        tl.fromTo("#mail", { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.15, ease: E }, 1.85);
+        tl.to("#sc-in", { opacity: 0, duration: 0.1, ease: "power2.in" }, 4.45);
+
+        // E (4.5 - 6): robot and URL; the logo raises at 4.9 s and holds
+        tl.fromTo("#se-in", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, 4.5);
+        //@end
+
+        // Logo "H to I" (frontend/src/brand/logo.js, ANIMATION / raiseAt): the 0.18 x 4 s = 0.72 s raise, cubic-bezier(.45,0,.25,1);
+        // binoculars (.mw-b) rise 6.5 and eyes (.mw-e) 2 SVG units, then hold. No tilt, no scale. Seek-safe GSAP tweens.
+        function bezier(x1, y1, x2, y2) {
+          function c(a1, a2, t) { return ((1 - 3 * a2 + 3 * a1) * t + (3 * a2 - 6 * a1)) * t * t + 3 * a1 * t; }
+          return function (x) {
+            if (x <= 0) return 0; if (x >= 1) return 1;
+            var lo = 0, hi = 1, t = x;
+            for (var i = 0; i < 40; i++) { t = (lo + hi) / 2; if (c(x1, x2, t) < x) lo = t; else hi = t; }
+            return c(y1, y2, t);
+          };
+        }
+        var LOGO_EASE = bezier(0.45, 0, 0.25, 1), L0 = __L0__, RAISE = (0.40 - 0.22) * 4.0;
+        var mwB = document.querySelector("#robot .mw-b"), mwE = document.querySelector("#robot .mw-e");
+        tl.set([mwB, mwE], { y: 0 }, 0);
+        tl.to(mwB, { y: -6.5, duration: RAISE, ease: LOGO_EASE }, L0);
+        tl.to(mwE, { y: -2, duration: RAISE, ease: LOGO_EASE }, L0);
+
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>
