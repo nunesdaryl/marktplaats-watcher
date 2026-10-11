@@ -1635,8 +1635,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   (MW-121, which also ended a false delivery-miss alarm), price-drop alerts for listings a check re-reads (MW-117),
   reserved listings skipped with fewer audit page fetches (MW-118), condition and Marktplaats' own distance on alerts
   (MW-120, distance only when the watch has a postcode) and genuine listings only (MW-122): paid placements never shown;
-  shops and dealers hidden by default, per watch "Also show shops and dealers", the filter switched on only after a
-  24-hour review of the seller-website signal; no seller names or ids stored. Review fixed a real problem in nearly every
+  shops and dealers identified by manufacturer details (GPSR) or the verified mark, with a per-watch "Also show shops and dealers" option; the filter remains off while those signals are measured for a week, with no seller names or ids stored. Review fixed a real problem in nearly every
   build (a gate step that could derail live merges, a private note on a public page, a removed coverage warning, a
   prompt sentence spliced into another instruction, a misleading distance, a gate fixed at six cases). Evals on the
   real model: great precision 100% (median of 3), recall 74%, chat 23/23; recall varies from run to run (61–87% this

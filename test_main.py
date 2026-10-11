@@ -106,9 +106,9 @@ def post_check(monkeypatch, watches):
         # MW-122: seller-signal counts (yes/no only) and the seller type; business filtering is off until reviewed.
         assert isinstance(result.pop("sellerListingsChecked"), int)   # MW-124: denominator for the signal review
         stats = {key: result.pop(key) for key in ("paidRemoved", "businessRemoved", "businessSignaled",
-                                                  "websiteUrlPresent", "showWebsiteTrue")}
+                                                  "gpsrPresent", "verifiedTrue")}
         assert stats == {"paidRemoved": 0, "businessRemoved": 0, "businessSignaled": 0,
-                         "websiteUrlPresent": 0, "showWebsiteTrue": 0}
+                         "gpsrPresent": 0, "verifiedTrue": 0}
         assert [item.pop("seller_type") for item in result["listings"]] == ["unverified"]
         assert result == {
             "watchId": sent["id"], "ok": True, "aiCall": True, "currentIds": [LISTING_ID],

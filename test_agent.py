@@ -67,19 +67,35 @@ def test_parses_listings_without_seller_data():
     assert all("sellerId" not in json.dumps(item) and "sellerName" not in json.dumps(item) for item in listings)
 
 
+@pytest.mark.parametrize("item, expected", [
+    ({"extendedAttributes": [{"key": "manufacturerName", "value": "Maker"}]}, True),
+    ({"extendedAttributes": [{"key": "manufacturerEmail", "value": "maker@example.com"}]}, True),
+    ({"extendedAttributes": [{"key": "manufacturerUrl", "value": "https://maker.invalid"}]}, True),
+    ({"sellerInformation": {"isVerified": True}}, True),
+    ({"sellerInformation": {"isVerified": False}}, False),
+    ({"sellerInformation": {"sellerWebsiteUrl": "https://shop.invalid", "showWebsiteUrl": True}}, False),
+    ({}, False),
+])
+def test_business_seller_uses_manufacturer_or_verified_signal(item, expected):
+    assert agent.is_business_seller(item) is expected
+
+
 def test_paid_and_business_filters_keep_only_boolean_seller_type(monkeypatch):
     base = {"title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE"}
     raw = [
         {**base, "itemId": "private", "sellerInformation": {"sellerName": "Do not store", "sellerId": 123}},
-        {**base, "itemId": "paid", "priorityProduct": "TOP_ADVERTENTIE"},
-        {**base, "itemId": "shop", "sellerInformation": {"sellerWebsiteUrl": "https://shop.invalid", "sellerName": "Do not store"}},
-        {**base, "itemId": "shown", "sellerInformation": {"showWebsiteUrl": True}},
+        {**base, "itemId": "paid", "priorityProduct": "TOP_ADVERTENTIE",
+         "extendedAttributes": [{"key": "manufacturerAddress", "value": "Paid shop"}],
+         "sellerInformation": {"isVerified": True}},
+        {**base, "itemId": "shop", "extendedAttributes": [{"key": "manufacturerTradename", "value": "Do not store"}], "sellerInformation": {"sellerName": "Do not store"}},
+        {**base, "itemId": "shown", "sellerInformation": {"isVerified": True}},
     ]
     monkeypatch.delenv("BUSINESS_SELLER_FILTER_ENABLED", raising=False)
     observed, stats = agent.parse_listings(raw, limit=None)
     assert [item["id"] for item in observed] == ["private", "shop", "shown"]
     assert stats["paid_removed"] == 1 and stats["business_signaled"] == 2 and stats["business_removed"] == 0
     assert stats["seller_listings_checked"] == 3
+    assert stats["gpsr_present"] == 1 and stats["verified_true"] == 1
     assert all("Do not store" not in json.dumps(item) and "shop.invalid" not in json.dumps(item) for item in observed)
     monkeypatch.setenv("BUSINESS_SELLER_FILTER_ENABLED", "1")
     private, stats = agent.parse_listings(raw, limit=None)
@@ -94,7 +110,7 @@ def test_scheduled_check_filters_before_ranking(monkeypatch):
     raw = [{"itemId": "m1", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE"},
            {"itemId": "m2", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "DAYTOP"},
            {"itemId": "m3", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE",
-            "sellerInformation": {"showWebsiteUrl": True}}]
+            "sellerInformation": {"isVerified": True}}]
     monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
     ranked = []
     def fake_rank(description, items, *args, **kwargs):
@@ -105,6 +121,7 @@ def test_scheduled_check_filters_before_ranking(monkeypatch):
     assert ranked == ["m1"] and result["currentIds"] == ["m1"]
     assert result["paidRemoved"] == 1 and result["businessRemoved"] == 1
     assert result["sellerListingsChecked"] == 2
+    assert result["gpsrPresent"] == 0 and result["verifiedTrue"] == 1
 
 
 def test_chat_search_and_audit_use_the_same_listing_filter(monkeypatch):
@@ -112,7 +129,7 @@ def test_chat_search_and_audit_use_the_same_listing_filter(monkeypatch):
     raw = [{"itemId": "m1", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE", "date": "Vandaag"},
            {"itemId": "m2", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "TOP_AD", "date": "Vandaag"},
            {"itemId": "m3", "title": "Bike", "vipUrl": "/v/bike", "priorityProduct": "NONE", "date": "Vandaag",
-            "sellerInformation": {"sellerWebsiteUrl": "https://shop.invalid"}}]
+            "extendedAttributes": [{"key": "manufacturerAddress", "value": "Do not store"}]}]
     page = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps({"listings": raw}) + "</script>"
     monkeypatch.setattr(agent, "fetch_page", lambda *args, **kwargs: page)
     found = json.loads(agent.search_marktplaats.invoke({"query": "bike"}))
@@ -1651,7 +1668,7 @@ def test_check_query_reports_an_unreadable_page_as_a_failure_not_as_empty(monkey
     [empty] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": ["a"]}])
     assert empty == {"watchId": "w1", "ok": True, "currentIds": [], "currentPrices": [], "listings": [], "newestId": None,
                      "waiting": 0, "capped": False, "paidRemoved": 0, "businessRemoved": 0, "businessSignaled": 0,
-                     "websiteUrlPresent": 0, "showWebsiteTrue": 0, "sellerListingsChecked": 0}
+                     "gpsrPresent": 0, "verifiedTrue": 0, "sellerListingsChecked": 0}
 
 
 def test_first_check_of_a_new_watch_scores_nothing(monkeypatch):

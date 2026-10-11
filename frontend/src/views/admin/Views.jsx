@@ -332,9 +332,9 @@ export function Runs({ params, open, update }) {
       { key: "emails", label: "E-mails" }, { key: "emailFailures", label: "E-mail failures" },
       { key: "paidRemoved", label: "Paid removed", render: (r) => r.paidRemoved ?? 0 },
       { key: "businessRemoved", label: "Shops removed", render: (r) => r.businessRemoved ?? 0 },
-      { key: "businessSignaled", label: "Website signals", render: (r) => r.businessSignaled ?? 0 },
-      { key: "websiteUrlPresent", label: "Website URL present", render: (r) => r.websiteUrlPresent ?? 0 },
-      { key: "showWebsiteTrue", label: "Show website", render: (r) => r.showWebsiteTrue ?? 0 },
+      { key: "businessSignaled", label: "Shop signals", render: (r) => r.businessSignaled ?? 0 },
+      { key: "gpsrPresent", label: "Manufacturer details", render: (r) => r.gpsrPresent ?? 0 },
+      { key: "verifiedTrue", label: "Verified", render: (r) => r.verifiedTrue ?? 0 },
       { key: "paused", label: "Paused", render: (r) => r.paused ? "Yes" : "No" },
     ]} onOpen={(r) => open({ view: "run", title: r.requestId ?? "Run", params: { id: r._id } })} />;
 }

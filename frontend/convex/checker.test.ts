@@ -30,6 +30,22 @@ async function seededWatch(schedule: any = hourly) {
 }
 const found = (id: any, ids: string[]) => ({ watchId: id, ok: true, currentIds: ids, listings: ids.map(listing) });
 
+test("scheduled check aggregates shop signals into the run", async () => {
+  const { t } = await seededWatch();
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(init.body as string);
+    return new Response(JSON.stringify({ results: body.watches.map((w: any) => ({
+      ...found(w.id, []), paidRemoved: 1, businessSignaled: 2, gpsrPresent: 2,
+      verifiedTrue: 1, sellerListingsChecked: 3,
+    })) }));
+  }));
+  await t.action(internal.checker.checkDue, {});
+  expect(await t.run((ctx) => ctx.db.query("runs").first())).toMatchObject({
+    paidRemoved: 1, businessSignaled: 2, gpsrPresent: 2, verifiedTrue: 1,
+    sellerListingsChecked: 3,
+  });
+});
+
 test("a later reserved search result marks an existing alert without creating another", async () => {
   const { t, id } = await seededWatch();
   const now = Date.now();
