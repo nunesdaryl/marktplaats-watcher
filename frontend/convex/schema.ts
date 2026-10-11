@@ -241,8 +241,10 @@ export default defineSchema({
     paidRemoved: v.optional(v.number()),
     businessRemoved: v.optional(v.number()),
     businessSignaled: v.optional(v.number()),
-    websiteUrlPresent: v.optional(v.number()),
-    showWebsiteTrue: v.optional(v.number()),
+    websiteUrlPresent: v.optional(v.number()), // historical runs
+    showWebsiteTrue: v.optional(v.number()), // historical runs
+    gpsrPresent: v.optional(v.number()),
+    verifiedTrue: v.optional(v.number()),
     sellerListingsChecked: v.optional(v.number()),
   }).index("by_at", ["at"]),
 

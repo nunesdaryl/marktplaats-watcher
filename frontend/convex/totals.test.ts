@@ -19,7 +19,7 @@ afterEach(() => { vi.useRealTimers(); delete process.env.CANARY_DISABLED; });
 
 test("run projection retains every numeric dashboard counter written by a check", () => {
   const counters = { at: 1, checked: 2, failed: 3, emails: 4, emailFailures: 5, timeouts: 6,
-    paidRemoved: 6, businessRemoved: 7, businessSignaled: 8, websiteUrlPresent: 9, showWebsiteTrue: 10,
+    paidRemoved: 6, businessRemoved: 7, businessSignaled: 8, gpsrPresent: 9, verifiedTrue: 10,
     sellerListingsChecked: 11 };
   const checker = readFileSync(new URL("./checker.ts", import.meta.url), "utf8");
   const calls = [...checker.matchAll(/ctx\.runMutation\(internal\.health\.logRun,\s*\{([^}]*)\}/g)];
@@ -35,7 +35,7 @@ test("backfill repairs existing run summaries without changing source runs", asy
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "owner", email: "owner@example.com" });
   const run = { at: Date.now(), checked: 2, failed: 0, emails: 0, emailFailures: 0,
-    paidRemoved: 52, businessRemoved: 3, businessSignaled: 4, websiteUrlPresent: 3, showWebsiteTrue: 2 };
+    paidRemoved: 52, businessRemoved: 3, businessSignaled: 4, gpsrPresent: 3, verifiedTrue: 2 };
   const id = await t.run((ctx) => ctx.db.insert("runs", run));
   await t.mutation(internal.totals.backfill, { dryRun: false });
   const key = `runs:${new Date().toISOString().slice(0, 10)}`;

@@ -200,7 +200,7 @@ export const dashboard = query({
     }).slice(0, 5);
     const live = (w: Doc<"watches">) => w.archivedAt === undefined;
     const fallingBehind = watches.filter((w) => w.active && live(w) && ((w.backlog ?? 0) >= 20 || w.coverageCapped));
-    const sellerRuns = runs.filter((r) => r.at >= now - DAY && r.sellerListingsChecked !== undefined);
+    const sellerRuns = runs.filter((r) => r.at >= now - DAY && r.gpsrPresent !== undefined && r.verifiedTrue !== undefined && r.sellerListingsChecked !== undefined);
     const nurture = Object.fromEntries(["welcome", "no_watch", "first_alert", "tips"].map((step) => [step, { sent: 0, openedLink: 0, unsubscribed: 0 }])) as Record<string, { sent: number; openedLink: number; unsubscribed: number }>;
     for await (const row of ctx.db.query("nurtureEmails")) {
       if (row.sentAt) nurture[row.step].sent++;
@@ -238,7 +238,9 @@ export const dashboard = query({
       },
       daily,
       sellerSignal24h: { since: sellerRuns.length ? Math.min(...sellerRuns.map((r) => r.at)) : now - DAY,
-        showWebsiteTrue: sellerRuns.reduce((n, r) => n + (r.showWebsiteTrue ?? 0), 0),
+        businessSignaled: sellerRuns.reduce((n, r) => n + (r.businessSignaled ?? 0), 0),
+        gpsrPresent: sellerRuns.reduce((n, r) => n + (r.gpsrPresent ?? 0), 0),
+        verifiedTrue: sellerRuns.reduce((n, r) => n + (r.verifiedTrue ?? 0), 0),
         sellerListingsChecked: sellerRuns.reduce((n, r) => n + r.sellerListingsChecked!, 0) },
       fallingBehindLabels: fallingBehind.map((w) => w.name ?? w.label),
       funnel,

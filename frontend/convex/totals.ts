@@ -30,7 +30,7 @@ export function projection(table: Tracked, row: Record<string, any>): Row {
     events: ["at", "userId", "name", "props", "device"],
     feedback: ["status", "handledAt", "repliedAt", "wouldPay", "createdAt"],
     runs: ["at", "checked", "failed", "emails", "emailFailures", "timeouts", "paused", "requestId",
-      "paidRemoved", "businessRemoved", "businessSignaled", "websiteUrlPresent", "showWebsiteTrue", "sellerListingsChecked"],
+      "paidRemoved", "businessRemoved", "businessSignaled", "gpsrPresent", "verifiedTrue", "sellerListingsChecked"],
     errors: ["at", "kind", "requestId", "message"],
     ratings: ["updatedAt"],
   };

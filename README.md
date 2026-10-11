@@ -2,9 +2,9 @@
 
 Tell it what you want on Marktplaats, pick how often to check, and get an e-mail when a good one shows up.
 
-We hide paid placements and, unless you choose otherwise, shops and dealers. We use only whether a seller has a website, never who they are. The shop filter is enabled after its live signal review.
+We hide paid placements. The shop filter remains off while we measure manufacturer details (GPSR) and Marktplaats' verified seller mark for a week; no seller identity is stored.
 
-Before setting `BUSINESS_SELLER_FILTER_ENABLED=1` on the search service, review 24 hours of normal scheduled runs in the owner dashboard's Runs view. It records counts for website URL present, show website true, and the combined signal; no seller identity is logged. Hand-check at least 20 flagged listings during those existing reads and record precision in the review. Leave the flag at `0` if the signal is weak.
+Before setting `BUSINESS_SELLER_FILTER_ENABLED=1` on the search service, review a week of normal scheduled runs in the owner dashboard's Runs view. It records counts for manufacturer details, verified sellers, and the combined shop signal among regular listings. Hand-check at least 20 flagged listings during those existing reads and record precision in the review. Leave the flag at `0` if the signal is weak.
 
 **Live:** https://marktplaats-watcher.vercel.app (https://marktplaatswatcher.vercel.app, without the hyphen, redirects there).
 

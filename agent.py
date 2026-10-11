@@ -98,13 +98,18 @@ def listing_image(item):
 
 
 def is_business_seller(item):
-    """Website flags are the only seller signals we use; never retain the website itself."""
+    """Use existing manufacturer and verified fields; never retain seller details."""
     seller = item.get("sellerInformation") or {}
-    return bool(seller.get("sellerWebsiteUrl") or seller.get("showWebsiteUrl") is True)
+    return has_manufacturer_details(item) or seller.get("isVerified") is True
+
+
+def has_manufacturer_details(item):
+    return any(isinstance(attribute, dict) and str(attribute.get("key", "")).startswith("manufacturer")
+               for attribute in (item.get("extendedAttributes") or []))
 
 
 def business_filter_enabled():
-    # Enable only after the station's 24-hour live signal review and hand-checked sample.
+    # Keep off while the station measures the new signals for a week.
     return os.getenv("BUSINESS_SELLER_FILTER_ENABLED") == "1"
 
 
@@ -123,7 +128,7 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
     results = []
     stats = {"on_page": len(listings or []), "price_ok": 0, "with_location": 0, "readable": listings is not None,
              "paid_removed": 0, "business_removed": 0, "business_signaled": 0,
-             "website_url_present": 0, "show_website_true": 0, "seller_listings_checked": 0}
+             "gpsr_present": 0, "verified_true": 0, "seller_listings_checked": 0}
     squash = lambda t: re.sub(r"\s+", "", t.lower())  # "16 GB" and "16gb" both match "16gb"
     for item in listings or []:
         if item.get("priorityProduct", "NONE") != "NONE":
@@ -133,8 +138,8 @@ def parse_listings(html, max_price_eur=None, home=None, max_km=None, must_includ
         business = is_business_seller(item)
         stats["business_signaled"] += business
         seller = item.get("sellerInformation") or {}
-        stats["website_url_present"] += bool(seller.get("sellerWebsiteUrl"))
-        stats["show_website_true"] += seller.get("showWebsiteUrl") is True
+        stats["gpsr_present"] += has_manufacturer_details(item)
+        stats["verified_true"] += seller.get("isVerified") is True
         if business and not include_business_sellers and business_filter_enabled():
             stats["business_removed"] += 1
             continue
@@ -1002,7 +1007,7 @@ def check_query(query, watches, now=None):
         results.append({"watchId": w["id"], "ok": True,
                         "paidRemoved": stats["paid_removed"], "businessRemoved": stats["business_removed"],
                         "businessSignaled": stats["business_signaled"],
-                        "websiteUrlPresent": stats["website_url_present"], "showWebsiteTrue": stats["show_website_true"],
+                        "gpsrPresent": stats["gpsr_present"], "verifiedTrue": stats["verified_true"],
                         "sellerListingsChecked": stats["seller_listings_checked"],
                         **({"reservedIds": reserved_ids} if reserved_ids else {}),
                         **({"aiCall": True} if any(not is_wanted_ad(item) for item in fresh_candidates) else {}),

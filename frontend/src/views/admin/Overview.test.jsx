@@ -109,10 +109,11 @@ test("listings removed chart displays the summed paid and shop counts", () => {
   expect(html).toContain('52 paid placements, 3 shops/dealers');
 });
 
-test("24-hour review shows the seller website flag numerator and inspected listing count", () => {
-  responses[0].sellerSignal24h = { showWebsiteTrue: 5, sellerListingsChecked: 20, since: oldNow - 24 * 60 * 60 * 1000 };
+test("24-hour review shows the shop signal and both parts", () => {
+  responses[0].sellerSignal24h = { businessSignaled: 5, gpsrPresent: 4, verifiedTrue: 2, sellerListingsChecked: 20, since: oldNow - 24 * 60 * 60 * 1000 };
   const { html } = render();
-  expect(html).toContain("Seller website flag seen on 5 of 20 listings (since");
+  expect(html).toContain("Shop signal (manufacturer details or verified) seen on 5 of 20 regular listings since");
+  expect(html).toContain("manufacturer details 4 · verified 2");
 });
 
 test("the refresh icon reruns all three queries and keeps old figures until all return", () => {

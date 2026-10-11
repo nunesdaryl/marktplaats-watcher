@@ -464,7 +464,7 @@ export default function Overview({ open, onSearch, ask }) {
       <div className="charts">
         <DayChart title="Listings removed" daily={data.daily} keys={[{ key: "paidRemoved", name: "paid placements" },
           { key: "businessRemoved", name: "shops/dealers", tone: "tag" }]}
-          note={data.sellerSignal24h && `Seller website flag seen on ${data.sellerSignal24h.showWebsiteTrue} of ${data.sellerSignal24h.sellerListingsChecked} listings (since ${new Date(data.sellerSignal24h.since).toLocaleString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })})`} />
+          note={data.sellerSignal24h?.sellerListingsChecked > 0 && `Shop signal (manufacturer details or verified) seen on ${data.sellerSignal24h.businessSignaled} of ${data.sellerSignal24h.sellerListingsChecked} regular listings since ${new Date(data.sellerSignal24h.since).toLocaleString("en-GB", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} (manufacturer details ${data.sellerSignal24h.gpsrPresent} · verified ${data.sellerSignal24h.verifiedTrue})`} />
         <DayChart title="Active people" daily={data.daily} keys={[{ key: "active", name: "people" }]} onDay={openDay}
                   onTitle={() => go("users", `Active in the last ${days} days`, { activeSince: since })} />
         <DayChart title="Chat messages" daily={data.daily} onDay={(day) => go("events", `Chat messages ${dayLabel(day)}`, { ...dayRange(day), name: "chat_sent" })}
