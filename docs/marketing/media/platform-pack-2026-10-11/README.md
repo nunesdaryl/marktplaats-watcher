@@ -22,12 +22,11 @@ H.264 + AAC, 30 fps. The poster is the hook frame (1.0 s, before the "Reserved" 
 | Time | Beat | EN on screen |
 |---|---|---|
 | 0–3 s | Hook, "Reserved" stamp at 1.6 s | Always just too late for that Marktplaats deal? |
-| 3–6 s | Plain words, typing | Tell it what you want, in plain words. |
-| 6–9.6 s | Alert e-mail with score and reason | Only the ones worth a look, with the reason. |
-| 9.6–12.3 s | Proof (the 100% lands at 10 s) | 100% of 'great match' picks were real matches. Our test: 53 listings, 6 watches, median of 3 runs (report of 10 Oct 2026). |
-| 12.15–15 s | Logo at rest, raises the binoculars at 12.5 s (H→I, 0.72 s) and holds | Marktplaats Watcher · Free for 30 days for the first 100 users. · marktplaats-watcher.vercel.app · Not affiliated with Marktplaats |
+| 3–6.05 s | Plain words, typing | Tell it what you want, in plain words. |
+| 6.05–11 s | Alert e-mail with the 9/10 score and the reason | Only the ones worth a look reach your inbox, with the reason. |
+| 11–15 s | Logo at rest, raises the binoculars at 12.0 s (H→I, 0.72 s) and holds | Marktplaats Watcher · Free for 30 days for the first 100 users. · marktplaats-watcher.vercel.app · Not affiliated with Marktplaats |
 
-Bumper (`yt-bumper`): 0–2 s "Too late for that Marktplaats deal?" (no card) · 2–4.5 s "It e-mails you the ones worth a look." over the alert e-mail card · 4.5–6 s robot (raise at 4.9 s), name, URL, "Not affiliated with Marktplaats". Dutch: "Altijd net te laat voor die ene Marktplaats-deal?" / "Te laat voor die Marktplaats-deal?", "Zeg in gewone woorden wat je zoekt.", "Alleen wat de moeite waard is, met uitleg waarom.", "Hij mailt je alleen wat de moeite waard is.".
+Bumper (`yt-bumper`): 0–2 s "Too late for that Marktplaats deal?" (no card) · 1.85–4.55 s "It e-mails you the ones worth a look." over the alert e-mail card · 4.5–6 s robot (raise at 4.9 s), name, URL, "Not affiliated with Marktplaats". Dutch: "Altijd net te laat voor die ene Marktplaats-deal?" / "Te laat voor die Marktplaats-deal?", "Zeg in gewone woorden wat je zoekt.", "Alleen wat de moeite waard is, komt in je inbox, met uitleg waarom.", "Hij mailt alleen wat de moeite waard is.".
 
 Safe zones: `reels-stories` keeps all text and the logo outside the top 14%, bottom 35% and 6% side margins; `meta-feed`, `x` and `yt-bumper` keep 5% margins. A review overlay (`SAFE_ZONE_OVERLAY=1 scripts/render-video.sh pack all all`, written to the gitignored `marketing/video/out/safe-zone/`) tints everything outside the safe box; the station's pixel check found no text or logo outside it in any frame of the eight videos.
 
@@ -35,20 +34,20 @@ Safe zones: `reels-stories` keeps all text and the logo outside the top 14%, bot
 
 | On-screen claim | Source and date |
 |---|---|
-| 100% of 'great match' picks were real matches (53 listings, 6 watches, median of 3 runs) | [Evaluation report](../../../../evals/report.md), 10 Oct 2026 |
 | Free for 30 days for the first 100 users; not affiliated with Marktplaats | [Landing page](../../../../frontend/src/Landing.jsx) |
 | Tell it what you want in plain words; only the ones worth a look, with the reason; score and reason in the alert e-mail | [Landing page](../../../../frontend/src/Landing.jsx), sample as in the [10 Oct launch video](../launch-2026-10-10/README.md) |
 | "Always just too late for that Marktplaats deal?" | The cohort-1 hook (a question, not a claim) |
 
-No other claims. No "first", "instant", "never miss" or invented urgency; no Marktplaats logo, colours or interface (the sample card is our own style). No claim about shops or dealers.
+No numeric claim is on screen in these cuts (the 100% proof stays in the longer films and on the landing page). No other claims. No "first", "instant", "never miss" or invented urgency; no Marktplaats logo, colours or interface (the sample card is our own style). No claim about shops or dealers.
 
 ## Known limits (for the reviewer)
 
-- **Footnote time in the 15 s cuts.** The brief puts the proof at 10–12.5 s. The footnote (12 words) is on screen about 2.3 s, shorter than the 5 s the HOW-TO asks for in the longer films and about 0.2 s per word. It is legible at 1:1 (28–32 px) but fast. The longer variants keep the 5 s footnote; if Daryl wants the proof to hold longer, the cut needs about 2 more seconds.
-- **Outro words per second.** To show the offer for at least 2.5 s the outro fades in at 12.15 s, slightly before the logo raise at 12.5 s.
-- **Bumper.** The hook is shortened to "Too late for that Marktplaats deal?" so it fits 2 s at 0.3 s per word. The Dutch answer line (9 words) is on screen about 2.4 s, a little under 0.3 s per word.
+- **No proof scene.** The 15 s cuts carry no numeric claim, so no footnote is needed; the 100% result lives in the longer films and on the landing page.
+- **Transitions.** The plain-words headline fades out over 0.15 s (5.90–6.05 s), then the e-mail fades in: no fully blank frame, 3 faint frames during the hand-over (6.03–6.13 s), measured frame by frame. The e-mail is settled about 4.4 s.
+- **Outro.** The logo is at rest from 11.0 s and raises at 12.0 s; the offer is on screen about 3.85 s.
+- **Bumper.** The hook is shortened to "Too late for that Marktplaats deal?" so it fits 2 s at 0.3 s per word. The logo step on the bumper reaches 3.19 px per frame (smooth ease, accepted).
 - The 24.5, 27 and 30 s films are unchanged.
 
 ## Checks
 
-`hyperframes@0.8.145 check` 0 errors for every format and both languages (the Dutch copy is checked from a copy whose default language is `nl`); ffprobe sizes, 30 fps, H.264 + AAC, 450 frames for the 15 s cuts and exactly 180 for the bumper; no blank stretch of more than 5 frames in a transition; the logo raise tracked per frame (orange lens centroid): starts at rest, rises the logo's 6.5 units scaled to the rendered size (21.3 px at 210 px, 22.3 px at 220 px, 19.3 px at 190 px), no frame step above 3.2 px, horizontal drift below 1 px, ends held.
+`hyperframes@0.8.145 check` 0 errors for every format and both languages (the Dutch copy is checked from a copy whose default language is `nl`); ffprobe sizes, 30 fps, H.264 + AAC, 450 frames for the 15 s cuts and exactly 180 for the bumper; no fully blank frame in the 6 s transition, 3 faint frames during the hand-over (measured on the frames, see Known limits); the logo raise tracked per frame (orange lens centroid): starts at rest, rises the logo's 6.5 units scaled to the rendered size (21.3 px at 210 px, 22.3 px at 220 px, 19.3 px at 190 px), no frame step above 3.2 px, horizontal drift below 1 px, ends held.

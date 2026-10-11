@@ -32,9 +32,9 @@ VARIANTS = {
     "why": dict(total=40.6, shift=0.0, s5=(28.6, 6.51), s6=(35.11, 5.49), logo_sfx=35.13, music_offset=1.365, l0=36.8),
     # platform pack (MW-130): own template src/pack.html with safe boxes per format; the logo raise (H to I, 0.72 s) is
     # a one-way raise that starts at l0 and holds. mail = (start, length), outro = (start, length), fade = music fade-out.
-    "pack": dict(total=15.0, template="pack.html", formats=("reels-stories", "meta-feed", "x"), mail=(6.0, 3.9),
-                 outro=(12.1, 2.9), mailkey="p3", l0=12.5, logo_sfx=12.5, music_offset=1.365, fade=1.5),
-    "bumper": dict(total=6.0, template="pack.html", formats=("yt-bumper",), mail=(2.0, 2.5),
+    "pack": dict(total=15.0, template="pack.html", formats=("reels-stories", "meta-feed", "x"), mail=(6.05, 4.95),
+                 outro=(11.0, 4.0), mailkey="p3", l0=12.0, logo_sfx=12.0, music_offset=1.365, fade=1.5),
+    "bumper": dict(total=6.0, template="pack.html", formats=("yt-bumper",), mail=(1.85, 2.7),
                    outro=(4.5, 1.5), mailkey="b1", l0=4.9, logo_sfx=4.9, music_offset=1.365, fade=1.2),
 }
 
@@ -61,11 +61,11 @@ def why_sfx_cues(v):
 
 def pack_sfx_cues(name, v):
     if name == "bumper":
-        return [("sfx-mail", "card-slide-1.ogg", 2.0, 0.6, 0.38), ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
+        return [("sfx-mail", "card-slide-1.ogg", 1.85, 0.6, 0.38), ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
     cues = [("sfx-stamp", "impactSoft_medium_002.ogg", 1.6, 0.14, 0.40)]
     cues += [(f"sfx-key-{k}", KEYS[k % len(KEYS)], round(3.5 + i * 0.04, 3), 0.25, 0.22) for k, i in enumerate(range(0, 32, 4))]
-    cues += [("sfx-send", "click2.ogg", 5.0, 0.06, 0.40), ("sfx-mail", "card-slide-1.ogg", 6.0, 0.6, 0.38),
-             ("sfx-proof", "click2.ogg", 9.9, 0.06, 0.40), ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
+    cues += [("sfx-send", "click2.ogg", 5.2, 0.06, 0.40), ("sfx-mail", "card-slide-1.ogg", 6.05, 0.6, 0.38),
+             ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45)]
     return cues
 
 
