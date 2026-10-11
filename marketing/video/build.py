@@ -29,7 +29,7 @@ VARIANTS = {
     "cohort1": dict(total=33.2, shift=3.0, s3d=4.97, s4=(13.71, 4.56), s5=(18.27, 6.21), s6=(24.48, 5.72), logo_sfx=24.5, music_offset=1.365, l0=26.2),
     # the `why` film is its own timeline (scene times live in the template): same 3.0 s hook, then pain, turn, four outcome
     # cards and proof, and the outro from 35.11 s; the H-to-I loop starts at l0 and the music offset is the cohort1 one
-    "why": dict(total=40.6, shift=0.0, s5=(28.6, 6.51), s6=(35.11, 5.49), logo_sfx=35.13, music_offset=1.365, l0=36.8),
+    "why": dict(total=45.7, shift=0.0, s5=(33.7, 6.51), s6=(40.21, 5.49), logo_sfx=40.23, music_offset=1.365, l0=41.9),
     # platform pack (MW-130): own template src/pack.html with safe boxes per format; the logo raise (H to I, 0.72 s) is
     # a one-way raise that starts at l0 and holds. mail = (start, length), outro = (start, length), fade = music fade-out.
     "pack": dict(total=15.0, template="pack.html", formats=("reels-stories", "meta-feed", "x"), mail=(6.05, 4.95),
@@ -53,8 +53,12 @@ def why_sfx_cues(v):
         ("sfx-chip", "click2.ogg", 10.2, 0.06, 0.40),
         ("sfx-card-a", "click2.ogg", 15.4, 0.06, 0.40),
         ("sfx-card-b", "click2.ogg", 18.15, 0.06, 0.40),
-        ("sfx-card-c", "click2.ogg", 21.5, 0.06, 0.40),
-        ("sfx-card-d", "click2.ogg", 24.5, 0.06, 0.40),
+        ("sfx-ob-row-1", "drop_001.ogg", 18.3, 0.11, 0.40),
+        ("sfx-ob-row-2", "drop_002.ogg", 19.29, 0.19, 0.32),
+        ("sfx-ob-row-3", "drop_003.ogg", 20.39, 0.19, 0.32),
+        ("sfx-ob-mail", "card-slide-1.ogg", 23.2, 0.6, 0.38),
+        ("sfx-card-c", "click2.ogg", 26.6, 0.06, 0.40),
+        ("sfx-card-d", "click2.ogg", 29.6, 0.06, 0.40),
         ("sfx-logo", "bong_001.ogg", v["logo_sfx"], 0.12, 0.45),
     ]
 
