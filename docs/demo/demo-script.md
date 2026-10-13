@@ -142,7 +142,7 @@ the audit and catch-up story in two sentences + the ask (2:30–3:00). Drop the 
   morning, a nightly delivery audit, an uptime check every 30 minutes."
 - **"How do you know the scores are right?"** "Every morning an audit re-checks yesterday's listings with a second look.
   When it found good listings we'd scored too low, we fixed the scorer and proved it on real data: great-match precision
-  is 100% with 74% recall (median of 3 runs); good-match precision is 86% with 78% recall (10 Oct 2026 report)."
+  is 100% with 81% recall (median of 3 runs); good-match precision is 86% with 86% recall (10 Oct 2026 report)."
 - **"Do I see ads or shops?"** "No paid placements, ever. Shops and dealers are hidden too, unless you switch on
   'Also show shops and dealers' for a watch, say when you want a warranty. And it tells you when something you've seen
   drops in price."
@@ -219,7 +219,7 @@ Proof the fix works, if asked:
 ## Sources for every number (updated from the 9 Oct 2026 report)
 - Switch alert, 10/10 at €150: Gmail, 30 Sep 11:34 CEST, from marktplaats-watcher@agentmail.to.
 - 9 of 25 not a Mac mini: `docs/marketing/positioning-audit-2026-09-29.md` (live page, 29 Sep).
-- 53 listings from 6 watches, great precision 100% (median of 3 runs, range 94.1–100%), recall 74% (median of 3 runs, range 69.6–73.9%), chat 23/23, €0.0302 per 100 listings:
+- 53 listings from 6 watches, great precision 100% (median of 3 runs, range 94.1–100%), recall 81% (median of 3 runs, range 76.2–81.0%), chat 23/23, €0.0302 per 100 listings:
   `evals/report.md` (scorer run 9 Oct 2026 08:33; chat run 08:34).
 - 33 cents a month for an hourly watch with 1 new listing per check (€2.02 with 10): `evals/report.md` cost table; $10 cap: RUNBOOK §3.
 - 33 catch-up matches to 3 accounts; nightly audit: `docs/system-design.html` §21.

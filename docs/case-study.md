@@ -49,15 +49,15 @@ The data path is: user confirms a watch → Convex schedules a due check → cod
 
 The reproducible chain is [frozen listings](../evals/data/listings.json) and [chat cases](../evals/chat_cases.py) → agent runs → saved outcome and trajectory grades → failure categories → [cost script](../evals/cost.py) and report. The 20-case learner floor was expanded to a **23-case** chat golden set; the cited run scored **23/23 outcome** and **23/23 trajectory**. This remains a selected regression set, not a population estimate. [evals/report.md §2. Does the chat do the right thing? (23-case golden set)](../evals/report.md#2-does-the-chat-do-the-right-thing-23-case-golden-set), [evals/report.md §Chat strata and abstention](../evals/report.md#chat-strata-and-abstention)
 
-The scorer fixture holds **53 real Marktplaats listings from 6 watches**. In the **10 Oct 2026** run, great-match precision was **100%** (median range **94.1–100.0%**) and recall **74%** (range **69.6–73.9%**); good-match precision/recall were **86%/78%**. Human overrides correct some judge labels. These are *median of 3 runs*, and misses remain visible in the report. [evals/report.md §1. Does the AI e-mail the right listings? (scorer vs corrected labels)](../evals/report.md#1-does-the-ai-e-mail-the-right-listings-scorer-vs-corrected-labels)
+The scorer fixture holds **53 real Marktplaats listings from 6 watches**. In the **10 Oct 2026** run, great-match precision was **100%** (median range **94.1–100.0%**) and recall **81%** (range **76.2–81.0%**); good-match precision/recall were **86%/86%**. Human overrides correct some judge labels. These are *median of 3 runs*, and misses remain visible in the report. [evals/report.md §1. Does the AI e-mail the right listings? (scorer vs corrected labels)](../evals/report.md#1-does-the-ai-e-mail-the-right-listings-scorer-vs-corrected-labels)
 
 The operational mapping below uses the report's saved representative scorer run at both notify levels **plus** operator-confirmed delivery-audit misses. A listing can appear at both levels, so counts are category occurrences, not distinct production incidents. [evals/report.md §Failure mapping](../evals/report.md#failure-mapping)
 
 | Failure category | Count | What the saved evidence means |
 |---|---:|---|
-| missing context | 3 | Delivery-audit reconstruction lacked some listing fields. |
+| missing context | 4 | Delivery-audit reconstruction lacked some listing fields. |
 | wrong tool | 0 | None observed in these saved results. |
-| wrong record | 8 | Human override, variant or accessory mismatch. |
+| wrong record | 4 | Human override, variant or accessory mismatch. |
 | invalid output | 6 | A mismatch between expected and produced scoring/chat result. |
 | unsafe action | 0 | None observed in these saved results. |
 | timeout | 0 | None observed in these saved results. |

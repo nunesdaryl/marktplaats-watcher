@@ -83,7 +83,7 @@ def check(chat, scorer, listings, spotcheck):
              chat["passed"] >= len(CASES) - 1 and
              all(row.get("passed") == (bool(row.get("outcome_passed")) and bool(row.get("trajectory_passed")))
                  for row in chat.get("cases", [])))) and precision is not None and precision >= 0.9
-            and recall is not None and recall >= 17 / 23 and price_type_cases_pass(scorer)
+            and recall is not None and recall >= 16 / 21 and price_type_cases_pass(scorer)
             and audit_misses_pass(scorer) and preference_cases_pass(scorer))
 
 
@@ -115,7 +115,7 @@ def main():
         print(f"Confirmed user cases: {len(confirmed)}; great precision {value if value is not None else 'n/a'} (report only)")
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
-                         "great recall at least 17/23, all price type cases, 4/5 earlier audit cases, the €130 bid, "
+                         "great recall at least 16/21, all price type cases, 4/5 earlier audit cases, the €130 bid, "
                          "and both MW-138 model cases in each of 3 runs")
 
 
