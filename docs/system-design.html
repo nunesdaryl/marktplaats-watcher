@@ -1628,6 +1628,21 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   variant now lives in the repo. The morning audit was clean (0 delivery misses), and the seller-website flag, seen on
   0 of 14,483 listings, was replaced by signals that exist in the search data (EU manufacturer details and the
   verified mark) — counted on regular listings for a week before deciding on a shop filter (MW-136).</p>
+<p><b>Spend, scorer and eval labels (12–13 October).</b> October's OpenAI bill passed its $5 soft alert ($11.93 by
+  13 October), mostly through the evals-and-local key (6,965 requests against the app's 1,563); 14 of the 33 eval runs
+  on 9–12 October were manual dispatches by the station. MW-137 shows OpenAI's billed cost per key on the owner
+  dashboard (App, Evals &amp; local, Other) through a read-only admin key, storing only key names and amounts, with
+  <code>OPENAI_MONTHLY_CAP_USD</code> (now $25) as the alert threshold against the billed total. MW-139 adds a rule to
+  <code>AGENTS.md</code>: a manual eval run only when no automatic run covers the reviewed commit, the operator asks,
+  or once after an infrastructure failure. The 13 October audit found a real scorer miss: a €150 Switch OLED titled
+  just "Nintendo Switch" scored 3/10 although its description named the OLED. MW-138 lets a description that names the
+  model confirm it, while a compatibility mention ("past op Switch OLED") does not; the real listing now scores 10 in
+  every run and the mention-only guard stays below the alert bar. Its first eval run failed the recall gate at 16 of 23,
+  the same misses main showed on the old prompt; the cause was three spot-check answers from 27 September that the
+  scorer contradicts in nearly every run. Daryl re-decided them (MW-140): a shop's "all ladies' bikes" listing is not a
+  Gazelle and a sled-base chair is not an IKEA office chair, while €100 stays within "under €100". Great matches went
+  from 23 to 21, the recall bar to 16 of 21 (not below the old ratio), and the next eval run passed at 18 of 21. MW-141,
+  teaching the scorer that a price equal to the maximum is within budget, is filed.</p>
 <p><b>Closing the feedback loop and genuine listings (10 October).</b> Daryl asked that the loop just finished with
   Vinod (asked on LinkedIn on 5 October, built as MW-90 and MW-114, told on 10 October) become a standard part of the
   factory. MW-116: feedback from any channel (LinkedIn added) is linked to its MW issue; a build moves it to in progress
