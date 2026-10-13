@@ -11,6 +11,14 @@ export function spendState(usd, cap) {
   return usd / cap >= 0.95 ? "danger" : usd / cap >= 0.8 ? "warning" : "normal";
 }
 
+export function billedSplit(billed) {
+  const rows = billed?.byKey ?? [];
+  const app = rows.filter((row) => row.name === "marktplaats-watcher-app").reduce((sum, row) => sum + row.usd, 0);
+  const evals = rows.filter((row) => row.name === "marktplaats-watcher-local-and-evals").reduce((sum, row) => sum + row.usd, 0);
+  const other = rows.filter((row) => row.name !== "marktplaats-watcher-app" && row.name !== "marktplaats-watcher-local-and-evals");
+  return { app, evals, other, otherUsd: other.reduce((sum, row) => sum + row.usd, 0) };
+}
+
 export function OpenAiSpendCard({ open }) {
   const data = useQuery(api.openaiSpend.month, {});
   if (!data || typeof data.measuredEur !== "number") return null;
@@ -18,11 +26,18 @@ export function OpenAiSpendCard({ open }) {
   const left = data.capUsd === null ? null : Math.max(0, data.capUsd - usd);
   const ratio = data.capUsd ? Math.min(1, usd / data.capUsd) : 0;
   const tone = spendState(usd, data.capUsd);
+  const split = billedSplit(data.billed);
+  const share = (amount) => data.billed?.usd ? `${Math.round(amount / data.billed.usd * 100)}%` : "0%";
   return <section className={`panel openai-spend ${tone}`} aria-label="OpenAI spend this month">
     <h2><button className="link-button strong" onClick={() => open("spend", "OpenAI spend this month")}>OpenAI this month →</button></h2>
-    <p className="spend-value">{money(usd, "$")}{data.capUsd ? ` of ${money(data.capUsd, "$")} · ${money(left, "$")} left (${Math.round(usd / data.capUsd * 100)}%)` : " · monthly cap not set"}</p>
-    {data.capUsd && <div className="spend-track" role="progressbar" aria-label="Monthly OpenAI cap used" aria-valuenow={Math.round(ratio * 100)} aria-valuemin="0" aria-valuemax="100"><span style={{ width: `${ratio * 100}%` }} /></div>}
-    <p className="hint">Measured by the app: {money(data.measuredEur)} (about {money(data.measuredUsd, "$")}). {data.billed ? `Billed by OpenAI: ${money(data.billed.usd, "$")} · updated ${when(data.billed.updatedAt)}.` : data.connected ? "OpenAI billing figure is waiting for its first update." : "OpenAI billing figure not connected."}</p>
+    <p className="spend-value">{data.billed ? `Billed by OpenAI this month: ${money(usd, "$")}` : money(usd, "$")}</p>
+    {data.capUsd !== null && <p className="hint">{money(usd, "$")} of {money(data.capUsd, "$")} · {money(left, "$")} left ({Math.round(usd / data.capUsd * 100)}%) — your alert threshold (OPENAI_MONTHLY_CAP_USD)</p>}
+    {data.capUsd !== null && <div className="spend-track" role="progressbar" aria-label="OpenAI alert threshold used" aria-valuenow={Math.round(ratio * 100)} aria-valuemin="0" aria-valuemax="100"><span style={{ width: `${ratio * 100}%` }} /></div>}
+    {data.billed && <div className="hint"><p>App: {money(split.app, "$")} ({share(split.app)})</p><p>Evals &amp; local: {money(split.evals, "$")} ({share(split.evals)})</p><p>Other keys: {money(split.otherUsd, "$")} ({share(split.otherUsd)})</p>
+      {split.other.length > 0 && <ul>{split.other.map((row) => <li key={row.name}>{row.name}: {money(row.usd, "$")} ({share(row.usd)})</li>)}</ul>}</div>}
+    {data.billed?.projectUsd !== null && data.billed?.projectUsd !== undefined && <p className="hint">Configured project billed: {money(data.billed.projectUsd, "$")}</p>}
+    <p className="hint">Measured by the app: {money(data.measuredEur)} (about {money(data.measuredUsd, "$")}). {data.billed ? `Billed data updated ${when(data.billed.updatedAt)}.` : data.connected ? "OpenAI billing figure is waiting for its first update." : "OpenAI billing figure not connected."}</p>
+    {!data.connected && <p className="hint">Connect an OpenAI admin key to see billed cost per key</p>}
     {data.backfillPending && <p className="hint">The monthly summary is checking earlier app usage.</p>}
     <p className="hint">The real hard cap lives in OpenAI settings. App measurements use estimated prices and an approximate exchange rate.</p>
     <button className="link-button" onClick={() => open("spend", "Where the money goes")}>Where the money goes →</button>

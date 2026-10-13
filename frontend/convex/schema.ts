@@ -135,6 +135,8 @@ export default defineSchema({
   aiSpendBackfills: defineTable({ monthStart: v.number(), completedAt: v.number() }).index("by_month", ["monthStart"]),
   openaiCosts: defineTable({
     monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
+    byKey: v.optional(v.array(v.object({ name: v.string(), usd: v.number() }))),
+    projectUsd: v.optional(v.number()),
   }).index("by_month", ["monthStart"]),
   openaiCapAlerts: defineTable({ monthStart: v.number(), alertedAt: v.number() }).index("by_month", ["monthStart"]),
   openaiIncident: defineTable({ key: v.string(), failureKind: v.optional(v.string()), updatedAt: v.number() })

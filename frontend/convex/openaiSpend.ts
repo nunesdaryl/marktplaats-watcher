@@ -68,6 +68,25 @@ export function parseCostsPage(page: any): { totalUsd: number; nextPage: string 
   return { totalUsd, nextPage: page.has_more ? page.next_page : null };
 }
 
+export function parseKeyCostsPage(page: any): { byId: Record<string, number>; nextPage: string | null } {
+  const parsed = parseCostsPage(page);
+  const byId: Record<string, number> = {};
+  for (const bucket of page.data) for (const result of bucket.results) {
+    const id = typeof result.api_key_id === "string" ? result.api_key_id : "";
+    byId[id] = (byId[id] ?? 0) + result.amount.value;
+  }
+  return { byId, nextPage: parsed.nextPage };
+}
+
+export function groupKeyCosts(byId: Record<string, number>, names: Record<string, string>) {
+  const byName: Record<string, number> = {};
+  for (const [id, usd] of Object.entries(byId)) {
+    const name = names[id] || "unnamed key";
+    byName[name] = (byName[name] ?? 0) + usd;
+  }
+  return Object.entries(byName).map(([name, usd]) => ({ name, usd })).sort((a, b) => b.usd - a.usd);
+}
+
 export const month = query({ args: { userId: v.optional(v.id("users")), watchId: v.optional(v.id("watches")),
   kind: v.optional(v.string()), since: v.optional(v.number()), until: v.optional(v.number()) }, handler: async (ctx, filters) => {
   if (!(await isOwner(ctx))) return null;
@@ -128,17 +147,19 @@ export const month = query({ args: { userId: v.optional(v.id("users")), watchId:
     backfillPending,
     capUsd: Number.isFinite(cap) && cap > 0 ? cap : null,
     connected: !!process.env.OPENAI_ADMIN_API_KEY?.trim(),
-    billed: process.env.OPENAI_ADMIN_API_KEY?.trim() && snapshot ? { usd: snapshot.totalUsd, updatedAt: snapshot.updatedAt } : null,
+    billed: process.env.OPENAI_ADMIN_API_KEY?.trim() && snapshot ? { usd: snapshot.totalUsd, updatedAt: snapshot.updatedAt,
+      byKey: snapshot.byKey ?? [], projectUsd: snapshot.projectUsd ?? null } : null,
     userLabels: Object.fromEntries(users.filter((u) => u !== null).map((u) => [u._id, { email: u.email, limitEur: u.aiBudgetEur ?? 1 }])),
     watchLabels: Object.fromEntries(watches.filter((w) => w !== null).map((w) => [w._id, { title: w.name ?? w.label, userId: w.userId }])),
     chatLabels: Object.fromEntries(chats.filter((c) => c !== null).map((c) => [c._id, { title: c.title, userId: c.userId }])),
   };
 } });
 
-export const saveCosts = internalMutation({ args: { monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number() },
+export const saveCosts = internalMutation({ args: { monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
+  byKey: v.array(v.object({ name: v.string(), usd: v.number() })), projectUsd: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const old = await ctx.db.query("openaiCosts").withIndex("by_month", (q) => q.eq("monthStart", args.monthStart)).unique();
-    if (old) await ctx.db.patch(old._id, { totalUsd: args.totalUsd, updatedAt: args.updatedAt });
+    if (old) await ctx.db.patch(old._id, args);
     else await ctx.db.insert("openaiCosts", args);
   } });
 
@@ -196,6 +217,71 @@ export const sendIncidentEmail = internalAction({ args: { recovered: v.boolean()
       text, html: `<p>${text}</p>` });
   } });
 
+async function costPages(key: string, start: number, groupByKey: boolean, project?: string) {
+  let cursor: string | null = null;
+  const seen = new Set<string>();
+  let totalUsd = 0;
+  const byId: Record<string, number> = {};
+  do {
+    const url = new URL("https://api.openai.com/v1/organization/costs");
+    url.searchParams.set("start_time", String(start / 1000));
+    url.searchParams.set("end_time", String(Math.floor(Date.now() / 1000)));
+    url.searchParams.set("limit", "180");
+    if (groupByKey) url.searchParams.append("group_by", "api_key_id");
+    if (project) url.searchParams.append("project_ids", project);
+    if (cursor) url.searchParams.set("page", cursor);
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
+    if (!response.ok) throw new Error(`OpenAI Costs request failed (${response.status})`);
+    const page = await response.json();
+    const parsed = groupByKey ? parseKeyCostsPage(page) : parseCostsPage(page);
+    if (groupByKey) for (const [id, usd] of Object.entries((parsed as ReturnType<typeof parseKeyCostsPage>).byId))
+      byId[id] = (byId[id] ?? 0) + usd;
+    else totalUsd += (parsed as ReturnType<typeof parseCostsPage>).totalUsd;
+    cursor = parsed.nextPage;
+    if (cursor) {
+      if (seen.has(cursor)) throw new Error("OpenAI Costs repeated a page cursor");
+      seen.add(cursor);
+    }
+  } while (cursor);
+  return { totalUsd, byId };
+}
+
+async function keyNames(key: string): Promise<Record<string, string>> {
+  const headers = { Authorization: `Bearer ${key}` };
+  const names: Record<string, string> = {};
+  let after: string | null = null;
+  do {
+    const url = new URL("https://api.openai.com/v1/organization/projects");
+    url.searchParams.set("limit", "100");
+    url.searchParams.set("include_archived", "true");
+    if (after) url.searchParams.set("after", after);
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error(`OpenAI projects request failed (${response.status})`);
+    const page = await response.json();
+    if (!Array.isArray(page.data) || typeof page.has_more !== "boolean") throw new Error("Invalid OpenAI projects response");
+    for (const project of page.data) {
+      if (typeof project.id !== "string") continue;
+      let keyAfter: string | null = null;
+      do {
+        const keysUrl = new URL(`https://api.openai.com/v1/organization/projects/${encodeURIComponent(project.id)}/api_keys`);
+        keysUrl.searchParams.set("limit", "100");
+        keysUrl.searchParams.set("owner_project_access", "any");
+        if (keyAfter) keysUrl.searchParams.set("after", keyAfter);
+        const keysResponse = await fetch(keysUrl, { headers });
+        if (!keysResponse.ok) throw new Error(`OpenAI project keys request failed (${keysResponse.status})`);
+        const keysPage = await keysResponse.json();
+        if (!Array.isArray(keysPage.data) || typeof keysPage.has_more !== "boolean") throw new Error("Invalid OpenAI project keys response");
+        for (const item of keysPage.data) if (typeof item.id === "string" && typeof item.name === "string") names[item.id] = item.name;
+        keyAfter = keysPage.has_more ? keysPage.data.at(-1)?.id : null;
+        if (keysPage.has_more && !keyAfter) throw new Error("Missing OpenAI project keys cursor");
+      } while (keyAfter);
+    }
+    after = page.has_more ? page.data.at(-1)?.id : null;
+    if (page.has_more && !after) throw new Error("Missing OpenAI projects cursor");
+  } while (after);
+  return names;
+}
+
 export const refreshCosts = internalAction({ args: {}, handler: async (ctx) => {
   await ctx.runAction(internal.spendRollup.backfill, {});
   const key = process.env.OPENAI_ADMIN_API_KEY?.trim();
@@ -205,28 +291,14 @@ export const refreshCosts = internalAction({ args: {}, handler: async (ctx) => {
     await ctx.runMutation(internal.openaiSpend.maybeAlert, { monthStart: start, spentUsd: measuredUsd });
     return;
   }
-  let cursor: string | null = null;
-  const seen = new Set<string>();
-  let totalUsd = 0;
-  do {
-    const url = new URL("https://api.openai.com/v1/organization/costs");
-    url.searchParams.set("start_time", String(start / 1000));
-    url.searchParams.set("end_time", String(Math.floor(Date.now() / 1000)));
-    url.searchParams.set("limit", "180");
-    // The Costs API is organisation-wide; the $ cap is per project, so count only this project when it is configured.
-    const project = process.env.OPENAI_PROJECT_ID?.trim();
-    if (project) url.searchParams.append("project_ids", project);
-    if (cursor) url.searchParams.set("page", cursor);
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
-    if (!response.ok) throw new Error(`OpenAI Costs request failed (${response.status})`);
-    const page = parseCostsPage(await response.json());
-    totalUsd += page.totalUsd;
-    cursor = page.nextPage;
-    if (cursor) {
-      if (seen.has(cursor)) throw new Error("OpenAI Costs repeated a page cursor");
-      seen.add(cursor);
-    }
-  } while (cursor);
-  await ctx.runMutation(internal.openaiSpend.saveCosts, { monthStart: start, totalUsd, updatedAt: Date.now() });
+  const project = process.env.OPENAI_PROJECT_ID?.trim();
+  const { totalUsd } = await costPages(key, start, false);
+  const { byId } = await costPages(key, start, true);
+  const projectUsd = project ? (await costPages(key, start, false, project)).totalUsd : undefined;
+  // Key names are a nicety: if the admin key cannot list projects, still store the amounts under "unnamed key".
+  let names: Record<string, string> = {};
+  try { names = await keyNames(key); } catch (error) { console.warn("OpenAI key names unavailable", String(error).slice(0, 200)); }
+  const byKey = groupKeyCosts(byId, names);
+  await ctx.runMutation(internal.openaiSpend.saveCosts, { monthStart: start, totalUsd, byKey, projectUsd, updatedAt: Date.now() });
   await ctx.runMutation(internal.openaiSpend.maybeAlert, { monthStart: start, spentUsd: totalUsd });
 } });
