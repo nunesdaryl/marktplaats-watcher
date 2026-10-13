@@ -1,5 +1,5 @@
 {
-  "source": "Owner dashboard delivery audits, 2026-10-07, 2026-10-09 and 2026-10-10 Europe/Amsterdam",
+  "source": "Owner dashboard delivery audits, 2026-10-07, 2026-10-09, 2026-10-10 and 2026-10-13 Europe/Amsterdam",
   "note": "Only fields present in the issue evidence are filled. Null means the audit summary did not provide that listing field; it is not an inferred listing value. Notify thresholds are inferred from which score counted as a miss. Each case carries an operator-confirmed expected outcome (should_alert); the gate counts correct outcomes, not raw scores. The 9 October bid case has no recorded audit score.",
   "cases": [
     {
@@ -121,6 +121,42 @@
       "diagnosis": "The advertiser is looking to buy laminate, not offering it for sale.",
       "should_alert": false,
       "decision": "Not a miss (Daryl, 10 Oct): wanted ads cannot satisfy a buyer's watch and score 0."
+    },
+    {
+      "id": "m2452950327",
+      "watch_description": "Nintendo Switch OLED, under €200",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "m2452950327",
+        "title": "Nintendo Switch",
+        "description": "Nintendo Switch OLED met wit/zwarte Joy-Cons",
+        "price_eur": 150,
+        "price_type": "fixed price",
+        "condition": "Zo goed als nieuw"
+      },
+      "check_score": 3,
+      "audit_score": 9,
+      "diagnosis": "MW-138: the description states that the listed console is a Switch OLED, despite the shorter title.",
+      "should_alert": true,
+      "decision": "Real miss (MW-138, Daryl, 13 Oct): the confirmed Switch OLED at EUR 150 should alert."
+    },
+    {
+      "id": "switch-mention-only",
+      "watch_description": "Nintendo Switch OLED, under €200",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "switch-mention-only",
+        "title": "Nintendo Switch",
+        "description": "Originele Switch (2017). Hoes past ook op Switch OLED.",
+        "price_eur": 150,
+        "price_type": "fixed price",
+        "condition": "Zo goed als nieuw"
+      },
+      "check_score": null,
+      "audit_score": null,
+      "diagnosis": "Synthetic MW-138 guard: OLED is mentioned only for case compatibility, not as the console model.",
+      "should_alert": false,
+      "decision": "Synthetic MW-138 control: a compatibility mention must not confirm the watched model."
     }
   ],
   "earlier_observations": [
