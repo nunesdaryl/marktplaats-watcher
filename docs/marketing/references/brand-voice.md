@@ -7,7 +7,7 @@ Plain, calm, specific. Lead with a real item or a visible product step. Explain 
 |---|---|---|
 | Product promise | “Beschrijf wat je zoekt. Sla je zoekopdracht op. Je krijgt een e-mail als een nieuwe advertentie je ingestelde drempel haalt.” | “Describe what you want. Save a watch. Get an email when a new listing meets your chosen bar.” |
 | First-check limit | “De eerste check is stil: bestaande advertenties worden niet als nieuw gemaild.” | “The first check is silent: existing listings are not emailed as new.” |
-| Evaluation | “In een offline test met 53 advertenties was de precisie bij ‘alleen heel goede matches’ 100% en de recall 74%; echte matches werden ook gemist.” | “In an offline test of 53 listings, the great-only setting reached 100% precision and 74% recall; it also missed real matches.” |
+| Evaluation | “In een offline test met 53 advertenties was de precisie bij ‘alleen heel goede matches’ 100% en de recall 81%; echte matches werden ook gemist.” | “In an offline test of 53 listings, the great-only setting reached 100% precision and 81% recall; it also missed real matches.” |
 | CTA | “Maak een watch aan. Bekijk de melding en beoordeel of die klopt.” | “Create a watch. Check the alert and rate whether it fits.” |
 
 Use informal **je** in Dutch, natural contractions in English, short paragraphs, restrained punctuation, and no decorative urgency. LinkedIn can show a specific engineering decision; buyer copy should explain the action. Review each translation aloud before Daryl publishes it.

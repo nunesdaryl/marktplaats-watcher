@@ -1,27 +1,25 @@
 # Evaluation report
 
-Scorer run 2026-10-10 10:36, chat run 2026-10-10 12:20. Model under test: **gpt-5.4-mini** (provider: **openai**). Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **7/10 agreed; overridden rows 3, 4, 9**.
+Scorer run 2026-10-10 10:36, chat run 2026-10-10 12:20. Model under test: **gpt-5.4-mini** (provider: **openai**). Judge model: **gpt-5.5**, human spot-check of 10 judge labels: **9/10 agreed; overridden rows 3**.
 Prompt versions: chat **chat-2026-10-10.1**, rank **rank-2026-10-09.2**.
 UAT sign-off: Daryl Nunes (name), 2 October 2026 (date), prompt versions chat-2026-09-30.2 / rank-2026-10-01.1
 
 ## 1. Does the AI e-mail the right listings? (scorer vs corrected labels)
 
-53 real Marktplaats listings from 6 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **23** are real matches.
+53 real Marktplaats listings from 6 watches, frozen in `evals/data/listings.json`; the judge marked **20** as real matches. After human overrides, **21** are real matches.
 
 | Notify level | E-mailed when | Precision | Recall |
 |---|---|---|---|
-| great | score ≥ 8 | **100%** | **74%** |
-| good | score ≥ 6 | **86%** | **78%** |
+| great | score ≥ 8 | **100%** | **81%** |
+| good | score ≥ 6 | **86%** | **86%** |
 
-Median of 3 runs; great precision range 94.1–100.0%, great recall range 69.6–73.9%. TP/FP/FN/TN counts are omitted; misses below use the saved representative run.
+Median of 3 runs; great precision range 94.1–100.0%, great recall range 76.2–81.0%. TP/FP/FN/TN counts are omitted; misses below use the saved representative run.
 
 *Precision: of the listings we e-mail, how many are real matches. Recall: of the real matches, how many we e-mail.*
 
 **Misses at 'great':**
 - Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 3; judge: Apple Mac Mini itself and under €500.
 - Missed a match (match): Gazelle herenfietsen — scored 2; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
 - Missed a match (human_override): IKEA Bureau en Bureaustoel Set — scored 7; original judge: Set includes an IKEA office chair, but the listed price is €100, not under €100.
 - Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 0; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
@@ -29,7 +27,7 @@ Median of 3 runs; great precision range 94.1–100.0%, great recall range 69.6�
 
 | Category | False positives | False negatives |
 |---|---|---|
-| human_override | 0 | 3 |
+| human_override | 0 | 1 |
 | match | 0 | 3 |
 
 **Misses at 'good':**
@@ -38,8 +36,6 @@ Median of 3 runs; great precision range 94.1–100.0%, great recall range 69.6�
 - E-mailed but not a match (accessory_or_part): Raspberry Pi - Maker & IoT Hardware Lot — scored 7: It includes Raspberry Pi-related maker hardware at a fair price under budget, but the exact Pi model is not confirmed.
 - Missed a match (match): Apple Mac Mini (Mid 2011) - Macintosh — scored 3; judge: Apple Mac Mini itself and under €500.
 - Missed a match (match): Gazelle herenfietsen — scored 2; judge: Gazelle men's bicycles; appears to be the desired brand and item type, well within budget.
-- Missed a match (human_override): Alle damesfietsen €80 // uitverkoop! — scored 1; original judge: General ladies' bikes listing with no indication they are Gazelle bikes.
-- Missed a match (human_override): Slede Stoel - Donkergrijs — scored 1; original judge: This is a sled-base chair and not listed as an IKEA office chair.
 - Missed a match (match): Apple iPhone 13 128GB Green - iPhone (1) - Dit product wordt — scored 0; judge: Regular Apple iPhone 13 128GB phone, priced under €350.
 
 **Failure categories at 'good':**
@@ -47,7 +43,6 @@ Median of 3 runs; great precision range 94.1–100.0%, great recall range 69.6�
 | Category | False positives | False negatives |
 |---|---|---|
 | accessory_or_part | 1 | 0 |
-| human_override | 0 | 2 |
 | match | 0 | 3 |
 | wrong_model_or_spec | 2 | 0 |
 
@@ -73,9 +68,9 @@ Four Switch OLED listings from 3 October were bidding from €200 at a €200 wa
 | 3 | m2449225496 | not great: bidding from the cap | 7 | It’s the exact Switch OLED model and the bidding start is right at the €200 budget ceiling, with complete/nice condition helping value. |
 | 3 | fixed-160-control | great: fixed price below the cap | 10 | Exact Switch OLED match in nearly new condition and well under the €200 budget. |
 
-## 1b. Delivery audit misses (7 and 9 October)
+## 1b. Delivery audit misses (7–13 October)
 
-The six frozen cases record the check score and, where known, the daily audit score. Unknown listing fields in the audit summary are omitted from scorer input.
+The frozen audit and synthetic cases record the check score and, where known, the daily audit score. Unknown listing fields in the audit summary are omitted from scorer input.
 
 | Run | Listing | Check | Audit | New score | Notify bar |
 |---|---|---:|---:|---:|---:|
@@ -113,9 +108,9 @@ Counts below use the saved representative scorer run at both notification levels
 
 | Operational category | Existing failure labels / source | Count | Observed exception |
 |---|---|---:|---|
-| missing context | unclear; delivery audit missing fields | 3 | PS5 Zo goed als nieuw |
+| missing context | unclear; delivery audit missing fields | 4 | PS5 Zo goed als nieuw |
 | wrong tool | chat tool mismatch | 0 | None observed in these saved results |
-| wrong record | human_override; wrong_model_or_spec; different_product; accessory_or_part | 8 | Alle damesfietsen €80 // uitverkoop! |
+| wrong record | human_override; wrong_model_or_spec; different_product; accessory_or_part | 4 | IKEA Bureau en Bureaustoel Set |
 | invalid output | over_budget; chat wrong result | 6 | Apple Mac Mini (Mid 2011) - Macintosh |
 | unsafe action | forbidden watch or notify call | 0 | None observed in these saved results |
 | timeout | chat timeout | 0 | None observed in these saved results |

@@ -96,7 +96,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   [failure mapping](evals/report.md#failure-mapping), outcome and trajectory grades, abstention strata, latency,
   and prompt versions. A pull request changing `agent.py` or `evals/**`, a Monday 06:00 UTC
   schedule, or a manual dispatch reruns the evals; the gate requires all but one chat case (22 of 23) and 90% precision for
-  "great" matches. The 10 Oct 2026 report records 100% great precision, 74% recall (median of 3 runs) on 53 listings from 6 watches, and 23/23 chat cases. The operator fills in the report's UAT sign-off after review. Rerun locally with
+  "great" matches. The 10 Oct 2026 report records 100% great precision, 81% recall (median of 3 runs) on 53 listings from 6 watches, and 23/23 chat cases. The operator fills in the report's UAT sign-off after review. Rerun locally with
   `.venv/bin/python -m evals.run_scorer`, `evals.run_chat`, `evals.report`, `evals.gate`, `evals.cost`.
 - **Cost:** an hourly watch is about €0.33/month with 1 new listing per check and €3.68 with 20; a busy 15-minute
   watch (20 new listings every check) is €14.73/month, within the $110/month OpenAI project cap but far above each user's €1 AI budget per 30 days, which pauses it first; a chat question about

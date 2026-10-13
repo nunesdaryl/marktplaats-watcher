@@ -334,6 +334,27 @@ def test_gate_rejects_recall_below_previous_seventeen_of_twenty_three(monkeypatc
     assert not gate.check({"total": 20, "passed": 20}, scorer, listings, "")
 
 
+def test_gate_requires_sixteen_of_twenty_one_corrected_great_matches(monkeypatch):
+    monkeypatch.setattr(gate, "price_type_cases_pass", lambda scorer: True)
+    monkeypatch.setattr(gate, "audit_misses_pass", lambda scorer: True)
+    monkeypatch.setattr(gate, "preference_cases_pass", lambda scorer: True)
+    listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(21)]
+    scored = [{"id": str(i), "score": 8 if i < 16 else 7,
+               "judge": {"match": True, "category": "match"}} for i in range(21)]
+    scorer = {"scored": scored, "metrics": {"great": {"threshold": 8}}}
+    chat = {"total": 20, "passed": 20}
+
+    assert gate.check(chat, scorer, listings, "")
+    scored[15]["score"] = 7
+    assert not gate.check(chat, scorer, listings, "")
+
+    # 18/24 is above the old 17/23 ratio but below the new 16/21 ratio.
+    listings = [{"id": str(i), "url": f"https://example.test/{i}"} for i in range(24)]
+    scored = [{"id": str(i), "score": 8 if i < 18 else 7,
+               "judge": {"match": True, "category": "match"}} for i in range(24)]
+    assert not gate.check(chat, {"scored": scored, "metrics": {"great": {"threshold": 8}}}, listings, "")
+
+
 def test_scorer_sends_known_audit_fields_without_inventing_missing_values(monkeypatch, tmp_path):
     path = tmp_path / "audit_misses.json"
     common.write(path, {"cases": [{"id": "free", "watch_description": "laminate",

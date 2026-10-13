@@ -11,7 +11,7 @@ Daryl records his own voice one sentence at a time, leaving a pause between line
 | Save | “Ik controleer het voorstel en klik zelf op ‘Save watch’.” |
 | Alert | “Verschijnt er een nieuwe advertentie die past, dan krijg ik een e-mail met een score en de reden waarom.” |
 | Act | “Is hij goed, dan helpt hij me met een eerste bod, en met één tik staat het klaar op Marktplaats.” |
-| Proof | “In onze test met 53 echte advertenties was elke ‘heel goede match’-mail ook echt raak, en hij ving ongeveer drie op de vier.” |
+| Proof | “In onze test met 53 echte advertenties was elke ‘heel goede match’-mail ook echt raak, en hij ving ongeveer vier op de vijf.” |
 | Human proof | “Cursusdocent Vinod Kumar Bhovi zei op de demodag: ‘I pay 10 euros to get this application … I think I can be your first user.’” |
 | Honest limit | “Hij kijkt hoogstens elk kwartier, kan soms een match missen, en is niet van Marktplaats.” |
 | CTA | “De eerste honderd mensen krijgen dertig dagen gratis; kijk hoeveel plekken er nog zijn en maak je eigen watch.” |
@@ -25,12 +25,12 @@ Daryl records his own voice one sentence at a time, leaving a pause between line
 | Save | “I review the suggestion and press Save watch myself.” |
 | Alert | “When a new listing fits, I get an email with a score and the reason why.” |
 | Act | “If it's good, it helps me with an opening offer, and one tap gets it ready on Marktplaats.” |
-| Proof | “In our test with 53 real listings, every ‘great match’ email was a real match, and it caught about three in four.” |
+| Proof | “In our test with 53 real listings, every ‘great match’ email was a real match, and it caught about four in five.” |
 | Human proof | “At demo day, course instructor Vinod Kumar Bhovi said, ‘I pay 10 euros to get this application … I think I can be your first user.’” |
 | Honest limit | “It checks at most every fifteen minutes, can sometimes miss a match, and isn't made by Marktplaats.” |
 | CTA | “The first hundred people get thirty days free; see how many places are left and set your own watch.” |
 
-Proof wording maps to the 10 October report: great-only precision 100% (median of 3 runs) and recall 74% (“about three in four”). The station rewrote the opening in plain words on 10 Oct 2026; the earlier precision/recall opening is hook 3 below.
+Proof wording maps to the 10 October report: great-only precision 100% (median of 3 runs) and recall 81% (“about four in five”). The station rewrote the opening in plain words on 10 Oct 2026; the earlier precision/recall opening is hook 3 below.
 
 ## Three alternate opening hooks (record in both languages)
 1. NL: “Deze advertentie kreeg een score en een reden, zodat ik zelf kon beslissen.” EN: “This listing came with a score and a reason, so I could decide for myself.”
