@@ -30,8 +30,11 @@ def audit_misses_pass(scorer):
     cases = {case["id"]: case for case in read(AUDIT_MISSES)["cases"]}
     bid_id = "m2451390076"
     wanted_id = "m2451247849"   # MW-121: a wanted ad must never alert; it is scored 0 in code, so it holds every run
+    model_id = "m2452950327"
+    mention_id = "switch-mention-only"
+    required_ids = (bid_id, model_id, mention_id)
     runs = scorer.get("runs", [scorer])
-    if len(runs) != 3 or len(cases) < 6 or bid_id not in cases:
+    if len(runs) != 3 or len(cases) < 8 or any(id not in cases for id in required_ids):
         return False
     for run in runs:
         rows = {row["id"]: row for row in run.get("audit_misses", [])}
@@ -41,11 +44,11 @@ def audit_misses_pass(scorer):
             score = rows[id]["score"]
             alerts = score is not None and score >= case["notify_threshold"]
             return alerts == case.get("should_alert", True)
-        if not correct(bid_id, cases[bid_id]):
+        if any(not correct(id, cases[id]) for id in required_ids):
             return False
         if wanted_id in cases and not correct(wanted_id, cases[wanted_id]):
             return False
-        if sum(correct(id, case) for id, case in cases.items() if id not in (bid_id, wanted_id)) < 4:
+        if sum(correct(id, case) for id, case in cases.items() if id not in (*required_ids, wanted_id)) < 4:
             return False
     return True
 
@@ -112,7 +115,8 @@ def main():
         print(f"Confirmed user cases: {len(confirmed)}; great precision {value if value is not None else 'n/a'} (report only)")
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
-                         "great recall at least 17/23, all price type cases, 4/5 earlier audit cases and the €130 bid in each of 3 runs")
+                         "great recall at least 17/23, all price type cases, 4/5 earlier audit cases, the €130 bid, "
+                         "and both MW-138 model cases in each of 3 runs")
 
 
 if __name__ == "__main__":
