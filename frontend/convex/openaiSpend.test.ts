@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import { parseCostsPage, summarizeSpend } from "./openaiSpend";
+import { groupKeyCosts, parseCostsPage, parseKeyCostsPage, summarizeSpend } from "./openaiSpend";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -36,6 +36,17 @@ test("Costs pages sum USD buckets and reject a different currency", () => {
     .toThrow(/currency/i);
 });
 
+test("key costs group by name without exposing key values", () => {
+  const parsed = parseKeyCostsPage({ data: [{ results: [
+    { api_key_id: "key_app", amount: { value: 1, currency: "usd" } },
+    { api_key_id: "key_app", amount: { value: 0.5, currency: "usd" } },
+    { api_key_id: "key_missing", amount: { value: 2, currency: "usd" } },
+  ] }], has_more: false });
+  expect(groupKeyCosts(parsed.byId, { key_app: "marktplaats-watcher-app" })).toEqual([
+    { name: "unnamed key", usd: 2 }, { name: "marktplaats-watcher-app", usd: 1.5 },
+  ]);
+});
+
 test("ledger totals group by kind, user, watch and chat; cost per alert uses checks only", () => {
   const rows = [
     { userId: "u1", kind: "watch", watchId: "w1", costEur: 0.3, alertsSent: 2, listingsScored: 4, at: Date.parse("2026-10-10") },
@@ -66,6 +77,13 @@ test("only owner sees monthly spend and disconnected billing stays explicit", as
   expect(await alice.query(api.openaiSpend.month, {})).toBeNull();
   expect(await owner.query(api.openaiSpend.month, {})).toMatchObject({ measuredEur: 0.25,
     billed: null, capUsd: 110, connected: false });
+});
+
+test("an unset alert threshold is absent from the owner query", async () => {
+  delete process.env.OPENAI_MONTHLY_CAP_USD;
+  const t = convexTest(schema, modules);
+  const month = await t.withIdentity({ subject: "owner", email: "owner@example.com" }).query(api.openaiSpend.month, {});
+  expect(month?.capUsd).toBeNull();
 });
 
 test("owner monthly query groups seeded watch and chat ledger rows", async () => {
@@ -108,20 +126,37 @@ test("legacy MW-86 rows are backfilled once into bounded monthly summaries", asy
   expect(await t.run((ctx) => ctx.db.query("aiSpendMonthly").collect())).toHaveLength(1);
 });
 
-test("hourly refresh follows Costs pagination and stores the billed month", async () => {
+test("hourly refresh stores organization totals and named key costs, retaining project filtering", async () => {
   const t = convexTest(schema, modules);
   process.env.OPENAI_ADMIN_API_KEY = "test-admin-key";
   process.env.OPENAI_PROJECT_ID = "proj_test";
   const fetcher = vi.fn()
     .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ results: [{ amount: { value: 2, currency: "usd" } }] }], has_more: true, next_page: "next" }) })
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ results: [{ amount: { value: 3.5, currency: "usd" } }] }], has_more: false, next_page: null }) });
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ results: [{ amount: { value: 3.5, currency: "usd" } }] }], has_more: false, next_page: null }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ results: [
+      { api_key_id: "key_app", amount: { value: 1, currency: "usd" } },
+      { api_key_id: "key_eval", amount: { value: 3, currency: "usd" } },
+      { api_key_id: "key_other", amount: { value: 1.5, currency: "usd" } },
+    ] }], has_more: false }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ results: [{ amount: { value: 1, currency: "usd" } }] }], has_more: false }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: "proj_test" }], has_more: false }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [
+      { id: "key_app", name: "marktplaats-watcher-app", value: "secret-never-store" },
+      { id: "key_eval", name: "marktplaats-watcher-local-and-evals" },
+      { id: "key_other", name: "vibegame-keychest" },
+    ], has_more: false }) });
   vi.stubGlobal("fetch", fetcher);
   await t.action(internal.openaiSpend.refreshCosts, {});
   const row = await t.run((ctx) => ctx.db.query("openaiCosts").collect());
-  expect(row).toMatchObject([{ totalUsd: 5.5, monthStart: Date.parse("2026-10-01T00:00:00Z") }]);
+  expect(row).toMatchObject([{ totalUsd: 5.5, projectUsd: 1, monthStart: Date.parse("2026-10-01T00:00:00Z"),
+    byKey: [{ name: "marktplaats-watcher-local-and-evals", usd: 3 }, { name: "vibegame-keychest", usd: 1.5 },
+      { name: "marktplaats-watcher-app", usd: 1 }] }]);
   expect(new URL(fetcher.mock.calls[1][0]).searchParams.get("page")).toBe("next");
   expect(fetcher.mock.calls[0][1].headers.Authorization).toBe("Bearer test-admin-key");
-  expect(new URL(fetcher.mock.calls[0][0]).searchParams.getAll("project_ids")).toEqual(["proj_test"]);   // project cap, not org
+  expect(new URL(fetcher.mock.calls[2][0]).searchParams.getAll("group_by")).toEqual(["api_key_id"]);
+  expect(new URL(fetcher.mock.calls[3][0]).searchParams.getAll("project_ids")).toEqual(["proj_test"]);
+  expect(JSON.stringify(row)).not.toContain("secret-never-store");
+  expect((await t.withIdentity({ subject: "owner", email: "owner@example.com" }).query(api.openaiSpend.month, {}))?.billed?.byKey).toHaveLength(3);
   delete process.env.OPENAI_ADMIN_API_KEY;
   delete process.env.OPENAI_PROJECT_ID;
   vi.unstubAllGlobals();

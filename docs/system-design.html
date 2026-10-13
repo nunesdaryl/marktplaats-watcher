@@ -1474,8 +1474,9 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   waitlist when full), "Founding user · free until 4 Nov" and "€x of €1.00 used" in the app, and places plus the
   waitlist on the owner dashboard. MW-88 adds the owner's OpenAI card ("$X of $110 · $Y left", amber at 80%, red at 95%,
   an 80% e-mail) and where the money goes: by kind, day, user, watch (with € per alert) and chat; an optional hourly
-  "billed by OpenAI" figure needs a read-only admin key Daryl may add (filtered to this project,
-  <code>OPENAI_PROJECT_ID</code>; cap in <code>OPENAI_MONTHLY_CAP_USD=110</code>). On the OpenAI side Daryl set the
+  "billed by OpenAI" figure needs a read-only admin key Daryl may add; it splits billed organization cost by app,
+  evals/local, and other API keys, while <code>OPENAI_PROJECT_ID</code> retains a separate project-filtered total.
+  <code>OPENAI_MONTHLY_CAP_USD</code> is the owner's alert threshold, not the OpenAI hard cap. On the OpenAI side Daryl set the
   project cap to $110, spend alerts at $55 and $88, and auto-reload ($5 → $20, at most $100 a month).</p>
 <p><b>Incident: OpenAI credit ran out (5 October, 15:34–17:34).</b> Two watches failed with "the AI that scores listings
   didn't answer"; the timing looked like the MW-86 deploy, but the production logs showed OpenAI's
