@@ -217,15 +217,16 @@ export const sendIncidentEmail = internalAction({ args: { recovered: v.boolean()
       text, html: `<p>${text}</p>` });
   } });
 
-async function costPages(key: string, start: number, groupByKey: boolean, project?: string) {
+async function costPages(key: string, start: number, groupByKey: boolean, project?: string, end = Date.now(), daily = false) {
   let cursor: string | null = null;
   const seen = new Set<string>();
   let totalUsd = 0;
   const byId: Record<string, number> = {};
+  const byDayId: Record<string, Record<string, number>> = {};
   do {
     const url = new URL("https://api.openai.com/v1/organization/costs");
     url.searchParams.set("start_time", String(start / 1000));
-    url.searchParams.set("end_time", String(Math.floor(Date.now() / 1000)));
+    url.searchParams.set("end_time", String(Math.floor(end / 1000)));
     url.searchParams.set("limit", "180");
     if (groupByKey) url.searchParams.append("group_by", "api_key_id");
     if (project) url.searchParams.append("project_ids", project);
@@ -237,13 +238,63 @@ async function costPages(key: string, start: number, groupByKey: boolean, projec
     if (groupByKey) for (const [id, usd] of Object.entries((parsed as ReturnType<typeof parseKeyCostsPage>).byId))
       byId[id] = (byId[id] ?? 0) + usd;
     else totalUsd += (parsed as ReturnType<typeof parseCostsPage>).totalUsd;
+    if (daily) for (const bucket of page.data) {
+      if (!Number.isSafeInteger(bucket.start_time)) throw new Error("Invalid Costs bucket time");
+      const day = new Date(bucket.start_time * 1000).toISOString().slice(0, 10);
+      const daily = byDayId[day] ??= {};
+      for (const result of bucket.results) if (typeof result.api_key_id === "string")
+        daily[result.api_key_id] = (daily[result.api_key_id] ?? 0) + result.amount.value;
+    }
     cursor = parsed.nextPage;
     if (cursor) {
       if (seen.has(cursor)) throw new Error("OpenAI Costs repeated a page cursor");
       seen.add(cursor);
     }
   } while (cursor);
-  return { totalUsd, byId };
+  return { totalUsd, byId, byDayId };
+}
+
+type UsageTotal = { model: string; inputTokens: number; cachedInputTokens: number; outputTokens: number; requests: number };
+type UsageByDay = Record<string, UsageTotal[]>;
+
+async function usagePages(key: string, kind: "completions" | "embeddings", start: number, end: number, appKeyId: string): Promise<UsageByDay> {
+  const days: Record<string, Record<string, UsageTotal>> = {};
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const url = new URL(`https://api.openai.com/v1/organization/usage/${kind}`);
+    url.searchParams.set("start_time", String(Math.floor(start / 1000)));
+    url.searchParams.set("end_time", String(Math.floor(end / 1000)));
+    url.searchParams.set("bucket_width", "1d");
+    url.searchParams.set("limit", "31");
+    url.searchParams.append("group_by", "api_key_id");
+    url.searchParams.append("group_by", "model");
+    if (cursor) url.searchParams.set("page", cursor);
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
+    if (!response.ok) throw new Error(`OpenAI ${kind} usage request failed (${response.status})`);
+    const page = await response.json();
+    if (!Array.isArray(page?.data) || typeof page.has_more !== "boolean") throw new Error(`Invalid OpenAI ${kind} usage response`);
+    for (const bucket of page.data) {
+      if (!Number.isSafeInteger(bucket.start_time) || !Array.isArray(bucket.results)) throw new Error(`Invalid OpenAI ${kind} usage bucket`);
+      const day = new Date(bucket.start_time * 1000).toISOString().slice(0, 10);
+      for (const result of bucket.results) {
+        if (result.api_key_id !== appKeyId) continue;
+        const model = typeof result.model === "string" ? result.model : "unknown model";
+        const values = [result.input_tokens, result.input_cached_tokens ?? 0, result.output_tokens ?? 0, result.num_model_requests];
+        if (values.some((value) => !Number.isSafeInteger(value) || value < 0)) throw new Error(`Invalid OpenAI ${kind} usage count`);
+        const daily = days[day] ??= {};
+        const total = daily[model] ??= { model, inputTokens: 0, cachedInputTokens: 0, outputTokens: 0, requests: 0 };
+        total.inputTokens += values[0];
+        total.cachedInputTokens += values[1];
+        total.outputTokens += values[2];
+        total.requests += values[3];
+      }
+    }
+    cursor = page.has_more ? page.next_page : null;
+    if (page.has_more && (typeof cursor !== "string" || seen.has(cursor))) throw new Error(`Invalid OpenAI ${kind} usage cursor`);
+    if (cursor) seen.add(cursor);
+  } while (cursor);
+  return Object.fromEntries(Object.entries(days).map(([day, models]) => [day, Object.values(models).sort((a, b) => a.model.localeCompare(b.model))]));
 }
 
 async function keyNames(key: string): Promise<Record<string, string>> {
@@ -281,6 +332,75 @@ async function keyNames(key: string): Promise<Record<string, string>> {
   } while (after);
   return names;
 }
+
+// Pass only spend fields to the action; user ids and other ledger identifiers never enter its output.
+export const reconciliationLedgerPage = internalQuery({ args: { start: v.number(), end: v.number(), cursor: v.optional(v.string()) },
+  handler: async (ctx, { start, end, cursor }) => {
+    const page = await ctx.db.query("aiSpend").withIndex("by_at", (q) => q.gte("at", start).lt("at", end))
+      .paginate({ cursor: cursor ?? null, numItems: 100 });
+    return { rows: page.page.map((row) => ({ date: new Date(row.at).toISOString().slice(0, 10), kind: row.kind,
+      model: row.model ?? "unknown model",
+      inputTokens: row.inputTokens, outputTokens: row.outputTokens, costEur: row.costEur })),
+      cursor: page.continueCursor, done: page.isDone };
+  } });
+
+export const reconciliationRollup = internalQuery({ args: { monthStart: v.number() }, handler: async (ctx, { monthStart: start }) => {
+  const rows = await ctx.db.query("aiSpendMonthly").withIndex("by_month", (q) => q.eq("monthStart", start)).collect();
+  const byDay: Record<string, number> = {};
+  for (const row of rows) for (const [day, eur] of Object.entries(row.days as Record<string, number>))
+    byDay[day] = (byDay[day] ?? 0) + eur;
+  return byDay;
+} });
+
+export const reconcile = internalAction({ args: { days: v.number() }, handler: async (ctx, { days }) => {
+  if (!Number.isSafeInteger(days) || days < 1 || days > 31) throw new Error("days must be an integer from 1 to 31");
+  const key = process.env.OPENAI_ADMIN_API_KEY?.trim();
+  if (!key) throw new Error("OPENAI_ADMIN_API_KEY is not configured");
+  const names = await keyNames(key);
+  const appKeyIds = Object.keys(names).filter((id) => names[id] === "marktplaats-watcher-app");
+  if (appKeyIds.length !== 1) throw new Error("Expected exactly one marktplaats-watcher-app key name");
+  const appKeyId = appKeyIds[0];
+  const today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+  const start = today - (days - 1) * 86_400_000;
+  const end = Date.now();
+  const [completions, embeddings, costs] = await Promise.all([
+    usagePages(key, "completions", start, end, appKeyId),
+    usagePages(key, "embeddings", start, end, appKeyId),
+    costPages(key, start, true, undefined, end, true),
+  ]);
+  type LedgerTotal = { inputTokens: number; outputTokens: number; costEur: number; calls: number };
+  const emptyTotal = (): LedgerTotal => ({ inputTokens: 0, outputTokens: 0, costEur: 0, calls: 0 });
+  const ledger: Record<string, LedgerTotal & { callsByKind: Record<string, number>;
+    byKind: Record<string, LedgerTotal>; byModel: Record<string, LedgerTotal> }> = {};
+  let cursor: string | undefined;
+  do {
+    const page = await ctx.runQuery(internal.openaiSpend.reconciliationLedgerPage, { start, end, cursor });
+    for (const row of page.rows) {
+      const day = ledger[row.date] ??= { ...emptyTotal(), callsByKind: {}, byKind: {}, byModel: {} };
+      for (const total of [day, day.byKind[row.kind] ??= emptyTotal(), day.byModel[row.model] ??= emptyTotal()]) {
+        total.inputTokens += row.inputTokens;
+        total.outputTokens += row.outputTokens;
+        total.costEur += row.costEur;
+        total.calls++;
+      }
+      day.callsByKind[row.kind] = (day.callsByKind[row.kind] ?? 0) + 1;
+    }
+    cursor = page.done ? undefined : page.cursor;
+    if (page.done) break;
+  } while (cursor);
+  const rollups: Record<string, number> = {};
+  for (let month = monthStart(start); month < end; month = nextMonth(month)) {
+    const monthly = await ctx.runQuery(internal.openaiSpend.reconciliationRollup, { monthStart: month });
+    for (const [day, eur] of Object.entries(monthly)) rollups[day] = (rollups[day] ?? 0) + eur;
+  }
+  return { keyName: names[appKeyId], days: Array.from({ length: days }, (_, index) => {
+    const date = new Date(start + index * 86_400_000).toISOString().slice(0, 10);
+    return { date, billedUsd: costs.byDayId[date]?.[appKeyId] ?? 0,
+      usage: { completions: completions[date] ?? [], embeddings: embeddings[date] ?? [] },
+      ledger: { ...(ledger[date] ?? { ...emptyTotal(), callsByKind: {}, byKind: {}, byModel: {} }),
+        rollupEur: rollups[date] ?? 0 } };
+  }) };
+} });
 
 export const refreshCosts = internalAction({ args: {}, handler: async (ctx) => {
   await ctx.runAction(internal.spendRollup.backfill, {});
