@@ -104,8 +104,7 @@ done
 code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'https://marktplaats-watcher.vercel.app/api/chat' -H 'content-type: application/json' -d '{"message":"hi"}') || fail "chat smoke request failed"
 [[ $code == 401 ]] || fail "chat without login returned $code instead of 401"
 if git diff --name-only "$before" "$merge_sha" -- agent.py prompts.py evals | grep -q .; then
-    gh workflow run evals.yml --ref main
-    evals=triggered
+    evals=push
 else
     evals=unchanged
 fi
