@@ -294,12 +294,14 @@ def test_audit_miss_gate_requires_four_of_five_old_cases_and_new_cases_each_run(
     common.write(path, {"cases": [{"id": str(i), "notify_threshold": 8, "should_alert": True} for i in range(5)]
                         + [{"id": "m2451390076", "notify_threshold": 8, "should_alert": True},
                            {"id": "m2452950327", "notify_threshold": 8, "should_alert": True},
-                           {"id": "switch-mention-only", "notify_threshold": 8, "should_alert": False}]})
+                           {"id": "switch-mention-only", "notify_threshold": 8, "should_alert": False},
+                           {"id": "budget-edge-equal", "notify_threshold": 8, "should_alert": True}]})
     monkeypatch.setattr(gate, "AUDIT_MISSES", path)
     runs = [{"audit_misses": [{"id": str(i), "score": 8 if i < 4 else 7}
                              for i in range(5)] + [{"id": "m2451390076", "score": 8},
                                                    {"id": "m2452950327", "score": 9},
-                                                   {"id": "switch-mention-only", "score": 6}]} for _ in range(3)]
+                                                   {"id": "switch-mention-only", "score": 6},
+                                                   {"id": "budget-edge-equal", "score": 8}]} for _ in range(3)]
     assert gate.audit_misses_pass({"runs": runs})
     runs[2]["audit_misses"][5]["score"] = 7
     assert not gate.audit_misses_pass({"runs": runs})
@@ -310,6 +312,10 @@ def test_audit_miss_gate_requires_four_of_five_old_cases_and_new_cases_each_run(
     runs[0]["audit_misses"][7]["score"] = 8
     assert not gate.audit_misses_pass({"runs": runs})
     runs[0]["audit_misses"][7]["score"] = 6
+    for run in runs:
+        run["audit_misses"][8]["score"] = 7
+        assert not gate.audit_misses_pass({"runs": runs})
+        run["audit_misses"][8]["score"] = 8
     runs[2]["audit_misses"][3]["score"] = 7
     assert not gate.audit_misses_pass({"runs": runs})
 
@@ -574,11 +580,12 @@ def test_audit_miss_gate_counts_expected_non_alerts_as_correct(monkeypatch, tmp_
              {"id": "e", "notify_threshold": 6, "should_alert": False},
              {"id": "m2451390076", "notify_threshold": 8, "should_alert": True},
              {"id": "m2452950327", "notify_threshold": 8, "should_alert": True},
-             {"id": "switch-mention-only", "notify_threshold": 8, "should_alert": False}]
+             {"id": "switch-mention-only", "notify_threshold": 8, "should_alert": False},
+             {"id": "budget-edge-equal", "notify_threshold": 8, "should_alert": True}]
     common.write(path, {"cases": cases})
     monkeypatch.setattr(gate, "AUDIT_MISSES", path)
     good = {"a": 9, "b": 10, "c": 6, "d": 2, "e": 3, "m2451390076": 9,
-            "m2452950327": 9, "switch-mention-only": 6}
+            "m2452950327": 9, "switch-mention-only": 6, "budget-edge-equal": 8}
     runs = [{"audit_misses": [{"id": k, "score": v} for k, v in good.items()]} for _ in range(3)]
     assert gate.audit_misses_pass({"runs": runs})
     runs[1]["audit_misses"] = [{"id": k, "score": {"a": 5, "c": 9}.get(k, v)} for k, v in good.items()]

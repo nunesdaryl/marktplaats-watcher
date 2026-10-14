@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 # Bump a version when its prompt text changes.
-PROMPT_VERSION = {"chat": "chat-2026-10-10.1", "rank": "rank-2026-10-09.2", "admin": "admin-2026-10-10.1", "offer": "offer-2026-10-06.1"}
+PROMPT_VERSION = {"chat": "chat-2026-10-10.1", "rank": "rank-2026-10-14.1", "admin": "admin-2026-10-10.1", "offer": "offer-2026-10-06.1"}
 
 OFFER_PROMPT = ("Help a buyer make a fair opening offer for this Marktplaats listing. Return one opening price, "
                 "one walk-away maximum, one short plain-English reason for the prices, and short polite messages "
@@ -70,6 +70,7 @@ RANK_PROMPT = ("Score each new Marktplaats listing from 0 to 10 for how well it 
                "free item can score great. Listings have already passed hard search filters such as price and "
                "distance; an omitted field is not evidence that a listing failed a filter. For 'swap' or 'see "
                "description', price_eur null is unknown, not free. "
+               "A fixed price equal to the watch's maximum ('under €X', 'max €X', or 'tot €X') is within budget and must not lower the score for that reason. "
                "A 'bidding from' price is a starting bid; score the listing on fit. "
                "The app applies the budget rule for bids near the maximum. "
                "The user's earlier ratings for this watch, when supplied, are examples of their own preferences. "

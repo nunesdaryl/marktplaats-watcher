@@ -32,7 +32,8 @@ def audit_misses_pass(scorer):
     wanted_id = "m2451247849"   # MW-121: a wanted ad must never alert; it is scored 0 in code, so it holds every run
     model_id = "m2452950327"
     mention_id = "switch-mention-only"
-    required_ids = (bid_id, model_id, mention_id)
+    budget_edge_id = "budget-edge-equal"
+    required_ids = (bid_id, model_id, mention_id, budget_edge_id)
     runs = scorer.get("runs", [scorer])
     if len(runs) != 3 or len(cases) < 8 or any(id not in cases for id in required_ids):
         return False
@@ -116,7 +117,7 @@ def main():
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
                          "great recall at least 16/21, all price type cases, 4/5 earlier audit cases, the €130 bid, "
-                         "and both MW-138 model cases in each of 3 runs")
+                         "both MW-138 model cases, and the equal-price budget case in each of 3 runs")
 
 
 if __name__ == "__main__":
