@@ -99,6 +99,26 @@ export const signupSources = query({ args: {}, handler: async (ctx) => {
     languages: [...languages].map(([language, count]) => ({ language, count })).sort((a, b) => b.count - a.count) };
 } });
 
+export const dashboardLoad = query({ args: {}, handler: async (ctx) => {
+  if (!(await isOwner(ctx))) return null;
+  const identity = await ctx.auth.getUserIdentity();
+  const ownerUser = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", identity!.subject)).unique();
+  if (!ownerUser) return null;
+  const loadEvents = await ctx.db.query("events")
+    .withIndex("by_user_at", (q) => q.eq("userId", ownerUser._id).gte("at", Date.now() - 7 * DAY))
+    .filter((q) => q.eq(q.field("name"), "dashboard_loaded")).order("desc").take(3500);
+  const loads = loadEvents.filter((e) =>
+    e.props?.all_ms !== undefined && /^\d+$/.test(e.props.all_ms) && e.props.slowest)
+    .map((e) => ({ ms: Number(e.props!.all_ms), slowest: e.props!.slowest! }))
+    .filter((e) => Number.isSafeInteger(e.ms)).sort((a, b) => a.ms - b.ms);
+  const slowestCounts = countBy(loads, (e) => e.slowest);
+  return loads.length ? {
+    medianMs: (loads[Math.floor((loads.length - 1) / 2)].ms + loads[Math.floor(loads.length / 2)].ms) / 2,
+    maxMs: loads.at(-1)!.ms,
+    slowest: slowestCounts[0].name,
+  } : null;
+} });
+
 export const dashboard = query({
   args: { days: v.optional(v.number()), at: v.optional(v.number()) },
   handler: async (ctx, { days = 30 }) => {
@@ -106,7 +126,6 @@ export const dashboard = query({
     days = Math.min(90, Math.max(7, Math.round(days)));
     const now = Date.now();
     const since = now - days * DAY;
-
     const users = (await readRows(ctx, "users") ?? await ctx.db.query("users").take(LIMIT)).slice(0, LIMIT);
     const places = await capacityFor(ctx);
     let waitlistCount = 0;

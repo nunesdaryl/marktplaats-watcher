@@ -38,6 +38,22 @@ test("bid handoff records only alert id, price type, and suggested amount", asyn
   expect((await all(t))[0]).toMatchObject({ name: "bid_handoff", props: { alertId: "alert123", priceType: "MIN_BID", amount: "100" } });
 });
 
+test("dashboard load events are accepted only from the owner with short timing props", async () => {
+  process.env.OWNER_EMAIL = "owner@example.com";
+  process.env.OWNER_CLERK_ID = "o";
+  try {
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+    const other = t.withIdentity({ subject: "x", email: "other@example.com" });
+    await owner.mutation(api.users.store, {});
+    await other.mutation(api.users.store, {});
+    const event = ev("dashboard_loaded", { props: { first_ms: "100", all_ms: "1000", slowest: "admin.dashboard" } });
+    expect(await other.mutation(api.events.track, { events: [event] })).toBe(0);
+    expect(await owner.mutation(api.events.track, { events: [event] })).toBe(1);
+    expect((await all(t))[0].props).toEqual({ first_ms: "100", all_ms: "1000", slowest: "admin.dashboard" });
+  } finally { delete process.env.OWNER_EMAIL; delete process.env.OWNER_CLERK_ID; }
+});
+
 test("at most 20 per call and 500 a day per person; deleted with the account data", async () => {
   const t = convexTest(schema, modules);
   const bob = t.withIdentity({ subject: "b", email: "b@example.com" });

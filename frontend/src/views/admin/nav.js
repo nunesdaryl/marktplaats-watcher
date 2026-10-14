@@ -93,6 +93,7 @@ const LABELS = {
   watch_archived: "Watches archived", alert_opened: "Alerts opened", listing_opened: "Listings opened",
   feedback_opened: "Feedback opened", feedback_sent: "Feedback sent", theme_changed: "Theme switched",
   onboarding_done: "Setup finished", history_opened: "Chat history opened", alert_rated: "Alerts rated", bid_handoff: "Bid hand-offs",
+  dashboard_loaded: "Dashboard opened (timed)",
   "": "Chat", c: "A chat", w: "A watch", watches: "Watches", alerts: "Alerts", archived: "Archived", admin: "Dashboard", chat: "New chat",
 };
 export const label = (name) => LABELS[name] ?? name;

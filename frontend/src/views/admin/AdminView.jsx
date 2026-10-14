@@ -115,7 +115,7 @@ function AdminAsk({ open, users, watches }) {
   </div>;
 }
 
-export default function AdminView() {
+export default function AdminView({ navigationStartedAt }) {
   const owner = useQuery(api.admin.amOwner);
   const users = useQuery(api.admin.userOptions, owner ? {} : "skip");
   const watches = useQuery(api.admin.watchOptions, owner ? {} : "skip");
@@ -129,7 +129,7 @@ export default function AdminView() {
   if (owner === false) return null;   // App.jsx only mounts this for the owner; the server returns no data to anyone else
   return (
     <AdminOptionsContext.Provider value={{ users, watches }}>
-      <Overview open={drill.open} onSearch={() => setSearchOpen(true)} ask={<AdminAsk open={drill.open} users={users} watches={watches} />} />
+      <Overview open={drill.open} onSearch={() => setSearchOpen(true)} ask={<AdminAsk open={drill.open} users={users} watches={watches} />} navigationStartedAt={navigationStartedAt} />
       {drill.current && <DrillPanel drill={drill} />}
       {searchOpen && <AdminSearch close={() => setSearchOpen(false)} open={drill.open} />}
     </AdminOptionsContext.Provider>

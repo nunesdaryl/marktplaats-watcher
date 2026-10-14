@@ -3,10 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, test, vi } from "vitest";
 import Overview from "./Overview.jsx";
 import { useQuery } from "convex/react";
-import { useRef, useState } from "react";
+import { getFunctionName } from "convex/server";
+import { useEffect, useRef, useState } from "react";
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useAction: () => () => Promise.resolve(null) }));
-vi.mock("react", async (importOriginal) => ({ ...await importOriginal(), useState: vi.fn(), useRef: vi.fn() }));
+vi.mock("react", async (importOriginal) => ({ ...await importOriginal(), useState: vi.fn(), useRef: vi.fn(), useEffect: vi.fn() }));
 vi.stubGlobal("React", React);
 
 const oldNow = Date.parse("2026-10-01T08:15:00Z");
@@ -29,9 +30,12 @@ let queryCount;
 let foundingResponse;
 let signupSourcesResponse;
 let emptyCount;
+let refCount;
+let loadResponse;
 
 function render() {
   renderCount = 0;
+  refCount = 0;
   const open = vi.fn();
   const tree = Overview({ open, onSearch: vi.fn() });
   const html = renderToStaticMarkup(tree);
@@ -45,13 +49,14 @@ beforeEach(() => {
     const index = renderCount++;
     return [states[index] ?? initial, (value) => { states[index] = value; }];
   });
-  vi.mocked(useRef).mockImplementation(() => previous);
+  vi.mocked(useRef).mockImplementation(() => refCount++ === 0 ? previous : { current: null });
   responses = [dashboard(oldNow, 3), ratings, { rows: [] }];
   foundingResponse = undefined;
   signupSourcesResponse = undefined;
   emptyCount = 0;
   queryCount = 0;
-  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0
+  loadResponse = null;
+  vi.mocked(useQuery).mockImplementation((ref, args) => getFunctionName(ref) === "admin:dashboardLoad" ? loadResponse : Object.keys(args).length === 0
     ? (emptyCount++ === 0 ? foundingResponse : signupSourcesResponse) : responses[(queryCount++) % 3]);
 });
 
@@ -87,6 +92,12 @@ test("owner overview shows sign-up source and language groups", () => {
   expect(html).toContain("nl: <strong>2</strong>");
 });
 
+test("owner overview shows the seven day dashboard load summary or empty state", () => {
+  expect(render().html).toContain("Dashboard load (7 days): Not measured yet");
+  loadResponse = { medianMs: 4200, maxMs: 18000, slowest: "admin.dashboard" };
+  expect(render().html).toContain("Dashboard load (7 days): median 4.2 s, slowest 18.0 s; slowest part: admin.dashboard");
+});
+
 test("the attention row names every zero state without adding a query", () => {
   const { html } = render();
   const row = html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
@@ -94,7 +105,7 @@ test("the attention row names every zero state without adding a query", () => {
   expect(row).toContain("0</span>");
   expect(row.match(/Nothing to review/g)).toHaveLength(2);
   expect(row).toContain("No audit run yet");
-  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(6);
+  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(7);
   responses[0].deliveryAudit.lastRunAt = oldNow - 1000;
   const audited = render().html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
   expect(audited.match(/Nothing to review/g)).toHaveLength(3);

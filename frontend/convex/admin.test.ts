@@ -50,18 +50,41 @@ test("only the owner gets dashboard data", async () => {
   expect(await t.query(api.admin.amOwner, {})).toBe(false);
   expect(await someone.query(api.admin.amOwner, {})).toBe(false);
   expect(await someone.query(api.admin.dashboard, {})).toBeNull();
+  expect(await someone.query(api.admin.dashboardLoad, {})).toBeNull();
   expect(await someone.query(api.admin.feedback, {})).toBeNull();
   expect(await owner.query(api.admin.amOwner, {})).toBe(true);
   // The owner's e-mail on another account (or the owner's account with another e-mail) is not the owner
   const lookalike = t.withIdentity({ subject: "x", email: "owner@example.com" });
   expect(await lookalike.query(api.admin.amOwner, {})).toBe(false);
   expect(await lookalike.query(api.admin.dashboard, {})).toBeNull();
+  expect(await lookalike.query(api.admin.dashboardLoad, {})).toBeNull();
   expect(await t.withIdentity({ subject: "o", email: "someone@example.com" }).query(api.admin.amOwner, {})).toBe(false);
   delete process.env.OWNER_CLERK_ID;
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);   // not configured: nobody is the owner
   process.env.OWNER_CLERK_ID = "o";
   delete process.env.OWNER_EMAIL;
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
+});
+
+test("dashboard load summary has no data until measured and uses seven day median, max and slowest part", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await owner.mutation(api.users.store, {});
+  expect(await owner.query(api.admin.dashboardLoad, {})).toBeNull();
+  const event = (all_ms: string, slowest: string, at = Date.now()) => ({
+    name: "dashboard_loaded", device: "desktop" as const, at,
+    props: { first_ms: "100", all_ms, slowest },
+  });
+  await owner.mutation(api.events.track, { events: [event("1000", "admin.feedback"), event("3000", "admin.dashboard"), event("8000", "admin.dashboard")] });
+  await t.run(async (ctx) => {
+    const user = (await ctx.db.query("users").collect())[0];
+    await ctx.db.insert("events", { userId: user._id, ...event("90000", "admin.feedback", Date.now() - 8 * 86_400_000) });
+    await ctx.db.insert("events", { userId: user._id, ...event("bad", "admin.feedback") });
+  });
+  expect(await owner.query(api.admin.dashboardLoad, {})).toEqual({ medianMs: 3000, maxMs: 8000, slowest: "admin.dashboard" });
+  await owner.mutation(api.events.track, { events: [event("5000", "admin.dashboard")] });
+  expect(await owner.query(api.admin.dashboardLoad, {})).toEqual({ medianMs: 4000, maxMs: 8000, slowest: "admin.dashboard" });
+  expect(await owner.query(api.admin.dashboard, {})).not.toHaveProperty("dashboardLoad7d");
 });
 
 test("owner dashboard sums removed listings by day and run", async () => {

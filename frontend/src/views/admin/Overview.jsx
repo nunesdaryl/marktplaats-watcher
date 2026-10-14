@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../../components/Icon.jsx";
 import { OpenAiSpendCard } from "./OpenAiSpend.jsx";
+import { useDashboardLoadTiming } from "./useDashboardLoadTiming.js";
 import { DAY, dayLabel, dayRange, label, when } from "./nav.js";
 
 const shortDay = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -275,7 +276,7 @@ function ScoreAccuracy({ s, go }) {
 }
 
 /** The overview. `open(view)` starts a drilldown. */
-export default function Overview({ open, onSearch, ask }) {
+export default function Overview({ open, onSearch, ask, navigationStartedAt }) {
   const [days, setDays] = useState(30);
   const [at, setAt] = useState();
   const dashboardResult = useQuery(api.admin.dashboard, { days, at });
@@ -283,7 +284,10 @@ export default function Overview({ open, onSearch, ask }) {
   const feedbackResult = useQuery(api.admin.feedback, { limit: 5, at });
   const founding = useQuery(api.founding.ownerSummary, {});
   const signupSources = useQuery(api.admin.signupSources, {});
+  const dashboardLoad = useQuery(api.admin.dashboardLoad, {});
   const previous = useRef(null);
+  useDashboardLoadTiming({ "admin.dashboard": dashboardResult, "admin.ratingStats": ratingResult,
+    "admin.feedback": feedbackResult, "founding.ownerSummary": founding, "admin.signupSources": signupSources }, navigationStartedAt);
   const refreshing = at !== undefined && (dashboardResult === undefined || ratingResult === undefined || feedbackResult === undefined);
   if (!refreshing) {
     previous.current = {
@@ -322,6 +326,9 @@ export default function Overview({ open, onSearch, ask }) {
           <span className="hint" aria-live="polite">{refreshing ? "Refreshing…" : `Updated ${updatedTime}`}</span>
         </div>
       </div>
+      <p className="hint">Dashboard load (7 days): {dashboardLoad
+        ? `median ${(dashboardLoad.medianMs / 1000).toFixed(1)} s, slowest ${(dashboardLoad.maxMs / 1000).toFixed(1)} s; slowest part: ${dashboardLoad.slowest}`
+        : "Not measured yet"}</p>
       <section className="attention" aria-labelledby="attention-title">
         <h2 id="attention-title">Needs your attention</h2>
         <div className="attention-stats">
