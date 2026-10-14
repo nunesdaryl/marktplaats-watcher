@@ -187,7 +187,8 @@ def failure_mapping(scorer, audit, overrides, chat_cases):
             counts[category] += 1
             examples.setdefault(category, f"chat {row['id']}: {row.get('failure') or 'wrong result'}")
     for case in audit:
-        if case.get("should_alert") and case.get("check_score", 0) < case["notify_threshold"]:
+        if (case.get("should_alert") and case.get("check_score") is not None
+                and case["check_score"] < case["notify_threshold"]):
             counts["missing context"] += 1
             examples.setdefault("missing context", case["listing"]["title"])
     return counts, examples

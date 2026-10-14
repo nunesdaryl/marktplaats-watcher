@@ -223,6 +223,16 @@ def test_report_names_configured_model_and_separate_judge(monkeypatch, eval_file
     assert "Prices: gpt-5.5 $5.00 / $30.00" in text
 
 
+def test_failure_mapping_skips_synthetic_audit_case_without_check_score():
+    audit = [{"should_alert": True, "check_score": None, "notify_threshold": 8,
+              "listing": {"title": "IKEA Markus bureaustoel"}}]
+
+    counts, examples = report.failure_mapping({}, audit, {}, [])
+
+    assert counts["missing context"] == 0
+    assert "missing context" not in examples
+
+
 def test_human_overrides_change_metrics_and_failure_categories(eval_files):
     listings = common.read(eval_files["LISTINGS"])["listings"]
     spotcheck = eval_files["SPOTCHECK"].read_text()
