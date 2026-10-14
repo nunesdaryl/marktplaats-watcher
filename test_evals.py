@@ -21,8 +21,14 @@ def test_model_factory_uses_default_and_second_provider(monkeypatch):
         patch.setattr(builtins, "__import__", import_guard)
         patch.delenv("MODEL_PROVIDER", raising=False)
         model_config.chat_model("gpt-5.4-mini", timeout=30, max_retries=2, max_tokens=1500, stream_usage=True)
-    assert calls[-1] == ("openai", {"model": "gpt-5.4-mini", "timeout": 30,
-                                   "max_retries": 2, "max_tokens": 1500, "stream_usage": True})
+    from openai_call_log import OpenAICallLogger
+    name, options = calls[-1]
+    assert name == "openai"
+    callbacks = options.pop("callbacks")
+    assert len(callbacks) == 1 and isinstance(callbacks[0], OpenAICallLogger)
+    assert callbacks[0].model == "gpt-5.4-mini"
+    assert options == {"model": "gpt-5.4-mini", "timeout": 30,
+                       "max_retries": 2, "max_tokens": 1500, "stream_usage": True}
 
     fake_anthropic = ModuleType("langchain_anthropic")
     fake_anthropic.ChatAnthropic = lambda **kwargs: calls.append(("anthropic", kwargs)) or object()

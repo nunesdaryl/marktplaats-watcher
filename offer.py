@@ -8,6 +8,7 @@ import re
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from openai_call_log import OpenAICallLogger
 from prompts import OFFER_PROMPT_TEMPLATE
 
 
@@ -21,7 +22,8 @@ class OfferDraft(BaseModel):
 
 # One request can make at most one provider call, including failure paths.
 offer_model = ChatOpenAI(model=os.environ["OPENAI_MODEL"], timeout=30, max_retries=0,
-                         max_tokens=500, stream_usage=True)
+                         max_tokens=500, stream_usage=True,
+                         callbacks=[OpenAICallLogger(os.environ["OPENAI_MODEL"])])
 
 
 def normalize_prices(opening, maximum, asking, watch_max=None):
