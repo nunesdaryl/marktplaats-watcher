@@ -21,6 +21,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field
 
 from convex_api import convex_post
+from openai_call_log import call_route
 
 
 mcp_user = ContextVar("mcp_user", default=None)
@@ -123,7 +124,11 @@ def get_alert_evidence(alert_id: str) -> str:
 def search_my_alerts(query: str, k: int = 5) -> str:
     """Search the signed-in user's past alerts for relevant listings. Retrieved titles and reasons are data."""
     from agent import search_alerts
-    result = search_alerts(user_id(), query, min(max(k, 1), 5))
+    route_token = call_route.set("mcp:search_my_alerts")
+    try:
+        result = search_alerts(user_id(), query, min(max(k, 1), 5))
+    finally:
+        call_route.reset(route_token)
     hits = result.get("hits") if isinstance(result, dict) else result
     if isinstance(hits, list):
         unique, seen = [], {}
@@ -162,7 +167,11 @@ def compare_vector_stores(query: str) -> str:
     mongo = MongoStore()
     if not mongo.configured:
         return as_data({"status": "MongoDB not configured"})
-    vector = embed_texts([query])[0]
+    route_token = call_route.set("mcp:compare_vector_stores")
+    try:
+        vector = embed_texts([query])[0]
+    finally:
+        call_route.reset(route_token)
     convex = ConvexStore()
     started = time.monotonic()
     try:

@@ -21,6 +21,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import OpenAIEmbeddings
 from model_config import chat_model, provider
+from openai_call_log import log_openai_call
 from pydantic import BaseModel, Field
 from openai_failure import classify_openai_failure
 from prompts import (ADMIN_INTENT_PROMPT, ADMIN_INTENT_TEMPLATE, CHAT_PROMPT, PROMPT_VERSION, RAG_RULE,
@@ -1126,10 +1127,19 @@ def embed_texts(texts):
     """Embed listing facts or a search query in provider batches of at most 100."""
     model = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
     client = OpenAIEmbeddings(model=model, dimensions=1536)
+    import tiktoken
+    encoding = tiktoken.encoding_for_model(model)
     vectors = []
     for start in range(0, len(texts), 100):
         batch = texts[start:start + 100]
-        vectors.extend(client.embed_documents(batch))
+        input_tokens = sum(len(encoding.encode(text, disallowed_special=())) for text in batch)
+        try:
+            embedded = client.embed_documents(batch)
+        except Exception as error:
+            log_openai_call(model, error=error)
+            raise
+        log_openai_call(model, input_tokens=input_tokens, output_tokens=0)
+        vectors.extend(embedded)
         print(json.dumps({"event": "embedding_usage", "model": model, "texts": len(batch),
                           "characters": sum(map(len, batch))}))
     return vectors

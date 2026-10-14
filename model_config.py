@@ -2,6 +2,7 @@
 import os
 
 from langchain_openai import ChatOpenAI
+from openai_call_log import OpenAICallLogger
 
 
 def provider():
@@ -11,6 +12,7 @@ def provider():
 def chat_model(name, **options):
     selected = provider()
     if selected == "openai":
+        options["callbacks"] = [*options.get("callbacks", []), OpenAICallLogger(name)]
         return ChatOpenAI(model=name, **options)
     if selected == "anthropic":
         options.pop("stream_usage", None)  # OpenAI-only usage streaming option

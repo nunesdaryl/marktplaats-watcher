@@ -45,6 +45,8 @@ Production run: `npx convex run --prod openaiSpend:reconcile '{"days":14}'` on 1
 
 **Recommendation:** the meter is priced correctly, and it under-counts because about 59% of the app key's completion requests since 5 Oct never reach it. The per-person €1 budget is therefore not wrong for the calls it sees, but it does not see most of the spend. Next, attribute those ~775 requests: log one line per OpenAI call in the Python service with its route (check, chat, audit, admin ask, offer, RAG) and token counts, compare a day of logs with OpenAI usage, and only then decide what to meter (record audit and RAG usage under an owner/internal kind; rotate the app key if any caller is outside the deployed app). File that as one follow-up issue. Do not change budgets or prices from this investigation.
 
+**Next measurement:** After one full UTC day in production, export the `openai_call` JSON lines from Vercel logs and count calls and tokens by `route` and `env`. Compare the production totals with that day's OpenAI completion and embedding usage from `openaiSpend:reconcile`; the remaining difference identifies calls outside the logged production service or calls that could not be observed here.
+
 ## OpenAI call-path inventory
 
 The Python service uses `OPENAI_API_KEY` for `ChatOpenAI` through `model_config.py:14` and `agent.py:380-384`, the separate offer model at `offer.py:23`, and `OpenAIEmbeddings` at `agent.py:1128`. These paths use the app key **when the deployed service's `OPENAI_API_KEY` is that key**. The Convex admin key only reads OpenAI organization APIs; it does not make model calls.

@@ -26,6 +26,7 @@ from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
 from openai_failure import classify_openai_failure  # noqa: E402
 from offer import draft_offer  # noqa: E402
+from openai_call_log import call_request_id, call_route  # noqa: E402
 
 
 app = FastAPI()
@@ -37,6 +38,12 @@ async def identify_request(request: Request, call_next):
     incoming = request.headers.get("X-Request-Id", "")
     ident = incoming if re.fullmatch(r"[A-Za-z0-9._-]{1,100}", incoming) else uuid.uuid4().hex
     token = request_id.set(ident)
+    call_id_token = call_request_id.set(ident)
+    path = request.url.path
+    call_route_token = call_route.set(path if path in {
+        "/api/internal/check", "/api/internal/audit", "/api/internal/embed",
+        "/api/chat", "/api/chat/stream", "/api/admin/ask", "/api/offer/help",
+    } else "unknown")
     mcp_token = None
     try:
         if request.url.path.startswith("/api/mcp"):
@@ -76,6 +83,8 @@ async def identify_request(request: Request, call_next):
     finally:
         if mcp_token is not None:
             mcp_user.reset(mcp_token)
+        call_route.reset(call_route_token)
+        call_request_id.reset(call_id_token)
         request_id.reset(token)
 
 
@@ -441,7 +450,22 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
         log("chat_turn", requestId=ident, mode=request.mode, tool_calls=stats["statuses"], ms=round((time.time() - started) * 1000),
             **{k: v for k, v in stats.items() if k != "statuses"})
 
-    return StreamingResponse(events(), media_type="application/x-ndjson",
+    def routed_events():
+        # Starlette consumes the synchronous iterator after the middleware returns.
+        while True:
+            route_token = call_route.set("/api/chat/stream")
+            id_token = call_request_id.set(ident)
+            try:
+                item = next(stream)
+            except StopIteration:
+                return
+            finally:
+                call_request_id.reset(id_token)
+                call_route.reset(route_token)
+            yield item
+
+    stream = events()
+    return StreamingResponse(routed_events(), media_type="application/x-ndjson",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
