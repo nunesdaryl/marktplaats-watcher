@@ -106,6 +106,20 @@ export const dashboard = query({
     days = Math.min(90, Math.max(7, Math.round(days)));
     const now = Date.now();
     const since = now - days * DAY;
+    const identity = await ctx.auth.getUserIdentity();
+    const ownerUser = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", identity!.subject)).unique();
+    const loadEvents = ownerUser ? await ctx.db.query("events")
+      .withIndex("by_user_at", (q) => q.eq("userId", ownerUser._id).gte("at", now - 7 * DAY)).order("desc").take(3500) : [];
+    const loads = loadEvents.filter((e) => e.name === "dashboard_loaded" &&
+      e.props?.all_ms !== undefined && /^\d+$/.test(e.props.all_ms) && e.props.slowest)
+      .map((e) => ({ ms: Number(e.props!.all_ms), slowest: e.props!.slowest! }))
+      .filter((e) => Number.isSafeInteger(e.ms)).sort((a, b) => a.ms - b.ms);
+    const slowestCounts = countBy(loads, (e) => e.slowest);
+    const dashboardLoad7d = loads.length ? {
+      medianMs: (loads[Math.floor((loads.length - 1) / 2)].ms + loads[Math.floor(loads.length / 2)].ms) / 2,
+      maxMs: loads.at(-1)!.ms,
+      slowest: slowestCounts[0].name,
+    } : null;
 
     const users = (await readRows(ctx, "users") ?? await ctx.db.query("users").take(LIMIT)).slice(0, LIMIT);
     const places = await capacityFor(ctx);
@@ -208,7 +222,7 @@ export const dashboard = query({
       if (row.unsubscribedAt) nurture[row.step].unsubscribed++;
     }
     return {
-      now, days,
+      now, days, dashboardLoad7d,
       nurture,
       totals: {
         users: users.length,

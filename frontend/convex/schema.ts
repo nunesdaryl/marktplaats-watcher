@@ -47,6 +47,9 @@ export const eventProps = v.object({
   alertId: v.optional(v.string()),
   priceType: v.optional(v.string()),
   amount: v.optional(v.string()),
+  first_ms: v.optional(v.string()),
+  all_ms: v.optional(v.string()),
+  slowest: v.optional(v.string()),
 });
 
 export const catchupItem = v.object({

@@ -95,6 +95,12 @@ function Workspace() {
   const chats = useQuery(api.chats.list) ?? [];
   const archivedWatches = useQuery(api.watches.archived) ?? [];
   const route = useRoute();
+  const dashboardOpen = useRef({ seenRoute: false, active: false, startedAt: 0 });
+  if (route.section === "admin") {
+    if (!dashboardOpen.current.active) dashboardOpen.current.startedAt = dashboardOpen.current.seenRoute ? performance.now() : 0;
+    dashboardOpen.current.active = true;
+  } else dashboardOpen.current.active = false;
+  dashboardOpen.current.seenRoute = true;
   const desktop = useMediaQuery("(min-width: 900px)");
   const { theme } = useTheme();
   const ownerCheck = useQuery(api.admin.amOwner);   // undefined while loading
@@ -157,7 +163,7 @@ function Workspace() {
   if (route.section === "w") content = <WatchView watch={watch} actions={actions} onEdit={(w) => setSheet({ type: "watch", mode: "edit", initial: w, watchId: w._id })} />;
   else if (route.section === "alerts") content = <AlertsView actions={actions} watches={watchesOrLoading} onNewWatch={() => newWatch()} offerId={route.offerId} />;
   else if (route.section === "archived") content = <ArchivedView actions={actions} />;
-  else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView /></Suspense> : null;
+  else if (route.section === "admin") content = isOwner ? <Suspense fallback={null}><AdminView navigationStartedAt={dashboardOpen.current.startedAt} /></Suspense> : null;
   else if (route.section === "watches") content = <WatchesView watches={watchesOrLoading} actions={actions} onNew={() => newWatch()} />;
   else if (route.section === "whats-new") content = <WhatsNew />;
   else content = <ChatView chatId={route.section === "c" ? route.id : undefined} watches={watches} onWatch={newWatch} onAdjust={newWatch} />;

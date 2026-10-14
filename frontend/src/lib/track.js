@@ -12,7 +12,7 @@ const short = (v) => (v === undefined || v === null ? undefined : String(v).slic
 
 /** track("chat_sent", { mode: "watch" }). Props are short strings; never send message text. */
 export function track(name, props = {}) {
-  const clean = Object.fromEntries(["section", "mode", "kind", "value", "alertId", "priceType", "amount"]
+  const clean = Object.fromEntries(["section", "mode", "kind", "value", "alertId", "priceType", "amount", "first_ms", "all_ms", "slowest"]
     .map((k) => [k, short(props[k])]).filter(([, v]) => v !== undefined));
   queue.push({ name, props: Object.keys(clean).length ? clean : undefined, device: device(), at: Date.now() });
   if (queue.length > 100) queue.splice(0, queue.length - 100);   // signed out or offline: keep only the latest

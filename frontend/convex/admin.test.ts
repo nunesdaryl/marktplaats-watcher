@@ -64,6 +64,26 @@ test("only the owner gets dashboard data", async () => {
   expect(await owner.query(api.admin.amOwner, {})).toBe(false);
 });
 
+test("dashboard load summary has no data until measured and uses seven day median, max and slowest part", async () => {
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });
+  await owner.mutation(api.users.store, {});
+  expect((await owner.query(api.admin.dashboard, {}))?.dashboardLoad7d).toBeNull();
+  const event = (all_ms: string, slowest: string, at = Date.now()) => ({
+    name: "dashboard_loaded", device: "desktop" as const, at,
+    props: { first_ms: "100", all_ms, slowest },
+  });
+  await owner.mutation(api.events.track, { events: [event("1000", "admin.feedback"), event("3000", "admin.dashboard"), event("8000", "admin.dashboard")] });
+  await t.run(async (ctx) => {
+    const user = (await ctx.db.query("users").collect())[0];
+    await ctx.db.insert("events", { userId: user._id, ...event("90000", "admin.feedback", Date.now() - 8 * 86_400_000) });
+    await ctx.db.insert("events", { userId: user._id, ...event("bad", "admin.feedback") });
+  });
+  expect((await owner.query(api.admin.dashboard, {}))?.dashboardLoad7d).toEqual({ medianMs: 3000, maxMs: 8000, slowest: "admin.dashboard" });
+  await owner.mutation(api.events.track, { events: [event("5000", "admin.dashboard")] });
+  expect((await owner.query(api.admin.dashboard, {}))?.dashboardLoad7d).toEqual({ medianMs: 4000, maxMs: 8000, slowest: "admin.dashboard" });
+});
+
 test("owner dashboard sums removed listings by day and run", async () => {
   const t = convexTest(schema, modules);
   const owner = t.withIdentity({ subject: "o", email: "owner@example.com" });

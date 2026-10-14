@@ -5,6 +5,7 @@ import { internal } from "./_generated/api";
 import { internalMutation, mutation } from "./_generated/server";
 import { eventProps } from "./schema";
 import { currentUser } from "./users";
+import { ownerMatches } from "./admin";
 import { insertTracked, deleteTracked } from "./totals";
 
 const DAY = 86_400_000;
@@ -16,7 +17,7 @@ const PER_DAY = 500;
 export const EVENT_NAMES = [
   "page_view", "chat_sent", "chip_clicked", "watch_saved", "watch_paused", "watch_resumed", "watch_deleted",
   "watch_archived", "alert_opened", "listing_opened", "feedback_opened", "feedback_sent", "theme_changed", "onboarding_done",
-  "history_opened", "alert_rated", "bid_handoff",
+  "history_opened", "alert_rated", "bid_handoff", "dashboard_loaded",
 ] as const;
 const ALLOWED = new Set<string>(EVENT_NAMES);
 
@@ -32,6 +33,7 @@ export const track = mutation({
   handler: async (ctx, { events }) => {
     const user = await currentUser(ctx);
     if (!user) return 0;                                  // signed out: nothing to link it to
+    const owner = ownerMatches(await ctx.auth.getUserIdentity());
     const now = Date.now();
     const today = await ctx.db.query("events")
       .withIndex("by_user_at", (q) => q.eq("userId", user._id).gte("at", now - DAY)).take(PER_DAY);
@@ -40,6 +42,7 @@ export const track = mutation({
     for (const e of events) {
       if (room <= 0) break;
       if (!ALLOWED.has(e.name)) continue;
+      if (e.name === "dashboard_loaded" && !owner) continue;
       const props = e.props && Object.fromEntries(Object.entries(e.props)
         .filter(([, value]) => typeof value === "string").map(([k, value]) => [k, (value as string).slice(0, 40)]));
       // Clock skew or an old queue: keep events inside the last hour and never in the future

@@ -3,10 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, test, vi } from "vitest";
 import Overview from "./Overview.jsx";
 import { useQuery } from "convex/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useAction: () => () => Promise.resolve(null) }));
-vi.mock("react", async (importOriginal) => ({ ...await importOriginal(), useState: vi.fn(), useRef: vi.fn() }));
+vi.mock("react", async (importOriginal) => ({ ...await importOriginal(), useState: vi.fn(), useRef: vi.fn(), useEffect: vi.fn() }));
 vi.stubGlobal("React", React);
 
 const oldNow = Date.parse("2026-10-01T08:15:00Z");
@@ -29,9 +29,11 @@ let queryCount;
 let foundingResponse;
 let signupSourcesResponse;
 let emptyCount;
+let refCount;
 
 function render() {
   renderCount = 0;
+  refCount = 0;
   const open = vi.fn();
   const tree = Overview({ open, onSearch: vi.fn() });
   const html = renderToStaticMarkup(tree);
@@ -45,7 +47,7 @@ beforeEach(() => {
     const index = renderCount++;
     return [states[index] ?? initial, (value) => { states[index] = value; }];
   });
-  vi.mocked(useRef).mockImplementation(() => previous);
+  vi.mocked(useRef).mockImplementation(() => refCount++ === 0 ? previous : { current: null });
   responses = [dashboard(oldNow, 3), ratings, { rows: [] }];
   foundingResponse = undefined;
   signupSourcesResponse = undefined;
@@ -85,6 +87,12 @@ test("owner overview shows sign-up source and language groups", () => {
   const { html } = render();
   expect(html).toContain("linkedin / post / launch");
   expect(html).toContain("nl: <strong>2</strong>");
+});
+
+test("owner overview shows the seven day dashboard load summary or empty state", () => {
+  expect(render().html).toContain("Dashboard load (7 days): Not measured yet");
+  responses[0].dashboardLoad7d = { medianMs: 4200, maxMs: 18000, slowest: "admin.dashboard" };
+  expect(render().html).toContain("Dashboard load (7 days): median 4.2 s, slowest 18.0 s; slowest part: admin.dashboard");
 });
 
 test("the attention row names every zero state without adding a query", () => {
