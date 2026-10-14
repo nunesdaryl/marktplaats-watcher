@@ -5,6 +5,10 @@ from evals.report import scorer_metrics, spotcheck_overrides, user_precision
 from evals.chat_cases import CASES
 
 
+# MW-141: a listing already scored this low may stay rejected after a rating.
+PREFERENCE_REJECT_FLOOR = 2
+
+
 def corrected_great_precisions(scorer, listings, spotcheck):
     overrides, _, _ = spotcheck_overrides(listings, spotcheck)
     runs = scorer.get("runs", [scorer])
@@ -92,7 +96,9 @@ def preference_cases_pass(scorer):
     expected = {case["id"] for case in read(PREFERENCE_CASES)}
     scored = {row["id"]: row for row in scorer.get("preference_scored", [])}
     return len(expected) >= 4 and scored.keys() == expected and all(
-        row["without"] is not None and row["with"] is not None and row["with"] < row["without"]
+        row["without"] is not None and row["with"] is not None and
+        (row["with"] < row["without"] or
+         (row["without"] <= PREFERENCE_REJECT_FLOOR and row["with"] <= row["without"]))
         for row in scored.values())
 
 

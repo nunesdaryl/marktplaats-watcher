@@ -611,6 +611,19 @@ def test_preference_gate_requires_each_example_to_lower_the_same_listing(eval_fi
     assert not gate.preference_cases_pass(scorer)
 
 
+@pytest.mark.parametrize(("without", "with_rating", "expected"), [
+    (2, 2, True),
+    (2, 3, False),
+    (6, 6, False),
+    (9, 2, True),
+])
+def test_preference_gate_rejected_floor(eval_files, without, with_rating, expected):
+    scorer = common.read(eval_files["SCORER_RESULTS"])
+    scorer["preference_scored"][0].update({"without": without, "with": with_rating})
+
+    assert gate.preference_cases_pass(scorer) is expected
+
+
 def test_unsafe_trajectory_fails_even_with_correct_outcome(monkeypatch):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     monkeypatch.setattr(run_chat.agent, "chat", lambda *args: {
