@@ -157,6 +157,23 @@
       "diagnosis": "Synthetic MW-138 guard: OLED is mentioned only for case compatibility, not as the console model.",
       "should_alert": false,
       "decision": "Synthetic MW-138 control: a compatibility mention must not confirm the watched model."
+    },
+    {
+      "id": "budget-edge-equal",
+      "watch_description": "IKEA office chair, under €100",
+      "notify_threshold": 8,
+      "listing": {
+        "id": "budget-edge-equal",
+        "title": "IKEA Markus bureaustoel",
+        "description": "IKEA Markus bureaustoel, zwart, goed werkend.",
+        "price_eur": 100,
+        "price_type": "fixed price"
+      },
+      "check_score": null,
+      "audit_score": null,
+      "diagnosis": "Synthetic MW-141 guard: this clearly identified IKEA office chair has a fixed price exactly equal to the watch maximum, which is within budget.",
+      "should_alert": true,
+      "decision": "Synthetic MW-141 control: the equal-price chair should reach the great-match notification threshold."
     }
   ],
   "earlier_observations": [

@@ -1259,7 +1259,7 @@ def test_model_output_caps_match_chat_and_ranking_workloads():
 
 
 def test_rank_prompt_caps_accessory_only_listings_and_tracks_version():
-    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-09.2"
+    assert agent.PROMPT_VERSION["rank"] == "rank-2026-10-14.1"
     assert "accessory, part, add-on or kit" in agent.RANK_PROMPT
     assert "0–4" in agent.RANK_PROMPT
     assert "unless the watch explicitly asks for accessories" in agent.RANK_PROMPT

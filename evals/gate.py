@@ -5,6 +5,10 @@ from evals.report import scorer_metrics, spotcheck_overrides, user_precision
 from evals.chat_cases import CASES
 
 
+# MW-141: a listing already scored this low may stay rejected after a rating.
+PREFERENCE_REJECT_FLOOR = 2
+
+
 def corrected_great_precisions(scorer, listings, spotcheck):
     overrides, _, _ = spotcheck_overrides(listings, spotcheck)
     runs = scorer.get("runs", [scorer])
@@ -32,7 +36,8 @@ def audit_misses_pass(scorer):
     wanted_id = "m2451247849"   # MW-121: a wanted ad must never alert; it is scored 0 in code, so it holds every run
     model_id = "m2452950327"
     mention_id = "switch-mention-only"
-    required_ids = (bid_id, model_id, mention_id)
+    budget_edge_id = "budget-edge-equal"
+    required_ids = (bid_id, model_id, mention_id, budget_edge_id)
     runs = scorer.get("runs", [scorer])
     if len(runs) != 3 or len(cases) < 8 or any(id not in cases for id in required_ids):
         return False
@@ -91,7 +96,9 @@ def preference_cases_pass(scorer):
     expected = {case["id"] for case in read(PREFERENCE_CASES)}
     scored = {row["id"]: row for row in scorer.get("preference_scored", [])}
     return len(expected) >= 4 and scored.keys() == expected and all(
-        row["without"] is not None and row["with"] is not None and row["with"] < row["without"]
+        row["without"] is not None and row["with"] is not None and
+        (row["with"] < row["without"] or
+         (row["without"] <= PREFERENCE_REJECT_FLOOR and row["with"] <= row["without"]))
         for row in scored.values())
 
 
@@ -116,7 +123,7 @@ def main():
     if not passed:
         raise SystemExit("Evaluation gate failed: require chat at least 19/20, great precision at least 90%, "
                          "great recall at least 16/21, all price type cases, 4/5 earlier audit cases, the €130 bid, "
-                         "and both MW-138 model cases in each of 3 runs")
+                         "both MW-138 model cases, and the equal-price budget case in each of 3 runs")
 
 
 if __name__ == "__main__":
