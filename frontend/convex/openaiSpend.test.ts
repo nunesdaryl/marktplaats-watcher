@@ -171,3 +171,66 @@ test("80% alert is recorded once for the month", async () => {
   await t.mutation(internal.openaiSpend.maybeAlert, { monthStart, spentUsd: 100 });
   expect(await t.run((ctx) => ctx.db.query("openaiCapAlerts").collect())).toHaveLength(1);
 });
+
+test("reconcile joins UTC usage and billed cost to ledger rows, including empty days, without identifiers", async () => {
+  const t = convexTest(schema, modules);
+  vi.setSystemTime(new Date("2026-10-14T12:00:00Z"));
+  process.env.OPENAI_ADMIN_API_KEY = "secret-admin-value";
+  await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", { clerkId: "alice", email: "alice@example.com", createdAt: Date.now() });
+    await ctx.db.insert("aiSpend", { userId, windowStart: Date.parse("2026-10-05"), kind: "chat", model: "gpt-5.4-mini",
+      inputTokens: 30, outputTokens: 10, costEur: 0.03, at: Date.parse("2026-10-13T23:30:00Z"), callId: "one", rolledUp: true });
+    await ctx.db.insert("aiSpend", { userId, windowStart: Date.parse("2026-10-05"), kind: "embedding", model: "text-embedding-3-small",
+      inputTokens: 20, outputTokens: 0, costEur: 0.01, at: Date.parse("2026-10-14T00:30:00Z"), callId: "two", rolledUp: true });
+    await ctx.db.insert("aiSpendMonthly", { userId, monthStart: Date.parse("2026-10-01"), totalEur: 0.04,
+      kinds: { chat: 0.03, embedding: 0.01 }, days: { "2026-10-13": 0.03, "2026-10-14": 0.01 },
+      dailyKinds: { "2026-10-13": { chat: 0.03 }, "2026-10-14": { embedding: 0.01 } } });
+  });
+  const fetcher = vi.fn(async (url: URL) => {
+    const path = url.pathname;
+    if (path.endsWith("/projects")) return { ok: true, json: async () => ({ data: [{ id: "proj" }], has_more: false }) };
+    if (path.endsWith("/api_keys")) return { ok: true, json: async () => ({ data: [
+      { id: "key_app", name: "marktplaats-watcher-app", value: "secret-app-value" },
+      { id: "key_other", name: "other" },
+    ], has_more: false }) };
+    if (path.endsWith("/usage/completions")) return { ok: true, json: async () => ({ data: [
+      { start_time: Date.parse("2026-10-13") / 1000, results: [
+        { api_key_id: "key_app", model: "gpt-5.4-mini", input_tokens: 100, input_cached_tokens: 25, output_tokens: 40, num_model_requests: 2 },
+        { api_key_id: "key_other", model: "gpt-5.4-mini", input_tokens: 999, input_cached_tokens: 0, output_tokens: 999, num_model_requests: 9 },
+      ] },
+    ], has_more: false }) };
+    if (path.endsWith("/usage/embeddings")) return { ok: true, json: async () => ({ data: [
+      { start_time: Date.parse("2026-10-14") / 1000, results: [
+        { api_key_id: "key_app", model: "text-embedding-3-small", input_tokens: 50, num_model_requests: 1 },
+      ] },
+    ], has_more: false }) };
+    if (path.endsWith("/costs")) return { ok: true, json: async () => ({ data: [
+      { start_time: Date.parse("2026-10-13") / 1000, results: [
+        { api_key_id: "key_app", amount: { value: 0.2, currency: "usd" } },
+        { api_key_id: "key_other", amount: { value: 5, currency: "usd" } },
+      ] },
+      { start_time: Date.parse("2026-10-14") / 1000, results: [
+        { api_key_id: "key_app", amount: { value: 0.1, currency: "usd" } },
+      ] },
+    ], has_more: false }) };
+    throw new Error(`Unexpected endpoint ${path}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  try {
+    const result = await t.action(internal.openaiSpend.reconcile, { days: 3 });
+    expect(result.days.map((day) => day.date)).toEqual(["2026-10-12", "2026-10-13", "2026-10-14"]);
+    expect(result.days[0]).toMatchObject({ billedUsd: 0, ledger: { costEur: 0, inputTokens: 0, callsByKind: {} },
+      usage: { completions: [], embeddings: [] } });
+    expect(result.days[1]).toMatchObject({ billedUsd: 0.2, ledger: { costEur: 0.03, inputTokens: 30,
+      outputTokens: 10, callsByKind: { chat: 1 }, byKind: { chat: { calls: 1, costEur: 0.03 } },
+      byModel: { "gpt-5.4-mini": { inputTokens: 30, outputTokens: 10 } }, rollupEur: 0.03 },
+      usage: { completions: [{ model: "gpt-5.4-mini",
+        inputTokens: 100, cachedInputTokens: 25, outputTokens: 40, requests: 2 }] } });
+    expect(result.days[2]).toMatchObject({ billedUsd: 0.1, ledger: { costEur: 0.01, inputTokens: 20,
+      callsByKind: { embedding: 1 } }, usage: { embeddings: [{ model: "text-embedding-3-small", inputTokens: 50,
+        cachedInputTokens: 0, outputTokens: 0, requests: 1 }] } });
+    expect(JSON.stringify(result)).not.toMatch(/secret-|alice@example|key_app|key_other/);
+    expect(result.keyName).toBe("marktplaats-watcher-app");
+    expect(await t.run((ctx) => ctx.db.query("openaiCosts").collect())).toEqual([]);
+  } finally { vi.unstubAllGlobals(); delete process.env.OPENAI_ADMIN_API_KEY; }
+});
