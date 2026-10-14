@@ -13,7 +13,7 @@ export function useDashboardLoadTiming(results, navigationStartedAt) {
     if (current.sent) return;
     const elapsed = Math.max(0, Math.round(performance.now() - current.start));
     queries.forEach((name, i) => {
-      if (values[i] !== undefined && values[i] !== null && current.arrived[name] === undefined) current.arrived[name] = elapsed;
+      if (values[i] !== undefined && current.arrived[name] === undefined) current.arrived[name] = elapsed;
     });
     if (queries.some((name) => current.arrived[name] === undefined)) return;
     current.sent = true;

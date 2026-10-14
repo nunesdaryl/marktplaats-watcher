@@ -284,6 +284,7 @@ export default function Overview({ open, onSearch, ask, navigationStartedAt }) {
   const feedbackResult = useQuery(api.admin.feedback, { limit: 5, at });
   const founding = useQuery(api.founding.ownerSummary, {});
   const signupSources = useQuery(api.admin.signupSources, {});
+  const dashboardLoad = useQuery(api.admin.dashboardLoad, {});
   const previous = useRef(null);
   useDashboardLoadTiming({ "admin.dashboard": dashboardResult, "admin.ratingStats": ratingResult,
     "admin.feedback": feedbackResult, "founding.ownerSummary": founding, "admin.signupSources": signupSources }, navigationStartedAt);
@@ -325,8 +326,8 @@ export default function Overview({ open, onSearch, ask, navigationStartedAt }) {
           <span className="hint" aria-live="polite">{refreshing ? "Refreshing…" : `Updated ${updatedTime}`}</span>
         </div>
       </div>
-      <p className="hint">Dashboard load (7 days): {data.dashboardLoad7d
-        ? `median ${(data.dashboardLoad7d.medianMs / 1000).toFixed(1)} s, slowest ${(data.dashboardLoad7d.maxMs / 1000).toFixed(1)} s; slowest part: ${data.dashboardLoad7d.slowest}`
+      <p className="hint">Dashboard load (7 days): {dashboardLoad
+        ? `median ${(dashboardLoad.medianMs / 1000).toFixed(1)} s, slowest ${(dashboardLoad.maxMs / 1000).toFixed(1)} s; slowest part: ${dashboardLoad.slowest}`
         : "Not measured yet"}</p>
       <section className="attention" aria-labelledby="attention-title">
         <h2 id="attention-title">Needs your attention</h2>

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, test, vi } from "vitest";
 import Overview from "./Overview.jsx";
 import { useQuery } from "convex/react";
+import { getFunctionName } from "convex/server";
 import { useEffect, useRef, useState } from "react";
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useAction: () => () => Promise.resolve(null) }));
@@ -30,6 +31,7 @@ let foundingResponse;
 let signupSourcesResponse;
 let emptyCount;
 let refCount;
+let loadResponse;
 
 function render() {
   renderCount = 0;
@@ -53,7 +55,8 @@ beforeEach(() => {
   signupSourcesResponse = undefined;
   emptyCount = 0;
   queryCount = 0;
-  vi.mocked(useQuery).mockImplementation((_ref, args) => Object.keys(args).length === 0
+  loadResponse = null;
+  vi.mocked(useQuery).mockImplementation((ref, args) => getFunctionName(ref) === "admin:dashboardLoad" ? loadResponse : Object.keys(args).length === 0
     ? (emptyCount++ === 0 ? foundingResponse : signupSourcesResponse) : responses[(queryCount++) % 3]);
 });
 
@@ -91,7 +94,7 @@ test("owner overview shows sign-up source and language groups", () => {
 
 test("owner overview shows the seven day dashboard load summary or empty state", () => {
   expect(render().html).toContain("Dashboard load (7 days): Not measured yet");
-  responses[0].dashboardLoad7d = { medianMs: 4200, maxMs: 18000, slowest: "admin.dashboard" };
+  loadResponse = { medianMs: 4200, maxMs: 18000, slowest: "admin.dashboard" };
   expect(render().html).toContain("Dashboard load (7 days): median 4.2 s, slowest 18.0 s; slowest part: admin.dashboard");
 });
 
@@ -102,7 +105,7 @@ test("the attention row names every zero state without adding a query", () => {
   expect(row).toContain("0</span>");
   expect(row.match(/Nothing to review/g)).toHaveLength(2);
   expect(row).toContain("No audit run yet");
-  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(6);
+  expect(vi.mocked(useQuery)).toHaveBeenCalledTimes(7);
   responses[0].deliveryAudit.lastRunAt = oldNow - 1000;
   const audited = render().html.match(/<section class="attention"[\s\S]*?<\/section>/)?.[0];
   expect(audited.match(/Nothing to review/g)).toHaveLength(3);

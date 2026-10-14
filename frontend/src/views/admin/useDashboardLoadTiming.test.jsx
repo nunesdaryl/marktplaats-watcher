@@ -55,3 +55,21 @@ test("timing starts at navigation even when the overview mounts later", async ()
     expect(track).toHaveBeenCalledWith("dashboard_loaded", expect.objectContaining({ first_ms: "500", all_ms: "500" }));
   } finally { await act(async () => root.unmount()); }
 });
+
+test("a null query result counts as arrived and sends one load event", async () => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  let time = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => time);
+  const root = createRoot(document.body.appendChild(document.createElement("div")));
+  const render = async (results) => { await act(async () => root.render(createElement(Probe, { results }))); };
+  try {
+    await render(empty);
+    time = 250;
+    await render({ ...empty, "admin.feedback": null });
+    time = 500;
+    await render(Object.fromEntries(names.map((name) => [name, name === "admin.feedback" ? null : {}])));
+    expect(track).toHaveBeenCalledExactlyOnceWith("dashboard_loaded", {
+      first_ms: "250", all_ms: "500", slowest: "admin.dashboard",
+    });
+  } finally { await act(async () => root.unmount()); }
+});
