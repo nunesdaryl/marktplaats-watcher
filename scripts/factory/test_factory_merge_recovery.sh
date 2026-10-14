@@ -37,6 +37,7 @@ if [[ $* == '-m pytest -q' && ${FAIL_PYTEST:-} == 1 ]]; then exit 1; fi
 SH
     cat > mockbin/gh <<'SH'
 #!/usr/bin/env bash
+printf 'gh %s\n' "$*" >> "$TEST_EVENTS"
 if [[ $1 == api ]]; then
     attempts=$(cat "$TEST_ATTEMPTS")
     printf '%s\n' "$((attempts + 1))" > "$TEST_ATTEMPTS"
@@ -116,6 +117,18 @@ run_gate FAIL_GH_ONCE=1
 [[ $(sed -n '1p' "$events") == '-m pip install -q -r requirements.txt' ]]
 [[ $(cat "$attempts_file") -ge 5 ]]
 echo 'PASS changed requirements installed, API retried, remote deleted before local branch'
+
+setup_repo changed_prompts prompts.py
+run_gate
+if grep -Eq '^gh workflow( |$)' "$events"; then
+    echo 'FAIL changed prompts dispatched a manual eval workflow' >&2
+    exit 1
+fi
+if ! grep -Fq 'evals:push' docs/factory/merges.md; then
+    echo 'FAIL changed prompts did not record evals:push' >&2
+    exit 1
+fi
+echo 'PASS changed prompts rely on push evals without manual dispatch'
 
 setup_repo unchanged_requirements file.txt
 run_gate
