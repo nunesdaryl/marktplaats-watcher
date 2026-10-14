@@ -64,7 +64,7 @@
     <table class="meta">
       <tr><td><b>Author</b></td><td>Daryl Nunes</td></tr>
       <tr><td><b>Date</b></td><td>26 September 2026 (v1) · 27 September 2026 (v2, v3) · updated 9 October 2026</td></tr>
-      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (10 Oct 2026 report: chat 23/23; great precision 100% and recall 81% (median of 3 runs) on 53 listings from 6 watches; a human check agreed with 9 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14), and a feedback-and-usage loop that only the owner can see (section 15)</td></tr>
+      <tr><td><b>Status</b></td><td><b>v3 live</b>: Next.js, ChatGPT/Apple-style app, evaluated (14 Oct 2026 report: chat 23/23; great precision 100% and recall 86% (median of 3 runs) on 53 listings from 6 watches; a human check agreed with 9 of 10 judge labels), monitored, costed (section 13), restyled with the Sieve design system and a new logo (section 14), and a feedback-and-usage loop that only the owner can see (section 15)</td></tr>
       <tr><td><b>Live</b></td><td><code>https://marktplaats-watcher.vercel.app</code> (<code>marktplaatswatcher.vercel.app</code> redirects here)</td></tr>
       <tr><td><b>Code</b></td><td><code>https://github.com/nunesdaryl/marktplaats-watcher</code> (public)</td></tr>
       <tr><td><b>Diagram</b></td><td><code>docs/architecture.excalidraw</code> (v1, editable in Excalidraw); the current architecture is in sections 12–13</td></tr>
@@ -1112,7 +1112,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     read back; another user's chat refused; a forged assistant turn rejected.</td></tr>
   <tr><td>MW-5</td><td>Precision against the human-corrected labels, failure categories, prompt versions, a UAT sign-off
     line, and a CI workflow (on prompt changes, weekly, manual) that skips cleanly without its key.</td><td>A real eval run
-    (10 Oct 2026 report: gate passed, chat 23/23, corrected "great" precision 100%, recall 81% (median of 3 runs)); the workflow ran on GitHub without the key and skipped with a
+    (14 Oct 2026 report: gate passed, chat 23/23, corrected "great" precision 100%, recall 86% (median of 3 runs)); the workflow ran on GitHub without the key and skipped with a
     notice. <b>Sent back once</b>: a test read the repo's real results.</td></tr>
   <tr><td>MW-16</td><td>The chat prompt maps "only great matches for my watch" to a notify change (prompt
     <code>chat-2026-09-30.2</code>), plus a repeat runner.</td><td>C3 15/15 with the real model (was 7/15); golden set 20/20 twice (29 Sep 2026 snapshot).</td></tr>
@@ -1199,7 +1199,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   <tr><td>MW-21</td><td>Every score a check gives is stored on the seen listing; the ranker scores 10 listings per call.</td>
     <td>Real run: 20 iPhone listings → 2 calls, order kept, none unscored. The audit can now say "scored 4 at check, 9 now".</td></tr>
   <tr><td>MW-22</td><td>Accessories aren't the item: a listing that is only an accessory, part or kit scores 0–4.</td>
-    <td>Real evals (10 Oct 2026 report): chat 23/23, "great" precision 100% and recall 81% (median of 3 runs) on 53 listings from 6 watches. Raspberry Pi display frames 6–7 → 1/10; real Pis 9–10.</td></tr>
+    <td>Real evals (14 Oct 2026 report): chat 23/23, "great" precision 100% and recall 86% (median of 3 runs) on 53 listings from 6 watches. Raspberry Pi display frames 6–7 → 1/10; real Pis 9–10.</td></tr>
   <tr><td>MW-23, MW-27</td><td>Catch-up e-mail: a dry run saves an exact plan; the send delivers only that plan (by listing
     id), with per-listing dedupe.</td><td>Sent back twice: a word search called a listing "sold" because its description said
     "apart verkocht" (now the page's <code>isReserved</code> flag), and the baseline hid real misses. The first send
@@ -1458,8 +1458,8 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   live demo early, states the honest limit (the app reads public search results anonymously today, with the robots.txt and terms risk
   recorded in ADR 0009) as the reason for the meeting, and asks first for a 30-minute conversation, then official search
   access, official revocable delegated buyer access (per-user consent on Marktplaats' own screen to place bids and send
-  messages; MW-115) and a joint pilot with a go / pivot / stop date. Proof numbers come from <code>evals/report.md</code> (10 Oct 2026: 100% great-match precision and 81% recall (median of 3 runs) on 53 listings from 6 watches,
-  23/23 chat cases, €0.00511 per 20-listing check, €0.0302 per 100 listings, about €0.0020 per chat question).</p>
+  messages; MW-115) and a joint pilot with a go / pivot / stop date. Proof numbers come from <code>evals/report.md</code> (14 Oct 2026: 100% great-match precision and 86% recall (median of 3 runs) on 53 listings from 6 watches,
+  23/23 chat cases, €0.00511 per 20-listing check, €0.0304 per 100 listings, about €0.0020 per chat question).</p>
 <p><b>Founding 100 and cost controls (5 October).</b> Daryl's LinkedIn post (4 October) promised the first 100 users a
   free month. Five factory issues made that promise exact and cheap. MW-85 admits only the first 100 accounts
   (<code>MAX_USERS</code>, a counter that never goes down, so deleting an account doesn't reopen a place; the owner is
@@ -1628,6 +1628,17 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   variant now lives in the repo. The morning audit was clean (0 delivery misses), and the seller-website flag, seen on
   0 of 14,483 listings, was replaced by signals that exist in the search data (EU manufacturer details and the
   verified mark) — counted on regular listings for a week before deciding on a shop filter (MW-136).</p>
+<p><b>Price at the maximum, and one eval run per merge (14 October).</b> MW-141 tells the scorer that a fixed
+  price equal to the watch's maximum is within budget ("under €100" includes €100, as Daryl decided for MW-140), and
+  adds a synthetic required case (an IKEA Markus chair at €100 on "under €100") that scored 9, 9, 9. Review took
+  three branch eval runs, each on a new commit: the first crashed the report on the synthetic case's empty earlier
+  score (fixed), the second failed only the rating-examples check because a Switch Lite already scored 2 without the
+  rating and 2 with it. Daryl chose a floor rule: a case already clearly rejected (2 or lower) passes when the rating
+  does not raise it; every other case must still drop. The third run passed. After the merge, main ran its eval twice:
+  once on the push and once started by the merge gate itself, which had done so on 36 earlier merges. MW-142 removed
+  the gate's own dispatch; merges that touch the scorer now record <code>evals:push</code> and pay for one run. The
+  14 October report on main: great precision 100% and recall 86% (median of 3 runs; recall range 85.7–90.5%), good
+  precision 87% and recall 95%, chat 23/23 with a p95 of 3.45 s.</p>
 <p><b>Spend, scorer and eval labels (12–13 October).</b> October's OpenAI bill passed its $5 soft alert ($11.93 by
   13 October), mostly through the evals-and-local key (6,965 requests against the app's 1,563); 14 of the 33 eval runs
   on 9–12 October were manual dispatches by the station. MW-137 shows OpenAI's billed cost per key on the owner
@@ -1659,7 +1670,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   shops and dealers identified by manufacturer details (GPSR) or the verified mark, with a per-watch "Also show shops and dealers" option; the filter remains off while those signals are measured for a week, with no seller names or ids stored. Review fixed a real problem in nearly every
   build (a gate step that could derail live merges, a private note on a public page, a removed coverage warning, a
   prompt sentence spliced into another instruction, a misleading distance, a gate fixed at six cases). Evals on the
-  real model: great precision 100% (median of 3), recall 81%, chat 23/23; recall varies from run to run (61–87% this
+  real model: great precision 100% (median of 3), recall 86%, chat 23/23; recall varies from run to run (61–87% this
   week with the same prompt), a known gap to fix. The live dashboard review that afternoon found the new "Listings
   removed" chart at 0 while checks had removed 52 paid placements: the dashboard reads slim per-day run summaries
   (MW-99) that did not carry the new counters. MW-124 added them (and a missing timeouts count), backfilled the
