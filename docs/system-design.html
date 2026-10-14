@@ -1628,6 +1628,19 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   variant now lives in the repo. The morning audit was clean (0 delivery misses), and the seller-website flag, seen on
   0 of 14,483 listings, was replaced by signals that exist in the search data (EU manufacturer details and the
   verified mark) — counted on regular listings for a week before deciding on a shop filter (MW-136).</p>
+<p><b>Where the OpenAI money goes (14 October, afternoon).</b> The owner dashboard showed OpenAI billing the app's
+  key $4.22 while the app had measured about $0.73. MW-143 added a read-only check (<code>openaiSpend:reconcile</code>)
+  that joins, per day, OpenAI's billed cost and token counts for the app key with the app's own ledger. Run on
+  production, it showed the price table is exact (repricing OpenAI's own token counts gives $4.219 against $4.220
+  billed); $0.86 predates the per-person meter (1–4 October); the daily delivery audit, which the meter never saw,
+  accounts for about $0.15; and about 775 completion requests over 5–13 October (about $2.52) never reach the meter
+  at all, from a source aggregate usage cannot name. MW-145 therefore logs one content-free line per OpenAI call
+  (route, environment, model, tokens, outcome) so a full day can be compared with OpenAI's usage before anything is
+  metered or a key is rotated. MW-144 measures the owner dashboard's load time: one timed event per open and a 7-day
+  summary line in its own small query. The first readings were 8.4 s cold, 0.4 s warm and 2.5 s on reload; on a cold
+  open the first data arrives at about 8 s and the rest within 0.4 s, so the wait is the app starting and signing
+  in, not one slow query. Review sent MW-144 back twice: the first build put the summary inside the heaviest
+  dashboard query, which every owner usage event would have re-run.</p>
 <p><b>Price at the maximum, and one eval run per merge (14 October).</b> MW-141 tells the scorer that a fixed
   price equal to the watch's maximum is within budget ("under €100" includes €100, as Daryl decided for MW-140), and
   adds a synthetic required case (an IKEA Markus chair at €100 on "under €100") that scored 9, 9, 9. Review took
