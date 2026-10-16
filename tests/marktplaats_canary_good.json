@@ -1,0 +1,6 @@
+{
+  "listings": [
+    {"itemId": "m1234567890", "title": "Bike", "vipUrl": "/v/bike", "priceInfo": {"priceCents": 40000}, "date": "Vandaag", "priorityProduct": "NONE"},
+    {"itemId": "a1531512320", "title": "Shop bike", "vipUrl": "/v/shop-bike", "priceInfo": {"priceCents": 50000}, "date": "Vandaag", "priorityProduct": "TOP_ADVERTENTIE"}
+  ]
+}
