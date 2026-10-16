@@ -107,7 +107,7 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 > Solutions engineer · FDE certificate DBG-FDE-2026-009
 > linkedin.com/in/daryl-nunes-959a28411 · darylnunes@gmail.com
 
-Before sending the deck along: its "Proof" and "Success criteria" slides still carry the 10 Oct 2026 snapshot of the eval figures (recall 74%, precision 94%); the 14 Oct report has great precision 100% and recall 86% (median of 3 runs).
+The pitch deck's "Proof" and "Success criteria" slides were updated on 16 Oct 2026 to the 14 Oct report (great precision 100%, recall 86%, median of 3 runs), so the deck and this e-mail agree.
 
 
 

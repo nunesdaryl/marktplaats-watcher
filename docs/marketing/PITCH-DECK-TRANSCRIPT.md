@@ -1,5 +1,5 @@
 # Marktplaats Watcher — Pitch Deck Transcript (14 slides)
-_Working transcript extracted from the Claude artifact 2026-10-04 by Axel and updated for MW-115. The source artifact is updated by the station after merge. Source: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma_
+_Working transcript extracted from the Claude artifact 2026-10-04 by Axel and updated for MW-115; slide 6 and 10 speaker notes synced with the deck on 16 Oct 2026 (14 Oct report figures). The source artifact is updated by the station after merge. Source: https://claude.ai/artifact/VszNy83Q2z3wNpZQV2U8ma_
 
 
 ## Slide 1
@@ -147,7 +147,7 @@ Source: evals/report.md in the project repository · not affiliated with Marktpl
 
 
 **Speaker notes:**
-You just saw it run. Here is how we know it works. Of the e-mails sent at the "great match" level, 94 percent were real matches, measured on 53 real Marktplaats listings, median of three runs; the range was 86 to 100 percent, and at the broader "good" level it is 83 percent. A model judge labels the listings and I spot-check the judge, and the misses are listed in the report, not tuned away. All 20 chat test cases pass. And the running cost, unprompted: a check that scores 20 new listings costs about half a cent in AI; a check with nothing new costs nothing. An hourly watch costs between 33 cents and about 3 euros 70 a month depending on how busy the search is. Hosting runs on free tiers today, and there is a hard cap on AI spend: when it is hit, the AI stops and nothing unscored is e-mailed.
+You just saw it run. Here is how we know it works. Of the e-mails sent at the "great match" level, 100 percent were real matches, measured on 53 real Marktplaats listings, median of three runs, range 90 to 100 percent; it catches 86 percent of the real matches, and at the broader "good" level precision is 87 percent. A model judge labels the listings and I spot-check the judge, and the misses are listed in the report, not tuned away. All 23 chat test cases pass, including people trying to trick it, and each is graded on the answer and on the tools it used. And the running cost, unprompted: a check that scores 20 new listings costs about half a cent in AI; a check with nothing new costs nothing. An hourly watch costs between 33 cents and about 3 euros 70 a month depending on how busy the search is. Hosting runs on free tiers today, and every person has a one-euro AI budget per month on top of a hard cap for the whole project: when a cap is hit, the AI stops and nothing unscored is e-mailed.
 
 
 ## Slide 7
@@ -255,7 +255,7 @@ Today's numbers: evals/report.md · brackets are to be filled in together
 
 
 **Speaker notes:**
-A pilot is only useful if we agree up front what success means. These are my suggestions; the brackets are numbers only you have, or targets we should set together. Precision: today 94 percent of great-match e-mails are real matches, on 53 listings; for a pilot I would want at least 90 percent on a larger set we agree on. How often buyers rate an alert a good match: the app already collects those ratings. Click-through compared with your current saved-search e-mails, and opt-outs per thousand alerts: you have the baselines. And AI cost per buyer: today an hourly watch costs between 33 cents and 3 euros 68 a month, depending on how busy the search is.
+A pilot is only useful if we agree up front what success means. These are my suggestions; the brackets are numbers only you have, or targets we should set together. Precision: today 100 percent of great-match e-mails are real matches, on 53 listings, median of three runs; for a pilot I would want at least 90 percent on a larger set we agree on. How often buyers rate an alert a good match: the app already collects those ratings. Click-through compared with your current saved-search e-mails, and opt-outs per thousand alerts: you have the baselines. And AI cost per buyer: today an hourly watch costs between 33 cents and 3 euros 68 a month, depending on how busy the search is.
 
 
 ## Slide 11
