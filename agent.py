@@ -7,7 +7,7 @@ import random
 from email.utils import parsedate_to_datetime
 import time
 import threading
-from contextvars import ContextVar
+from contextvars import ContextVar, copy_context
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor
@@ -37,6 +37,12 @@ _page_cache = {}      # url -> (fetched_at, html)
 _fetch_times = []     # timestamps of real fetches in the last hour
 
 NEXT_DATA = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
+
+
+def _map_with_request_context(pool, function, items):
+    # Each task needs its own Context: a Context cannot run in two threads at once.
+    futures = [pool.submit(copy_context().run, function, item) for item in items]
+    return [future.result() for future in futures]
 
 
 def find_listings(data):
@@ -922,7 +928,7 @@ def check_query(query, watches, now=None):
             return e
     keys = list(dict.fromkeys(key for _, _, key in plans))
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
-        reads = dict(zip(keys, pool.map(read, keys)))
+        reads = dict(zip(keys, _map_with_request_context(pool, read, keys)))
 
     for w, home, key in plans:
         if isinstance(reads[key], httpx.HTTPError):
@@ -990,7 +996,7 @@ def check_query(query, watches, now=None):
             _rank_usage_for_check.reset(token)
 
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
-        ranked = list(pool.map(rank, to_rank))
+        ranked = _map_with_request_context(pool, rank, to_rank)
     for (w, listings, fresh_candidates, newest, waiting, capped, reserved_ids, stats), (fresh, usage) in zip(to_rank, ranked):
         tokens = {"input_tokens": sum(x[0] for x in usage), "output_tokens": sum(x[1] for x in usage),
                   "calls": [{"input_tokens": x[0], "output_tokens": x[1]} for x in usage]}

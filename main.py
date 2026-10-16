@@ -17,6 +17,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Re
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 load_dotenv()  # before importing agent: it reads the environment at import time
 
@@ -26,7 +27,7 @@ from evals.common import cost_usd, USD_TO_EUR  # noqa: E402
 from mcp_server import http_app as mcp_http_app, mcp_user  # noqa: E402
 from openai_failure import classify_openai_failure  # noqa: E402
 from offer import draft_offer  # noqa: E402
-from openai_call_log import call_request_id, call_route  # noqa: E402
+from openai_call_log import call_records, call_request_id, call_route, flush_openai_calls  # noqa: E402
 
 
 app = FastAPI()
@@ -39,6 +40,8 @@ async def identify_request(request: Request, call_next):
     ident = incoming if re.fullmatch(r"[A-Za-z0-9._-]{1,100}", incoming) else uuid.uuid4().hex
     token = request_id.set(ident)
     call_id_token = call_request_id.set(ident)
+    records = {}
+    records_token = call_records.set(records)
     path = request.url.path
     call_route_token = call_route.set(path if path in {
         "/api/internal/check", "/api/internal/audit", "/api/internal/embed",
@@ -79,11 +82,23 @@ async def identify_request(request: Request, call_next):
                 if name.lower() not in ("content-length", "transfer-encoding")
             })
         response.headers["X-Request-Id"] = ident
+        if hasattr(response, "body_iterator"):
+            body_iterator = response.body_iterator
+            async def body_with_flush():
+                try:
+                    async for chunk in body_iterator:
+                        yield chunk
+                finally:
+                    await run_in_threadpool(flush_openai_calls, records)
+            response.body_iterator = body_with_flush()
+        else:
+            await run_in_threadpool(flush_openai_calls, records)
         return response
     finally:
         if mcp_token is not None:
             mcp_user.reset(mcp_token)
         call_route.reset(call_route_token)
+        call_records.reset(records_token)
         call_request_id.reset(call_id_token)
         request_id.reset(token)
 
@@ -414,6 +429,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
         return StreamingResponse(iter([json.dumps(event) + "\n"]), media_type="application/x-ndjson")
 
     ident = request_id.get()
+    stream_records = call_records.get()
 
     def events():
         started, stats = time.time(), {"statuses": 0, "listings": 0, "error": None}
@@ -455,6 +471,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
         while True:
             route_token = call_route.set("/api/chat/stream")
             id_token = call_request_id.set(ident)
+            records_token = call_records.set(stream_records)
             try:
                 item = next(stream)
             except StopIteration:
@@ -462,6 +479,7 @@ def chat_stream_route(request: ChatRequest, background_tasks: BackgroundTasks, u
             finally:
                 call_request_id.reset(id_token)
                 call_route.reset(route_token)
+                call_records.reset(records_token)
             yield item
 
     stream = events()

@@ -15,7 +15,9 @@ os.environ.setdefault("OPENAI_MODEL", "gpt-5.4-mini")
 
 import agent  # noqa: E402
 import main  # noqa: E402
+import mcp_server  # noqa: E402
 import offer  # noqa: E402
+import convex_api  # noqa: E402
 from openai_call_log import OpenAICallLogger, call_request_id, call_route  # noqa: E402
 from test_agent import client  # noqa: E402, F401 - authenticated API fixture
 
@@ -176,3 +178,148 @@ def test_embedding_failure_logs_once_and_raises(monkeypatch, capsys):
     assert records(capsys) == [{"event": "openai_call", "route": "unknown", "env": "local",
                                "model": "text-embedding-3-small", "input_tokens": None, "output_tokens": None,
                                "ok": False, "error": "RuntimeError", "request_id": None}]
+
+
+def test_check_flushes_one_grouped_batch_after_two_rankings_and_failure(monkeypatch):
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    monkeypatch.setenv("CRON_SECRET", "test-cron")
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda path, payload: posts.append((path, payload)))
+
+    def fake_check(*args):
+        logger = OpenAICallLogger("gpt-5.4-mini")
+        finish(logger, 10, 2)
+        finish(logger, 20, 3)
+        logger.on_llm_error(RuntimeError("secret prompt"), run_id=uuid4())
+        return [{"ok": True, "listings": []}]
+
+    monkeypatch.setattr(main, "check_query", fake_check)
+    response = TestClient(main.app).post("/api/internal/check", headers={"X-Cron-Secret": "test-cron"},
+        json={"query": "bike", "watches": [{"id": "w1"}]})
+    assert response.status_code == 200
+    assert len(posts) == 1
+    assert posts[0][0] == "/api/openai-calls"
+    rows = posts[0][1]["records"]
+    assert len(rows) == 2
+    assert next(row for row in rows if row["ok"]) == {
+        "day": rows[0]["day"], "route": "/api/internal/check", "env": "local", "model": "gpt-5.4-mini",
+        "ok": True, "error": None, "requests": 2, "inputTokens": 30, "outputTokens": 5}
+    assert next(row for row in rows if not row["ok"]) == {
+        "day": rows[0]["day"], "route": "/api/internal/check", "env": "local", "model": "gpt-5.4-mini",
+        "ok": False, "error": "RuntimeError", "requests": 1, "inputTokens": 0, "outputTokens": 0}
+    assert "secret prompt" not in json.dumps(posts)
+
+
+def test_real_check_pool_rankings_keep_request_route(monkeypatch, capsys):
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    monkeypatch.setenv("CRON_SECRET", "test-cron")
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda path, payload: posts.append((path, payload)))
+    raw = [{"itemId": "m123", "title": "Bike", "vipUrl": "/v/m123",
+            "date": "Vandaag", "priceInfo": {"priceCents": 10000, "priceType": "FIXED"}}]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+
+    class FakeRanker:
+        def invoke(self, messages):
+            finish(OpenAICallLogger("gpt-5.4-mini"), 11, 2)
+            listings = json.loads(messages[-1]["content"])["listings"]
+            return agent.Ranking(ranks=[agent.Rank(id=item["id"], score=8, reason="match")
+                                        for item in listings])
+
+    monkeypatch.setattr(agent, "ranker", FakeRanker())
+    response = TestClient(main.app).post("/api/internal/check", headers={"X-Cron-Secret": "test-cron"},
+        json={"query": "bike", "watches": [
+            {"id": "w1", "watermark": 0, "max_price_eur": 500},
+            {"id": "w2", "watermark": 0, "max_price_eur": 600}]})
+    assert response.status_code == 200
+    assert all(item["ok"] for item in response.json()["results"])
+    assert len(posts) == 1 and posts[0][0] == "/api/openai-calls"
+    assert len(posts[0][1]["records"]) == 1
+    row = posts[0][1]["records"][0]
+    assert row.items() >= {"route": "/api/internal/check", "requests": 2,
+                           "inputTokens": 22, "outputTokens": 4}.items()
+    lines = records(capsys)
+    assert len(lines) == 2
+    assert all(line["route"] == "/api/internal/check" for line in lines)
+
+
+def test_stream_flushes_after_tool_turn(monkeypatch, client):
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    monkeypatch.setattr(main, "chat_allowance", lambda user: {"allowed": True})
+    monkeypatch.setattr(main, "record_chat_spend", lambda *args: None)
+    monkeypatch.setattr(main, "save_assistant", lambda *args: True)
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda path, payload: posts.append(payload))
+
+    def fake_events(*args):
+        finish(OpenAICallLogger("gpt-5.4-mini"), 12, 2)
+        yield {"type": "status", "text": "tool"}
+        assert posts == []
+        finish(OpenAICallLogger("gpt-5.4-mini"), 18, 3)
+        yield {"type": "done", "answer": "OK", "listings": [], "searches": [], "proposals": [],
+               "usage": {"input_tokens": 30, "output_tokens": 5, "model_calls": 0, "tool_calls": 1}}
+
+    monkeypatch.setattr(main, "chat_events", fake_events)
+    response = client.post("/api/chat/stream", json={"message": "secret chat"},
+        headers={"Authorization": f"Bearer {client.token()}"})
+    assert response.status_code == 200
+    assert len(posts) == 1
+    assert posts[0]["records"][0].items() >= {"route": "/api/chat/stream", "requests": 2,
+                                                "inputTokens": 30, "outputTokens": 5}.items()
+
+
+def test_unconfigured_and_failed_flush_do_not_change_response(monkeypatch, capsys):
+    monkeypatch.setenv("CRON_SECRET", "test-cron")
+    monkeypatch.delenv("CONVEX_SITE_URL", raising=False)
+    monkeypatch.delenv("API_TO_CONVEX_SECRET", raising=False)
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda *args: posts.append(args))
+    monkeypatch.setattr(main, "check_query", lambda *args: (finish(OpenAICallLogger("gpt-5.4-mini"), 1, 1) or
+        [{"ok": True, "listings": []}]))
+    client = TestClient(main.app)
+    payload = {"query": "bike", "watches": [{"id": "w1"}]}
+    assert client.post("/api/internal/check", json=payload, headers={"X-Cron-Secret": "test-cron"}).status_code == 200
+    assert posts == []
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    assert client.post("/api/internal/check", json=payload, headers={"X-Cron-Secret": "test-cron"}).status_code == 200
+    assert len(posts) == 1
+    posts.clear()
+    monkeypatch.setattr(main, "check_query", lambda *args: [{"ok": True, "listings": []}])
+    assert client.post("/api/internal/check", json=payload, headers={"X-Cron-Secret": "test-cron"}).status_code == 200
+    assert posts == []
+    monkeypatch.setattr(main, "check_query", lambda *args: (finish(OpenAICallLogger("gpt-5.4-mini"), 1, 1) or
+        [{"ok": True, "listings": []}]))
+    monkeypatch.setattr(convex_api, "convex_post", lambda *args: (_ for _ in ()).throw(TimeoutError("secret")))
+    assert client.post("/api/internal/check", json=payload, headers={"X-Cron-Secret": "test-cron"}).status_code == 200
+    assert '"event": "openai_calls_flush_failed", "error": "TimeoutError"' in capsys.readouterr().out
+
+
+def test_mcp_tool_call_flushes_its_route(monkeypatch):
+    monkeypatch.setenv("MCP_ENABLED", "1")
+    monkeypatch.setenv("MCP_OWNER_TOKEN", "owner-secret")
+    monkeypatch.setenv("OWNER_CLERK_ID", "owner")
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    monkeypatch.setattr(main, "admission_check", lambda user: True)
+    monkeypatch.setattr(main, "too_many", lambda user: False)
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda path, payload: posts.append((path, payload)))
+
+    def fake_search(*args):
+        finish(OpenAICallLogger("text-embedding-3-small"), 4, 0)
+        return []
+
+    monkeypatch.setattr(agent, "search_alerts", fake_search)
+    response = TestClient(main.app, base_url="https://marktplaats-watcher.vercel.app").post(
+        "/api/mcp", headers={"Authorization": "Bearer owner-secret", "Accept": "application/json, text/event-stream"},
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+              "params": {"name": "search_my_alerts", "arguments": {"query": "bike"}}})
+    assert response.status_code == 200
+    assert posts == [("/api/openai-calls", {"records": [{
+        "day": posts[0][1]["records"][0]["day"], "route": "mcp:search_my_alerts", "env": "local",
+        "model": "text-embedding-3-small", "ok": True, "error": None,
+        "requests": 1, "inputTokens": 4, "outputTokens": 0}]})]
