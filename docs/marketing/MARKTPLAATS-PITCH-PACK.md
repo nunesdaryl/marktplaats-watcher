@@ -107,6 +107,14 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 > Solutions engineer · FDE certificate DBG-FDE-2026-009
 > linkedin.com/in/daryl-nunes-959a28411 · darylnunes@gmail.com
 
+**Sent 16 Oct 2026 (by Daryl):**
+
+- **17:09 CEST, Marktplaats Zakelijk callback form** ("Liever advies op maat?", marktplaatszakelijk.nl): submitted ("Bedankt! We nemen zo snel mogelijk contact met je op."). It has no message field, so it is a callback request: expect a call and use this e-mail as the script.
+- **17:11 CEST, Adevinta contact form** (adevinta.com/contact, topic "Others"): submitted with a shorter English version of this pitch, asking them to forward it to the Marktplaats NL partnerships, product or API team.
+- **17:15 CEST, e-mail to support@marktplaats.nl** (forward request, then this pitch in English and Dutch): bounced with "Address not found". The address only appeared on a third-party site; do not use it again.
+
+The pitch e-mail itself still waits for a named person (Vinod's introduction or LinkedIn). If neither form gets an answer by Fri 23 Oct 2026, that is the next step. The only other published e-mail, marktplaats@teamlewis.com, is the press agency and not a route for a pitch.
+
 The pitch deck's "Proof" and "Success criteria" slides were updated on 16 Oct 2026 to the 14 Oct report (great precision 100%, recall 86%, median of 3 runs), so the deck and this e-mail agree.
 
 
@@ -139,4 +147,4 @@ The pitch deck's "Proof" and "Success criteria" slides were updated on 16 Oct 20
 ---
 _Next actions: 1) send the Vinod ask (7c), 2) fire 2–3 LinkedIn connects (7b), 3) e-mail on first accept (7a). Track responses in this file._
 
-_Status 16 Oct 2026: the founding-user launch posts and the note to Vinod went out (see `generated/launch-posts-2026-10-10.md`); Daryl chose to e-mail the pitch (7d) instead of calling the business desk. Record who it went to, when, and the answer here and on MW-14._
+_Status 16 Oct 2026: the founding-user launch posts and the note to Vinod went out (see `generated/launch-posts-2026-10-10.md`); Daryl chose to e-mail the pitch (7d) instead of calling the business desk. Later that day the Zakelijk callback form and the Adevinta contact form were submitted and the support@marktplaats.nl e-mail bounced (list in 7d, recorded on MW-14). Record each answer here and on MW-14._
