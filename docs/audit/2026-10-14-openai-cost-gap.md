@@ -49,18 +49,28 @@ Production run: `npx convex run --prod openaiSpend:reconcile '{"days":14}'` on 1
 
 MW-147 meters daily delivery audits and catch-up plans as `audit` spend on the owner's account, including dry-run plans; the audited watch stays a reference and its user's budget is untouched. Watch checks now record each explicit ranking attempt, including retries and failed calls, with failed calls carrying estimated input tokens and zero output tokens. Historical spend is not backfilled.
 
+### Follow-up, 16 October 2026
+
+- **Vercel logs could not be used.** The team is on the Hobby plan, whose runtime logs do not keep a full day, and the Logs page did not finish loading, so the planned comparison of a full day of `openai_call` lines with OpenAI usage was not possible.
+- **The gap on 15 October (UTC)**, from the read-only `openaiSpend:reconcile '{"days":2}'` and `npx convex data aiSpend --prod`: OpenAI counted 178 completion requests on the app key (410,256 input and 41,962 output tokens, $0.49 billed); the meter recorded 92 `watch` calls (156,471 / 13,529 tokens, about $0.19) and no other kind. About 86 requests (about $0.30, roughly 60%) never reached the meter. Embeddings: 16 requests at OpenAI, 33 estimated rows in the meter, both negligible in cost.
+- **Correction to hypothesis 3 above.** The check path did not capture usage for every ranking call: a call that raised (timeout, server error) recorded nothing, and the ranker's client retried once on its own (`max_retries=1`) without the app seeing the extra attempt.
+- **MW-145's route tag was wrong for watch checks.** The check scores listings in a `ThreadPoolExecutor`, which does not carry context variables into its threads, so those calls were logged with route `unknown`. Found in the MW-146 review and fixed there (each pool task runs in a copy of the request context).
+- **MW-146** (merged `12fa3a3`) keeps the daily counts per route in Convex (`openaiCalls`, read with `openaiCalls:summary`); the first production rows were watch-check calls of about 3,060 input tokens each.
+- **MW-147** (merged `010dd34`) meters the audit and catch-ups as `audit` on the owner, and every scoring attempt of a watch check against the watch owner, failed attempts with estimated input tokens marked `estimated`.
+- **Next:** compare the first full UTC day of `openaiCalls:summary` (17 October) with `openaiSpend:reconcile`, then decide whether anything remains unexplained.
+
 ## OpenAI call-path inventory
 
 The Python service uses `OPENAI_API_KEY` for `ChatOpenAI` through `model_config.py:14` and `agent.py:380-384`, the separate offer model at `offer.py:23`, and `OpenAIEmbeddings` at `agent.py:1128`. These paths use the app key **when the deployed service's `OPENAI_API_KEY` is that key**. The Convex admin key only reads OpenAI organization APIs; it does not make model calls.
 
 | Caller and model operation | Metering status | Evidence in code |
 | --- | --- | --- |
-| Scheduled watch check and model ranking (including omitted-ID retry) | Metered for responses whose usage reaches Convex; failed attempts may escape | `frontend/convex/checker.ts:500,538`; `main.py:528-535`; `agent.py:642,979-1003`; `frontend/convex/aiBudget.ts:45` |
+| Scheduled watch check and model ranking (including omitted-ID retry) | Metered for responses whose usage reaches Convex; failed attempts may escape (every attempt metered since MW-147, failed ones estimated) | `frontend/convex/checker.ts:500,538`; `main.py:528-535`; `agent.py:642,979-1003`; `frontend/convex/aiBudget.ts:45` |
 | Chat and watch-mode chat model turns | Metered on completed response; streaming errors/timeouts before final `done` can escape | `agent.py:440-485`; `main.py:367-370,413-422`; `main.py:268-274`; `frontend/convex/http.ts:59` |
 | Owner Admin Ask intent model | Metered when usage metadata exists | `agent.py:411-422`; `main.py:300-313` |
 | Offer help draft model | Metered when usage metadata exists | `offer.py:23,42`; `main.py:322-350` |
 | Alert embeddings, including alerts from normal checks and catch-up sends | Metered with **estimated** tokens, after successful embedding response; retry or save/record failure can escape | `frontend/convex/checker.ts:256`; `frontend/convex/catchup.ts:152`; `frontend/convex/embeddings.ts:86-116`; `main.py:520-525`; `agent.py:1125-1133` |
-| Daily delivery audit ranking for each watch with candidates; catch-up audit uses the same route | **Not metered** | `frontend/convex/catchup.ts:206`; `main.py:543-548`; `agent.py:1024-1071,642` |
+| Daily delivery audit ranking for each watch with candidates; catch-up audit uses the same route | **Not metered** (metered as owner `audit` since MW-147, 16 Oct) | `frontend/convex/catchup.ts:206`; `main.py:543-548`; `agent.py:1024-1071,642` |
 | RAG alert search query embeddings, including MCP `search_my_alerts` | **Not metered** | `agent.py:1138-1142`; `mcp_server.py:165`; `agent.py:1125-1133` |
 | Canary check | No model call observed on its read-only path; no meter expected | `frontend/convex/checker.ts:558-572`; `agent.py:803,918` |
 | Watch volume estimate | No model call; no meter expected | `main.py:389-398`; `agent.py:estimate_volume_note` |

@@ -1628,6 +1628,24 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   variant now lives in the repo. The morning audit was clean (0 delivery misses), and the seller-website flag, seen on
   0 of 14,483 listings, was replaced by signals that exist in the search data (EU manufacturer details and the
   verified mark) — counted on regular listings for a week before deciding on a shop filter (MW-136).</p>
+<p><b>Counting every OpenAI call (16 October).</b> The planned comparison of a full day of MW-145's log lines with
+  OpenAI's usage could not be done: the Vercel team is on the Hobby plan, whose runtime logs do not keep a full day,
+  and the Logs page never finished loading. The read-only reconcile still showed the size of the gap for 15 October
+  (UTC): OpenAI counted 178 completion requests on the app key ($0.49 billed), the meter recorded 92 watch-check calls
+  (about $0.19) and nothing else, so about 86 requests (about $0.30, roughly 60%) never reached the meter. MW-146 now
+  keeps a daily count of OpenAI calls in Convex (<code>openaiCalls</code>: day, route, environment, model, outcome,
+  requests and tokens; no content), sent once per request after the work ends and read with
+  <code>openaiCalls:summary</code>; rows are deleted after 90 days. Its review found that the watch check scores
+  listings in a thread pool that did not carry the request's context, so every scoring call of a check was counted
+  nowhere and logged with the route "unknown", which had also silently broken MW-145's route tag; the fix gives each
+  pool task a copy of the context, and a test now runs the real two-watch check. MW-147 meters what the code showed
+  was missing: the daily delivery audit and catch-ups (which score up to 40 listings per watch) as an
+  <code>audit</code> kind on the owner's account, never on the watch owner's €1 budget; and every scoring attempt of
+  a watch check, since the OpenAI client's own hidden retry is replaced by an explicit one, with failed attempts
+  charged at an estimated input size (prompt length ÷ 4) and marked as estimated. The owner's "Where the money goes"
+  page shows the new "Delivery audit &amp; catch-ups" column. The first full day of counts (17 October) will show how
+  much of the gap remains. Lesson: a context variable does not follow work into a thread pool, and a test that fakes
+  the pooled function cannot see it.</p>
 <p><b>Where the OpenAI money goes (14 October, afternoon).</b> The owner dashboard showed OpenAI billing the app's
   key $4.22 while the app had measured about $0.73. MW-143 added a read-only check (<code>openaiSpend:reconcile</code>)
   that joins, per day, OpenAI's billed cost and token counts for the app key with the app's own ledger. Run on
@@ -1641,7 +1659,6 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   open the first data arrives at about 8 s and the rest within 0.4 s, so the wait is the app starting and signing
   in, not one slow query. Review sent MW-144 back twice: the first build put the summary inside the heaviest
   dashboard query, which every owner usage event would have re-run.</p>
-<p>MW-147 meters daily delivery audits and catch-up plans as owner overhead, including dry-run plans, without charging the audited watch owner's budget. Watch checks record each ranking attempt, including retries and failed attempts; failed attempts use estimated input tokens and zero output tokens.</p>
 <p><b>Price at the maximum, and one eval run per merge (14 October).</b> MW-141 tells the scorer that a fixed
   price equal to the watch's maximum is within budget ("under €100" includes €100, as Daryl decided for MW-140), and
   adds a synthetic required case (an IKEA Markus chair at €100 on "under €100") that scored 9, 9, 9. Review took
