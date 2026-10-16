@@ -15,7 +15,7 @@ That position is also the safer one for Marktplaats. One shared, rate-limited ch
 
 **Order:**
 
-1. **Make `/api/mcp` connectable.** Add OAuth 2.1 with Protected Resource Metadata, tool annotations and confirm-step watch tools. This needs MW-76 (production Clerk).
+1. **Make `/api/mcp` connectable.** Add OAuth 2.1 with Protected Resource Metadata, tool annotations and watch tools with an Undo e-mail (ADR 0016). This needs MW-76 (production Clerk).
 2. **List it on the self-serve routes.** These are the official MCP Registry, the Grok Bot/Cursor marketplace, Claude custom connectors and a Claude/Codex plugin in our own repo marketplace, plus Smithery and the Docker catalog.
 3. **Wait on the reviewed public directories.** Claude's Connectors Directory and the ChatGPT/Codex directory come after MW-14 gives us official access. Until then, the "unofficial access" limit from ADR 0009 is exactly what their policies screen for.
 
@@ -101,7 +101,7 @@ The current version is **2026-07-28**. Before listing, the server needs these ch
 - **Client registration.** Dynamic Client Registration is deprecated in favour of **Client ID Metadata Documents (CIMD)**. Claude and Smithery already use CIMD.
 - **OAuth basics.** PRM (RFC 9728), PKCE S256 and `iss` validation (RFC 9207) are the baseline.
 - **Tool annotations.** `readOnlyHint`/`destructiveHint`, plus `openWorldHint` for OpenAI, are effectively required by both big directories.
-- **Elicitation changed.** It now runs through multi-round-trip requests, and support differs per client. A confirm link that opens our app keeps working everywhere and keeps the person's approval inside our own UI, as ADR 0002 requires.
+- **Elicitation changed.** It now runs through multi-round-trip requests, and support differs per client. We don't depend on it: under ADR 0016 (16 Oct) agents write the person's own watches directly and the person gets an Undo e-mail.
 
 ## Competitors
 
@@ -136,7 +136,7 @@ Our difference holds up: **scored, explained, watched, human-approved**. The Mus
    - Keep the kill switch (`MCP_ENABLED`).
 2. **Directory policy.** OpenAI's no-scraping and no-unofficial-connector rules, and Anthropic's "verify that you own or control any API endpoint" rule. Lead every listing with the person's own watches and alerts (our data); live search is secondary.
 3. **Cost.** Agents call tools in loops. Every MCP call must count against the person's €1 budget and the 40-a-day limit, attributed per client, so a runaway loop costs at most one person's budget.
-4. **Prompt injection.** Listing text is written by strangers. Keep wrapping results as data and keep tools free of side effects. Any write goes through a confirm link the person opens in our app, never straight from the agent.
+4. **Prompt injection.** Listing text is written by strangers. Keep wrapping results as data. Agent writes are limited to the person's own watches and ratings (ADR 0016): inside the app's limits, capped at 20 a day, each with an Undo e-mail, and switchable off. Nothing that sends, bids, buys or deletes permanently is reachable from an agent.
 5. **Safety of the person.** Never expose addresses, never send messages or bids from our servers, and keep bid hand-off in the person's own browser. This is our deliberate contrast with the Muse incidents.
 6. **Capacity.** Agent sign-ups count toward the founding 100 and the same AI budget; there is no separate free tier for agents.
 7. **Publisher terms.** Cursor's terms forbid charging for plugins and copyleft licences. ChatGPT forbids selling digital subscriptions inside ChatGPT. Monetisation stays on our own site.
@@ -147,7 +147,7 @@ Draft factory specs, filed 16 Oct 2026 as `draft` on MW and waiting for Daryl's 
 
 1. **MW-148** OAuth 2.1 for `/api/mcp`: PRM, 401 challenge, CIMD with DCR fallback, lazy auth for public tools. Depends on MW-76.
 2. **MW-149** Spec 2026-07-28 compatibility: tool titles and annotations, output schemas, `ttlMs`, and a server card.
-3. **MW-150** Agent watch tools behind a confirm step: propose, pause, resume and rate, with a confirm link that opens our app.
+3. **MW-150** Agent watch tools: create, change, pause, archive and rate, written directly with an Undo e-mail (ADR 0016, decided 16 Oct).
 4. **MW-151** A rate limit shared across server instances, MCP metering against the AI budget, and per-client attribution on the dashboard.
 5. **MW-152** Distribution package: `server.json` for the official registry, Claude and Codex plugin manifests with a Marktplaats skill, and an `/agents` page with setup steps per client.
 6. **MW-153** Directory submissions, which are Daryl's to do (human-ready):

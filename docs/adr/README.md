@@ -19,6 +19,7 @@ The quality attributes guiding these decisions are **security** (keep writes and
 | [0013](0013-prompt-versions-and-eval-gate.md) | Version prompts and gate changes with corrected evaluations. |
 | [0014](0014-check-idempotency-and-resume.md) | A later dispatcher tick resumes a crashed check; listing persistence prevents duplicate alerts. |
 | [0015](0015-model-swap-evaluation.md) | Select chat models by provider and rerun both golden sets before judging a swap. |
+| [0016](0016-agents-write-watches-with-undo.md) | External MCP agents may write the person's watches directly, with an Undo e-mail (supersedes 0002 for agents only). |
 
 ## Add a decision
 
