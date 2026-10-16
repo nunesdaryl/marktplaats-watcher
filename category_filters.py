@@ -70,7 +70,9 @@ def from_plain_words(query, category_id=None, filters=None):
             match = re.search(r"(?:under|below|onder|minder dan|tot|max(?:imum)?)\s+(\d[\d., ]*)\s*km\b", text)
             if match:
                 inferred["mileage"] = ":" + str(int(re.sub(r"\D", "", match[1])))
-    if inferred_category and not inferred:
+    # Condition describes many unrelated items (including accessories). It can
+    # narrow a category established by another facet, but cannot choose one.
+    if inferred_category and not any(key != "condition" for key in inferred):
         return None, {}, None
     if inferred_category:
         inferred.update(filters or {})

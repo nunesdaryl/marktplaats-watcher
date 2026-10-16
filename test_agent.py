@@ -2273,14 +2273,15 @@ def test_plain_words_map_first_set_category_filters():
     from category_filters import from_plain_words
     cases = [
         ("diesel car under 50.000 km", "91", {"fuel": "474", "mileage": ":50000"}),
-        ("used car", "91", {"condition": "14049"}),
-        ("used bike", "445", {"condition": "32"}),
+        ("used car", "91", {"condition": "14049"}, "91"),
+        ("used bike", "445", {"condition": "32"}, "445"),
         ("16GB laptop", "339", {"memoryRAM": "12103"}),
-        ("used PlayStation 5", "2954", {"condition": "32"}),
+        ("used PlayStation 5", "2954", {"condition": "32"}, "2954"),
         ("128GB iPhone", "1953", {"storage": "12824"}),
     ]
-    for words, category, filters in cases:
-        assert from_plain_words(words)[:2] == (category, filters)
+    for case in cases:
+        words, category, filters, *explicit = case
+        assert from_plain_words(words, category_id=explicit[0] if explicit else None)[:2] == (category, filters)
 
 
 def test_category_is_not_inferred_from_product_or_brand_alone():
@@ -2291,6 +2292,17 @@ def test_category_is_not_inferred_from_product_or_brand_alone():
     assert from_plain_words("diesel auto onder 50.000 km")[:2] == (
         "91", {"fuel": "474", "mileage": ":50000"})
     assert from_plain_words("auto", category_id="91")[:2] == ("91", {})
+
+
+def test_condition_words_need_an_explicit_category_or_another_category_filter():
+    from category_filters import from_plain_words
+    for words in ("auto stoeltje nieuw", "iphone hoesje nieuw", "fiets gebruikt",
+                  "used car", "refurbished PlayStation 5"):
+        assert from_plain_words(words)[:2] == (None, {})
+    assert from_plain_words("iphone 13 128gb nieuw")[:2] == (
+        "1953", {"condition": "30", "storage": "12824"})
+    assert from_plain_words("fiets gebruikt", category_id="445")[:2] == (
+        "445", {"condition": "32"})
 
 
 def test_category_search_filters_and_old_watch_request():
