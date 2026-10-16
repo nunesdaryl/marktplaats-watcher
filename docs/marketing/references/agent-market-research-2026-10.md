@@ -72,7 +72,7 @@ How people talk about this, which feeds copy and the `/agents` page:
 
 ## Funnel by channel
 
-`registry or marketplace listing → install → OAuth sign-in (founding place check) → first tool call (list or propose a watch) → confirm link in our app → first scored alert → rating`
+`registry or marketplace listing → install → OAuth sign-in (founding place check) → first tool call (list or create a watch; ADR 0016, with an Undo e-mail) → first scored alert → rating`
 
 Measure each step per client (the per-client attribution in draft spec 4) next to the existing "Sign-ups by landing source" panel.
 

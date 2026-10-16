@@ -1787,6 +1787,18 @@ unavailable, chat logs the failure and continues with its original tools.
 data, not instructions. Search results are emitted as the existing listing-card
 event. A separate seven-case RAG evaluation covers grounded answers, empty
 results, a malicious title and a forged user id.</p>
+<p><b>Planned for external agents (16 Oct 2026, not built yet).</b>
+<a href="adr/0016-agents-write-watches-with-undo.md">ADR 0016</a> lets external MCP agents
+create, change, pause, archive and rate the person's own watches and alerts without a Save
+step. Every agent write goes through the same Convex mutations and limits, records the
+client's name and e-mails the person a one-tap Undo (valid 7 days). The cap is 20 agent
+writes per person per day, behind <code>MCP_WRITES_ENABLED</code>. Agents may never delete,
+message, bid, buy or share personal data; the in-app chat keeps ADR 0002. The build order is
+MW-76 (production Clerk), MW-148 (OAuth 2.1), MW-149 (tool annotations and output schemas),
+MW-150 (the write tools), MW-151 (shared rate limit and metering) and MW-152 (registry
+metadata and plugins). Background: the
+<a href="audit/2026-10-17-agent-first-mcp.md">agent-first audit</a> and the
+<a href="audit/2026-10-17-marktplaats-mcp-deep-dive.md">Marktplaats MCP deep dive</a>.</p>
 </section>
 
 </body>

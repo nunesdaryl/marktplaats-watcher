@@ -200,6 +200,8 @@ uptime check).
 
 The [MCP server](mcp_server.py) exposes six read-only tools over streamable HTTP at `/api/mcp`: `list_my_watches`, `get_watch_activity`, `get_alert_evidence`, `search_my_alerts`, `compare_vector_stores`, and `search_marktplaats`. A client connects to `https://marktplaats-watcher.vercel.app/api/mcp` with `Authorization: Bearer <token>`. The server must have `MCP_ENABLED=1`. The bearer token may be a verified Clerk session token for an admitted user, or the owner's configured `MCP_OWNER_TOKEN` with `OWNER_CLERK_ID`; rate limits and admission checks apply. See [the access middleware](main.py) and [ADR 0011](docs/adr/0011-server-writes-agent-turns.md). The owner's Claude Desktop/Code connection demonstration is a separate operator step.
 
+Planned (not built): OAuth sign-in for external agents and agent watch tools with an Undo e-mail, under [ADR 0016](docs/adr/0016-agents-write-watches-with-undo.md) (MW-148 to MW-152).
+
 ## Running the factory
 
 The MW queue is in Linear. From the main checkout, run `scripts/factory/dispatch.sh MW-<number>` for one `agent-ready` issue. After a PASS review marks it `ready-to-merge` and Daryl adds an `Operator merge approval:` comment, run `scripts/factory-merge.sh MW-<number> <reviewed-40-character-SHA>`. The gate and evidence log are described in [AGENTS.md](AGENTS.md) and [RUNBOOK.md](RUNBOOK.md).
