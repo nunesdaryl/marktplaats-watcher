@@ -1,0 +1,10176 @@
+{
+  "source": "marktplaats-py CATEGORIES.md (MIT); Marktplaats search facets observed 2026-10-16",
+  "categories": [
+    {
+      "id": 1,
+      "name": "Antiek en Kunst",
+      "l1Id": null
+    },
+    {
+      "id": 2,
+      "name": "Antiek | Bestek",
+      "l1Id": 1
+    },
+    {
+      "id": 3,
+      "name": "Antiek | Boeken en Bijbels",
+      "l1Id": 1
+    },
+    {
+      "id": 1100,
+      "name": "Antiek | Emaille",
+      "l1Id": 1
+    },
+    {
+      "id": 1501,
+      "name": "Antiek | Gereedschap en Instrumenten",
+      "l1Id": 1
+    },
+    {
+      "id": 1648,
+      "name": "Antiek | Glas en Kristal",
+      "l1Id": 1
+    },
+    {
+      "id": 2614,
+      "name": "Antiek | Goud en Zilver",
+      "l1Id": 1
+    },
+    {
+      "id": 2661,
+      "name": "Antiek | Kandelaars",
+      "l1Id": 1
+    },
+    {
+      "id": 1841,
+      "name": "Antiek | Kantoor en Zakelijk",
+      "l1Id": 1
+    },
+    {
+      "id": 1502,
+      "name": "Antiek | Keramiek en Aardewerk",
+      "l1Id": 1
+    },
+    {
+      "id": 1842,
+      "name": "Antiek | Keukenbenodigdheden",
+      "l1Id": 1
+    },
+    {
+      "id": 2118,
+      "name": "Antiek | Kleden en Textiel",
+      "l1Id": 1
+    },
+    {
+      "id": 1503,
+      "name": "Antiek | Kleding en Accessoires",
+      "l1Id": 1
+    },
+    {
+      "id": 6,
+      "name": "Antiek | Klokken",
+      "l1Id": 1
+    },
+    {
+      "id": 1647,
+      "name": "Antiek | Koper en Brons",
+      "l1Id": 1
+    },
+    {
+      "id": 7,
+      "name": "Antiek | Lampen",
+      "l1Id": 1
+    },
+    {
+      "id": 1504,
+      "name": "Antiek | Meubels | Bedden",
+      "l1Id": 1
+    },
+    {
+      "id": 5,
+      "name": "Antiek | Meubels | Kasten",
+      "l1Id": 1
+    },
+    {
+      "id": 1505,
+      "name": "Antiek | Meubels | Stoelen en Banken",
+      "l1Id": 1
+    },
+    {
+      "id": 1506,
+      "name": "Antiek | Meubels | Tafels",
+      "l1Id": 1
+    },
+    {
+      "id": 1101,
+      "name": "Antiek | Naaimachines",
+      "l1Id": 1
+    },
+    {
+      "id": 10,
+      "name": "Antiek | Porselein",
+      "l1Id": 1
+    },
+    {
+      "id": 1102,
+      "name": "Antiek | Religie",
+      "l1Id": 1
+    },
+    {
+      "id": 1103,
+      "name": "Antiek | Schalen",
+      "l1Id": 1
+    },
+    {
+      "id": 2662,
+      "name": "Antiek | Schoolplaten",
+      "l1Id": 1
+    },
+    {
+      "id": 1843,
+      "name": "Antiek | Servies compleet",
+      "l1Id": 1
+    },
+    {
+      "id": 12,
+      "name": "Antiek | Servies los",
+      "l1Id": 1
+    },
+    {
+      "id": 1507,
+      "name": "Antiek | Speelgoed",
+      "l1Id": 1
+    },
+    {
+      "id": 2663,
+      "name": "Antiek | Spiegels",
+      "l1Id": 1
+    },
+    {
+      "id": 2664,
+      "name": "Antiek | Tin",
+      "l1Id": 1
+    },
+    {
+      "id": 11,
+      "name": "Antiek | Tv's en Audio",
+      "l1Id": 1
+    },
+    {
+      "id": 14,
+      "name": "Antiek | Vazen",
+      "l1Id": 1
+    },
+    {
+      "id": 1104,
+      "name": "Antiek | Wandborden en Tegels",
+      "l1Id": 1
+    },
+    {
+      "id": 1500,
+      "name": "Antiek | Woonaccessoires",
+      "l1Id": 1
+    },
+    {
+      "id": 9,
+      "name": "Antiek | Overige Antiek",
+      "l1Id": 1
+    },
+    {
+      "id": 15,
+      "name": "Curiosa en Brocante",
+      "l1Id": 1
+    },
+    {
+      "id": 23,
+      "name": "Kunst | Beelden en Houtsnijwerken",
+      "l1Id": 1
+    },
+    {
+      "id": 1508,
+      "name": "Kunst | Designobjecten",
+      "l1Id": 1
+    },
+    {
+      "id": 1105,
+      "name": "Kunst | Etsen en Gravures",
+      "l1Id": 1
+    },
+    {
+      "id": 27,
+      "name": "Kunst | Litho's en Zeefdrukken",
+      "l1Id": 1
+    },
+    {
+      "id": 1844,
+      "name": "Kunst | Niet-Westerse kunst",
+      "l1Id": 1
+    },
+    {
+      "id": 1846,
+      "name": "Kunst | Schilderijen | Abstract",
+      "l1Id": 1
+    },
+    {
+      "id": 25,
+      "name": "Kunst | Schilderijen | Klassiek",
+      "l1Id": 1
+    },
+    {
+      "id": 1845,
+      "name": "Kunst | Schilderijen | Modern",
+      "l1Id": 1
+    },
+    {
+      "id": 26,
+      "name": "Kunst | Tekeningen en Foto's",
+      "l1Id": 1
+    },
+    {
+      "id": 24,
+      "name": "Kunst | Overige Kunst",
+      "l1Id": 1
+    },
+    {
+      "id": 31,
+      "name": "Audio, Tv en Foto",
+      "l1Id": null
+    },
+    {
+      "id": 2834,
+      "name": "Actiecamera's",
+      "l1Id": 31
+    },
+    {
+      "id": 2617,
+      "name": "Afstandsbedieningen",
+      "l1Id": 31
+    },
+    {
+      "id": 1106,
+      "name": "Audiokabels en Televisiekabels",
+      "l1Id": 31
+    },
+    {
+      "id": 32,
+      "name": "Bandrecorders",
+      "l1Id": 31
+    },
+    {
+      "id": 3056,
+      "name": "Beamer-accessoires",
+      "l1Id": 31
+    },
+    {
+      "id": 1132,
+      "name": "Beamers",
+      "l1Id": 31
+    },
+    {
+      "id": 2665,
+      "name": "Blu-ray-spelers",
+      "l1Id": 31
+    },
+    {
+      "id": 33,
+      "name": "Buizenversterkers",
+      "l1Id": 31
+    },
+    {
+      "id": 2036,
+      "name": "Cassettedecks",
+      "l1Id": 31
+    },
+    {
+      "id": 35,
+      "name": "Cd-spelers",
+      "l1Id": 31
+    },
+    {
+      "id": 3052,
+      "name": "Converters",
+      "l1Id": 31
+    },
+    {
+      "id": 1722,
+      "name": "Decoders en Harddiskrecorders",
+      "l1Id": 31
+    },
+    {
+      "id": 2666,
+      "name": "Diaprojectors",
+      "l1Id": 31
+    },
+    {
+      "id": 3057,
+      "name": "Drones",
+      "l1Id": 31
+    },
+    {
+      "id": 1114,
+      "name": "Dvd-spelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1115,
+      "name": "Filmrollen",
+      "l1Id": 31
+    },
+    {
+      "id": 3059,
+      "name": "Fotoalbums en Accessoires",
+      "l1Id": 31
+    },
+    {
+      "id": 480,
+      "name": "Fotocamera's Analoog",
+      "l1Id": 31
+    },
+    {
+      "id": 487,
+      "name": "Fotocamera's Digitaal",
+      "l1Id": 31
+    },
+    {
+      "id": 1360,
+      "name": "Fotografie | Accu's en Batterijen",
+      "l1Id": 31
+    },
+    {
+      "id": 2667,
+      "name": "Fotografie | Digitale fotolijsten",
+      "l1Id": 31
+    },
+    {
+      "id": 488,
+      "name": "Fotografie | Doka Toebehoren",
+      "l1Id": 31
+    },
+    {
+      "id": 1720,
+      "name": "Fotografie | Filters",
+      "l1Id": 31
+    },
+    {
+      "id": 489,
+      "name": "Fotografie | Flitsers",
+      "l1Id": 31
+    },
+    {
+      "id": 1483,
+      "name": "Fotografie | Fotolijsten",
+      "l1Id": 31
+    },
+    {
+      "id": 1721,
+      "name": "Fotografie | Fotopapier",
+      "l1Id": 31
+    },
+    {
+      "id": 1400,
+      "name": "Fotografie | Fotostudio en Toebehoren",
+      "l1Id": 31
+    },
+    {
+      "id": 1484,
+      "name": "Fotografie | Fototassen",
+      "l1Id": 31
+    },
+    {
+      "id": 493,
+      "name": "Fotografie | Geheugenkaarten",
+      "l1Id": 31
+    },
+    {
+      "id": 495,
+      "name": "Fotografie | Lenzen en Objectieven",
+      "l1Id": 31
+    },
+    {
+      "id": 497,
+      "name": "Fotografie | Onderwatercamera's",
+      "l1Id": 31
+    },
+    {
+      "id": 501,
+      "name": "Fotografie | Professionele apparatuur",
+      "l1Id": 31
+    },
+    {
+      "id": 500,
+      "name": "Fotografie | Statieven en Balhoofden",
+      "l1Id": 31
+    },
+    {
+      "id": 1116,
+      "name": "Home Cinema-sets",
+      "l1Id": 31
+    },
+    {
+      "id": 2833,
+      "name": "Karaoke-apparatuur",
+      "l1Id": 31
+    },
+    {
+      "id": 37,
+      "name": "Koptelefoons",
+      "l1Id": 31
+    },
+    {
+      "id": 38,
+      "name": "Luidsprekers",
+      "l1Id": 31
+    },
+    {
+      "id": 2668,
+      "name": "Mediaspelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1723,
+      "name": "Mp3-spelers | Accessoires | Apple iPod",
+      "l1Id": 31
+    },
+    {
+      "id": 1452,
+      "name": "Mp3-spelers | Accessoires | Overige merken",
+      "l1Id": 31
+    },
+    {
+      "id": 40,
+      "name": "Mp3-spelers | Apple iPod",
+      "l1Id": 31
+    },
+    {
+      "id": 1649,
+      "name": "Mp3-spelers | Overige merken",
+      "l1Id": 31
+    },
+    {
+      "id": 2615,
+      "name": "Mp4-spelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1724,
+      "name": "Opladers",
+      "l1Id": 31
+    },
+    {
+      "id": 496,
+      "name": "Optische apparatuur | Microscopen",
+      "l1Id": 31
+    },
+    {
+      "id": 502,
+      "name": "Optische apparatuur | Telescopen",
+      "l1Id": 31
+    },
+    {
+      "id": 503,
+      "name": "Optische apparatuur | Verrekijkers",
+      "l1Id": 31
+    },
+    {
+      "id": 42,
+      "name": "Platenspelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1117,
+      "name": "Professionele Audio-, Tv- en Video-apparatuur",
+      "l1Id": 31
+    },
+    {
+      "id": 3055,
+      "name": "Projectieschermen",
+      "l1Id": 31
+    },
+    {
+      "id": 43,
+      "name": "Radio's",
+      "l1Id": 31
+    },
+    {
+      "id": 1118,
+      "name": "Schotelantennes",
+      "l1Id": 31
+    },
+    {
+      "id": 3053,
+      "name": "Soundbars",
+      "l1Id": 31
+    },
+    {
+      "id": 36,
+      "name": "Stereo-sets",
+      "l1Id": 31
+    },
+    {
+      "id": 3058,
+      "name": "Televisie-accessoires",
+      "l1Id": 31
+    },
+    {
+      "id": 1453,
+      "name": "Televisiebeugels",
+      "l1Id": 31
+    },
+    {
+      "id": 1120,
+      "name": "Televisies",
+      "l1Id": 31
+    },
+    {
+      "id": 45,
+      "name": "Tuners",
+      "l1Id": 31
+    },
+    {
+      "id": 46,
+      "name": "Versterkers en Receivers",
+      "l1Id": 31
+    },
+    {
+      "id": 1129,
+      "name": "Videobewaking",
+      "l1Id": 31
+    },
+    {
+      "id": 1130,
+      "name": "Videocamera's Analoog",
+      "l1Id": 31
+    },
+    {
+      "id": 1131,
+      "name": "Videocamera's Digitaal",
+      "l1Id": 31
+    },
+    {
+      "id": 1133,
+      "name": "Videospelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1121,
+      "name": "Vintage Televisies",
+      "l1Id": 31
+    },
+    {
+      "id": 47,
+      "name": "Walkmans, Discmans en Minidiscspelers",
+      "l1Id": 31
+    },
+    {
+      "id": 1725,
+      "name": "Weerstations en Barometers",
+      "l1Id": 31
+    },
+    {
+      "id": 41,
+      "name": "Overige Audio, Tv en Foto",
+      "l1Id": 31
+    },
+    {
+      "id": 91,
+      "name": "Auto's",
+      "l1Id": null,
+      "filters": {
+        "mileage": {
+          "label": "Kilometerstand",
+          "type": "range",
+          "unit": "km",
+          "min": 0,
+          "max": 1000000
+        },
+        "fuel": {
+          "label": "Brandstof",
+          "type": "choice",
+          "values": {
+            "473": "Benzine",
+            "474": "Diesel",
+            "11756": "Elektrisch",
+            "13838": "Hybride Elektrisch/Benzine",
+            "13839": "Hybride Elektrisch/Diesel",
+            "475": "LPG",
+            "13840": "CNG (Aardgas)",
+            "13841": "Waterstof",
+            "476": "Overige brandstoffen"
+          }
+        },
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14049": "Gebruikt"
+          }
+        }
+      }
+    },
+    {
+      "id": 2932,
+      "name": "Abarth",
+      "l1Id": 91
+    },
+    {
+      "id": 3217,
+      "name": "Aiways",
+      "l1Id": 91
+    },
+    {
+      "id": 2152,
+      "name": "Aixam",
+      "l1Id": 91
+    },
+    {
+      "id": 92,
+      "name": "Alfa Romeo",
+      "l1Id": 91
+    },
+    {
+      "id": 2937,
+      "name": "Alpina",
+      "l1Id": 91
+    },
+    {
+      "id": 2936,
+      "name": "Alpine",
+      "l1Id": 91
+    },
+    {
+      "id": 2153,
+      "name": "Aston Martin",
+      "l1Id": 91
+    },
+    {
+      "id": 93,
+      "name": "Audi",
+      "l1Id": 91
+    },
+    {
+      "id": 2154,
+      "name": "Austin",
+      "l1Id": 91
+    },
+    {
+      "id": 2148,
+      "name": "Bentley",
+      "l1Id": 91
+    },
+    {
+      "id": 95,
+      "name": "Bestelauto's",
+      "l1Id": 91
+    },
+    {
+      "id": 96,
+      "name": "BMW",
+      "l1Id": 91
+    },
+    {
+      "id": 2938,
+      "name": "Bugatti",
+      "l1Id": 91
+    },
+    {
+      "id": 97,
+      "name": "Buick",
+      "l1Id": 91
+    },
+    {
+      "id": 3213,
+      "name": "BYD",
+      "l1Id": 91
+    },
+    {
+      "id": 98,
+      "name": "Cadillac",
+      "l1Id": 91
+    },
+    {
+      "id": 3243,
+      "name": "Chery",
+      "l1Id": 91
+    },
+    {
+      "id": 99,
+      "name": "Chevrolet",
+      "l1Id": 91
+    },
+    {
+      "id": 100,
+      "name": "Chrysler",
+      "l1Id": 91
+    },
+    {
+      "id": 101,
+      "name": "Citroën",
+      "l1Id": 91
+    },
+    {
+      "id": 3051,
+      "name": "Cupra",
+      "l1Id": 91
+    },
+    {
+      "id": 2660,
+      "name": "Dacia",
+      "l1Id": 91
+    },
+    {
+      "id": 103,
+      "name": "Daewoo",
+      "l1Id": 91
+    },
+    {
+      "id": 105,
+      "name": "Daihatsu",
+      "l1Id": 91
+    },
+    {
+      "id": 3239,
+      "name": "DFSK",
+      "l1Id": 91
+    },
+    {
+      "id": 108,
+      "name": "Dodge",
+      "l1Id": 91
+    },
+    {
+      "id": 3227,
+      "name": "Dongfeng",
+      "l1Id": 91
+    },
+    {
+      "id": 109,
+      "name": "Donkervoort",
+      "l1Id": 91
+    },
+    {
+      "id": 2933,
+      "name": "DS",
+      "l1Id": 91
+    },
+    {
+      "id": 110,
+      "name": "Ferrari",
+      "l1Id": 91
+    },
+    {
+      "id": 111,
+      "name": "Fiat",
+      "l1Id": 91
+    },
+    {
+      "id": 2829,
+      "name": "Fisker",
+      "l1Id": 91
+    },
+    {
+      "id": 112,
+      "name": "Ford",
+      "l1Id": 91
+    },
+    {
+      "id": 113,
+      "name": "Ford Usa",
+      "l1Id": 91
+    },
+    {
+      "id": 3242,
+      "name": "Geely",
+      "l1Id": 91
+    },
+    {
+      "id": 3223,
+      "name": "Genesis",
+      "l1Id": 91
+    },
+    {
+      "id": 2949,
+      "name": "GMC",
+      "l1Id": 91
+    },
+    {
+      "id": 114,
+      "name": "Honda",
+      "l1Id": 91
+    },
+    {
+      "id": 2149,
+      "name": "Hummer",
+      "l1Id": 91
+    },
+    {
+      "id": 3221,
+      "name": "Hongqi",
+      "l1Id": 91
+    },
+    {
+      "id": 115,
+      "name": "Hyundai",
+      "l1Id": 91
+    },
+    {
+      "id": 2659,
+      "name": "Infiniti",
+      "l1Id": 91
+    },
+    {
+      "id": 3212,
+      "name": "Isuzu",
+      "l1Id": 91
+    },
+    {
+      "id": 3240,
+      "name": "Jaecoo",
+      "l1Id": 91
+    },
+    {
+      "id": 117,
+      "name": "Jaguar",
+      "l1Id": 91
+    },
+    {
+      "id": 118,
+      "name": "Jeep",
+      "l1Id": 91
+    },
+    {
+      "id": 119,
+      "name": "Kia",
+      "l1Id": 91
+    },
+    {
+      "id": 2155,
+      "name": "Lada",
+      "l1Id": 91
+    },
+    {
+      "id": 122,
+      "name": "Lamborghini",
+      "l1Id": 91
+    },
+    {
+      "id": 123,
+      "name": "Lancia",
+      "l1Id": 91
+    },
+    {
+      "id": 124,
+      "name": "Land Rover",
+      "l1Id": 91
+    },
+    {
+      "id": 2831,
+      "name": "Landwind",
+      "l1Id": 91
+    },
+    {
+      "id": 3226,
+      "name": "Leapmotor",
+      "l1Id": 91
+    },
+    {
+      "id": 125,
+      "name": "Lexus",
+      "l1Id": 91
+    },
+    {
+      "id": 2150,
+      "name": "Lincoln",
+      "l1Id": 91
+    },
+    {
+      "id": 127,
+      "name": "Lotus",
+      "l1Id": 91
+    },
+    {
+      "id": 3218,
+      "name": "Lucid",
+      "l1Id": 91
+    },
+    {
+      "id": 3211,
+      "name": "Lynk & Co",
+      "l1Id": 91
+    },
+    {
+      "id": 128,
+      "name": "Maserati",
+      "l1Id": 91
+    },
+    {
+      "id": 3238,
+      "name": "Maxus",
+      "l1Id": 91
+    },
+    {
+      "id": 129,
+      "name": "Mazda",
+      "l1Id": 91
+    },
+    {
+      "id": 2935,
+      "name": "McLaren",
+      "l1Id": 91
+    },
+    {
+      "id": 130,
+      "name": "Mercedes-Benz",
+      "l1Id": 91
+    },
+    {
+      "id": 131,
+      "name": "Mercury",
+      "l1Id": 91
+    },
+    {
+      "id": 132,
+      "name": "MG",
+      "l1Id": 91
+    },
+    {
+      "id": 133,
+      "name": "Mini",
+      "l1Id": 91
+    },
+    {
+      "id": 134,
+      "name": "Mitsubishi",
+      "l1Id": 91
+    },
+    {
+      "id": 3214,
+      "name": "NIO",
+      "l1Id": 91
+    },
+    {
+      "id": 135,
+      "name": "Nissan",
+      "l1Id": 91
+    },
+    {
+      "id": 136,
+      "name": "Oldsmobile",
+      "l1Id": 91
+    },
+    {
+      "id": 137,
+      "name": "Oldtimers",
+      "l1Id": 91
+    },
+    {
+      "id": 3241,
+      "name": "Omoda",
+      "l1Id": 91
+    },
+    {
+      "id": 138,
+      "name": "Opel",
+      "l1Id": 91
+    },
+    {
+      "id": 140,
+      "name": "Peugeot",
+      "l1Id": 91
+    },
+    {
+      "id": 2934,
+      "name": "Polestar",
+      "l1Id": 91
+    },
+    {
+      "id": 143,
+      "name": "Pontiac",
+      "l1Id": 91
+    },
+    {
+      "id": 144,
+      "name": "Porsche",
+      "l1Id": 91
+    },
+    {
+      "id": 146,
+      "name": "Renault",
+      "l1Id": 91
+    },
+    {
+      "id": 2156,
+      "name": "Rolls-Royce",
+      "l1Id": 91
+    },
+    {
+      "id": 147,
+      "name": "Rover",
+      "l1Id": 91
+    },
+    {
+      "id": 148,
+      "name": "Saab",
+      "l1Id": 91
+    },
+    {
+      "id": 150,
+      "name": "Seat",
+      "l1Id": 91
+    },
+    {
+      "id": 3220,
+      "name": "Seres",
+      "l1Id": 91
+    },
+    {
+      "id": 151,
+      "name": "Skoda",
+      "l1Id": 91
+    },
+    {
+      "id": 152,
+      "name": "Smart",
+      "l1Id": 91
+    },
+    {
+      "id": 2939,
+      "name": "Spyker",
+      "l1Id": 91
+    },
+    {
+      "id": 2151,
+      "name": "SsangYong",
+      "l1Id": 91
+    },
+    {
+      "id": 153,
+      "name": "Subaru",
+      "l1Id": 91
+    },
+    {
+      "id": 154,
+      "name": "Suzuki",
+      "l1Id": 91
+    },
+    {
+      "id": 2830,
+      "name": "Tesla",
+      "l1Id": 91
+    },
+    {
+      "id": 155,
+      "name": "Toyota",
+      "l1Id": 91
+    },
+    {
+      "id": 156,
+      "name": "Triumph",
+      "l1Id": 91
+    },
+    {
+      "id": 3216,
+      "name": "Vinfast",
+      "l1Id": 91
+    },
+    {
+      "id": 157,
+      "name": "Volkswagen",
+      "l1Id": 91
+    },
+    {
+      "id": 158,
+      "name": "Volvo",
+      "l1Id": 91
+    },
+    {
+      "id": 3225,
+      "name": "Voyah",
+      "l1Id": 91
+    },
+    {
+      "id": 159,
+      "name": "Vrachtwagens",
+      "l1Id": 91
+    },
+    {
+      "id": 3215,
+      "name": "XPENG",
+      "l1Id": 91
+    },
+    {
+      "id": 3224,
+      "name": "ZEEKR",
+      "l1Id": 91
+    },
+    {
+      "id": 139,
+      "name": "Overige Auto's",
+      "l1Id": 91
+    },
+    {
+      "id": 2600,
+      "name": "Auto-onderdelen",
+      "l1Id": null
+    },
+    {
+      "id": 2905,
+      "name": "Accu's en Toebehoren",
+      "l1Id": 2600
+    },
+    {
+      "id": 2906,
+      "name": "Airco en Verwarming",
+      "l1Id": 2600
+    },
+    {
+      "id": 65,
+      "name": "Banden en Velgen",
+      "l1Id": 2600
+    },
+    {
+      "id": 2907,
+      "name": "Besturing",
+      "l1Id": 2600
+    },
+    {
+      "id": 3060,
+      "name": "Brandstofpompen",
+      "l1Id": 2600
+    },
+    {
+      "id": 2908,
+      "name": "Brandstofsystemen",
+      "l1Id": 2600
+    },
+    {
+      "id": 2909,
+      "name": "Carrosserie en Plaatwerk",
+      "l1Id": 2600
+    },
+    {
+      "id": 2910,
+      "name": "Dashboard en Schakelaars",
+      "l1Id": 2600
+    },
+    {
+      "id": 2911,
+      "name": "Elektronica en Kabels",
+      "l1Id": 2600
+    },
+    {
+      "id": 2912,
+      "name": "Filters",
+      "l1Id": 2600
+    },
+    {
+      "id": 2913,
+      "name": "Interieur en Bekleding",
+      "l1Id": 2600
+    },
+    {
+      "id": 2914,
+      "name": "Klein materiaal",
+      "l1Id": 2600
+    },
+    {
+      "id": 2915,
+      "name": "Motor en Toebehoren",
+      "l1Id": 2600
+    },
+    {
+      "id": 2923,
+      "name": "Ophanging en Onderstel",
+      "l1Id": 2600
+    },
+    {
+      "id": 2916,
+      "name": "Remmen en Aandrijving",
+      "l1Id": 2600
+    },
+    {
+      "id": 2917,
+      "name": "Ruiten en Toebehoren",
+      "l1Id": 2600
+    },
+    {
+      "id": 3061,
+      "name": "Sidebars",
+      "l1Id": 2600
+    },
+    {
+      "id": 2918,
+      "name": "Spiegels",
+      "l1Id": 2600
+    },
+    {
+      "id": 2919,
+      "name": "Transmissie en Toebehoren",
+      "l1Id": 2600
+    },
+    {
+      "id": 3062,
+      "name": "Trekhaken",
+      "l1Id": 2600
+    },
+    {
+      "id": 2920,
+      "name": "Uitlaatsystemen",
+      "l1Id": 2600
+    },
+    {
+      "id": 2921,
+      "name": "Verlichting",
+      "l1Id": 2600
+    },
+    {
+      "id": 88,
+      "name": "Vrachtwagen-onderdelen",
+      "l1Id": 2600
+    },
+    {
+      "id": 2922,
+      "name": "Overige Auto-onderdelen",
+      "l1Id": 2600
+    },
+    {
+      "id": 48,
+      "name": "Auto diversen",
+      "l1Id": null
+    },
+    {
+      "id": 49,
+      "name": "Aanhangers en Bagagewagens",
+      "l1Id": 48
+    },
+    {
+      "id": 1134,
+      "name": "Aanhangwagen-onderdelen",
+      "l1Id": 48
+    },
+    {
+      "id": 3063,
+      "name": "Achteruitrijcamera's",
+      "l1Id": 48
+    },
+    {
+      "id": 50,
+      "name": "Anti-diefstal",
+      "l1Id": 48
+    },
+    {
+      "id": 1641,
+      "name": "Auto Inkoop",
+      "l1Id": 48
+    },
+    {
+      "id": 54,
+      "name": "Auto-accessoires",
+      "l1Id": 48
+    },
+    {
+      "id": 60,
+      "name": "Autogereedschap",
+      "l1Id": 48
+    },
+    {
+      "id": 3067,
+      "name": "Autohoezen",
+      "l1Id": 48
+    },
+    {
+      "id": 3070,
+      "name": "Automatten",
+      "l1Id": 48
+    },
+    {
+      "id": 53,
+      "name": "Autonavigatie",
+      "l1Id": 48
+    },
+    {
+      "id": 55,
+      "name": "Autoradio's",
+      "l1Id": 48
+    },
+    {
+      "id": 56,
+      "name": "Autospeakers",
+      "l1Id": 48
+    },
+    {
+      "id": 1651,
+      "name": "Autosport-onderdelen",
+      "l1Id": 48
+    },
+    {
+      "id": 58,
+      "name": "Autostallingen en Garages",
+      "l1Id": 48
+    },
+    {
+      "id": 2646,
+      "name": "Autostickers",
+      "l1Id": 48
+    },
+    {
+      "id": 3066,
+      "name": "Bagagerekken",
+      "l1Id": 48
+    },
+    {
+      "id": 452,
+      "name": "Dakdragers",
+      "l1Id": 48
+    },
+    {
+      "id": 52,
+      "name": "Dakkoffers",
+      "l1Id": 48
+    },
+    {
+      "id": 3068,
+      "name": "Dashcams",
+      "l1Id": 48
+    },
+    {
+      "id": 3065,
+      "name": "Fietsendragers",
+      "l1Id": 48
+    },
+    {
+      "id": 3048,
+      "name": "Hondenrekken",
+      "l1Id": 48
+    },
+    {
+      "id": 3075,
+      "name": "Jumpstarters",
+      "l1Id": 48
+    },
+    {
+      "id": 3064,
+      "name": "Kentekenplaathouders",
+      "l1Id": 48
+    },
+    {
+      "id": 120,
+      "name": "Kitcars",
+      "l1Id": 48
+    },
+    {
+      "id": 3069,
+      "name": "Kofferbakmatten",
+      "l1Id": 48
+    },
+    {
+      "id": 3074,
+      "name": "Krikken",
+      "l1Id": 48
+    },
+    {
+      "id": 3071,
+      "name": "Laadpalen",
+      "l1Id": 48
+    },
+    {
+      "id": 2644,
+      "name": "Onderhoudsmiddelen",
+      "l1Id": 48
+    },
+    {
+      "id": 102,
+      "name": "Raceauto's",
+      "l1Id": 48
+    },
+    {
+      "id": 149,
+      "name": "Schadeauto's",
+      "l1Id": 48
+    },
+    {
+      "id": 1619,
+      "name": "Sneeuwkettingen",
+      "l1Id": 48
+    },
+    {
+      "id": 3073,
+      "name": "Velgenbomen",
+      "l1Id": 48
+    },
+    {
+      "id": 2645,
+      "name": "Wieldoppen",
+      "l1Id": 48
+    },
+    {
+      "id": 89,
+      "name": "Overige Auto diversen",
+      "l1Id": 48
+    },
+    {
+      "id": 201,
+      "name": "Boeken",
+      "l1Id": null
+    },
+    {
+      "id": 2835,
+      "name": "Advies, Hulp en Training",
+      "l1Id": 201
+    },
+    {
+      "id": 202,
+      "name": "Atlassen en Landkaarten",
+      "l1Id": 201
+    },
+    {
+      "id": 203,
+      "name": "Auto's | Boeken",
+      "l1Id": 201
+    },
+    {
+      "id": 2692,
+      "name": "Auto's | Folders en Tijdschriften",
+      "l1Id": 201
+    },
+    {
+      "id": 204,
+      "name": "Avontuur en Actie",
+      "l1Id": 201
+    },
+    {
+      "id": 205,
+      "name": "Biografieën",
+      "l1Id": 201
+    },
+    {
+      "id": 1877,
+      "name": "Boekenweekgeschenken",
+      "l1Id": 201
+    },
+    {
+      "id": 206,
+      "name": "Catalogussen en Folders",
+      "l1Id": 201
+    },
+    {
+      "id": 1878,
+      "name": "Chicklit",
+      "l1Id": 201
+    },
+    {
+      "id": 207,
+      "name": "Detectives",
+      "l1Id": 201
+    },
+    {
+      "id": 1879,
+      "name": "Dieren en Huisdieren",
+      "l1Id": 201
+    },
+    {
+      "id": 2690,
+      "name": "E-books",
+      "l1Id": 201
+    },
+    {
+      "id": 1460,
+      "name": "Economie, Management en Marketing",
+      "l1Id": 201
+    },
+    {
+      "id": 209,
+      "name": "Encyclopedieën",
+      "l1Id": 201
+    },
+    {
+      "id": 210,
+      "name": "Esoterie en Spiritualiteit",
+      "l1Id": 201
+    },
+    {
+      "id": 1880,
+      "name": "Essays, Columns en Interviews",
+      "l1Id": 201
+    },
+    {
+      "id": 225,
+      "name": "Fantasy",
+      "l1Id": 201
+    },
+    {
+      "id": 1461,
+      "name": "Film, Tv en Media",
+      "l1Id": 201
+    },
+    {
+      "id": 1462,
+      "name": "Filosofie",
+      "l1Id": 201
+    },
+    {
+      "id": 1463,
+      "name": "Gedichten en Poëzie",
+      "l1Id": 201
+    },
+    {
+      "id": 1881,
+      "name": "Geschiedenis | Stad en Regio",
+      "l1Id": 201
+    },
+    {
+      "id": 211,
+      "name": "Geschiedenis | Vaderland",
+      "l1Id": 201
+    },
+    {
+      "id": 1882,
+      "name": "Geschiedenis | Wereld",
+      "l1Id": 201
+    },
+    {
+      "id": 219,
+      "name": "Gezondheid, Dieet en Voeding",
+      "l1Id": 201
+    },
+    {
+      "id": 212,
+      "name": "Godsdienst en Theologie",
+      "l1Id": 201
+    },
+    {
+      "id": 1883,
+      "name": "Historische romans",
+      "l1Id": 201
+    },
+    {
+      "id": 213,
+      "name": "Hobby en Vrije tijd",
+      "l1Id": 201
+    },
+    {
+      "id": 1620,
+      "name": "Humor",
+      "l1Id": 201
+    },
+    {
+      "id": 214,
+      "name": "Informatica en Computer",
+      "l1Id": 201
+    },
+    {
+      "id": 1464,
+      "name": "Kinderboeken | Baby's en Peuters",
+      "l1Id": 201
+    },
+    {
+      "id": 1465,
+      "name": "Kinderboeken | Kleuters",
+      "l1Id": 201
+    },
+    {
+      "id": 215,
+      "name": "Kinderboeken | Jeugd | onder 10 jaar",
+      "l1Id": 201
+    },
+    {
+      "id": 1884,
+      "name": "Kinderboeken | Jeugd | 10 tot 12 jaar",
+      "l1Id": 201
+    },
+    {
+      "id": 1885,
+      "name": "Kinderboeken | Jeugd | 13 jaar en ouder",
+      "l1Id": 201
+    },
+    {
+      "id": 216,
+      "name": "Kookboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 1886,
+      "name": "Kunst en Cultuur | Architectuur",
+      "l1Id": 201
+    },
+    {
+      "id": 1887,
+      "name": "Kunst en Cultuur | Beeldend",
+      "l1Id": 201
+    },
+    {
+      "id": 1888,
+      "name": "Kunst en Cultuur | Dans en Theater",
+      "l1Id": 201
+    },
+    {
+      "id": 217,
+      "name": "Kunst en Cultuur | Fotografie en Design",
+      "l1Id": 201
+    },
+    {
+      "id": 218,
+      "name": "Literatuur",
+      "l1Id": 201
+    },
+    {
+      "id": 1889,
+      "name": "Luisterboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 2618,
+      "name": "Mode",
+      "l1Id": 201
+    },
+    {
+      "id": 220,
+      "name": "Muziek",
+      "l1Id": 201
+    },
+    {
+      "id": 208,
+      "name": "Natuur",
+      "l1Id": 201
+    },
+    {
+      "id": 2119,
+      "name": "Oorlog en Militair",
+      "l1Id": 201
+    },
+    {
+      "id": 2694,
+      "name": "Partijen en Verzamelingen",
+      "l1Id": 201
+    },
+    {
+      "id": 1466,
+      "name": "Politiek en Maatschappij",
+      "l1Id": 201
+    },
+    {
+      "id": 2693,
+      "name": "Prentenboeken en Plaatjesalbums",
+      "l1Id": 201
+    },
+    {
+      "id": 222,
+      "name": "Psychologie",
+      "l1Id": 201
+    },
+    {
+      "id": 223,
+      "name": "Reisgidsen",
+      "l1Id": 201
+    },
+    {
+      "id": 1890,
+      "name": "Reisverhalen",
+      "l1Id": 201
+    },
+    {
+      "id": 224,
+      "name": "Romans",
+      "l1Id": 201
+    },
+    {
+      "id": 2688,
+      "name": "Science fiction",
+      "l1Id": 201
+    },
+    {
+      "id": 226,
+      "name": "Sportboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 2687,
+      "name": "Sprookjes en Fabels",
+      "l1Id": 201
+    },
+    {
+      "id": 1467,
+      "name": "Streekboeken en Streekromans",
+      "l1Id": 201
+    },
+    {
+      "id": 227,
+      "name": "Stripboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 1459,
+      "name": "Strips | Comics",
+      "l1Id": 201
+    },
+    {
+      "id": 1652,
+      "name": "Schoolboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 228,
+      "name": "Studieboeken en Cursussen",
+      "l1Id": 201
+    },
+    {
+      "id": 229,
+      "name": "Taal | Duits",
+      "l1Id": 201
+    },
+    {
+      "id": 230,
+      "name": "Taal | Engels",
+      "l1Id": 201
+    },
+    {
+      "id": 231,
+      "name": "Taal | Frans",
+      "l1Id": 201
+    },
+    {
+      "id": 233,
+      "name": "Taal | Spaans",
+      "l1Id": 201
+    },
+    {
+      "id": 232,
+      "name": "Taal | Overige Talen",
+      "l1Id": 201
+    },
+    {
+      "id": 235,
+      "name": "Techniek",
+      "l1Id": 201
+    },
+    {
+      "id": 236,
+      "name": "Thrillers",
+      "l1Id": 201
+    },
+    {
+      "id": 237,
+      "name": "Tijdschriften en Kranten",
+      "l1Id": 201
+    },
+    {
+      "id": 2689,
+      "name": "Vervoer en Transport",
+      "l1Id": 201
+    },
+    {
+      "id": 1468,
+      "name": "Wetenschap",
+      "l1Id": 201
+    },
+    {
+      "id": 1891,
+      "name": "Wonen en Tuinieren",
+      "l1Id": 201
+    },
+    {
+      "id": 238,
+      "name": "Woordenboeken",
+      "l1Id": 201
+    },
+    {
+      "id": 1892,
+      "name": "Zwangerschap en Opvoeding",
+      "l1Id": 201
+    },
+    {
+      "id": 221,
+      "name": "Overige Boeken",
+      "l1Id": 201
+    },
+    {
+      "id": 289,
+      "name": "Caravans en Kamperen",
+      "l1Id": null
+    },
+    {
+      "id": 3083,
+      "name": "Bolderkarren",
+      "l1Id": 289
+    },
+    {
+      "id": 2710,
+      "name": "Camper Inkoop",
+      "l1Id": 289
+    },
+    {
+      "id": 1352,
+      "name": "Camper-accessoires",
+      "l1Id": 289
+    },
+    {
+      "id": 2925,
+      "name": "Campers",
+      "l1Id": 289
+    },
+    {
+      "id": 292,
+      "name": "Caravan accessoires",
+      "l1Id": 289
+    },
+    {
+      "id": 2713,
+      "name": "Caravan Inkoop",
+      "l1Id": 289
+    },
+    {
+      "id": 293,
+      "name": "Caravancentra",
+      "l1Id": 289
+    },
+    {
+      "id": 2924,
+      "name": "Caravans",
+      "l1Id": 289
+    },
+    {
+      "id": 314,
+      "name": "Caravanstallingen",
+      "l1Id": 289
+    },
+    {
+      "id": 315,
+      "name": "Kampeeraccessoires",
+      "l1Id": 289
+    },
+    {
+      "id": 1922,
+      "name": "Kampeergereedschap",
+      "l1Id": 289
+    },
+    {
+      "id": 3077,
+      "name": "Kampeermeubelen",
+      "l1Id": 289
+    },
+    {
+      "id": 3081,
+      "name": "Koelboxen",
+      "l1Id": 289
+    },
+    {
+      "id": 3079,
+      "name": "Luchtbedden",
+      "l1Id": 289
+    },
+    {
+      "id": 3080,
+      "name": "Luchtpompen",
+      "l1Id": 289
+    },
+    {
+      "id": 3076,
+      "name": "Regenkleding",
+      "l1Id": 289
+    },
+    {
+      "id": 3082,
+      "name": "Slaapmatten",
+      "l1Id": 289
+    },
+    {
+      "id": 1923,
+      "name": "Slaapzakken",
+      "l1Id": 289
+    },
+    {
+      "id": 317,
+      "name": "Stacaravans",
+      "l1Id": 289
+    },
+    {
+      "id": 290,
+      "name": "Tentaccessoires",
+      "l1Id": 289
+    },
+    {
+      "id": 318,
+      "name": "Tenten",
+      "l1Id": 289
+    },
+    {
+      "id": 319,
+      "name": "Verhuur",
+      "l1Id": 289
+    },
+    {
+      "id": 320,
+      "name": "Voortenten en Luifels",
+      "l1Id": 289
+    },
+    {
+      "id": 321,
+      "name": "Vouwwagens",
+      "l1Id": 289
+    },
+    {
+      "id": 3078,
+      "name": "Windschermen",
+      "l1Id": 289
+    },
+    {
+      "id": 3084,
+      "name": "Zaklampen",
+      "l1Id": 289
+    },
+    {
+      "id": 316,
+      "name": "Overige Caravans en Kamperen",
+      "l1Id": 289
+    },
+    {
+      "id": 1744,
+      "name": "Cd's en Dvd's",
+      "l1Id": null
+    },
+    {
+      "id": 1745,
+      "name": "Blu-ray",
+      "l1Id": 1744
+    },
+    {
+      "id": 1715,
+      "name": "Cassettebandjes",
+      "l1Id": 1744
+    },
+    {
+      "id": 2717,
+      "name": "Cd's | Schlagers",
+      "l1Id": 1744
+    },
+    {
+      "id": 1336,
+      "name": "Cd's | Klassiek",
+      "l1Id": 1744
+    },
+    {
+      "id": 1342,
+      "name": "Cd's | Verzamelalbums",
+      "l1Id": 1744
+    },
+    {
+      "id": 1681,
+      "name": "Cd's | Country en Western",
+      "l1Id": 1744
+    },
+    {
+      "id": 1332,
+      "name": "Cd's | Dance en House",
+      "l1Id": 1744
+    },
+    {
+      "id": 1747,
+      "name": "Cd's | Kinderen en Jeugd",
+      "l1Id": 1744
+    },
+    {
+      "id": 3085,
+      "name": "Cd's | Franstalig",
+      "l1Id": 1744
+    },
+    {
+      "id": 1340,
+      "name": "Cd Singles",
+      "l1Id": 1744
+    },
+    {
+      "id": 1333,
+      "name": "Cd's | Filmmuziek en Soundtracks",
+      "l1Id": 1744
+    },
+    {
+      "id": 2714,
+      "name": "Cd's | Hardrock en Metal",
+      "l1Id": 1744
+    },
+    {
+      "id": 1334,
+      "name": "Cd's | Hiphop en Rap",
+      "l1Id": 1744
+    },
+    {
+      "id": 1746,
+      "name": "Cd's | Humor en Cabaret",
+      "l1Id": 1744
+    },
+    {
+      "id": 2716,
+      "name": "Cd's | Instrumentaal",
+      "l1Id": 1744
+    },
+    {
+      "id": 1335,
+      "name": "Cd's | Jazz en Blues",
+      "l1Id": 1744
+    },
+    {
+      "id": 2718,
+      "name": "Cd's | Kerst en Sinterklaas",
+      "l1Id": 1744
+    },
+    {
+      "id": 1748,
+      "name": "Cd's | Latin en Salsa",
+      "l1Id": 1744
+    },
+    {
+      "id": 2121,
+      "name": "Cd's | Meditatie en Spiritualiteit",
+      "l1Id": 1744
+    },
+    {
+      "id": 1337,
+      "name": "Cd's | Nederlandstalig",
+      "l1Id": 1744
+    },
+    {
+      "id": 1338,
+      "name": "Cd's | Pop",
+      "l1Id": 1744
+    },
+    {
+      "id": 1749,
+      "name": "Cd's | R&B en Soul",
+      "l1Id": 1744
+    },
+    {
+      "id": 2715,
+      "name": "Cd's | Reggae en Ska",
+      "l1Id": 1744
+    },
+    {
+      "id": 2120,
+      "name": "Cd's | Religie en Gospel",
+      "l1Id": 1744
+    },
+    {
+      "id": 1339,
+      "name": "Cd's | Rock",
+      "l1Id": 1744
+    },
+    {
+      "id": 1343,
+      "name": "Cd's | Wereldmuziek",
+      "l1Id": 1744
+    },
+    {
+      "id": 1349,
+      "name": "Cd's | Overige Cd's",
+      "l1Id": 1744
+    },
+    {
+      "id": 1107,
+      "name": "Dvd's | Actie",
+      "l1Id": 1744
+    },
+    {
+      "id": 2619,
+      "name": "Dvd's | Avontuur",
+      "l1Id": 1744
+    },
+    {
+      "id": 2720,
+      "name": "Dvd's | Cabaret en Sketches",
+      "l1Id": 1744
+    },
+    {
+      "id": 1450,
+      "name": "Dvd's | Documentaire en Educatief",
+      "l1Id": 1744
+    },
+    {
+      "id": 1451,
+      "name": "Dvd's | Drama",
+      "l1Id": 1744
+    },
+    {
+      "id": 1750,
+      "name": "Dvd's | Filmhuis",
+      "l1Id": 1744
+    },
+    {
+      "id": 1751,
+      "name": "Dvd's | Horror",
+      "l1Id": 1744
+    },
+    {
+      "id": 602,
+      "name": "Dvd's | Kinderen en Jeugd",
+      "l1Id": 1744
+    },
+    {
+      "id": 1754,
+      "name": "Dvd's | Klassiekers",
+      "l1Id": 1744
+    },
+    {
+      "id": 1108,
+      "name": "Dvd's | Komedie",
+      "l1Id": 1744
+    },
+    {
+      "id": 1109,
+      "name": "Dvd's | Muziek en Concerten",
+      "l1Id": 1744
+    },
+    {
+      "id": 1752,
+      "name": "Dvd's | Nederlandstalig",
+      "l1Id": 1744
+    },
+    {
+      "id": 2122,
+      "name": "Dvd's | Religie en Gospel",
+      "l1Id": 1744
+    },
+    {
+      "id": 1753,
+      "name": "Dvd's | Science Fiction en Fantasy",
+      "l1Id": 1744
+    },
+    {
+      "id": 810,
+      "name": "Dvd's | Sport en Fitness",
+      "l1Id": 1744
+    },
+    {
+      "id": 1110,
+      "name": "Dvd's | Tekenfilms en Animatie",
+      "l1Id": 1744
+    },
+    {
+      "id": 1111,
+      "name": "Dvd's | Thrillers en Misdaad",
+      "l1Id": 1744
+    },
+    {
+      "id": 1112,
+      "name": "Dvd's | Tv en Series",
+      "l1Id": 1744
+    },
+    {
+      "id": 1113,
+      "name": "Dvd's | Overige Dvd's",
+      "l1Id": 1744
+    },
+    {
+      "id": 1124,
+      "name": "VHS | Documentaire, Tv en Muziek",
+      "l1Id": 1744
+    },
+    {
+      "id": 1122,
+      "name": "VHS | Film",
+      "l1Id": 1744
+    },
+    {
+      "id": 1125,
+      "name": "VHS | Kinderen en Jeugd",
+      "l1Id": 1744
+    },
+    {
+      "id": 1682,
+      "name": "Vinyl | Country en Western",
+      "l1Id": 1744
+    },
+    {
+      "id": 1372,
+      "name": "Vinyl | Dance en House",
+      "l1Id": 1744
+    },
+    {
+      "id": 3248,
+      "name": "Vinyl | Elektronisch",
+      "l1Id": 1744
+    },
+    {
+      "id": 1373,
+      "name": "Vinyl | Filmmuziek en Soundtracks",
+      "l1Id": 1744
+    },
+    {
+      "id": 2719,
+      "name": "Vinyl | Hardrock en Metal",
+      "l1Id": 1744
+    },
+    {
+      "id": 1374,
+      "name": "Vinyl | Hiphop en Rap",
+      "l1Id": 1744
+    },
+    {
+      "id": 1375,
+      "name": "Vinyl | Jazz en Blues",
+      "l1Id": 1744
+    },
+    {
+      "id": 2721,
+      "name": "Vinyl | Kinderen en Jeugd",
+      "l1Id": 1744
+    },
+    {
+      "id": 1376,
+      "name": "Vinyl | Klassiek",
+      "l1Id": 1744
+    },
+    {
+      "id": 1762,
+      "name": "Vinyl | Latin en Salsa",
+      "l1Id": 1744
+    },
+    {
+      "id": 1377,
+      "name": "Vinyl | Nederlandstalig",
+      "l1Id": 1744
+    },
+    {
+      "id": 1378,
+      "name": "Vinyl | Pop",
+      "l1Id": 1744
+    },
+    {
+      "id": 1763,
+      "name": "Vinyl | R&B en Soul",
+      "l1Id": 1744
+    },
+    {
+      "id": 3249,
+      "name": "Vinyl | Reggae",
+      "l1Id": 1744
+    },
+    {
+      "id": 1379,
+      "name": "Vinyl | Rock",
+      "l1Id": 1744
+    },
+    {
+      "id": 1382,
+      "name": "Vinyl | Verzamelalbums",
+      "l1Id": 1744
+    },
+    {
+      "id": 1383,
+      "name": "Vinyl | Wereldmuziek",
+      "l1Id": 1744
+    },
+    {
+      "id": 1380,
+      "name": "Vinyl Singles",
+      "l1Id": 1744
+    },
+    {
+      "id": 1384,
+      "name": "Vinyl | Overige Vinyl",
+      "l1Id": 1744
+    },
+    {
+      "id": 322,
+      "name": "Computers en Software",
+      "l1Id": null,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        }
+      }
+    },
+    {
+      "id": 2724,
+      "name": "Accu's en Batterijen",
+      "l1Id": 322
+    },
+    {
+      "id": 3022,
+      "name": "Accesspoints",
+      "l1Id": 322
+    },
+    {
+      "id": 2844,
+      "name": "Android Tablets",
+      "l1Id": 322
+    },
+    {
+      "id": 371,
+      "name": "Antivirus- en Beveiligingssoftware",
+      "l1Id": 322
+    },
+    {
+      "id": 324,
+      "name": "Apple Desktops",
+      "l1Id": 322
+    },
+    {
+      "id": 2722,
+      "name": "Apple iPads",
+      "l1Id": 322
+    },
+    {
+      "id": 325,
+      "name": "Apple Macbooks",
+      "l1Id": 322,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        },
+        "harddisk": {
+          "label": "Totale opslagcapaciteit",
+          "type": "choice",
+          "values": {
+            "2341": "128 GB of minder",
+            "2342": "256 GB",
+            "2343": "512 GB",
+            "2344": "1 TB of meer",
+            "2340": "Onbekend"
+          }
+        },
+        "memoryRAM": {
+          "label": "Werkgeheugen (RAM)",
+          "type": "choice",
+          "values": {
+            "2331": "Minder dan 4 GB",
+            "2333": "4 GB",
+            "12102": "8 GB",
+            "12103": "16 GB",
+            "12104": "32 GB",
+            "12105": "64 GB of meer"
+          }
+        }
+      }
+    },
+    {
+      "id": 373,
+      "name": "Audio-software",
+      "l1Id": 322
+    },
+    {
+      "id": 3016,
+      "name": "Barebones",
+      "l1Id": 322
+    },
+    {
+      "id": 1415,
+      "name": "Beschrijfbare discs",
+      "l1Id": 322
+    },
+    {
+      "id": 359,
+      "name": "Besturingssoftware",
+      "l1Id": 322
+    },
+    {
+      "id": 3086,
+      "name": "Capture cards",
+      "l1Id": 322
+    },
+    {
+      "id": 3020,
+      "name": "Chromebooks",
+      "l1Id": 322
+    },
+    {
+      "id": 326,
+      "name": "Computerbehuizingen",
+      "l1Id": 322
+    },
+    {
+      "id": 3018,
+      "name": "Computerkoelers",
+      "l1Id": 322
+    },
+    {
+      "id": 328,
+      "name": "Desktop Pc's",
+      "l1Id": 322
+    },
+    {
+      "id": 3038,
+      "name": "Dockingstations",
+      "l1Id": 322
+    },
+    {
+      "id": 2620,
+      "name": "E-readers",
+      "l1Id": 322
+    },
+    {
+      "id": 1475,
+      "name": "Educatie- en Cursussoftware",
+      "l1Id": 322
+    },
+    {
+      "id": 3014,
+      "name": "Geheugenkaartlezers",
+      "l1Id": 322
+    },
+    {
+      "id": 3013,
+      "name": "Geluidskaarten",
+      "l1Id": 322
+    },
+    {
+      "id": 333,
+      "name": "Harde schijven",
+      "l1Id": 322
+    },
+    {
+      "id": 3037,
+      "name": "Headsets",
+      "l1Id": 322
+    },
+    {
+      "id": 3019,
+      "name": "Interne voedingen",
+      "l1Id": 322
+    },
+    {
+      "id": 3036,
+      "name": "Joysticks",
+      "l1Id": 322
+    },
+    {
+      "id": 3032,
+      "name": "Labelprinters",
+      "l1Id": 322
+    },
+    {
+      "id": 1653,
+      "name": "Laptop-opladers",
+      "l1Id": 322
+    },
+    {
+      "id": 3030,
+      "name": "Laptophoezen",
+      "l1Id": 322
+    },
+    {
+      "id": 3029,
+      "name": "Laptopstandaarden",
+      "l1Id": 322
+    },
+    {
+      "id": 3028,
+      "name": "Laptoptafels",
+      "l1Id": 322
+    },
+    {
+      "id": 1654,
+      "name": "Laptoptassen",
+      "l1Id": 322
+    },
+    {
+      "id": 335,
+      "name": "Moederborden",
+      "l1Id": 322
+    },
+    {
+      "id": 336,
+      "name": "Monitoren",
+      "l1Id": 322
+    },
+    {
+      "id": 3035,
+      "name": "Muismatten",
+      "l1Id": 322
+    },
+    {
+      "id": 1727,
+      "name": "Muizen",
+      "l1Id": 322
+    },
+    {
+      "id": 3017,
+      "name": "NAS",
+      "l1Id": 322
+    },
+    {
+      "id": 1477,
+      "name": "Navigatiesoftware",
+      "l1Id": 322
+    },
+    {
+      "id": 338,
+      "name": "Netwerk switches",
+      "l1Id": 322
+    },
+    {
+      "id": 3015,
+      "name": "Netwerkkaarten",
+      "l1Id": 322
+    },
+    {
+      "id": 2841,
+      "name": "Noodvoedingen (UPS)",
+      "l1Id": 322
+    },
+    {
+      "id": 3039,
+      "name": "Office-software",
+      "l1Id": 322
+    },
+    {
+      "id": 369,
+      "name": "Ontwerp- en Bewerkingssoftware",
+      "l1Id": 322
+    },
+    {
+      "id": 350,
+      "name": "Optische drives",
+      "l1Id": 322
+    },
+    {
+      "id": 332,
+      "name": "Pc speakers",
+      "l1Id": 322
+    },
+    {
+      "id": 1658,
+      "name": "Pc- en Netwerkkabels",
+      "l1Id": 322
+    },
+    {
+      "id": 3033,
+      "name": "Pocketprinters",
+      "l1Id": 322
+    },
+    {
+      "id": 3023,
+      "name": "Powerlines",
+      "l1Id": 322
+    },
+    {
+      "id": 3027,
+      "name": "Presenters",
+      "l1Id": 322
+    },
+    {
+      "id": 342,
+      "name": "Printers",
+      "l1Id": 322
+    },
+    {
+      "id": 1416,
+      "name": "Printerbenodigdheden",
+      "l1Id": 322
+    },
+    {
+      "id": 2842,
+      "name": "3D Printers",
+      "l1Id": 322
+    },
+    {
+      "id": 3034,
+      "name": "3D-printerbenodigheden",
+      "l1Id": 322
+    },
+    {
+      "id": 343,
+      "name": "Processors",
+      "l1Id": 322
+    },
+    {
+      "id": 331,
+      "name": "RAM geheugen",
+      "l1Id": 322
+    },
+    {
+      "id": 334,
+      "name": "Routers en Modems",
+      "l1Id": 322
+    },
+    {
+      "id": 3012,
+      "name": "Serverkasten",
+      "l1Id": 322
+    },
+    {
+      "id": 1417,
+      "name": "Servers",
+      "l1Id": 322
+    },
+    {
+      "id": 2847,
+      "name": "Tablet-hoezen",
+      "l1Id": 322
+    },
+    {
+      "id": 3031,
+      "name": "Tekentablets",
+      "l1Id": 322
+    },
+    {
+      "id": 352,
+      "name": "Toetsenborden",
+      "l1Id": 322
+    },
+    {
+      "id": 1418,
+      "name": "USB Sticks",
+      "l1Id": 322
+    },
+    {
+      "id": 353,
+      "name": "Videokaarten",
+      "l1Id": 322
+    },
+    {
+      "id": 327,
+      "name": "Vintage Computers",
+      "l1Id": 322
+    },
+    {
+      "id": 354,
+      "name": "Webcams",
+      "l1Id": 322
+    },
+    {
+      "id": 3024,
+      "name": "WiFi-versterkers",
+      "l1Id": 322
+    },
+    {
+      "id": 339,
+      "name": "Windows Laptops",
+      "l1Id": 322,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        },
+        "memoryRAM": {
+          "label": "Werkgeheugen (RAM)",
+          "type": "choice",
+          "values": {
+            "2331": "Minder dan 4 GB",
+            "2333": "4 GB",
+            "12102": "8 GB",
+            "12103": "16 GB",
+            "12104": "32 GB",
+            "12105": "64 GB of meer"
+          }
+        }
+      }
+    },
+    {
+      "id": 2723,
+      "name": "Windows Tablets",
+      "l1Id": 322
+    },
+    {
+      "id": 341,
+      "name": "Overige Computers en Software",
+      "l1Id": 322
+    },
+    {
+      "id": 378,
+      "name": "Contacten en Berichten",
+      "l1Id": null
+    },
+    {
+      "id": 379,
+      "name": "Advies en Oproepen",
+      "l1Id": 378
+    },
+    {
+      "id": 1353,
+      "name": "Contact kwijt en Opsporing",
+      "l1Id": 378
+    },
+    {
+      "id": 1469,
+      "name": "Dating | Websites en SMS",
+      "l1Id": 378
+    },
+    {
+      "id": 380,
+      "name": "Evenementen",
+      "l1Id": 378
+    },
+    {
+      "id": 1662,
+      "name": "Gevonden voorwerpen",
+      "l1Id": 378
+    },
+    {
+      "id": 2078,
+      "name": "Huisgenoten gezocht",
+      "l1Id": 378
+    },
+    {
+      "id": 385,
+      "name": "Man zoekt Man",
+      "l1Id": 378
+    },
+    {
+      "id": 386,
+      "name": "Man zoekt Vrouw",
+      "l1Id": 378
+    },
+    {
+      "id": 1470,
+      "name": "Muziek maken en Bandleden",
+      "l1Id": 378
+    },
+    {
+      "id": 390,
+      "name": "Reisgenoten en Carpoolers",
+      "l1Id": 378
+    },
+    {
+      "id": 391,
+      "name": "Reünies",
+      "l1Id": 378
+    },
+    {
+      "id": 1473,
+      "name": "Sport en Hobby oproepen",
+      "l1Id": 378
+    },
+    {
+      "id": 1661,
+      "name": "Thuisparty's",
+      "l1Id": 378
+    },
+    {
+      "id": 1474,
+      "name": "Uitgaan",
+      "l1Id": 378
+    },
+    {
+      "id": 1396,
+      "name": "Vriendschappen",
+      "l1Id": 378
+    },
+    {
+      "id": 393,
+      "name": "Vrouw zoekt Man",
+      "l1Id": 378
+    },
+    {
+      "id": 394,
+      "name": "Vrouw zoekt Vrouw",
+      "l1Id": 378
+    },
+    {
+      "id": 1098,
+      "name": "Diensten en Vakmensen",
+      "l1Id": null
+    },
+    {
+      "id": 1205,
+      "name": "Aannemers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2079,
+      "name": "Alarminstallateurs en Beveiliging",
+      "l1Id": 1098
+    },
+    {
+      "id": 2054,
+      "name": "Alternatieve geneeskunde en Spiritualiteit",
+      "l1Id": 1098
+    },
+    {
+      "id": 1189,
+      "name": "Auto en Motor | Monteurs en Garages",
+      "l1Id": 1098
+    },
+    {
+      "id": 2037,
+      "name": "Auto en Motor | Poetsers en Wassers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2038,
+      "name": "Auto en Motor | Schadeherstellers en Spuiterijen",
+      "l1Id": 1098
+    },
+    {
+      "id": 1191,
+      "name": "Bijles, Privé-les en Taalles",
+      "l1Id": 1098
+    },
+    {
+      "id": 1708,
+      "name": "Bloemisten en Geschenken",
+      "l1Id": 1098
+    },
+    {
+      "id": 1187,
+      "name": "Boekhouders en Administrateurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 2080,
+      "name": "Bouwkundig adviseurs en Architecten",
+      "l1Id": 1098
+    },
+    {
+      "id": 2081,
+      "name": "Coaching en Persoonlijke effectiviteit",
+      "l1Id": 1098
+    },
+    {
+      "id": 1195,
+      "name": "Computer en Internet experts",
+      "l1Id": 1098
+    },
+    {
+      "id": 1210,
+      "name": "Cursussen en Workshops",
+      "l1Id": 1098
+    },
+    {
+      "id": 2039,
+      "name": "Dakdekkers en Rietdekkers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2611,
+      "name": "Detectivebureaus",
+      "l1Id": 1098
+    },
+    {
+      "id": 2040,
+      "name": "Dieren | Honden | Verzorging, Oppas en Les",
+      "l1Id": 1098
+    },
+    {
+      "id": 2082,
+      "name": "Dieren | Katten | Verzorging, Oppas en Les",
+      "l1Id": 1098
+    },
+    {
+      "id": 2041,
+      "name": "Dieren | Paarden | Verzorging, Oppas en Les",
+      "l1Id": 1098
+    },
+    {
+      "id": 1196,
+      "name": "Dieren | Overige | Verzorging, Oppas en Les",
+      "l1Id": 1098
+    },
+    {
+      "id": 1201,
+      "name": "Drukwerk en Grafisch ontwerpers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2608,
+      "name": "Edelsmeden en Sieradenmakers",
+      "l1Id": 1098
+    },
+    {
+      "id": 1633,
+      "name": "Elektriciens",
+      "l1Id": 1098
+    },
+    {
+      "id": 1421,
+      "name": "Fietsenmakers en Bromfietsenmakers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2042,
+      "name": "Film- en Videobewerking",
+      "l1Id": 1098
+    },
+    {
+      "id": 1199,
+      "name": "Fotografen",
+      "l1Id": 1098
+    },
+    {
+      "id": 1198,
+      "name": "Geld en Leningen",
+      "l1Id": 1098
+    },
+    {
+      "id": 2043,
+      "name": "Gevelrenovatie en Voegers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2044,
+      "name": "Glaszetters",
+      "l1Id": 1098
+    },
+    {
+      "id": 1427,
+      "name": "Groepsuitjes en Personeelsfeesten",
+      "l1Id": 1098
+    },
+    {
+      "id": 1202,
+      "name": "Huishoudelijke hulp",
+      "l1Id": 1098
+    },
+    {
+      "id": 1097,
+      "name": "Hypotheken en Verzekeringen",
+      "l1Id": 1098
+    },
+    {
+      "id": 1225,
+      "name": "Interieuradviseurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 1203,
+      "name": "Juristen en Notarissen",
+      "l1Id": 1098
+    },
+    {
+      "id": 1634,
+      "name": "Kappers en Thuiskappers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2084,
+      "name": "Kinderfeestjes en Entertainers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2612,
+      "name": "Kledingadvies en Stylisten",
+      "l1Id": 1098
+    },
+    {
+      "id": 2045,
+      "name": "Kleermakers en Kledingontwerpers",
+      "l1Id": 1098
+    },
+    {
+      "id": 1192,
+      "name": "Klussers en Klusbedrijven",
+      "l1Id": 1098
+    },
+    {
+      "id": 1204,
+      "name": "Koeriers, Chauffeurs en Taxi's",
+      "l1Id": 1098
+    },
+    {
+      "id": 1423,
+      "name": "Kunstenaars en Portretschilders",
+      "l1Id": 1098
+    },
+    {
+      "id": 2607,
+      "name": "Lassers en Metaalbewerking",
+      "l1Id": 1098
+    },
+    {
+      "id": 1635,
+      "name": "Loodgieters en Installateurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 1424,
+      "name": "Makelaars en Taxateurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 1425,
+      "name": "Muziekles en Zangles",
+      "l1Id": 1098
+    },
+    {
+      "id": 1188,
+      "name": "Muzikanten, Artiesten en Dj's",
+      "l1Id": 1098
+    },
+    {
+      "id": 2085,
+      "name": "Ongediertebestrijding",
+      "l1Id": 1098
+    },
+    {
+      "id": 1211,
+      "name": "Oppas en Kinderopvang",
+      "l1Id": 1098
+    },
+    {
+      "id": 3087,
+      "name": "Personal trainers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2613,
+      "name": "Promotie- en Reclamebureaus",
+      "l1Id": 1098
+    },
+    {
+      "id": 2610,
+      "name": "Reparatie en Onderhoud | Antiek, Klokken en Meubels",
+      "l1Id": 1098
+    },
+    {
+      "id": 1219,
+      "name": "Reparatie en Onderhoud | Audio, Tv en Foto",
+      "l1Id": 1098
+    },
+    {
+      "id": 2086,
+      "name": "Reparatie en Onderhoud | Caravans en Campers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2047,
+      "name": "Reparatie en Onderhoud | Kleding en Schoenen",
+      "l1Id": 1098
+    },
+    {
+      "id": 2087,
+      "name": "Reparatie en Onderhoud | Muziekinstrumenten",
+      "l1Id": 1098
+    },
+    {
+      "id": 2088,
+      "name": "Reparatie en Onderhoud | Pc's en Spelcomputers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2052,
+      "name": "Reparatie en Onderhoud | Sloten",
+      "l1Id": 1098
+    },
+    {
+      "id": 1664,
+      "name": "Reparatie en Onderhoud | Telecommunicatie",
+      "l1Id": 1098
+    },
+    {
+      "id": 2089,
+      "name": "Reparatie en Onderhoud | Watersport en Boten",
+      "l1Id": 1098
+    },
+    {
+      "id": 1397,
+      "name": "Reparatie en Onderhoud | Witgoed en Apparatuur",
+      "l1Id": 1098
+    },
+    {
+      "id": 1636,
+      "name": "Reparatie en Onderhoud | Overige",
+      "l1Id": 1098
+    },
+    {
+      "id": 1193,
+      "name": "Restaurants en Cateraars",
+      "l1Id": 1098
+    },
+    {
+      "id": 1213,
+      "name": "Rijscholen",
+      "l1Id": 1098
+    },
+    {
+      "id": 1214,
+      "name": "Schilders en Behangers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2048,
+      "name": "Schoonheidsspecialisten | Manicure",
+      "l1Id": 1098
+    },
+    {
+      "id": 2049,
+      "name": "Schoonheidsspecialisten | Pedicure",
+      "l1Id": 1098
+    },
+    {
+      "id": 1220,
+      "name": "Schoonheidsspecialisten | Overige",
+      "l1Id": 1098
+    },
+    {
+      "id": 1637,
+      "name": "Schoonmakers en Glazenwassers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2050,
+      "name": "Schoorsteenvegers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2051,
+      "name": "Slopers en Sloopwerkzaamheden",
+      "l1Id": 1098
+    },
+    {
+      "id": 1426,
+      "name": "Stukadoors en Tegelzetters",
+      "l1Id": 1098
+    },
+    {
+      "id": 1226,
+      "name": "Thuiszorg en Kraamhulp",
+      "l1Id": 1098
+    },
+    {
+      "id": 1638,
+      "name": "Timmerlieden en Meubelmakers",
+      "l1Id": 1098
+    },
+    {
+      "id": 1218,
+      "name": "Tuinmannen en Stratenmakers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2606,
+      "name": "Uitvaartverzorging",
+      "l1Id": 1098
+    },
+    {
+      "id": 1221,
+      "name": "Verhuizers en Opslag",
+      "l1Id": 1098
+    },
+    {
+      "id": 59,
+      "name": "Verhuur | Auto en Motor",
+      "l1Id": 1098
+    },
+    {
+      "id": 996,
+      "name": "Verhuur | Boten",
+      "l1Id": 1098
+    },
+    {
+      "id": 1871,
+      "name": "Verhuur | Gereedschap en Machines",
+      "l1Id": 1098
+    },
+    {
+      "id": 1422,
+      "name": "Verhuur | Kleding en Feestkleding",
+      "l1Id": 1098
+    },
+    {
+      "id": 1639,
+      "name": "Verhuur | Zalen en Feestlocaties",
+      "l1Id": 1098
+    },
+    {
+      "id": 1719,
+      "name": "Verhuur | Overig",
+      "l1Id": 1098
+    },
+    {
+      "id": 1222,
+      "name": "Vertalers, Tolken en Tekstschrijvers",
+      "l1Id": 1098
+    },
+    {
+      "id": 2090,
+      "name": "Vloerleggers en Parketteurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 2091,
+      "name": "Wasserettes, Stomerijen en Strijkservice",
+      "l1Id": 1098
+    },
+    {
+      "id": 1223,
+      "name": "Webdesigners en Hosting",
+      "l1Id": 1098
+    },
+    {
+      "id": 2055,
+      "name": "Welzijn | Masseurs en Massagesalons",
+      "l1Id": 1098
+    },
+    {
+      "id": 2056,
+      "name": "Welzijn | Therapeuten",
+      "l1Id": 1098
+    },
+    {
+      "id": 1200,
+      "name": "Welzijn | Overige",
+      "l1Id": 1098
+    },
+    {
+      "id": 1640,
+      "name": "Zakelijk adviseurs en Bemiddelaars",
+      "l1Id": 1098
+    },
+    {
+      "id": 2057,
+      "name": "Zonweringinstallateurs",
+      "l1Id": 1098
+    },
+    {
+      "id": 1227,
+      "name": "Overige Diensten",
+      "l1Id": 1098
+    },
+    {
+      "id": 395,
+      "name": "Dieren en Toebehoren",
+      "l1Id": null
+    },
+    {
+      "id": 399,
+      "name": "Dierenvoeding",
+      "l1Id": 395
+    },
+    {
+      "id": 2725,
+      "name": "Honden | Beagles, Bassets en Lopende honden",
+      "l1Id": 395
+    },
+    {
+      "id": 1924,
+      "name": "Honden | Bulldogs, Pinschers en Molossers",
+      "l1Id": 395
+    },
+    {
+      "id": 1925,
+      "name": "Honden | Chihuahua's en Gezelschapshonden",
+      "l1Id": 395
+    },
+    {
+      "id": 1926,
+      "name": "Honden | Dekreuen",
+      "l1Id": 395
+    },
+    {
+      "id": 401,
+      "name": "Honden | Herdershonden en Veedrijvers",
+      "l1Id": 395
+    },
+    {
+      "id": 402,
+      "name": "Honden | Jack Russells en Terriërs",
+      "l1Id": 395
+    },
+    {
+      "id": 404,
+      "name": "Honden | Niet-rashonden",
+      "l1Id": 395
+    },
+    {
+      "id": 2726,
+      "name": "Honden | Poolhonden, Keeshonden en Oertypen",
+      "l1Id": 395
+    },
+    {
+      "id": 403,
+      "name": "Honden | Retrievers, Spaniëls en Waterhonden",
+      "l1Id": 395
+    },
+    {
+      "id": 2727,
+      "name": "Honden | Setters en Staande honden",
+      "l1Id": 395
+    },
+    {
+      "id": 1927,
+      "name": "Honden | Teckels en Dashonden",
+      "l1Id": 395
+    },
+    {
+      "id": 2728,
+      "name": "Honden | Windhonden",
+      "l1Id": 395
+    },
+    {
+      "id": 1928,
+      "name": "Honden-accessoires",
+      "l1Id": 395
+    },
+    {
+      "id": 3092,
+      "name": "Hondenbenches",
+      "l1Id": 395
+    },
+    {
+      "id": 3094,
+      "name": "Hondenhalsbanden en Penningen",
+      "l1Id": 395
+    },
+    {
+      "id": 1356,
+      "name": "Hondenhokken",
+      "l1Id": 395
+    },
+    {
+      "id": 3090,
+      "name": "Hondenkleding",
+      "l1Id": 395
+    },
+    {
+      "id": 3088,
+      "name": "Hondenmanden",
+      "l1Id": 395
+    },
+    {
+      "id": 3093,
+      "name": "Hondenriemen",
+      "l1Id": 395
+    },
+    {
+      "id": 3091,
+      "name": "Hondenspeelgoed",
+      "l1Id": 395
+    },
+    {
+      "id": 3089,
+      "name": "Hondenvoerbakken en Drinkbakken",
+      "l1Id": 395
+    },
+    {
+      "id": 2732,
+      "name": "Insecten en Spinnen",
+      "l1Id": 395
+    },
+    {
+      "id": 1929,
+      "name": "Katten en Kittens | Dekkaters",
+      "l1Id": 395
+    },
+    {
+      "id": 406,
+      "name": "Katten en Kittens | Overige Katten",
+      "l1Id": 395
+    },
+    {
+      "id": 407,
+      "name": "Katten en Kittens | Raskatten | Korthaar",
+      "l1Id": 395
+    },
+    {
+      "id": 1930,
+      "name": "Katten en Kittens | Raskatten | Langhaar",
+      "l1Id": 395
+    },
+    {
+      "id": 1931,
+      "name": "Katten-accessoires",
+      "l1Id": 395
+    },
+    {
+      "id": 3096,
+      "name": "Kattenbakken",
+      "l1Id": 395
+    },
+    {
+      "id": 3100,
+      "name": "Kattenhalsbanden en Penningen",
+      "l1Id": 395
+    },
+    {
+      "id": 3099,
+      "name": "Kattenmanden",
+      "l1Id": 395
+    },
+    {
+      "id": 3098,
+      "name": "Kattenspeelgoed",
+      "l1Id": 395
+    },
+    {
+      "id": 3095,
+      "name": "Kattenvoerbakken en Drinkbakken",
+      "l1Id": 395
+    },
+    {
+      "id": 408,
+      "name": "Knaagdieren",
+      "l1Id": 395
+    },
+    {
+      "id": 1357,
+      "name": "Knaagdieren en Konijnen | Hokken en Kooien",
+      "l1Id": 395
+    },
+    {
+      "id": 1932,
+      "name": "Knaagdieren en Konijnen | Toebehoren",
+      "l1Id": 395
+    },
+    {
+      "id": 409,
+      "name": "Konijnen",
+      "l1Id": 395
+    },
+    {
+      "id": 3097,
+      "name": "Krabmeubelen",
+      "l1Id": 395
+    },
+    {
+      "id": 3244,
+      "name": "Lama's en Alpaca's",
+      "l1Id": 395
+    },
+    {
+      "id": 411,
+      "name": "Paarden",
+      "l1Id": 395
+    },
+    {
+      "id": 2731,
+      "name": "Paarden en Pony's | Beschermers",
+      "l1Id": 395
+    },
+    {
+      "id": 2730,
+      "name": "Paarden en Pony's | Dekens en Dekjes",
+      "l1Id": 395
+    },
+    {
+      "id": 1933,
+      "name": "Paarden en Pony's | Dekhengsten en Fokmerries",
+      "l1Id": 395
+    },
+    {
+      "id": 1712,
+      "name": "Paarden en Pony's | Hoofdstellen en Tuigage",
+      "l1Id": 395
+    },
+    {
+      "id": 413,
+      "name": "Paarden en Pony's | Overige Paardenspullen",
+      "l1Id": 395
+    },
+    {
+      "id": 414,
+      "name": "Paarden en Pony's | Trailers en Aanhangwagens",
+      "l1Id": 395
+    },
+    {
+      "id": 2729,
+      "name": "Paarden en Pony's | Verzorgingsproducten",
+      "l1Id": 395
+    },
+    {
+      "id": 416,
+      "name": "Paarden en Pony's | Zadels",
+      "l1Id": 395
+    },
+    {
+      "id": 1486,
+      "name": "Paardrijkleding",
+      "l1Id": 395
+    },
+    {
+      "id": 1488,
+      "name": "Pluimvee",
+      "l1Id": 395
+    },
+    {
+      "id": 400,
+      "name": "Pluimvee | Toebehoren",
+      "l1Id": 395
+    },
+    {
+      "id": 417,
+      "name": "Pony's",
+      "l1Id": 395
+    },
+    {
+      "id": 418,
+      "name": "Reptielen en Amfibieën",
+      "l1Id": 395
+    },
+    {
+      "id": 421,
+      "name": "Reptielen en Amfibieën | Toebehoren",
+      "l1Id": 395
+    },
+    {
+      "id": 419,
+      "name": "Rijtuigen en Koetsen",
+      "l1Id": 395
+    },
+    {
+      "id": 422,
+      "name": "Runderen",
+      "l1Id": 395
+    },
+    {
+      "id": 1485,
+      "name": "Schapen, Geiten en Varkens",
+      "l1Id": 395
+    },
+    {
+      "id": 420,
+      "name": "Stalling en Weidegang",
+      "l1Id": 395
+    },
+    {
+      "id": 3050,
+      "name": "Transportboxen",
+      "l1Id": 395
+    },
+    {
+      "id": 423,
+      "name": "Vermiste en Gevonden Dieren",
+      "l1Id": 395
+    },
+    {
+      "id": 396,
+      "name": "Vissen | Aquaria en Toebehoren",
+      "l1Id": 395
+    },
+    {
+      "id": 424,
+      "name": "Vissen | Aquariumvissen",
+      "l1Id": 395
+    },
+    {
+      "id": 425,
+      "name": "Vissen | Vijvervissen",
+      "l1Id": 395
+    },
+    {
+      "id": 1665,
+      "name": "Vogels | Duiven",
+      "l1Id": 395
+    },
+    {
+      "id": 1358,
+      "name": "Vogels | Hokken en Kooien",
+      "l1Id": 395
+    },
+    {
+      "id": 1487,
+      "name": "Vogels | Kanaries",
+      "l1Id": 395
+    },
+    {
+      "id": 426,
+      "name": "Vogels | Overige Vogels",
+      "l1Id": 395
+    },
+    {
+      "id": 427,
+      "name": "Vogels | Parkieten en Papegaaien",
+      "l1Id": 395
+    },
+    {
+      "id": 1934,
+      "name": "Vogels | Toebehoren",
+      "l1Id": 395
+    },
+    {
+      "id": 410,
+      "name": "Overige Dieren",
+      "l1Id": 395
+    },
+    {
+      "id": 397,
+      "name": "Overige Dieren-accessoires",
+      "l1Id": 395
+    },
+    {
+      "id": 239,
+      "name": "Doe-het-zelf en Verbouw",
+      "l1Id": null
+    },
+    {
+      "id": 1350,
+      "name": "Motoren",
+      "l1Id": 239
+    },
+    {
+      "id": 3199,
+      "name": "Adembescherming",
+      "l1Id": 239
+    },
+    {
+      "id": 3250,
+      "name": "Afvalhout",
+      "l1Id": 239
+    },
+    {
+      "id": 241,
+      "name": "Aggregaten",
+      "l1Id": 239
+    },
+    {
+      "id": 1866,
+      "name": "Alarmsystemen",
+      "l1Id": 239
+    },
+    {
+      "id": 3102,
+      "name": "Betonmolens",
+      "l1Id": 239
+    },
+    {
+      "id": 2849,
+      "name": "Bouwketen en Schaftketen",
+      "l1Id": 239
+    },
+    {
+      "id": 273,
+      "name": "Bouwliften",
+      "l1Id": 239
+    },
+    {
+      "id": 1185,
+      "name": "Bouwverlichting",
+      "l1Id": 239
+    },
+    {
+      "id": 1395,
+      "name": "Buizen en Afvoer",
+      "l1Id": 239
+    },
+    {
+      "id": 243,
+      "name": "Compressors",
+      "l1Id": 239
+    },
+    {
+      "id": 2850,
+      "name": "Containers",
+      "l1Id": 239
+    },
+    {
+      "id": 270,
+      "name": "Dakpannen en Dakbedekking",
+      "l1Id": 239
+    },
+    {
+      "id": 244,
+      "name": "Deuren en Horren",
+      "l1Id": 239
+    },
+    {
+      "id": 245,
+      "name": "Draaibanken",
+      "l1Id": 239
+    },
+    {
+      "id": 1867,
+      "name": "Elektra en Kabels",
+      "l1Id": 239
+    },
+    {
+      "id": 3198,
+      "name": "Gehoorbeschermers",
+      "l1Id": 239
+    },
+    {
+      "id": 246,
+      "name": "Geisers en Boilers",
+      "l1Id": 239
+    },
+    {
+      "id": 3252,
+      "name": "Gereedschap | Accu's",
+      "l1Id": 239
+    },
+    {
+      "id": 242,
+      "name": "Gereedschap | Boormachines",
+      "l1Id": 239
+    },
+    {
+      "id": 2990,
+      "name": "Gereedschap | Freesmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 247,
+      "name": "Gereedschap | Handgereedschap",
+      "l1Id": 239
+    },
+    {
+      "id": 258,
+      "name": "Gereedschap | Lasapparaten",
+      "l1Id": 239
+    },
+    {
+      "id": 1710,
+      "name": "Gereedschap | Machine-onderdelen en Toebehoren",
+      "l1Id": 239
+    },
+    {
+      "id": 259,
+      "name": "Gereedschap | Overige machines",
+      "l1Id": 239
+    },
+    {
+      "id": 268,
+      "name": "Gereedschap | Schuurmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 2733,
+      "name": "Gereedschap | Slijpmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 287,
+      "name": "Gereedschap | Zaagmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 3103,
+      "name": "Gereedschapskisten",
+      "l1Id": 239
+    },
+    {
+      "id": 249,
+      "name": "Glas en Ramen",
+      "l1Id": 239
+    },
+    {
+      "id": 1869,
+      "name": "Hang- en Sluitwerk",
+      "l1Id": 239
+    },
+    {
+      "id": 252,
+      "name": "Hout en Planken",
+      "l1Id": 239
+    },
+    {
+      "id": 2621,
+      "name": "IJzerwaren en Bevestigingsmiddelen",
+      "l1Id": 239
+    },
+    {
+      "id": 1870,
+      "name": "Isolatie en Afdichting",
+      "l1Id": 239
+    },
+    {
+      "id": 254,
+      "name": "Kozijnen en Schuifpuien",
+      "l1Id": 239
+    },
+    {
+      "id": 256,
+      "name": "Kratten en Dozen",
+      "l1Id": 239
+    },
+    {
+      "id": 257,
+      "name": "Ladders en Trappen",
+      "l1Id": 239
+    },
+    {
+      "id": 3197,
+      "name": "Laskappen",
+      "l1Id": 239
+    },
+    {
+      "id": 3049,
+      "name": "Lieren en Takels",
+      "l1Id": 239
+    },
+    {
+      "id": 1399,
+      "name": "Meetapparatuur",
+      "l1Id": 239
+    },
+    {
+      "id": 260,
+      "name": "Metalen",
+      "l1Id": 239
+    },
+    {
+      "id": 2624,
+      "name": "Metselstenen",
+      "l1Id": 239
+    },
+    {
+      "id": 2851,
+      "name": "Palletwagens en Pompwagens",
+      "l1Id": 239
+    },
+    {
+      "id": 263,
+      "name": "Platen en Panelen",
+      "l1Id": 239
+    },
+    {
+      "id": 1872,
+      "name": "Plinten en Afwerking",
+      "l1Id": 239
+    },
+    {
+      "id": 264,
+      "name": "Reinigingsmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 265,
+      "name": "Rolluiken",
+      "l1Id": 239
+    },
+    {
+      "id": 266,
+      "name": "Sanitair",
+      "l1Id": 239
+    },
+    {
+      "id": 3104,
+      "name": "Schaafmachines",
+      "l1Id": 239
+    },
+    {
+      "id": 267,
+      "name": "Schildersmaterialen",
+      "l1Id": 239
+    },
+    {
+      "id": 269,
+      "name": "Steigers",
+      "l1Id": 239
+    },
+    {
+      "id": 1873,
+      "name": "Tegels",
+      "l1Id": 239
+    },
+    {
+      "id": 271,
+      "name": "Tekentafels",
+      "l1Id": 239
+    },
+    {
+      "id": 3105,
+      "name": "Thermostaten",
+      "l1Id": 239
+    },
+    {
+      "id": 3251,
+      "name": "Thuisbatterijen",
+      "l1Id": 239
+    },
+    {
+      "id": 2623,
+      "name": "Transportwagens",
+      "l1Id": 239
+    },
+    {
+      "id": 3101,
+      "name": "Veiligheidsbrillen",
+      "l1Id": 239
+    },
+    {
+      "id": 3201,
+      "name": "Veiligheidshelmen",
+      "l1Id": 239
+    },
+    {
+      "id": 3200,
+      "name": "Veiligheidskleding",
+      "l1Id": 239
+    },
+    {
+      "id": 1874,
+      "name": "Ventilatie en Afzuiging",
+      "l1Id": 239
+    },
+    {
+      "id": 1875,
+      "name": "Verf, Beits en Lak",
+      "l1Id": 239
+    },
+    {
+      "id": 282,
+      "name": "Verwarming en Radiatoren",
+      "l1Id": 239
+    },
+    {
+      "id": 284,
+      "name": "Vloerdelen en Plavuizen",
+      "l1Id": 239
+    },
+    {
+      "id": 261,
+      "name": "Werkbanken",
+      "l1Id": 239
+    },
+    {
+      "id": 1876,
+      "name": "Zeil en Folie",
+      "l1Id": 239
+    },
+    {
+      "id": 2622,
+      "name": "Zonnepanelen en Toebehoren",
+      "l1Id": 239
+    },
+    {
+      "id": 2852,
+      "name": "Zwenkwielen",
+      "l1Id": 239
+    },
+    {
+      "id": 262,
+      "name": "Overige Doe-het-zelf en Verbouw",
+      "l1Id": 239
+    },
+    {
+      "id": 445,
+      "name": "Fietsen en Brommers",
+      "l1Id": null,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt"
+          }
+        }
+      }
+    },
+    {
+      "id": 2735,
+      "name": "Brommerhelmen",
+      "l1Id": 445
+    },
+    {
+      "id": 712,
+      "name": "Brommeronderdelen | Algemeen",
+      "l1Id": 445
+    },
+    {
+      "id": 1623,
+      "name": "Brommeronderdelen | Kreidler",
+      "l1Id": 445
+    },
+    {
+      "id": 2027,
+      "name": "Brommeronderdelen | Oldtimers",
+      "l1Id": 445
+    },
+    {
+      "id": 718,
+      "name": "Brommeronderdelen | Puch",
+      "l1Id": 445
+    },
+    {
+      "id": 719,
+      "name": "Brommeronderdelen | Scooters",
+      "l1Id": 445
+    },
+    {
+      "id": 720,
+      "name": "Brommeronderdelen | Snorfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 1138,
+      "name": "Brommeronderdelen | Zundapp",
+      "l1Id": 445
+    },
+    {
+      "id": 679,
+      "name": "Brommers | Crossbrommers",
+      "l1Id": 445
+    },
+    {
+      "id": 2734,
+      "name": "Brommers | Derbi",
+      "l1Id": 445
+    },
+    {
+      "id": 1432,
+      "name": "Brommers | Honda",
+      "l1Id": 445
+    },
+    {
+      "id": 680,
+      "name": "Brommers | Kreidler",
+      "l1Id": 445
+    },
+    {
+      "id": 681,
+      "name": "Brommers | Oldtimers",
+      "l1Id": 445
+    },
+    {
+      "id": 682,
+      "name": "Brommers | Overige merken",
+      "l1Id": 445
+    },
+    {
+      "id": 2124,
+      "name": "Brommers | Peugeot",
+      "l1Id": 445
+    },
+    {
+      "id": 683,
+      "name": "Brommers | Puch",
+      "l1Id": 445
+    },
+    {
+      "id": 684,
+      "name": "Brommers | Schadebrommers",
+      "l1Id": 445
+    },
+    {
+      "id": 2625,
+      "name": "Brommers | Solex",
+      "l1Id": 445
+    },
+    {
+      "id": 1914,
+      "name": "Brommers | Toebehoren",
+      "l1Id": 445
+    },
+    {
+      "id": 685,
+      "name": "Brommers | Tomos",
+      "l1Id": 445
+    },
+    {
+      "id": 1915,
+      "name": "Brommers | Tuning en Styling",
+      "l1Id": 445
+    },
+    {
+      "id": 686,
+      "name": "Brommers | Vespa",
+      "l1Id": 445
+    },
+    {
+      "id": 687,
+      "name": "Brommers | Zundapp",
+      "l1Id": 445
+    },
+    {
+      "id": 451,
+      "name": "Elektrische fietsen",
+      "l1Id": 445,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt"
+          }
+        },
+        "frameHeight": {
+          "label": "Framehoogte",
+          "type": "choice",
+          "values": {
+            "3488": "Minder dan 47 cm",
+            "3489": "47 tot 51 cm",
+            "3490": "51 tot 55 cm",
+            "3491": "55 tot 59 cm",
+            "3492": "59 cm of meer"
+          }
+        }
+      }
+    },
+    {
+      "id": 450,
+      "name": "Fietsaccessoires | Aanhangers en Karren",
+      "l1Id": 445
+    },
+    {
+      "id": 3108,
+      "name": "Fietsaccessoires | Bagagedragers",
+      "l1Id": 445
+    },
+    {
+      "id": 3110,
+      "name": "Fietsaccessoires | Buggydragers",
+      "l1Id": 445
+    },
+    {
+      "id": 3107,
+      "name": "Fietsaccessoires | Fietsaccu's",
+      "l1Id": 445
+    },
+    {
+      "id": 3112,
+      "name": "Fietsaccessoires | Fietscomputers",
+      "l1Id": 445
+    },
+    {
+      "id": 3115,
+      "name": "Fietsaccessoires | Fietsenrekken",
+      "l1Id": 445
+    },
+    {
+      "id": 3109,
+      "name": "Fietsaccessoires | Fietsgereedschap",
+      "l1Id": 445
+    },
+    {
+      "id": 2736,
+      "name": "Fietsaccessoires | Fietshelmen",
+      "l1Id": 445
+    },
+    {
+      "id": 468,
+      "name": "Fietsaccessoires | Fietskleding",
+      "l1Id": 445
+    },
+    {
+      "id": 1918,
+      "name": "Fietsaccessoires | Fietsmanden",
+      "l1Id": 445
+    },
+    {
+      "id": 3113,
+      "name": "Fietsaccessoires | Fietspompen",
+      "l1Id": 445
+    },
+    {
+      "id": 3114,
+      "name": "Fietsaccessoires | Fietssloten",
+      "l1Id": 445
+    },
+    {
+      "id": 457,
+      "name": "Fietsaccessoires | Fietsstoeltjes",
+      "l1Id": 445
+    },
+    {
+      "id": 1666,
+      "name": "Fietsaccessoires | Fietstassen",
+      "l1Id": 445
+    },
+    {
+      "id": 3111,
+      "name": "Fietsaccessoires | Fietsverlichting",
+      "l1Id": 445
+    },
+    {
+      "id": 3116,
+      "name": "Fietsaccessoires | Fietsbellen",
+      "l1Id": 445
+    },
+    {
+      "id": 1919,
+      "name": "Fietsaccessoires | Overige Fietsaccessoires",
+      "l1Id": 445
+    },
+    {
+      "id": 446,
+      "name": "Fietsen | Bakfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 1621,
+      "name": "Fietsen | Crossfietsen en BMX",
+      "l1Id": 445
+    },
+    {
+      "id": 1667,
+      "name": "Fietsen | Cruisers en Lowriders",
+      "l1Id": 445
+    },
+    {
+      "id": 447,
+      "name": "Fietsen | Dames | Damesfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 1916,
+      "name": "Fietsen | Dames | Moederfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 461,
+      "name": "Fietsen | Dames | Omafietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 448,
+      "name": "Fietsen | Dames | Sportfietsen en Toerfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 456,
+      "name": "Fietsen | Driewielers",
+      "l1Id": 445
+    },
+    {
+      "id": 449,
+      "name": "Fietsen | Driewielfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 3106,
+      "name": "Fietsen | Eenwielers",
+      "l1Id": 445
+    },
+    {
+      "id": 453,
+      "name": "Fietsen | Heren | Herenfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 454,
+      "name": "Fietsen | Heren | Sportfietsen en Toerfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 455,
+      "name": "Fietsen | Jongens",
+      "l1Id": 445
+    },
+    {
+      "id": 1917,
+      "name": "Fietsen | Kinderfietsjes",
+      "l1Id": 445
+    },
+    {
+      "id": 458,
+      "name": "Fietsen | Ligfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 459,
+      "name": "Fietsen | Meisjes",
+      "l1Id": 445
+    },
+    {
+      "id": 460,
+      "name": "Fietsen | Mountainbikes en ATB",
+      "l1Id": 445
+    },
+    {
+      "id": 2026,
+      "name": "Fietsen | Oldtimers",
+      "l1Id": 445
+    },
+    {
+      "id": 464,
+      "name": "Fietsen | Racefietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 466,
+      "name": "Fietsen | Tandems",
+      "l1Id": 445
+    },
+    {
+      "id": 467,
+      "name": "Fietsen | Vouwfietsen",
+      "l1Id": 445
+    },
+    {
+      "id": 462,
+      "name": "Fietsonderdelen",
+      "l1Id": 445
+    },
+    {
+      "id": 690,
+      "name": "Minibikes, Midibikes en Pitbikes",
+      "l1Id": 445
+    },
+    {
+      "id": 2737,
+      "name": "Scooters | Aprilia",
+      "l1Id": 445
+    },
+    {
+      "id": 2738,
+      "name": "Scooters | Kymco",
+      "l1Id": 445
+    },
+    {
+      "id": 2742,
+      "name": "Scooters | Overige merken",
+      "l1Id": 445
+    },
+    {
+      "id": 2739,
+      "name": "Scooters | Peugeot",
+      "l1Id": 445
+    },
+    {
+      "id": 2740,
+      "name": "Scooters | Piaggio",
+      "l1Id": 445
+    },
+    {
+      "id": 2853,
+      "name": "Scooters | SYM",
+      "l1Id": 445
+    },
+    {
+      "id": 2741,
+      "name": "Scooters | Vespa",
+      "l1Id": 445
+    },
+    {
+      "id": 726,
+      "name": "Scooters | Yamaha",
+      "l1Id": 445
+    },
+    {
+      "id": 727,
+      "name": "Snorfietsen en Snorscooters",
+      "l1Id": 445
+    },
+    {
+      "id": 465,
+      "name": "Steps",
+      "l1Id": 445
+    },
+    {
+      "id": 463,
+      "name": "Overige Fietsen en Brommers",
+      "l1Id": 445
+    },
+    {
+      "id": 1099,
+      "name": "Hobby en Vrije tijd",
+      "l1Id": null
+    },
+    {
+      "id": 1228,
+      "name": "Borduren en Borduurmachines",
+      "l1Id": 1099
+    },
+    {
+      "id": 1229,
+      "name": "Breien en Haken",
+      "l1Id": 1099
+    },
+    {
+      "id": 1231,
+      "name": "Cursusmateriaal",
+      "l1Id": 1099
+    },
+    {
+      "id": 1969,
+      "name": "Denksport en Puzzels",
+      "l1Id": 1099
+    },
+    {
+      "id": 1398,
+      "name": "Elektronica-componenten",
+      "l1Id": 1099
+    },
+    {
+      "id": 1234,
+      "name": "Feestartikelen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1971,
+      "name": "Feestartikelen | Verhuur",
+      "l1Id": 1099
+    },
+    {
+      "id": 1233,
+      "name": "Gezelschapsspellen | Bordspellen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2743,
+      "name": "Gezelschapsspellen | Kaartspellen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2744,
+      "name": "Gezelschapsspellen | Overige",
+      "l1Id": 1099
+    },
+    {
+      "id": 1401,
+      "name": "Kaarten | Zelf maken",
+      "l1Id": 1099
+    },
+    {
+      "id": 2745,
+      "name": "Kaarten | Zelfgemaakt",
+      "l1Id": 1099
+    },
+    {
+      "id": 2854,
+      "name": "Kantklossen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2855,
+      "name": "Kledingapplicaties en Hotfix",
+      "l1Id": 1099
+    },
+    {
+      "id": 1235,
+      "name": "Kledingpatronen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1240,
+      "name": "Knutselen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2626,
+      "name": "Kostuums, Theaterbenodigdheden en LARP",
+      "l1Id": 1099
+    },
+    {
+      "id": 1241,
+      "name": "Kralen en Sieraden maken",
+      "l1Id": 1099
+    },
+    {
+      "id": 1236,
+      "name": "Metaaldetectors",
+      "l1Id": 1099
+    },
+    {
+      "id": 2126,
+      "name": "Ministeck",
+      "l1Id": 1099
+    },
+    {
+      "id": 2127,
+      "name": "Modelauto's | 1:5 tot 1:12",
+      "l1Id": 1099
+    },
+    {
+      "id": 921,
+      "name": "Modelauto's | 1:18",
+      "l1Id": 1099
+    },
+    {
+      "id": 2746,
+      "name": "Modelauto's | 1:24",
+      "l1Id": 1099
+    },
+    {
+      "id": 2747,
+      "name": "Modelauto's | 1:32",
+      "l1Id": 1099
+    },
+    {
+      "id": 1972,
+      "name": "Modelauto's | 1:43",
+      "l1Id": 1099
+    },
+    {
+      "id": 2033,
+      "name": "Modelauto's | 1:50",
+      "l1Id": 1099
+    },
+    {
+      "id": 2748,
+      "name": "Modelauto's | 1:87",
+      "l1Id": 1099
+    },
+    {
+      "id": 2749,
+      "name": "Modelauto's | Overige schalen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1237,
+      "name": "Modelbouw | Auto's en Voertuigen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2750,
+      "name": "Modelbouw | Boten en Schepen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2751,
+      "name": "Modelbouw | Figuren en Diorama's",
+      "l1Id": 1099
+    },
+    {
+      "id": 2752,
+      "name": "Modelbouw | Vliegtuigen en Helikopters",
+      "l1Id": 1099
+    },
+    {
+      "id": 2753,
+      "name": "Modelbouw | Overige",
+      "l1Id": 1099
+    },
+    {
+      "id": 2034,
+      "name": "Modelbouw | Radiografisch | Auto's",
+      "l1Id": 1099
+    },
+    {
+      "id": 2754,
+      "name": "Modelbouw | Radiografisch | Helikopters en Quadcopters",
+      "l1Id": 1099
+    },
+    {
+      "id": 2856,
+      "name": "Modelbouw | Radiografisch | Vliegtuigen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2755,
+      "name": "Modelbouw | Radiografisch | Overige",
+      "l1Id": 1099
+    },
+    {
+      "id": 1238,
+      "name": "Modeltreinen | H0",
+      "l1Id": 1099
+    },
+    {
+      "id": 2627,
+      "name": "Modeltreinen | N-Spoor",
+      "l1Id": 1099
+    },
+    {
+      "id": 2756,
+      "name": "Modeltreinen | Overige schalen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1973,
+      "name": "Naaien en Fournituren",
+      "l1Id": 1099
+    },
+    {
+      "id": 1239,
+      "name": "Naaimachines en Toebehoren",
+      "l1Id": 1099
+    },
+    {
+      "id": 2857,
+      "name": "Picknickmanden",
+      "l1Id": 1099
+    },
+    {
+      "id": 2858,
+      "name": "Pottenbakken",
+      "l1Id": 1099
+    },
+    {
+      "id": 1242,
+      "name": "Schilderen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1243,
+      "name": "Scrapbooking",
+      "l1Id": 1099
+    },
+    {
+      "id": 1230,
+      "name": "Spaarzegeltjes",
+      "l1Id": 1099
+    },
+    {
+      "id": 2859,
+      "name": "Spinnewielen en Spinnen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1974,
+      "name": "Stempelen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2757,
+      "name": "Stickers en Plaatjes",
+      "l1Id": 1099
+    },
+    {
+      "id": 1244,
+      "name": "Stoffen en Lappen",
+      "l1Id": 1099
+    },
+    {
+      "id": 2860,
+      "name": "Taarten en Cupcakes maken",
+      "l1Id": 1099
+    },
+    {
+      "id": 1975,
+      "name": "Tekenen",
+      "l1Id": 1099
+    },
+    {
+      "id": 1245,
+      "name": "Theezakjes",
+      "l1Id": 1099
+    },
+    {
+      "id": 2861,
+      "name": "Vergrootglazen, Loepen en Loeplampen",
+      "l1Id": 1099
+    },
+    {
+      "id": 3245,
+      "name": "Verzamelkaartspellen | Lorcana",
+      "l1Id": 1099
+    },
+    {
+      "id": 919,
+      "name": "Verzamelkaartspellen | Magic the Gathering",
+      "l1Id": 1099
+    },
+    {
+      "id": 930,
+      "name": "Verzamelkaartspellen | Pokémon",
+      "l1Id": 1099
+    },
+    {
+      "id": 949,
+      "name": "Verzamelkaartspellen | Yu-gi-Oh!",
+      "l1Id": 1099
+    },
+    {
+      "id": 1976,
+      "name": "Verzamelkaartspellen | Overige",
+      "l1Id": 1099
+    },
+    {
+      "id": 1977,
+      "name": "Vilt",
+      "l1Id": 1099
+    },
+    {
+      "id": 1449,
+      "name": "Wargaming",
+      "l1Id": 1099
+    },
+    {
+      "id": 1264,
+      "name": "Overige Hobby en Vrije tijd",
+      "l1Id": 1099
+    },
+    {
+      "id": 504,
+      "name": "Huis en Inrichting",
+      "l1Id": null
+    },
+    {
+      "id": 1509,
+      "name": "Badkamer | Badkamermeubels",
+      "l1Id": 504
+    },
+    {
+      "id": 1935,
+      "name": "Badkamer | Badtextiel en Accessoires",
+      "l1Id": 504
+    },
+    {
+      "id": 1936,
+      "name": "Badkamer | Complete badkamers",
+      "l1Id": 504
+    },
+    {
+      "id": 505,
+      "name": "Banken | Bankstellen",
+      "l1Id": 504
+    },
+    {
+      "id": 1939,
+      "name": "Banken | Complete zithoeken",
+      "l1Id": 504
+    },
+    {
+      "id": 1937,
+      "name": "Banken | Sofa's en Chaises Longues",
+      "l1Id": 504
+    },
+    {
+      "id": 1938,
+      "name": "Banken | Voetenbanken en Poefen",
+      "l1Id": 504
+    },
+    {
+      "id": 2128,
+      "name": "Barkrukken",
+      "l1Id": 504
+    },
+    {
+      "id": 3206,
+      "name": "Barren",
+      "l1Id": 504
+    },
+    {
+      "id": 1253,
+      "name": "Brandblussers en Brandkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 508,
+      "name": "Bureaus",
+      "l1Id": 504
+    },
+    {
+      "id": 3194,
+      "name": "Bureaustoelen",
+      "l1Id": 504
+    },
+    {
+      "id": 511,
+      "name": "Complete eetkamers",
+      "l1Id": 504
+    },
+    {
+      "id": 510,
+      "name": "Complete inboedels",
+      "l1Id": 504
+    },
+    {
+      "id": 2951,
+      "name": "Emmers",
+      "l1Id": 504
+    },
+    {
+      "id": 1940,
+      "name": "Fauteuils",
+      "l1Id": 504
+    },
+    {
+      "id": 2950,
+      "name": "Haarden",
+      "l1Id": 504
+    },
+    {
+      "id": 513,
+      "name": "Kachels",
+      "l1Id": 504
+    },
+    {
+      "id": 1254,
+      "name": "Kamerplanten",
+      "l1Id": 504
+    },
+    {
+      "id": 515,
+      "name": "Kasten | Boekenkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 516,
+      "name": "Kasten | Buffetkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 2763,
+      "name": "Kasten | Computermeubels",
+      "l1Id": 504
+    },
+    {
+      "id": 517,
+      "name": "Kasten | Dressoirs",
+      "l1Id": 504
+    },
+    {
+      "id": 518,
+      "name": "Kasten | Kledingkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 2764,
+      "name": "Kasten | Ladekasten",
+      "l1Id": 504
+    },
+    {
+      "id": 2862,
+      "name": "Kasten | Lockerkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 519,
+      "name": "Kasten | Overige",
+      "l1Id": 504
+    },
+    {
+      "id": 2765,
+      "name": "Kasten | Roldeurkasten en Archiefkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 2864,
+      "name": "Kasten | Schoenenkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 3117,
+      "name": "Kasten | Schoenenrekken",
+      "l1Id": 504
+    },
+    {
+      "id": 2863,
+      "name": "Kasten | Secretaires",
+      "l1Id": 504
+    },
+    {
+      "id": 3118,
+      "name": "Kasten | Stellingkasten",
+      "l1Id": 504
+    },
+    {
+      "id": 1255,
+      "name": "Kasten | Televisiemeubels",
+      "l1Id": 504
+    },
+    {
+      "id": 520,
+      "name": "Kasten | Vitrinekasten",
+      "l1Id": 504
+    },
+    {
+      "id": 1256,
+      "name": "Kasten | Wandmeubels",
+      "l1Id": 504
+    },
+    {
+      "id": 1941,
+      "name": "Keuken | Bestek",
+      "l1Id": 504
+    },
+    {
+      "id": 521,
+      "name": "Keuken | Complete keukens",
+      "l1Id": 504
+    },
+    {
+      "id": 1257,
+      "name": "Keuken | Keukenbenodigdheden",
+      "l1Id": 504
+    },
+    {
+      "id": 1942,
+      "name": "Keuken | Keukenelementen",
+      "l1Id": 504
+    },
+    {
+      "id": 1511,
+      "name": "Keuken | Potten en Pannen",
+      "l1Id": 504
+    },
+    {
+      "id": 1262,
+      "name": "Keuken | Servies",
+      "l1Id": 504
+    },
+    {
+      "id": 1943,
+      "name": "Keuken | Textiel",
+      "l1Id": 504
+    },
+    {
+      "id": 1512,
+      "name": "Keuken | Tupperware",
+      "l1Id": 504
+    },
+    {
+      "id": 3203,
+      "name": "Krukjes",
+      "l1Id": 504
+    },
+    {
+      "id": 1258,
+      "name": "Lampen | Hanglampen",
+      "l1Id": 504
+    },
+    {
+      "id": 1944,
+      "name": "Lampen | Kroonluchters",
+      "l1Id": 504
+    },
+    {
+      "id": 1945,
+      "name": "Lampen | Lampenkappen",
+      "l1Id": 504
+    },
+    {
+      "id": 2760,
+      "name": "Lampen | Losse lampen",
+      "l1Id": 504
+    },
+    {
+      "id": 1265,
+      "name": "Lampen | Overige",
+      "l1Id": 504
+    },
+    {
+      "id": 2761,
+      "name": "Lampen | Plafondlampen",
+      "l1Id": 504
+    },
+    {
+      "id": 2762,
+      "name": "Lampen | Spots",
+      "l1Id": 504
+    },
+    {
+      "id": 1260,
+      "name": "Lampen | Tafellampen",
+      "l1Id": 504
+    },
+    {
+      "id": 1259,
+      "name": "Lampen | Vloerlampen",
+      "l1Id": 504
+    },
+    {
+      "id": 1622,
+      "name": "Lampen | Wandlampen",
+      "l1Id": 504
+    },
+    {
+      "id": 1261,
+      "name": "Schoonmaakartikelen",
+      "l1Id": 504
+    },
+    {
+      "id": 507,
+      "name": "Slaapkamer | Bedden",
+      "l1Id": 504
+    },
+    {
+      "id": 525,
+      "name": "Slaapkamer | Beddengoed",
+      "l1Id": 504
+    },
+    {
+      "id": 1946,
+      "name": "Slaapkamer | Boxsprings",
+      "l1Id": 504
+    },
+    {
+      "id": 1948,
+      "name": "Slaapkamer | Complete slaapkamers",
+      "l1Id": 504
+    },
+    {
+      "id": 506,
+      "name": "Slaapkamer | Matrassen en Bedbodems",
+      "l1Id": 504
+    },
+    {
+      "id": 2766,
+      "name": "Slaapkamer | Nachtkastjes",
+      "l1Id": 504
+    },
+    {
+      "id": 528,
+      "name": "Slaapkamer | Slaapbanken",
+      "l1Id": 504
+    },
+    {
+      "id": 1947,
+      "name": "Slaapkamer | Stapelbedden en Hoogslapers",
+      "l1Id": 504
+    },
+    {
+      "id": 535,
+      "name": "Slaapkamer | Waterbedden",
+      "l1Id": 504
+    },
+    {
+      "id": 530,
+      "name": "Stoelen",
+      "l1Id": 504
+    },
+    {
+      "id": 1669,
+      "name": "Stoffering | Behang",
+      "l1Id": 504
+    },
+    {
+      "id": 512,
+      "name": "Stoffering | Gordijnen en Lamellen",
+      "l1Id": 504
+    },
+    {
+      "id": 533,
+      "name": "Stoffering | Tapijten en Kleden",
+      "l1Id": 504
+    },
+    {
+      "id": 1517,
+      "name": "Stoffering | Vloerbedekking",
+      "l1Id": 504
+    },
+    {
+      "id": 3120,
+      "name": "Tafelkleden",
+      "l1Id": 504
+    },
+    {
+      "id": 531,
+      "name": "Tafelonderdelen",
+      "l1Id": 504
+    },
+    {
+      "id": 2758,
+      "name": "Tafels | Bijzettafels",
+      "l1Id": 504
+    },
+    {
+      "id": 1949,
+      "name": "Tafels | Eettafels",
+      "l1Id": 504
+    },
+    {
+      "id": 2759,
+      "name": "Tafels | Kaptafels",
+      "l1Id": 504
+    },
+    {
+      "id": 527,
+      "name": "Tafels | Salontafels",
+      "l1Id": 504
+    },
+    {
+      "id": 1950,
+      "name": "Tafels | Sidetables",
+      "l1Id": 504
+    },
+    {
+      "id": 3119,
+      "name": "Tafels | Statafels",
+      "l1Id": 504
+    },
+    {
+      "id": 2865,
+      "name": "Woonaccessoires | Boeddhabeelden",
+      "l1Id": 504
+    },
+    {
+      "id": 509,
+      "name": "Woonaccessoires | Cd- en Dvd-rekken",
+      "l1Id": 504
+    },
+    {
+      "id": 3127,
+      "name": "Deurbellen",
+      "l1Id": 504
+    },
+    {
+      "id": 3123,
+      "name": "Woonaccessoires | Deurstoppers",
+      "l1Id": 504
+    },
+    {
+      "id": 2767,
+      "name": "Woonaccessoires | Dienbladen",
+      "l1Id": 504
+    },
+    {
+      "id": 3122,
+      "name": "Woonaccessoires | Droogbloemen",
+      "l1Id": 504
+    },
+    {
+      "id": 2866,
+      "name": "Woonaccessoires | Etagères",
+      "l1Id": 504
+    },
+    {
+      "id": 2867,
+      "name": "Woonaccessoires | Kamerschermen",
+      "l1Id": 504
+    },
+    {
+      "id": 1510,
+      "name": "Woonaccessoires | Kandelaars en Kaarsen",
+      "l1Id": 504
+    },
+    {
+      "id": 514,
+      "name": "Woonaccessoires | Kapstokken",
+      "l1Id": 504
+    },
+    {
+      "id": 1513,
+      "name": "Woonaccessoires | Kisten",
+      "l1Id": 504
+    },
+    {
+      "id": 523,
+      "name": "Woonaccessoires | Klokken",
+      "l1Id": 504
+    },
+    {
+      "id": 2869,
+      "name": "Woonaccessoires | Kransen",
+      "l1Id": 504
+    },
+    {
+      "id": 2868,
+      "name": "Woonaccessoires | Krantenbakken en Lectuurbakken",
+      "l1Id": 504
+    },
+    {
+      "id": 3121,
+      "name": "Woonaccessoires | Kunstplanten en Kunstbloemen",
+      "l1Id": 504
+    },
+    {
+      "id": 2768,
+      "name": "Woonaccessoires | Kussens",
+      "l1Id": 504
+    },
+    {
+      "id": 2769,
+      "name": "Woonaccessoires | Lijsten",
+      "l1Id": 504
+    },
+    {
+      "id": 2871,
+      "name": "Woonaccessoires | Memoborden",
+      "l1Id": 504
+    },
+    {
+      "id": 2872,
+      "name": "Woonaccessoires | Onderzetters",
+      "l1Id": 504
+    },
+    {
+      "id": 536,
+      "name": "Woonaccessoires | Overige",
+      "l1Id": 504
+    },
+    {
+      "id": 3124,
+      "name": "Woonaccessoires | Paraplubakken",
+      "l1Id": 504
+    },
+    {
+      "id": 2870,
+      "name": "Woonaccessoires | Plaids en Woondekens",
+      "l1Id": 504
+    },
+    {
+      "id": 1514,
+      "name": "Woonaccessoires | Prullenbakken",
+      "l1Id": 504
+    },
+    {
+      "id": 1515,
+      "name": "Woonaccessoires | Schalen en Manden",
+      "l1Id": 504
+    },
+    {
+      "id": 1668,
+      "name": "Woonaccessoires | Schilderijen, Tekeningen en Foto's",
+      "l1Id": 504
+    },
+    {
+      "id": 529,
+      "name": "Woonaccessoires | Spiegels",
+      "l1Id": 504
+    },
+    {
+      "id": 2874,
+      "name": "Woonaccessoires | Stolpen",
+      "l1Id": 504
+    },
+    {
+      "id": 2873,
+      "name": "Woonaccessoires | Tekstborden en Spreuken",
+      "l1Id": 504
+    },
+    {
+      "id": 3125,
+      "name": "Woonaccessoires | Thermometers",
+      "l1Id": 504
+    },
+    {
+      "id": 1516,
+      "name": "Woonaccessoires | Vazen",
+      "l1Id": 504
+    },
+    {
+      "id": 2875,
+      "name": "Woonaccessoires | Wanddecoraties",
+      "l1Id": 504
+    },
+    {
+      "id": 2876,
+      "name": "Woonaccessoires | Wandplanken en Boekenplanken",
+      "l1Id": 504
+    },
+    {
+      "id": 3126,
+      "name": "Woonaccessoires | Wereldbollen",
+      "l1Id": 504
+    },
+    {
+      "id": 1518,
+      "name": "Woonaccessoires | Wijnrekken",
+      "l1Id": 504
+    },
+    {
+      "id": 2877,
+      "name": "Woonaccessoires | Zuilen en Pilaren",
+      "l1Id": 504
+    },
+    {
+      "id": 2770,
+      "name": "Zitzakken",
+      "l1Id": 504
+    },
+    {
+      "id": 526,
+      "name": "Overige Huis en Inrichting",
+      "l1Id": 504
+    },
+    {
+      "id": 1032,
+      "name": "Huizen en Kamers",
+      "l1Id": null
+    },
+    {
+      "id": 2142,
+      "name": "Huizen te koop",
+      "l1Id": 1032
+    },
+    {
+      "id": 2143,
+      "name": "Huizen te huur",
+      "l1Id": 1032
+    },
+    {
+      "id": 2771,
+      "name": "Kamers te huur",
+      "l1Id": 1032
+    },
+    {
+      "id": 2144,
+      "name": "Anti-kraak",
+      "l1Id": 1032
+    },
+    {
+      "id": 1041,
+      "name": "Buitenland",
+      "l1Id": 1032
+    },
+    {
+      "id": 2147,
+      "name": "Expat Rentals",
+      "l1Id": 1032
+    },
+    {
+      "id": 1643,
+      "name": "Garages en Parkeerplaatsen",
+      "l1Id": 1032
+    },
+    {
+      "id": 1055,
+      "name": "Kavels en Percelen",
+      "l1Id": 1032
+    },
+    {
+      "id": 1642,
+      "name": "Nieuwbouwprojecten",
+      "l1Id": 1032
+    },
+    {
+      "id": 860,
+      "name": "Recreatiewoningen te koop",
+      "l1Id": 1032
+    },
+    {
+      "id": 1081,
+      "name": "Woonboten te koop",
+      "l1Id": 1032
+    },
+    {
+      "id": 2145,
+      "name": "Op zoek naar een huis",
+      "l1Id": 1032
+    },
+    {
+      "id": 2146,
+      "name": "Op zoek naar een kamer",
+      "l1Id": 1032
+    },
+    {
+      "id": 565,
+      "name": "Kinderen en Baby's",
+      "l1Id": null
+    },
+    {
+      "id": 566,
+      "name": "Autostoeltjes",
+      "l1Id": 565
+    },
+    {
+      "id": 581,
+      "name": "Babydragers en Draagdoeken",
+      "l1Id": 565
+    },
+    {
+      "id": 567,
+      "name": "Babyfoons",
+      "l1Id": 565
+    },
+    {
+      "id": 3129,
+      "name": "Babykleding | Baby-kledingpakketten",
+      "l1Id": 565
+    },
+    {
+      "id": 3128,
+      "name": "Babykleding | Baby-zwemkleding",
+      "l1Id": 565
+    },
+    {
+      "id": 568,
+      "name": "Babykleding | Maat 50",
+      "l1Id": 565
+    },
+    {
+      "id": 569,
+      "name": "Babykleding | Maat 56",
+      "l1Id": 565
+    },
+    {
+      "id": 570,
+      "name": "Babykleding | Maat 62",
+      "l1Id": 565
+    },
+    {
+      "id": 571,
+      "name": "Babykleding | Maat 68",
+      "l1Id": 565
+    },
+    {
+      "id": 572,
+      "name": "Babykleding | Maat 74",
+      "l1Id": 565
+    },
+    {
+      "id": 573,
+      "name": "Babykleding | Maat 80",
+      "l1Id": 565
+    },
+    {
+      "id": 574,
+      "name": "Babykleding | Maat 86",
+      "l1Id": 565
+    },
+    {
+      "id": 1673,
+      "name": "Babykleding | Mutsen, Sjaals en Wanten",
+      "l1Id": 565
+    },
+    {
+      "id": 575,
+      "name": "Babykleding | Overige",
+      "l1Id": 565
+    },
+    {
+      "id": 2777,
+      "name": "Babykleding | Petten en Hoeden",
+      "l1Id": 565
+    },
+    {
+      "id": 2130,
+      "name": "Babykleding | Prematuur",
+      "l1Id": 565
+    },
+    {
+      "id": 576,
+      "name": "Babykleding | Schoentjes en Sokjes",
+      "l1Id": 565
+    },
+    {
+      "id": 3137,
+      "name": "Babymode-accessoires",
+      "l1Id": 565
+    },
+    {
+      "id": 1489,
+      "name": "Babyvoeding en Toebehoren",
+      "l1Id": 565
+    },
+    {
+      "id": 577,
+      "name": "Babywiegjes en Ledikanten",
+      "l1Id": 565
+    },
+    {
+      "id": 578,
+      "name": "Badjes en Verzorging",
+      "l1Id": 565
+    },
+    {
+      "id": 580,
+      "name": "Boxen",
+      "l1Id": 565
+    },
+    {
+      "id": 2132,
+      "name": "Buggy's",
+      "l1Id": 565
+    },
+    {
+      "id": 2129,
+      "name": "Carnavalskleding en Verkleedspullen",
+      "l1Id": 565
+    },
+    {
+      "id": 2133,
+      "name": "Dekens, Slaapzakjes en Inbakerproducten",
+      "l1Id": 565
+    },
+    {
+      "id": 579,
+      "name": "Kinderkamer | Bedden",
+      "l1Id": 565
+    },
+    {
+      "id": 2772,
+      "name": "Kinderkamer | Beddengoed",
+      "l1Id": 565
+    },
+    {
+      "id": 2773,
+      "name": "Kinderkamer | Commodes en Kasten",
+      "l1Id": 565
+    },
+    {
+      "id": 1670,
+      "name": "Kinderkamer | Complete kinderkamers",
+      "l1Id": 565
+    },
+    {
+      "id": 1671,
+      "name": "Kinderkamer | Inrichting en Decoratie",
+      "l1Id": 565
+    },
+    {
+      "id": 599,
+      "name": "Kinderkamer | Overige Meubels",
+      "l1Id": 565
+    },
+    {
+      "id": 2774,
+      "name": "Kinderkamer | Stapelbedden en Hoogslapers",
+      "l1Id": 565
+    },
+    {
+      "id": 2775,
+      "name": "Kinderkamer | Tafels en Stoelen",
+      "l1Id": 565
+    },
+    {
+      "id": 3135,
+      "name": "Kinderkleding | Kinder-kledingpakketten",
+      "l1Id": 565
+    },
+    {
+      "id": 3134,
+      "name": "Kinderkleding | Kinder-zwemkleding",
+      "l1Id": 565
+    },
+    {
+      "id": 584,
+      "name": "Kinderkleding | Maat 104",
+      "l1Id": 565
+    },
+    {
+      "id": 585,
+      "name": "Kinderkleding | Maat 110",
+      "l1Id": 565
+    },
+    {
+      "id": 586,
+      "name": "Kinderkleding | Maat 116",
+      "l1Id": 565
+    },
+    {
+      "id": 587,
+      "name": "Kinderkleding | Maat 122",
+      "l1Id": 565
+    },
+    {
+      "id": 588,
+      "name": "Kinderkleding | Maat 128",
+      "l1Id": 565
+    },
+    {
+      "id": 589,
+      "name": "Kinderkleding | Maat 134",
+      "l1Id": 565
+    },
+    {
+      "id": 590,
+      "name": "Kinderkleding | Maat 140",
+      "l1Id": 565
+    },
+    {
+      "id": 591,
+      "name": "Kinderkleding | Maat 146",
+      "l1Id": 565
+    },
+    {
+      "id": 592,
+      "name": "Kinderkleding | Maat 152",
+      "l1Id": 565
+    },
+    {
+      "id": 593,
+      "name": "Kinderkleding | Maat 158",
+      "l1Id": 565
+    },
+    {
+      "id": 594,
+      "name": "Kinderkleding | Maat 164",
+      "l1Id": 565
+    },
+    {
+      "id": 595,
+      "name": "Kinderkleding | Maat 170",
+      "l1Id": 565
+    },
+    {
+      "id": 596,
+      "name": "Kinderkleding | Maat 176",
+      "l1Id": 565
+    },
+    {
+      "id": 582,
+      "name": "Kinderkleding | Maat 92",
+      "l1Id": 565
+    },
+    {
+      "id": 583,
+      "name": "Kinderkleding | Maat 98",
+      "l1Id": 565
+    },
+    {
+      "id": 1672,
+      "name": "Kinderkleding | Mutsen, Sjaals en Handschoenen",
+      "l1Id": 565
+    },
+    {
+      "id": 597,
+      "name": "Kinderkleding | Overige",
+      "l1Id": 565
+    },
+    {
+      "id": 2776,
+      "name": "Kinderkleding | Petten en Hoeden",
+      "l1Id": 565
+    },
+    {
+      "id": 598,
+      "name": "Kinderkleding | Schoenen en Sokken",
+      "l1Id": 565
+    },
+    {
+      "id": 3136,
+      "name": "Kindermode-accessoires",
+      "l1Id": 565
+    },
+    {
+      "id": 1951,
+      "name": "Kinderspulletjes",
+      "l1Id": 565
+    },
+    {
+      "id": 600,
+      "name": "Kinderstoelen",
+      "l1Id": 565
+    },
+    {
+      "id": 603,
+      "name": "Kinderwagens en Combinaties",
+      "l1Id": 565
+    },
+    {
+      "id": 1952,
+      "name": "Kraamcadeaus en Geboorteborden",
+      "l1Id": 565
+    },
+    {
+      "id": 3138,
+      "name": "Luiertassen",
+      "l1Id": 565
+    },
+    {
+      "id": 1490,
+      "name": "Speelgoed | Actiefiguren",
+      "l1Id": 565
+    },
+    {
+      "id": 1491,
+      "name": "Speelgoed | Babyspeelgoed",
+      "l1Id": 565
+    },
+    {
+      "id": 3144,
+      "name": "Speelgoed | Badspeelgoed",
+      "l1Id": 565
+    },
+    {
+      "id": 2157,
+      "name": "Speelgoed | Bouwstenen",
+      "l1Id": 565
+    },
+    {
+      "id": 3131,
+      "name": "Speelgoed | Buiten | Accuvoertuigen",
+      "l1Id": 565
+    },
+    {
+      "id": 2878,
+      "name": "Speelgoed | Buiten | Actiespeelgoed",
+      "l1Id": 565
+    },
+    {
+      "id": 2779,
+      "name": "Speelgoed | Buiten | Los speelgoed",
+      "l1Id": 565
+    },
+    {
+      "id": 3130,
+      "name": "Speelgoed | Buiten | Opblaasfiguren",
+      "l1Id": 565
+    },
+    {
+      "id": 617,
+      "name": "Speelgoed | Buiten | Rolschaatsen",
+      "l1Id": 565
+    },
+    {
+      "id": 618,
+      "name": "Speelgoed | Buiten | Skelters",
+      "l1Id": 565
+    },
+    {
+      "id": 3133,
+      "name": "Speelgoed | Buiten | Sleeën",
+      "l1Id": 565
+    },
+    {
+      "id": 3011,
+      "name": "Speelgoed | Buiten | Speelhuisjes",
+      "l1Id": 565
+    },
+    {
+      "id": 607,
+      "name": "Speelgoed | Buiten | Speeltoestellen",
+      "l1Id": 565
+    },
+    {
+      "id": 3132,
+      "name": "Speelgoed | Buiten | Springkussens",
+      "l1Id": 565
+    },
+    {
+      "id": 2780,
+      "name": "Speelgoed | Buiten | Trampolines",
+      "l1Id": 565
+    },
+    {
+      "id": 2781,
+      "name": "Speelgoed | Buiten | Voertuigen en Loopfietsen",
+      "l1Id": 565
+    },
+    {
+      "id": 2782,
+      "name": "Speelgoed | Buiten | Zandbakken",
+      "l1Id": 565
+    },
+    {
+      "id": 611,
+      "name": "Speelgoed | Duplo en Lego",
+      "l1Id": 565
+    },
+    {
+      "id": 1492,
+      "name": "Speelgoed | Educatief en Creatief",
+      "l1Id": 565
+    },
+    {
+      "id": 608,
+      "name": "Speelgoed | Fisher-Price",
+      "l1Id": 565
+    },
+    {
+      "id": 3143,
+      "name": "Speelgoed | Hobbelfiguren",
+      "l1Id": 565
+    },
+    {
+      "id": 1674,
+      "name": "Speelgoed | Houten speelgoed",
+      "l1Id": 565
+    },
+    {
+      "id": 615,
+      "name": "Speelgoed | Kinderpuzzels",
+      "l1Id": 565
+    },
+    {
+      "id": 610,
+      "name": "Speelgoed | Knuffels en Pluche",
+      "l1Id": 565
+    },
+    {
+      "id": 2879,
+      "name": "Speelgoed | My Little Pony",
+      "l1Id": 565
+    },
+    {
+      "id": 612,
+      "name": "Speelgoed | Overig",
+      "l1Id": 565
+    },
+    {
+      "id": 613,
+      "name": "Speelgoed | Playmobil",
+      "l1Id": 565
+    },
+    {
+      "id": 614,
+      "name": "Speelgoed | Poppen",
+      "l1Id": 565
+    },
+    {
+      "id": 2783,
+      "name": "Speelgoed | Poppenhuizen",
+      "l1Id": 565
+    },
+    {
+      "id": 616,
+      "name": "Speelgoed | Racebanen",
+      "l1Id": 565
+    },
+    {
+      "id": 2131,
+      "name": "Speelgoed | Speelgoedvoertuigen",
+      "l1Id": 565
+    },
+    {
+      "id": 3139,
+      "name": "Speelgoed | Speelkeukens",
+      "l1Id": 565
+    },
+    {
+      "id": 3142,
+      "name": "Speelgoed | Speelkleden",
+      "l1Id": 565
+    },
+    {
+      "id": 3145,
+      "name": "Speelgoed | Speeltafels",
+      "l1Id": 565
+    },
+    {
+      "id": 3141,
+      "name": "Speelgoed | Speeltenten",
+      "l1Id": 565
+    },
+    {
+      "id": 2880,
+      "name": "Speelgoed | Thomas de Trein",
+      "l1Id": 565
+    },
+    {
+      "id": 3140,
+      "name": "Speelgoed | Voetbaltafels",
+      "l1Id": 565
+    },
+    {
+      "id": 2778,
+      "name": "Speelgoed | Vtech",
+      "l1Id": 565
+    },
+    {
+      "id": 619,
+      "name": "Traphekjes",
+      "l1Id": 565
+    },
+    {
+      "id": 1706,
+      "name": "Tweelingen en Meerlingen",
+      "l1Id": 565
+    },
+    {
+      "id": 620,
+      "name": "Wipstoeltjes",
+      "l1Id": 565
+    },
+    {
+      "id": 606,
+      "name": "Overige Kinderen en Baby's",
+      "l1Id": 565
+    },
+    {
+      "id": 621,
+      "name": "Kleding | Dames",
+      "l1Id": null
+    },
+    {
+      "id": 628,
+      "name": "Blouses en Tunieken",
+      "l1Id": 621
+    },
+    {
+      "id": 3146,
+      "name": "Dames-kledingpakketten",
+      "l1Id": 621
+    },
+    {
+      "id": 2134,
+      "name": "Gelegenheidskleding",
+      "l1Id": 621
+    },
+    {
+      "id": 2881,
+      "name": "Huispakken",
+      "l1Id": 621
+    },
+    {
+      "id": 1494,
+      "name": "Jasjes, Kostuums en Pakken",
+      "l1Id": 621
+    },
+    {
+      "id": 2785,
+      "name": "Jumpsuits",
+      "l1Id": 621
+    },
+    {
+      "id": 631,
+      "name": "Jurken",
+      "l1Id": 621
+    },
+    {
+      "id": 3147,
+      "name": "Kledinghangers",
+      "l1Id": 621
+    },
+    {
+      "id": 3148,
+      "name": "Kledingrekken",
+      "l1Id": 621
+    },
+    {
+      "id": 1676,
+      "name": "Leggings, Maillots en Panty's",
+      "l1Id": 621
+    },
+    {
+      "id": 632,
+      "name": "Ondergoed en Lingerie",
+      "l1Id": 621
+    },
+    {
+      "id": 634,
+      "name": "Positiekleding",
+      "l1Id": 621
+    },
+    {
+      "id": 635,
+      "name": "Rokken",
+      "l1Id": 621
+    },
+    {
+      "id": 638,
+      "name": "Tops",
+      "l1Id": 621
+    },
+    {
+      "id": 633,
+      "name": "Overige Dameskleding",
+      "l1Id": 621
+    },
+    {
+      "id": 1776,
+      "name": "Kleding | Heren",
+      "l1Id": null
+    },
+    {
+      "id": 1778,
+      "name": "Badmode en Zwemkleding",
+      "l1Id": 1776
+    },
+    {
+      "id": 2032,
+      "name": "Bodywarmers",
+      "l1Id": 1776
+    },
+    {
+      "id": 646,
+      "name": "Broeken en Pantalons",
+      "l1Id": 1776
+    },
+    {
+      "id": 2031,
+      "name": "Carnavalskleding en Feestkleding",
+      "l1Id": 1776
+    },
+    {
+      "id": 1331,
+      "name": "Grote Maten",
+      "l1Id": 1776
+    },
+    {
+      "id": 641,
+      "name": "Hoeden en Petten",
+      "l1Id": 1776
+    },
+    {
+      "id": 2788,
+      "name": "Jassen | Winter",
+      "l1Id": 1776
+    },
+    {
+      "id": 647,
+      "name": "Jassen | Zomer",
+      "l1Id": 1776
+    },
+    {
+      "id": 1680,
+      "name": "Mutsen, Sjaals en Handschoenen",
+      "l1Id": 1776
+    },
+    {
+      "id": 3205,
+      "name": "Pyjama's",
+      "l1Id": 1776
+    },
+    {
+      "id": 1495,
+      "name": "Riemen en Ceinturen",
+      "l1Id": 1776
+    },
+    {
+      "id": 642,
+      "name": "Schoenen",
+      "l1Id": 1776
+    },
+    {
+      "id": 1677,
+      "name": "Sokken en Kousen",
+      "l1Id": 1776
+    },
+    {
+      "id": 1497,
+      "name": "Spijkerbroeken en Jeans",
+      "l1Id": 1776
+    },
+    {
+      "id": 1779,
+      "name": "Sportkleding",
+      "l1Id": 1776
+    },
+    {
+      "id": 651,
+      "name": "T-shirts",
+      "l1Id": 1776
+    },
+    {
+      "id": 2629,
+      "name": "Trouwkleding en Trouwaccessoires",
+      "l1Id": 1776
+    },
+    {
+      "id": 652,
+      "name": "Truien en Vesten",
+      "l1Id": 1776
+    },
+    {
+      "id": 2630,
+      "name": "Wintersportkleding",
+      "l1Id": 1776
+    },
+    {
+      "id": 3149,
+      "name": "Heren-kledingpakketten",
+      "l1Id": 1776
+    },
+    {
+      "id": 648,
+      "name": "Kostuums en Colberts",
+      "l1Id": 1776
+    },
+    {
+      "id": 1675,
+      "name": "Ondergoed",
+      "l1Id": 1776
+    },
+    {
+      "id": 649,
+      "name": "Overhemden",
+      "l1Id": 1776
+    },
+    {
+      "id": 2790,
+      "name": "Polo's",
+      "l1Id": 1776
+    },
+    {
+      "id": 643,
+      "name": "Stropdassen",
+      "l1Id": 1776
+    },
+    {
+      "id": 650,
+      "name": "Overige Herenkleding",
+      "l1Id": 1776
+    },
+    {
+      "id": 678,
+      "name": "Motoren",
+      "l1Id": null
+    },
+    {
+      "id": 688,
+      "name": "Handleidingen en Instructieboekjes",
+      "l1Id": 678
+    },
+    {
+      "id": 1434,
+      "name": "Tuning en Styling",
+      "l1Id": 678
+    },
+    {
+      "id": 1893,
+      "name": "Accessoires | Koffers en Tassen",
+      "l1Id": 678
+    },
+    {
+      "id": 1894,
+      "name": "Accessoires | Navigatiesystemen",
+      "l1Id": 678
+    },
+    {
+      "id": 1895,
+      "name": "Accessoires | Onderhoudsmiddelen",
+      "l1Id": 678
+    },
+    {
+      "id": 1896,
+      "name": "Accessoires | Sloten",
+      "l1Id": 678
+    },
+    {
+      "id": 1897,
+      "name": "Accessoires | Stickers",
+      "l1Id": 678
+    },
+    {
+      "id": 1898,
+      "name": "Accessoires | Overige",
+      "l1Id": 678
+    },
+    {
+      "id": 1899,
+      "name": "Kleding | Motorhelmen",
+      "l1Id": 678
+    },
+    {
+      "id": 689,
+      "name": "Kleding | Motorkleding",
+      "l1Id": 678
+    },
+    {
+      "id": 691,
+      "name": "Motoren | Aprilia",
+      "l1Id": 678
+    },
+    {
+      "id": 3222,
+      "name": "Motoren | Benelli",
+      "l1Id": 678
+    },
+    {
+      "id": 3237,
+      "name": "Motoren | Beta",
+      "l1Id": 678
+    },
+    {
+      "id": 692,
+      "name": "Motoren | BMW",
+      "l1Id": 678
+    },
+    {
+      "id": 2647,
+      "name": "Motoren | Buell",
+      "l1Id": 678
+    },
+    {
+      "id": 2648,
+      "name": "Motoren | Cagiva",
+      "l1Id": 678
+    },
+    {
+      "id": 3228,
+      "name": "Motoren | CFMOTO",
+      "l1Id": 678
+    },
+    {
+      "id": 694,
+      "name": "Motoren | Ducati",
+      "l1Id": 678
+    },
+    {
+      "id": 3233,
+      "name": "Motoren | Fantic Motor",
+      "l1Id": 678
+    },
+    {
+      "id": 695,
+      "name": "Motoren | Harley-Davidson",
+      "l1Id": 678
+    },
+    {
+      "id": 696,
+      "name": "Motoren | Honda",
+      "l1Id": 678
+    },
+    {
+      "id": 2882,
+      "name": "Motoren | Husqvarna",
+      "l1Id": 678
+    },
+    {
+      "id": 2883,
+      "name": "Motoren | Hyosung",
+      "l1Id": 678
+    },
+    {
+      "id": 3235,
+      "name": "Motoren | Indian",
+      "l1Id": 678
+    },
+    {
+      "id": 697,
+      "name": "Motoren | Kawasaki",
+      "l1Id": 678
+    },
+    {
+      "id": 2649,
+      "name": "Motoren | KTM",
+      "l1Id": 678
+    },
+    {
+      "id": 2941,
+      "name": "Motoren | Mash",
+      "l1Id": 678
+    },
+    {
+      "id": 701,
+      "name": "Motoren | Moto Guzzi",
+      "l1Id": 678
+    },
+    {
+      "id": 3232,
+      "name": "Motoren | Moto Morini",
+      "l1Id": 678
+    },
+    {
+      "id": 3231,
+      "name": "Motoren | Mutt Motorcycles",
+      "l1Id": 678
+    },
+    {
+      "id": 702,
+      "name": "Motoren | MV Agusta",
+      "l1Id": 678
+    },
+    {
+      "id": 703,
+      "name": "Motoren | Oldtimers",
+      "l1Id": 678
+    },
+    {
+      "id": 3229,
+      "name": "Motoren | Peugeot",
+      "l1Id": 678
+    },
+    {
+      "id": 2884,
+      "name": "Motoren | Piaggio",
+      "l1Id": 678
+    },
+    {
+      "id": 3236,
+      "name": "Motoren | Rieju",
+      "l1Id": 678
+    },
+    {
+      "id": 2940,
+      "name": "Motoren | Royal Enfield",
+      "l1Id": 678
+    },
+    {
+      "id": 705,
+      "name": "Motoren | Schademotoren",
+      "l1Id": 678
+    },
+    {
+      "id": 707,
+      "name": "Motoren | Suzuki",
+      "l1Id": 678
+    },
+    {
+      "id": 709,
+      "name": "Motoren | Triumph",
+      "l1Id": 678
+    },
+    {
+      "id": 3234,
+      "name": "Motoren | Ultraviolette",
+      "l1Id": 678
+    },
+    {
+      "id": 710,
+      "name": "Motoren | Yamaha",
+      "l1Id": 678
+    },
+    {
+      "id": 3230,
+      "name": "Motoren | Zero Motorcycles",
+      "l1Id": 678
+    },
+    {
+      "id": 700,
+      "name": "Motoren | Zijspanmotoren",
+      "l1Id": 678
+    },
+    {
+      "id": 704,
+      "name": "Motoren | Overige merken",
+      "l1Id": 678
+    },
+    {
+      "id": 2792,
+      "name": "Motoren Inkoop",
+      "l1Id": 678
+    },
+    {
+      "id": 1903,
+      "name": "Onderdelen | Merk-onafhankelijk",
+      "l1Id": 678
+    },
+    {
+      "id": 2018,
+      "name": "Onderdelen | BMW",
+      "l1Id": 678
+    },
+    {
+      "id": 2019,
+      "name": "Onderdelen | Ducati",
+      "l1Id": 678
+    },
+    {
+      "id": 2020,
+      "name": "Onderdelen | Harley-Davidson",
+      "l1Id": 678
+    },
+    {
+      "id": 2021,
+      "name": "Onderdelen | Honda",
+      "l1Id": 678
+    },
+    {
+      "id": 2022,
+      "name": "Onderdelen | Kawasaki",
+      "l1Id": 678
+    },
+    {
+      "id": 2023,
+      "name": "Onderdelen | Oldtimers",
+      "l1Id": 678
+    },
+    {
+      "id": 2024,
+      "name": "Onderdelen | Suzuki",
+      "l1Id": 678
+    },
+    {
+      "id": 2025,
+      "name": "Onderdelen | Yamaha",
+      "l1Id": 678
+    },
+    {
+      "id": 717,
+      "name": "Onderdelen | Overige",
+      "l1Id": 678
+    },
+    {
+      "id": 724,
+      "name": "Quads en Trikes",
+      "l1Id": 678
+    },
+    {
+      "id": 723,
+      "name": "Overige Motoren",
+      "l1Id": 678
+    },
+    {
+      "id": 728,
+      "name": "Muziek en Instrumenten",
+      "l1Id": null
+    },
+    {
+      "id": 729,
+      "name": "Accordeons",
+      "l1Id": 728
+    },
+    {
+      "id": 730,
+      "name": "Behuizingen en Koffers",
+      "l1Id": 728
+    },
+    {
+      "id": 1713,
+      "name": "Blaasinstrumenten | Blokfluiten",
+      "l1Id": 728
+    },
+    {
+      "id": 2885,
+      "name": "Blaasinstrumenten | Didgeridoos",
+      "l1Id": 728
+    },
+    {
+      "id": 743,
+      "name": "Blaasinstrumenten | Dwarsfluiten en Piccolo's",
+      "l1Id": 728
+    },
+    {
+      "id": 1764,
+      "name": "Blaasinstrumenten | Hobo's",
+      "l1Id": 728
+    },
+    {
+      "id": 1765,
+      "name": "Blaasinstrumenten | Hoorns",
+      "l1Id": 728
+    },
+    {
+      "id": 771,
+      "name": "Blaasinstrumenten | Klarinetten",
+      "l1Id": 728
+    },
+    {
+      "id": 1714,
+      "name": "Blaasinstrumenten | Mondharmonica's",
+      "l1Id": 728
+    },
+    {
+      "id": 1766,
+      "name": "Blaasinstrumenten | Saxofoons",
+      "l1Id": 728
+    },
+    {
+      "id": 1767,
+      "name": "Blaasinstrumenten | Trombones",
+      "l1Id": 728
+    },
+    {
+      "id": 779,
+      "name": "Blaasinstrumenten | Trompetten",
+      "l1Id": 728
+    },
+    {
+      "id": 1768,
+      "name": "Blaasinstrumenten | Tuba's",
+      "l1Id": 728
+    },
+    {
+      "id": 763,
+      "name": "Blaasinstrumenten | Overige",
+      "l1Id": 728
+    },
+    {
+      "id": 731,
+      "name": "Bladmuziek",
+      "l1Id": 728
+    },
+    {
+      "id": 738,
+      "name": "Dj-sets en Draaitafels",
+      "l1Id": 728
+    },
+    {
+      "id": 1769,
+      "name": "Draaiorgels",
+      "l1Id": 728
+    },
+    {
+      "id": 1402,
+      "name": "Drumcomputers",
+      "l1Id": 728
+    },
+    {
+      "id": 742,
+      "name": "Drumstellen en Slagwerk",
+      "l1Id": 728
+    },
+    {
+      "id": 744,
+      "name": "Effecten",
+      "l1Id": 728
+    },
+    {
+      "id": 1716,
+      "name": "Instrumenten | Onderdelen",
+      "l1Id": 728
+    },
+    {
+      "id": 1717,
+      "name": "Instrumenten | Toebehoren",
+      "l1Id": 728
+    },
+    {
+      "id": 2135,
+      "name": "Kabels en Stekkers",
+      "l1Id": 728
+    },
+    {
+      "id": 751,
+      "name": "Keyboards",
+      "l1Id": 728
+    },
+    {
+      "id": 754,
+      "name": "Licht en Laser",
+      "l1Id": 728
+    },
+    {
+      "id": 756,
+      "name": "Mengpanelen",
+      "l1Id": 728
+    },
+    {
+      "id": 757,
+      "name": "Microfoons",
+      "l1Id": 728
+    },
+    {
+      "id": 758,
+      "name": "Midi-apparatuur",
+      "l1Id": 728
+    },
+    {
+      "id": 761,
+      "name": "Orgels",
+      "l1Id": 728
+    },
+    {
+      "id": 762,
+      "name": "Orkestbanden",
+      "l1Id": 728
+    },
+    {
+      "id": 739,
+      "name": "Percussie",
+      "l1Id": 728
+    },
+    {
+      "id": 765,
+      "name": "Piano's",
+      "l1Id": 728
+    },
+    {
+      "id": 770,
+      "name": "Samplers",
+      "l1Id": 728
+    },
+    {
+      "id": 772,
+      "name": "Soundmodules",
+      "l1Id": 728
+    },
+    {
+      "id": 1770,
+      "name": "Snaarinstrumenten | Banjo's",
+      "l1Id": 728
+    },
+    {
+      "id": 746,
+      "name": "Snaarinstrumenten | Gitaren | Akoestisch",
+      "l1Id": 728
+    },
+    {
+      "id": 747,
+      "name": "Snaarinstrumenten | Gitaren | Bas",
+      "l1Id": 728
+    },
+    {
+      "id": 748,
+      "name": "Snaarinstrumenten | Gitaren | Elektrisch",
+      "l1Id": 728
+    },
+    {
+      "id": 2886,
+      "name": "Snaarinstrumenten | Harpen",
+      "l1Id": 728
+    },
+    {
+      "id": 1771,
+      "name": "Snaarinstrumenten | Klavecimbels",
+      "l1Id": 728
+    },
+    {
+      "id": 1772,
+      "name": "Snaarinstrumenten | Mandolines",
+      "l1Id": 728
+    },
+    {
+      "id": 1370,
+      "name": "Snaarinstrumenten | Overige",
+      "l1Id": 728
+    },
+    {
+      "id": 774,
+      "name": "Standaards",
+      "l1Id": 728
+    },
+    {
+      "id": 1773,
+      "name": "Strijkinstrumenten | Cello's",
+      "l1Id": 728
+    },
+    {
+      "id": 1774,
+      "name": "Strijkinstrumenten | Contrabassen",
+      "l1Id": 728
+    },
+    {
+      "id": 1371,
+      "name": "Strijkinstrumenten | Violen en Altviolen",
+      "l1Id": 728
+    },
+    {
+      "id": 1775,
+      "name": "Strijkinstrumenten | Overige",
+      "l1Id": 728
+    },
+    {
+      "id": 777,
+      "name": "Synthesizers",
+      "l1Id": 728
+    },
+    {
+      "id": 2631,
+      "name": "Theaterbelichting",
+      "l1Id": 728
+    },
+    {
+      "id": 745,
+      "name": "Versterkers | Bas en Gitaar",
+      "l1Id": 728
+    },
+    {
+      "id": 768,
+      "name": "Versterkers | Keyboard, Monitor en PA",
+      "l1Id": 728
+    },
+    {
+      "id": 764,
+      "name": "Overige Muziek en Instrumenten",
+      "l1Id": 728
+    },
+    {
+      "id": 1784,
+      "name": "Postzegels en Munten",
+      "l1Id": null
+    },
+    {
+      "id": 948,
+      "name": "Aandelen en Waardepapieren",
+      "l1Id": 1784
+    },
+    {
+      "id": 2926,
+      "name": "Bankbiljetten | België",
+      "l1Id": 1784
+    },
+    {
+      "id": 1786,
+      "name": "Bankbiljetten | Nederland",
+      "l1Id": 1784
+    },
+    {
+      "id": 1787,
+      "name": "Bankbiljetten | Europa | Eurobiljetten",
+      "l1Id": 1784
+    },
+    {
+      "id": 1788,
+      "name": "Bankbiljetten | Europa | Niet-Eurobiljetten",
+      "l1Id": 1784
+    },
+    {
+      "id": 1789,
+      "name": "Bankbiljetten | Afrika",
+      "l1Id": 1784
+    },
+    {
+      "id": 1790,
+      "name": "Bankbiljetten | Amerika",
+      "l1Id": 1784
+    },
+    {
+      "id": 1791,
+      "name": "Bankbiljetten | Azië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1792,
+      "name": "Bankbiljetten | Oceanië",
+      "l1Id": 1784
+    },
+    {
+      "id": 2927,
+      "name": "Brieven en Enveloppen | België",
+      "l1Id": 1784
+    },
+    {
+      "id": 2795,
+      "name": "Brieven en Enveloppen | Nederland",
+      "l1Id": 1784
+    },
+    {
+      "id": 2796,
+      "name": "Brieven en Enveloppen | Buitenland",
+      "l1Id": 1784
+    },
+    {
+      "id": 2793,
+      "name": "Edelmetalen en Baren",
+      "l1Id": 1784
+    },
+    {
+      "id": 2928,
+      "name": "Munten | België",
+      "l1Id": 1784
+    },
+    {
+      "id": 924,
+      "name": "Munten | Nederland",
+      "l1Id": 1784
+    },
+    {
+      "id": 1394,
+      "name": "Munten | Europa | Euromunten",
+      "l1Id": 1784
+    },
+    {
+      "id": 925,
+      "name": "Munten | Europa | Niet-Euromunten",
+      "l1Id": 1784
+    },
+    {
+      "id": 1793,
+      "name": "Munten | Afrika",
+      "l1Id": 1784
+    },
+    {
+      "id": 1794,
+      "name": "Munten | Amerika",
+      "l1Id": 1784
+    },
+    {
+      "id": 1795,
+      "name": "Munten | Azië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1796,
+      "name": "Munten | Oceanië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1797,
+      "name": "Munten en Bankbiljetten | Toebehoren",
+      "l1Id": 1784
+    },
+    {
+      "id": 1798,
+      "name": "Munten en Bankbiljetten | Verzamelingen",
+      "l1Id": 1784
+    },
+    {
+      "id": 1799,
+      "name": "Penningen en Medailles",
+      "l1Id": 1784
+    },
+    {
+      "id": 939,
+      "name": "Postzegels | Nederland",
+      "l1Id": 1784
+    },
+    {
+      "id": 1800,
+      "name": "Postzegels | Nederlandse Antillen en Aruba",
+      "l1Id": 1784
+    },
+    {
+      "id": 1801,
+      "name": "Postzegels | Nederlands-Indië en Nieuw-Guinea",
+      "l1Id": 1784
+    },
+    {
+      "id": 1802,
+      "name": "Postzegels | Suriname",
+      "l1Id": 1784
+    },
+    {
+      "id": 1803,
+      "name": "Postzegels | Europa | België",
+      "l1Id": 1784
+    },
+    {
+      "id": 1804,
+      "name": "Postzegels | Europa | Duitsland",
+      "l1Id": 1784
+    },
+    {
+      "id": 1805,
+      "name": "Postzegels | Europa | Frankrijk",
+      "l1Id": 1784
+    },
+    {
+      "id": 1806,
+      "name": "Postzegels | Europa | Hongarije",
+      "l1Id": 1784
+    },
+    {
+      "id": 2794,
+      "name": "Postzegels | Europa | Italië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1807,
+      "name": "Postzegels | Europa | Oostenrijk",
+      "l1Id": 1784
+    },
+    {
+      "id": 1808,
+      "name": "Postzegels | Europa | Rusland",
+      "l1Id": 1784
+    },
+    {
+      "id": 2029,
+      "name": "Postzegels | Europa | Scandinavië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1809,
+      "name": "Postzegels | Europa | Spanje",
+      "l1Id": 1784
+    },
+    {
+      "id": 2028,
+      "name": "Postzegels | Europa | UK",
+      "l1Id": 1784
+    },
+    {
+      "id": 1810,
+      "name": "Postzegels | Europa | Zwitserland",
+      "l1Id": 1784
+    },
+    {
+      "id": 938,
+      "name": "Postzegels | Europa | Overig",
+      "l1Id": 1784
+    },
+    {
+      "id": 1811,
+      "name": "Postzegels | Afrika",
+      "l1Id": 1784
+    },
+    {
+      "id": 1812,
+      "name": "Postzegels | Amerika",
+      "l1Id": 1784
+    },
+    {
+      "id": 936,
+      "name": "Postzegels | Azië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1813,
+      "name": "Postzegels | Oceanië",
+      "l1Id": 1784
+    },
+    {
+      "id": 1814,
+      "name": "Postzegels | Thematische zegels",
+      "l1Id": 1784
+    },
+    {
+      "id": 937,
+      "name": "Postzegels | Eerstedagenveloppen",
+      "l1Id": 1784
+    },
+    {
+      "id": 1815,
+      "name": "Postzegels | Toebehoren",
+      "l1Id": 1784
+    },
+    {
+      "id": 1816,
+      "name": "Postzegels | Volle albums en Verzamelingen",
+      "l1Id": 1784
+    },
+    {
+      "id": 1826,
+      "name": "Sieraden, Tassen en Uiterlijk",
+      "l1Id": null
+    },
+    {
+      "id": 3042,
+      "name": "Activity trackers",
+      "l1Id": 1826
+    },
+    {
+      "id": 13,
+      "name": "Antieke sieraden",
+      "l1Id": 1826
+    },
+    {
+      "id": 1827,
+      "name": "Armbanden",
+      "l1Id": 1826
+    },
+    {
+      "id": 1828,
+      "name": "Beautycases",
+      "l1Id": 1826
+    },
+    {
+      "id": 17,
+      "name": "Bedels",
+      "l1Id": 1826
+    },
+    {
+      "id": 1829,
+      "name": "Broches",
+      "l1Id": 1826
+    },
+    {
+      "id": 903,
+      "name": "Edelstenen",
+      "l1Id": 1826
+    },
+    {
+      "id": 2137,
+      "name": "Enkelbandjes en Enkelkettinkjes",
+      "l1Id": 1826
+    },
+    {
+      "id": 4,
+      "name": "Horloges | Antiek",
+      "l1Id": 1826
+    },
+    {
+      "id": 16,
+      "name": "Horloges | Dames",
+      "l1Id": 1826
+    },
+    {
+      "id": 1831,
+      "name": "Horloges | Heren",
+      "l1Id": 1826
+    },
+    {
+      "id": 2797,
+      "name": "Horloges | Kinderen",
+      "l1Id": 1826
+    },
+    {
+      "id": 18,
+      "name": "Kettingen",
+      "l1Id": 1826
+    },
+    {
+      "id": 2136,
+      "name": "Kettinghangers",
+      "l1Id": 1826
+    },
+    {
+      "id": 2138,
+      "name": "Kindersieraden",
+      "l1Id": 1826
+    },
+    {
+      "id": 1348,
+      "name": "Koffers",
+      "l1Id": 1826
+    },
+    {
+      "id": 1833,
+      "name": "Manchetknopen",
+      "l1Id": 1826
+    },
+    {
+      "id": 19,
+      "name": "Oorbellen",
+      "l1Id": 1826
+    },
+    {
+      "id": 3150,
+      "name": "Paraplu's",
+      "l1Id": 1826
+    },
+    {
+      "id": 21,
+      "name": "Piercings",
+      "l1Id": 1826
+    },
+    {
+      "id": 1836,
+      "name": "Portemonnees",
+      "l1Id": 1826
+    },
+    {
+      "id": 22,
+      "name": "Ringen",
+      "l1Id": 1826
+    },
+    {
+      "id": 3041,
+      "name": "Smartwatches",
+      "l1Id": 1826
+    },
+    {
+      "id": 3045,
+      "name": "Sporthorloges",
+      "l1Id": 1826
+    },
+    {
+      "id": 626,
+      "name": "Tassen | Damestassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 1837,
+      "name": "Tassen | Reistassen en Weekendtassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 1838,
+      "name": "Tassen | Rugtassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 1839,
+      "name": "Tassen | Schooltassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 1840,
+      "name": "Tassen | Schoudertassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 3151,
+      "name": "Tassen | Sporttassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 2798,
+      "name": "Toilettassen",
+      "l1Id": 1826
+    },
+    {
+      "id": 677,
+      "name": "Uiterlijk | Cosmetica en Make-up",
+      "l1Id": 1826
+    },
+    {
+      "id": 2633,
+      "name": "Uiterlijk | Dieet en Afvallen",
+      "l1Id": 1826
+    },
+    {
+      "id": 2632,
+      "name": "Uiterlijk | Gezichtsverzorging",
+      "l1Id": 1826
+    },
+    {
+      "id": 1830,
+      "name": "Uiterlijk | Haarverzorging",
+      "l1Id": 1826
+    },
+    {
+      "id": 1832,
+      "name": "Uiterlijk | Lichaamsverzorging",
+      "l1Id": 1826
+    },
+    {
+      "id": 1834,
+      "name": "Uiterlijk | Mondverzorging",
+      "l1Id": 1826
+    },
+    {
+      "id": 1835,
+      "name": "Uiterlijk | Parfum",
+      "l1Id": 1826
+    },
+    {
+      "id": 627,
+      "name": "Zonnebrillen en Brillen | Dames",
+      "l1Id": 1826
+    },
+    {
+      "id": 645,
+      "name": "Zonnebrillen en Brillen | Heren",
+      "l1Id": 1826
+    },
+    {
+      "id": 20,
+      "name": "Overige Accessoires",
+      "l1Id": 1826
+    },
+    {
+      "id": 356,
+      "name": "Spelcomputers en Games",
+      "l1Id": null,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        }
+      }
+    },
+    {
+      "id": 1729,
+      "name": "Games | Atari",
+      "l1Id": 356
+    },
+    {
+      "id": 2887,
+      "name": "Games | Nintendo 2DS en 3DS",
+      "l1Id": 356
+    },
+    {
+      "id": 1733,
+      "name": "Games | Nintendo 64",
+      "l1Id": 356
+    },
+    {
+      "id": 1659,
+      "name": "Games | Nintendo DS",
+      "l1Id": 356
+    },
+    {
+      "id": 363,
+      "name": "Games | Nintendo Game Boy",
+      "l1Id": 356
+    },
+    {
+      "id": 1730,
+      "name": "Games | Nintendo GameCube",
+      "l1Id": 356
+    },
+    {
+      "id": 1731,
+      "name": "Games | Nintendo NES",
+      "l1Id": 356
+    },
+    {
+      "id": 1732,
+      "name": "Games | Nintendo Super NES",
+      "l1Id": 356
+    },
+    {
+      "id": 2942,
+      "name": "Games | Nintendo Switch",
+      "l1Id": 356
+    },
+    {
+      "id": 3247,
+      "name": "Games | Nintendo Switch 2",
+      "l1Id": 356
+    },
+    {
+      "id": 1630,
+      "name": "Games | Nintendo Wii",
+      "l1Id": 356
+    },
+    {
+      "id": 2888,
+      "name": "Games | Nintendo Wii U",
+      "l1Id": 356
+    },
+    {
+      "id": 364,
+      "name": "Games | Overige",
+      "l1Id": 356
+    },
+    {
+      "id": 365,
+      "name": "Games | Pc",
+      "l1Id": 356
+    },
+    {
+      "id": 366,
+      "name": "Games | Sega",
+      "l1Id": 356
+    },
+    {
+      "id": 367,
+      "name": "Games | Sony PlayStation 1",
+      "l1Id": 356
+    },
+    {
+      "id": 1734,
+      "name": "Games | Sony PlayStation 2",
+      "l1Id": 356
+    },
+    {
+      "id": 1735,
+      "name": "Games | Sony PlayStation 3",
+      "l1Id": 356
+    },
+    {
+      "id": 2889,
+      "name": "Games | Sony PlayStation 4",
+      "l1Id": 356
+    },
+    {
+      "id": 2952,
+      "name": "Games | Sony PlayStation 5",
+      "l1Id": 356
+    },
+    {
+      "id": 1660,
+      "name": "Games | Sony PlayStation Portable",
+      "l1Id": 356
+    },
+    {
+      "id": 2890,
+      "name": "Games | Sony PlayStation Vita",
+      "l1Id": 356
+    },
+    {
+      "id": 1631,
+      "name": "Games | Xbox 360",
+      "l1Id": 356
+    },
+    {
+      "id": 2891,
+      "name": "Games | Xbox One",
+      "l1Id": 356
+    },
+    {
+      "id": 368,
+      "name": "Games | Xbox Original",
+      "l1Id": 356
+    },
+    {
+      "id": 2953,
+      "name": "Games | Xbox Series X en S",
+      "l1Id": 356
+    },
+    {
+      "id": 345,
+      "name": "Spelcomputers | Atari",
+      "l1Id": 356
+    },
+    {
+      "id": 2892,
+      "name": "Spelcomputers | Nintendo 2DS en 3DS",
+      "l1Id": 356
+    },
+    {
+      "id": 1739,
+      "name": "Spelcomputers | Nintendo 64",
+      "l1Id": 356
+    },
+    {
+      "id": 2800,
+      "name": "Spelcomputers | Nintendo Consoles | Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 1655,
+      "name": "Spelcomputers | Nintendo DS",
+      "l1Id": 356
+    },
+    {
+      "id": 346,
+      "name": "Spelcomputers | Nintendo Game Boy",
+      "l1Id": 356
+    },
+    {
+      "id": 1736,
+      "name": "Spelcomputers | Nintendo GameCube",
+      "l1Id": 356
+    },
+    {
+      "id": 1737,
+      "name": "Spelcomputers | Nintendo NES",
+      "l1Id": 356
+    },
+    {
+      "id": 2799,
+      "name": "Spelcomputers | Nintendo Portables | Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 1738,
+      "name": "Spelcomputers | Nintendo Super NES",
+      "l1Id": 356
+    },
+    {
+      "id": 2943,
+      "name": "Spelcomputers | Nintendo Switch",
+      "l1Id": 356
+    },
+    {
+      "id": 3246,
+      "name": "Spelcomputers | Nintendo Switch 2",
+      "l1Id": 356
+    },
+    {
+      "id": 2946,
+      "name": "Spelcomputers | Nintendo Switch Lite",
+      "l1Id": 356
+    },
+    {
+      "id": 1628,
+      "name": "Spelcomputers | Nintendo Wii",
+      "l1Id": 356
+    },
+    {
+      "id": 2893,
+      "name": "Spelcomputers | Nintendo Wii U",
+      "l1Id": 356
+    },
+    {
+      "id": 348,
+      "name": "Spelcomputers | Sega",
+      "l1Id": 356
+    },
+    {
+      "id": 347,
+      "name": "Spelcomputers | Sony PlayStation 1",
+      "l1Id": 356
+    },
+    {
+      "id": 1740,
+      "name": "Spelcomputers | Sony PlayStation 2",
+      "l1Id": 356
+    },
+    {
+      "id": 1741,
+      "name": "Spelcomputers | Sony PlayStation 3",
+      "l1Id": 356
+    },
+    {
+      "id": 2894,
+      "name": "Spelcomputers | Sony PlayStation 4",
+      "l1Id": 356
+    },
+    {
+      "id": 2954,
+      "name": "Spelcomputers | Sony PlayStation 5",
+      "l1Id": 356,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        },
+        "model": {
+          "label": "Model",
+          "type": "choice",
+          "values": {
+            "13201": "Playstation 5",
+            "13202": "Playstation 5 Digital"
+          }
+        }
+      }
+    },
+    {
+      "id": 2801,
+      "name": "Spelcomputers | Sony PlayStation Consoles | Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 2802,
+      "name": "Spelcomputers | Sony PlayStation Portables | Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 2895,
+      "name": "Spelcomputers | Sony PlayStation Vita",
+      "l1Id": 356
+    },
+    {
+      "id": 1656,
+      "name": "Spelcomputers | Sony PSP",
+      "l1Id": 356
+    },
+    {
+      "id": 2803,
+      "name": "Spelcomputers | Xbox | Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 1629,
+      "name": "Spelcomputers | Xbox 360",
+      "l1Id": 356
+    },
+    {
+      "id": 2896,
+      "name": "Spelcomputers | Xbox One",
+      "l1Id": 356
+    },
+    {
+      "id": 349,
+      "name": "Spelcomputers | Xbox Original",
+      "l1Id": 356
+    },
+    {
+      "id": 2955,
+      "name": "Spelcomputers | Xbox Series X en S",
+      "l1Id": 356
+    },
+    {
+      "id": 1657,
+      "name": "Spelcomputers | Overige Accessoires",
+      "l1Id": 356
+    },
+    {
+      "id": 1743,
+      "name": "Spelcomputers | Overige",
+      "l1Id": 356
+    },
+    {
+      "id": 2945,
+      "name": "Virtual Reality",
+      "l1Id": 356
+    },
+    {
+      "id": 784,
+      "name": "Sport en Fitness",
+      "l1Id": null
+    },
+    {
+      "id": 785,
+      "name": "Badminton",
+      "l1Id": 784
+    },
+    {
+      "id": 1780,
+      "name": "Ballet",
+      "l1Id": 784
+    },
+    {
+      "id": 786,
+      "name": "Basketbal",
+      "l1Id": 784
+    },
+    {
+      "id": 787,
+      "name": "Bergsport en Wandelen",
+      "l1Id": 784
+    },
+    {
+      "id": 3158,
+      "name": "Bidons",
+      "l1Id": 784
+    },
+    {
+      "id": 789,
+      "name": "Biljarten en Poolen",
+      "l1Id": 784
+    },
+    {
+      "id": 3157,
+      "name": "Boksen",
+      "l1Id": 784
+    },
+    {
+      "id": 790,
+      "name": "Bowlen",
+      "l1Id": 784
+    },
+    {
+      "id": 3154,
+      "name": "Dansen",
+      "l1Id": 784
+    },
+    {
+      "id": 791,
+      "name": "Darts",
+      "l1Id": 784
+    },
+    {
+      "id": 803,
+      "name": "Fitnessapparatuur",
+      "l1Id": 784
+    },
+    {
+      "id": 793,
+      "name": "Fitnessmaterialen",
+      "l1Id": 784
+    },
+    {
+      "id": 1386,
+      "name": "Gezondheidsproducten en Wellness",
+      "l1Id": 784
+    },
+    {
+      "id": 794,
+      "name": "Golf",
+      "l1Id": 784
+    },
+    {
+      "id": 1781,
+      "name": "Handbal",
+      "l1Id": 784
+    },
+    {
+      "id": 2139,
+      "name": "Handboogschieten",
+      "l1Id": 784
+    },
+    {
+      "id": 795,
+      "name": "Hartslagmeters",
+      "l1Id": 784
+    },
+    {
+      "id": 796,
+      "name": "Hockey",
+      "l1Id": 784
+    },
+    {
+      "id": 3159,
+      "name": "Hoelahoeps",
+      "l1Id": 784
+    },
+    {
+      "id": 1782,
+      "name": "Honkbal en Softbal",
+      "l1Id": 784
+    },
+    {
+      "id": 2140,
+      "name": "IJshockey",
+      "l1Id": 784
+    },
+    {
+      "id": 797,
+      "name": "Karting",
+      "l1Id": 784
+    },
+    {
+      "id": 3156,
+      "name": "Klimsport",
+      "l1Id": 784
+    },
+    {
+      "id": 1385,
+      "name": "Korfbal",
+      "l1Id": 784
+    },
+    {
+      "id": 799,
+      "name": "Loopsport en Atletiek",
+      "l1Id": 784
+    },
+    {
+      "id": 800,
+      "name": "Massageproducten",
+      "l1Id": 784
+    },
+    {
+      "id": 3152,
+      "name": "Padel",
+      "l1Id": 784
+    },
+    {
+      "id": 804,
+      "name": "Rugby",
+      "l1Id": 784
+    },
+    {
+      "id": 805,
+      "name": "Sauna",
+      "l1Id": 784
+    },
+    {
+      "id": 806,
+      "name": "Schaatsen",
+      "l1Id": 784
+    },
+    {
+      "id": 3153,
+      "name": "Schietsport-accessoires",
+      "l1Id": 784
+    },
+    {
+      "id": 1444,
+      "name": "Skateboarden",
+      "l1Id": 784
+    },
+    {
+      "id": 807,
+      "name": "Skeelers",
+      "l1Id": 784
+    },
+    {
+      "id": 808,
+      "name": "Skiën en Langlaufen",
+      "l1Id": 784
+    },
+    {
+      "id": 809,
+      "name": "Snowboarden",
+      "l1Id": 784
+    },
+    {
+      "id": 3160,
+      "name": "Springtouwen",
+      "l1Id": 784
+    },
+    {
+      "id": 811,
+      "name": "Squash",
+      "l1Id": 784
+    },
+    {
+      "id": 812,
+      "name": "Tafeltennis",
+      "l1Id": 784
+    },
+    {
+      "id": 813,
+      "name": "Tennis",
+      "l1Id": 784
+    },
+    {
+      "id": 1445,
+      "name": "Turnen",
+      "l1Id": 784
+    },
+    {
+      "id": 814,
+      "name": "Vechtsporten en Zelfverdediging",
+      "l1Id": 784
+    },
+    {
+      "id": 815,
+      "name": "Vliegeren",
+      "l1Id": 784
+    },
+    {
+      "id": 816,
+      "name": "Voetbal",
+      "l1Id": 784
+    },
+    {
+      "id": 1783,
+      "name": "Volleybal",
+      "l1Id": 784
+    },
+    {
+      "id": 792,
+      "name": "Wielrennen",
+      "l1Id": 784
+    },
+    {
+      "id": 3155,
+      "name": "Yoga en Pilates",
+      "l1Id": 784
+    },
+    {
+      "id": 818,
+      "name": "Zweefvliegen en Paragliding",
+      "l1Id": 784
+    },
+    {
+      "id": 801,
+      "name": "Overige Sport en Fitness",
+      "l1Id": 784
+    },
+    {
+      "id": 820,
+      "name": "Telecommunicatie",
+      "l1Id": null,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        }
+      }
+    },
+    {
+      "id": 825,
+      "name": "Carkits",
+      "l1Id": 820
+    },
+    {
+      "id": 848,
+      "name": "Scanners",
+      "l1Id": 820
+    },
+    {
+      "id": 821,
+      "name": "Antennes en Masten",
+      "l1Id": 820
+    },
+    {
+      "id": 822,
+      "name": "Antwoordapparaten",
+      "l1Id": 820
+    },
+    {
+      "id": 3047,
+      "name": "Autoladers",
+      "l1Id": 820
+    },
+    {
+      "id": 1454,
+      "name": "Datacommunicatie en VoIP",
+      "l1Id": 820
+    },
+    {
+      "id": 826,
+      "name": "Faxen",
+      "l1Id": 820
+    },
+    {
+      "id": 827,
+      "name": "ISDN en ADSL",
+      "l1Id": 820
+    },
+    {
+      "id": 1953,
+      "name": "Mobiele telefoons | Apple iPhone",
+      "l1Id": 820,
+      "filters": {
+        "condition": {
+          "label": "Conditie",
+          "type": "choice",
+          "values": {
+            "30": "Nieuw",
+            "14050": "Refurbished",
+            "31": "Zo goed als nieuw",
+            "32": "Gebruikt",
+            "13940": "Niet werkend"
+          }
+        },
+        "storage": {
+          "label": "Opslagcapaciteit",
+          "type": "choice",
+          "values": {
+            "12820": "8 GB",
+            "12821": "16 GB",
+            "12822": "32 GB",
+            "12823": "64 GB",
+            "12824": "128 GB",
+            "12825": "256 GB",
+            "12826": "512 GB",
+            "13829": "1 TB"
+          }
+        },
+        "simlock": {
+          "label": "Simlock",
+          "type": "choice",
+          "values": {
+            "6861": "Met simlock",
+            "6862": "Zonder simlock"
+          }
+        }
+      }
+    },
+    {
+      "id": 1683,
+      "name": "Mobiele telefoons | Batterijen en Accu's",
+      "l1Id": 820
+    },
+    {
+      "id": 1954,
+      "name": "Mobiele telefoons | Blackberry",
+      "l1Id": 820
+    },
+    {
+      "id": 829,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | Apple iPhone",
+      "l1Id": 820
+    },
+    {
+      "id": 2804,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | Blackberry",
+      "l1Id": 820
+    },
+    {
+      "id": 2805,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | HTC",
+      "l1Id": 820
+    },
+    {
+      "id": 2806,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | Nokia",
+      "l1Id": 820
+    },
+    {
+      "id": 2808,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | Overige merken",
+      "l1Id": 820
+    },
+    {
+      "id": 2807,
+      "name": "Mobiele telefoons | Hoesjes en Frontjes | Samsung",
+      "l1Id": 820
+    },
+    {
+      "id": 1685,
+      "name": "Mobiele telefoons | HTC",
+      "l1Id": 820
+    },
+    {
+      "id": 2897,
+      "name": "Mobiele telefoons | Huawei",
+      "l1Id": 820
+    },
+    {
+      "id": 1632,
+      "name": "Mobiele telefoons | LG",
+      "l1Id": 820
+    },
+    {
+      "id": 834,
+      "name": "Mobiele telefoons | Motorola",
+      "l1Id": 820
+    },
+    {
+      "id": 836,
+      "name": "Mobiele telefoons | Nokia",
+      "l1Id": 820
+    },
+    {
+      "id": 1956,
+      "name": "Mobiele telefoons | Oordopjes",
+      "l1Id": 820
+    },
+    {
+      "id": 1957,
+      "name": "Mobiele telefoons | Telefoon-opladers",
+      "l1Id": 820
+    },
+    {
+      "id": 837,
+      "name": "Mobiele telefoons | Overige merken",
+      "l1Id": 820
+    },
+    {
+      "id": 840,
+      "name": "Mobiele telefoons | Sagem",
+      "l1Id": 820
+    },
+    {
+      "id": 841,
+      "name": "Mobiele telefoons | Samsung",
+      "l1Id": 820
+    },
+    {
+      "id": 842,
+      "name": "Mobiele telefoons | Siemens",
+      "l1Id": 820
+    },
+    {
+      "id": 1958,
+      "name": "Mobiele telefoons | Software",
+      "l1Id": 820
+    },
+    {
+      "id": 843,
+      "name": "Mobiele telefoons | Sony",
+      "l1Id": 820
+    },
+    {
+      "id": 1959,
+      "name": "Mobiele telefoons | Toebehoren en Onderdelen",
+      "l1Id": 820
+    },
+    {
+      "id": 340,
+      "name": "Pda's",
+      "l1Id": 820
+    },
+    {
+      "id": 1684,
+      "name": "Pda's | Toebehoren",
+      "l1Id": 820
+    },
+    {
+      "id": 845,
+      "name": "Portofoons en Walkie-talkies",
+      "l1Id": 820
+    },
+    {
+      "id": 3040,
+      "name": "Powerbanks",
+      "l1Id": 820
+    },
+    {
+      "id": 846,
+      "name": "Prepaidkaarten en Simkaarten",
+      "l1Id": 820
+    },
+    {
+      "id": 850,
+      "name": "Telefooncentrales",
+      "l1Id": 820
+    },
+    {
+      "id": 3046,
+      "name": "Telefoonhouders",
+      "l1Id": 820
+    },
+    {
+      "id": 851,
+      "name": "Vaste telefoons | Handsets en Draadloos",
+      "l1Id": 820
+    },
+    {
+      "id": 852,
+      "name": "Vaste telefoons | Niet Draadloos",
+      "l1Id": 820
+    },
+    {
+      "id": 3043,
+      "name": "Wearable-accessoires",
+      "l1Id": 820
+    },
+    {
+      "id": 855,
+      "name": "Zenders en Ontvangers",
+      "l1Id": 820
+    },
+    {
+      "id": 844,
+      "name": "Overige Telecommunicatie",
+      "l1Id": 820
+    },
+    {
+      "id": 1984,
+      "name": "Tickets en Kaartjes",
+      "l1Id": null
+    },
+    {
+      "id": 1271,
+      "name": "Autovignetten",
+      "l1Id": 1984
+    },
+    {
+      "id": 2898,
+      "name": "Beurzen",
+      "l1Id": 1984
+    },
+    {
+      "id": 1986,
+      "name": "Concerten | Dance",
+      "l1Id": 1984
+    },
+    {
+      "id": 1988,
+      "name": "Concerten | House, Techno en Trance",
+      "l1Id": 1984
+    },
+    {
+      "id": 1989,
+      "name": "Concerten | Jazz en Blues",
+      "l1Id": 1984
+    },
+    {
+      "id": 1990,
+      "name": "Concerten | Klassiek",
+      "l1Id": 1984
+    },
+    {
+      "id": 1992,
+      "name": "Concerten | Nederlandstalig",
+      "l1Id": 1984
+    },
+    {
+      "id": 1249,
+      "name": "Concerten | Pop",
+      "l1Id": 1984
+    },
+    {
+      "id": 1993,
+      "name": "Concerten | R&B en Hiphop",
+      "l1Id": 1984
+    },
+    {
+      "id": 1994,
+      "name": "Concerten | Rock en Metal",
+      "l1Id": 1984
+    },
+    {
+      "id": 1996,
+      "name": "Concerten | Overige",
+      "l1Id": 1984
+    },
+    {
+      "id": 1448,
+      "name": "Evenementen en Festivals",
+      "l1Id": 1984
+    },
+    {
+      "id": 1246,
+      "name": "Filmkaartjes",
+      "l1Id": 1984
+    },
+    {
+      "id": 2809,
+      "name": "Hotelbonnen",
+      "l1Id": 1984
+    },
+    {
+      "id": 1978,
+      "name": "Kortingen en Cadeaubonnen",
+      "l1Id": 1984
+    },
+    {
+      "id": 1248,
+      "name": "Musea",
+      "l1Id": 1984
+    },
+    {
+      "id": 1997,
+      "name": "Recreatie | Dierentuinen",
+      "l1Id": 1984
+    },
+    {
+      "id": 1247,
+      "name": "Recreatie | Pretparken en Attractieparken",
+      "l1Id": 1984
+    },
+    {
+      "id": 1232,
+      "name": "Recreatie | Overige",
+      "l1Id": 1984
+    },
+    {
+      "id": 2000,
+      "name": "Sport | Schaatsen",
+      "l1Id": 1984
+    },
+    {
+      "id": 2001,
+      "name": "Sport | Tennis",
+      "l1Id": 1984
+    },
+    {
+      "id": 1251,
+      "name": "Sport | Voetbal",
+      "l1Id": 1984
+    },
+    {
+      "id": 2002,
+      "name": "Sport | Overige",
+      "l1Id": 1984
+    },
+    {
+      "id": 1250,
+      "name": "Theater | Cabaret en Komedie",
+      "l1Id": 1984
+    },
+    {
+      "id": 2014,
+      "name": "Theater | Musical",
+      "l1Id": 1984
+    },
+    {
+      "id": 2016,
+      "name": "Theater | Toneel, Dans en Opera",
+      "l1Id": 1984
+    },
+    {
+      "id": 2017,
+      "name": "Theater | Overige",
+      "l1Id": 1984
+    },
+    {
+      "id": 1998,
+      "name": "Trein, Bus en Vliegtuig",
+      "l1Id": 1984
+    },
+    {
+      "id": 1252,
+      "name": "Overige Tickets en Kaartjes",
+      "l1Id": 1984
+    },
+    {
+      "id": 1847,
+      "name": "Tuin en Terras",
+      "l1Id": null
+    },
+    {
+      "id": 1857,
+      "name": "Aarde en Mest",
+      "l1Id": 1847
+    },
+    {
+      "id": 2960,
+      "name": "Barbecue-accessoires",
+      "l1Id": 1847
+    },
+    {
+      "id": 3000,
+      "name": "Bergingen en Tuinkasten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2957,
+      "name": "Bestrijdingsmiddelen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2971,
+      "name": "Bewateringscomputers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1849,
+      "name": "Bielzen en Borders",
+      "l1Id": 1847
+    },
+    {
+      "id": 2987,
+      "name": "Bladblazers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1852,
+      "name": "Bloembakken en Plantenbakken",
+      "l1Id": 1847
+    },
+    {
+      "id": 1850,
+      "name": "Bloembollen en Zaden",
+      "l1Id": 1847
+    },
+    {
+      "id": 1442,
+      "name": "Bloempotten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2985,
+      "name": "Bosmaaiers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1443,
+      "name": "Brievenbussen",
+      "l1Id": 1847
+    },
+    {
+      "id": 3010,
+      "name": "Bubbelbaden en Hottubs",
+      "l1Id": 1847
+    },
+    {
+      "id": 2962,
+      "name": "Buitenkeukens",
+      "l1Id": 1847
+    },
+    {
+      "id": 2972,
+      "name": "Buitenkranen",
+      "l1Id": 1847
+    },
+    {
+      "id": 281,
+      "name": "Buitenverlichting",
+      "l1Id": 1847
+    },
+    {
+      "id": 1853,
+      "name": "Deurmatten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2899,
+      "name": "Droogmolens en Wasrekken",
+      "l1Id": 1847
+    },
+    {
+      "id": 2976,
+      "name": "Druppelsystemen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2958,
+      "name": "Elektrische barbecues",
+      "l1Id": 1847
+    },
+    {
+      "id": 2977,
+      "name": "Fakkels",
+      "l1Id": 1847
+    },
+    {
+      "id": 1855,
+      "name": "Gaas en Draad",
+      "l1Id": 1847
+    },
+    {
+      "id": 2959,
+      "name": "Gasbarbecues",
+      "l1Id": 1847
+    },
+    {
+      "id": 2975,
+      "name": "Gieters",
+      "l1Id": 1847
+    },
+    {
+      "id": 2634,
+      "name": "Gras en Kunstgras",
+      "l1Id": 1847
+    },
+    {
+      "id": 250,
+      "name": "Grasmaaiers",
+      "l1Id": 1847
+    },
+    {
+      "id": 2984,
+      "name": "Grastrimmers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1860,
+      "name": "Grind, Keien en Split",
+      "l1Id": 1847
+    },
+    {
+      "id": 1351,
+      "name": "Haardhout",
+      "l1Id": 1847
+    },
+    {
+      "id": 2991,
+      "name": "Hakselaars",
+      "l1Id": 1847
+    },
+    {
+      "id": 276,
+      "name": "Hand-tuingereedschap",
+      "l1Id": 1847
+    },
+    {
+      "id": 2997,
+      "name": "Handzagen",
+      "l1Id": 1847
+    },
+    {
+      "id": 3006,
+      "name": "Hangmatten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2989,
+      "name": "Heggenscharen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2988,
+      "name": "Hogedrukreinigers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1441,
+      "name": "Houtskoolbarbecues",
+      "l1Id": 1847
+    },
+    {
+      "id": 2999,
+      "name": "Kassen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2992,
+      "name": "Kloofmachines",
+      "l1Id": 1847
+    },
+    {
+      "id": 2998,
+      "name": "Kruiwagens",
+      "l1Id": 1847
+    },
+    {
+      "id": 2900,
+      "name": "Kweekspullen",
+      "l1Id": 1847
+    },
+    {
+      "id": 3005,
+      "name": "Ligbedden",
+      "l1Id": 1847
+    },
+    {
+      "id": 2995,
+      "name": "Onkruidbranders",
+      "l1Id": 1847
+    },
+    {
+      "id": 2901,
+      "name": "Overkappingen",
+      "l1Id": 1847
+    },
+    {
+      "id": 1863,
+      "name": "Palen, Balken en Planken",
+      "l1Id": 1847
+    },
+    {
+      "id": 3009,
+      "name": "Parasols",
+      "l1Id": 1847
+    },
+    {
+      "id": 1858,
+      "name": "Partytenten",
+      "l1Id": 1847
+    },
+    {
+      "id": 3003,
+      "name": "Picknicktafels",
+      "l1Id": 1847
+    },
+    {
+      "id": 2961,
+      "name": "Pizzaovens",
+      "l1Id": 1847
+    },
+    {
+      "id": 279,
+      "name": "Planten | Bomen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2948,
+      "name": "Planten | Fruitbomen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2947,
+      "name": "Planten | Struiken en Hagen",
+      "l1Id": 1847
+    },
+    {
+      "id": 1851,
+      "name": "Planten | Tuinplanten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2956,
+      "name": "Plantenvoeding",
+      "l1Id": 1847
+    },
+    {
+      "id": 1859,
+      "name": "Regentonnen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2983,
+      "name": "Robotmaaiers",
+      "l1Id": 1847
+    },
+    {
+      "id": 3008,
+      "name": "Schaduwdoeken",
+      "l1Id": 1847
+    },
+    {
+      "id": 251,
+      "name": "Schuttingen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2994,
+      "name": "Snoeischaren",
+      "l1Id": 1847
+    },
+    {
+      "id": 2993,
+      "name": "Takkenscharen",
+      "l1Id": 1847
+    },
+    {
+      "id": 280,
+      "name": "Tegels en Klinkers",
+      "l1Id": 1847
+    },
+    {
+      "id": 2967,
+      "name": "Terrasdelen en Vlonders",
+      "l1Id": 1847
+    },
+    {
+      "id": 2811,
+      "name": "Terrasverwarmers",
+      "l1Id": 1847
+    },
+    {
+      "id": 3004,
+      "name": "Tuinbanken",
+      "l1Id": 1847
+    },
+    {
+      "id": 1861,
+      "name": "Tuinbeelden",
+      "l1Id": 1847
+    },
+    {
+      "id": 2966,
+      "name": "Tuinhaarden",
+      "l1Id": 1847
+    },
+    {
+      "id": 2968,
+      "name": "Tuinhekken en Hekwerk",
+      "l1Id": 1847
+    },
+    {
+      "id": 277,
+      "name": "Tuinhuizen",
+      "l1Id": 1847
+    },
+    {
+      "id": 1864,
+      "name": "Tuinmeubel-accessoires",
+      "l1Id": 1847
+    },
+    {
+      "id": 2969,
+      "name": "Tuinpoorten",
+      "l1Id": 1847
+    },
+    {
+      "id": 2970,
+      "name": "Tuinschermen",
+      "l1Id": 1847
+    },
+    {
+      "id": 278,
+      "name": "Tuinsets en Loungesets",
+      "l1Id": 1847
+    },
+    {
+      "id": 1865,
+      "name": "Tuinslangen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2974,
+      "name": "Tuinsproeiers",
+      "l1Id": 1847
+    },
+    {
+      "id": 2979,
+      "name": "Tuinstekers",
+      "l1Id": 1847
+    },
+    {
+      "id": 3001,
+      "name": "Tuinstoelen",
+      "l1Id": 1847
+    },
+    {
+      "id": 3002,
+      "name": "Tuintafels",
+      "l1Id": 1847
+    },
+    {
+      "id": 2978,
+      "name": "Tuinvazen",
+      "l1Id": 1847
+    },
+    {
+      "id": 275,
+      "name": "Tuinwanddecoratie",
+      "l1Id": 1847
+    },
+    {
+      "id": 2996,
+      "name": "Veegmachines",
+      "l1Id": 1847
+    },
+    {
+      "id": 2986,
+      "name": "Verticuteermachines",
+      "l1Id": 1847
+    },
+    {
+      "id": 283,
+      "name": "Vijvers",
+      "l1Id": 1847
+    },
+    {
+      "id": 3007,
+      "name": "Vijver-toebehoren",
+      "l1Id": 1847
+    },
+    {
+      "id": 2981,
+      "name": "Vogelhuisjes en Vogelbaden",
+      "l1Id": 1847
+    },
+    {
+      "id": 2964,
+      "name": "Vuurkorven",
+      "l1Id": 1847
+    },
+    {
+      "id": 2963,
+      "name": "Vuurschalen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2965,
+      "name": "Vuurtafels",
+      "l1Id": 1847
+    },
+    {
+      "id": 1854,
+      "name": "Waterpartijen en Fonteinen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2973,
+      "name": "Waterpompen",
+      "l1Id": 1847
+    },
+    {
+      "id": 1856,
+      "name": "Werkkleding",
+      "l1Id": 1847
+    },
+    {
+      "id": 2982,
+      "name": "Windwijzers en Windmolens",
+      "l1Id": 1847
+    },
+    {
+      "id": 1848,
+      "name": "Zand",
+      "l1Id": 1847
+    },
+    {
+      "id": 2810,
+      "name": "Zitmaaiers",
+      "l1Id": 1847
+    },
+    {
+      "id": 288,
+      "name": "Zonneschermen",
+      "l1Id": 1847
+    },
+    {
+      "id": 2980,
+      "name": "Zonnewijzers",
+      "l1Id": 1847
+    },
+    {
+      "id": 1711,
+      "name": "Zwembad-toebehoren",
+      "l1Id": 1847
+    },
+    {
+      "id": 819,
+      "name": "Zwembaden",
+      "l1Id": 1847
+    },
+    {
+      "id": 274,
+      "name": "Overige Tuin en Terras",
+      "l1Id": 1847
+    },
+    {
+      "id": 167,
+      "name": "Vacatures",
+      "l1Id": null
+    },
+    {
+      "id": 1180,
+      "name": "Goede doelen en Vrijwilligerswerk",
+      "l1Id": 167
+    },
+    {
+      "id": 1183,
+      "name": "Profielen | Man/Vrouw zoekt werk",
+      "l1Id": 167
+    },
+    {
+      "id": 2076,
+      "name": "Profielen | Scholier zoekt bijbaan",
+      "l1Id": 167
+    },
+    {
+      "id": 1184,
+      "name": "Profielen | Student zoekt bijbaan of stage",
+      "l1Id": 167
+    },
+    {
+      "id": 1158,
+      "name": "Stages en Leerbanen",
+      "l1Id": 167
+    },
+    {
+      "id": 1139,
+      "name": "Vacatures | Administratief en Secretarieel",
+      "l1Id": 167
+    },
+    {
+      "id": 1141,
+      "name": "Vacatures | Automatisering en ICT",
+      "l1Id": 167
+    },
+    {
+      "id": 2075,
+      "name": "Vacatures | Automotive",
+      "l1Id": 167
+    },
+    {
+      "id": 1142,
+      "name": "Vacatures | Beveiliging",
+      "l1Id": 167
+    },
+    {
+      "id": 1143,
+      "name": "Vacatures | Bouwnijverheid",
+      "l1Id": 167
+    },
+    {
+      "id": 1144,
+      "name": "Vacatures | Chauffeurs",
+      "l1Id": 167
+    },
+    {
+      "id": 1644,
+      "name": "Vacatures | Cultuur, Recreatie en Sport",
+      "l1Id": 167
+    },
+    {
+      "id": 1145,
+      "name": "Vacatures | Detailhandel en Winkelpersoneel",
+      "l1Id": 167
+    },
+    {
+      "id": 1146,
+      "name": "Vacatures | Directie, Management en Staf",
+      "l1Id": 167
+    },
+    {
+      "id": 1147,
+      "name": "Vacatures | Elektriciens",
+      "l1Id": 167
+    },
+    {
+      "id": 1148,
+      "name": "Vacatures | Financiële dienstverlening",
+      "l1Id": 167
+    },
+    {
+      "id": 1149,
+      "name": "Vacatures | Gezondheidszorg",
+      "l1Id": 167
+    },
+    {
+      "id": 1151,
+      "name": "Vacatures | Grafische industrie",
+      "l1Id": 167
+    },
+    {
+      "id": 1152,
+      "name": "Vacatures | Horeca en Catering",
+      "l1Id": 167
+    },
+    {
+      "id": 1154,
+      "name": "Vacatures | HR en Arbeidsbemiddeling",
+      "l1Id": 167
+    },
+    {
+      "id": 1155,
+      "name": "Vacatures | Industrie en Productie",
+      "l1Id": 167
+    },
+    {
+      "id": 1150,
+      "name": "Vacatures | Juridisch en Fiscaal",
+      "l1Id": 167
+    },
+    {
+      "id": 1157,
+      "name": "Vacatures | Klantenservice en Callcenter",
+      "l1Id": 167
+    },
+    {
+      "id": 1140,
+      "name": "Vacatures | Landbouw, Natuur en Milieu",
+      "l1Id": 167
+    },
+    {
+      "id": 1159,
+      "name": "Vacatures | Logistiek, Inkoop en Transport",
+      "l1Id": 167
+    },
+    {
+      "id": 1645,
+      "name": "Vacatures | Maatschappelijke dienstverlening",
+      "l1Id": 167
+    },
+    {
+      "id": 1161,
+      "name": "Vacatures | Makelaardij en Vastgoed",
+      "l1Id": 167
+    },
+    {
+      "id": 1162,
+      "name": "Vacatures | Marketing, Communicatie en Media",
+      "l1Id": 167
+    },
+    {
+      "id": 1163,
+      "name": "Vacatures | Modellen",
+      "l1Id": 167
+    },
+    {
+      "id": 1438,
+      "name": "Vacatures | Netwerk Marketing",
+      "l1Id": 167
+    },
+    {
+      "id": 1164,
+      "name": "Vacatures | Onderwijs, Wetenschap en Onderzoek",
+      "l1Id": 167
+    },
+    {
+      "id": 1165,
+      "name": "Vacatures | Overheid",
+      "l1Id": 167
+    },
+    {
+      "id": 1166,
+      "name": "Vacatures | Promotiewerk en Flyering",
+      "l1Id": 167
+    },
+    {
+      "id": 1179,
+      "name": "Vacatures | Scheepvaart en Visserij",
+      "l1Id": 167
+    },
+    {
+      "id": 1167,
+      "name": "Vacatures | Schoonmaak en Facilitaire diensten",
+      "l1Id": 167
+    },
+    {
+      "id": 1171,
+      "name": "Vacatures | Techniek",
+      "l1Id": 167
+    },
+    {
+      "id": 1172,
+      "name": "Vacatures | Tekstschrijvers en Editors",
+      "l1Id": 167
+    },
+    {
+      "id": 1173,
+      "name": "Vacatures | Thuiswerk",
+      "l1Id": 167
+    },
+    {
+      "id": 1174,
+      "name": "Vacatures | Toerisme, Reizen en Evenementen",
+      "l1Id": 167
+    },
+    {
+      "id": 1175,
+      "name": "Vacatures | Uiterlijke verzorging",
+      "l1Id": 167
+    },
+    {
+      "id": 1176,
+      "name": "Vacatures | Vakantiewerk",
+      "l1Id": 167
+    },
+    {
+      "id": 1177,
+      "name": "Vacatures | Verkoop en Commercie",
+      "l1Id": 167
+    },
+    {
+      "id": 1646,
+      "name": "Vacatures | Zakelijke dienstverlening",
+      "l1Id": 167
+    },
+    {
+      "id": 1181,
+      "name": "Vacatures | Overige Vacatures",
+      "l1Id": 167
+    },
+    {
+      "id": 856,
+      "name": "Vakantie",
+      "l1Id": null
+    },
+    {
+      "id": 2812,
+      "name": "Woningruil",
+      "l1Id": 856
+    },
+    {
+      "id": 1707,
+      "name": "Bed & Breakfasts en Pensions",
+      "l1Id": 856
+    },
+    {
+      "id": 859,
+      "name": "Campings",
+      "l1Id": 856
+    },
+    {
+      "id": 2062,
+      "name": "Vakantie | Aanbiedingen en Last minute",
+      "l1Id": 856
+    },
+    {
+      "id": 2601,
+      "name": "Vakantie | Autovakanties",
+      "l1Id": 856
+    },
+    {
+      "id": 2063,
+      "name": "Vakantie | Creatief",
+      "l1Id": 856
+    },
+    {
+      "id": 2064,
+      "name": "Vakantie | Fly-drive",
+      "l1Id": 856
+    },
+    {
+      "id": 2065,
+      "name": "Vakantie | Groepen en Rondreizen",
+      "l1Id": 856
+    },
+    {
+      "id": 2066,
+      "name": "Vakantie | Jongeren en Studenten",
+      "l1Id": 856
+    },
+    {
+      "id": 2067,
+      "name": "Vakantie | Kinderen en Jeugd",
+      "l1Id": 856
+    },
+    {
+      "id": 2068,
+      "name": "Vakantie | Kunst en Cultuur",
+      "l1Id": 856
+    },
+    {
+      "id": 2069,
+      "name": "Vakantie | Senioren",
+      "l1Id": 856
+    },
+    {
+      "id": 2070,
+      "name": "Vakantie | Singles en Alleenstaanden",
+      "l1Id": 856
+    },
+    {
+      "id": 2071,
+      "name": "Vakantie | Sportief en Actief",
+      "l1Id": 856
+    },
+    {
+      "id": 2072,
+      "name": "Vakantie | Stedentrips",
+      "l1Id": 856
+    },
+    {
+      "id": 2073,
+      "name": "Vakantie | Wintersport",
+      "l1Id": 856
+    },
+    {
+      "id": 2074,
+      "name": "Vakantie | Zon en Strand",
+      "l1Id": 856
+    },
+    {
+      "id": 862,
+      "name": "Vakantiehuizen | België",
+      "l1Id": 856
+    },
+    {
+      "id": 1278,
+      "name": "Vakantiehuizen | Denemarken",
+      "l1Id": 856
+    },
+    {
+      "id": 863,
+      "name": "Vakantiehuizen | Duitsland",
+      "l1Id": 856
+    },
+    {
+      "id": 1291,
+      "name": "Vakantiehuizen | Frankrijk",
+      "l1Id": 856
+    },
+    {
+      "id": 865,
+      "name": "Vakantiehuizen | Griekenland",
+      "l1Id": 856
+    },
+    {
+      "id": 866,
+      "name": "Vakantiehuizen | Groot-Brittannië",
+      "l1Id": 856
+    },
+    {
+      "id": 867,
+      "name": "Vakantiehuizen | Hongarije",
+      "l1Id": 856
+    },
+    {
+      "id": 1302,
+      "name": "Vakantiehuizen | Ierland",
+      "l1Id": 856
+    },
+    {
+      "id": 1310,
+      "name": "Vakantiehuizen | Italië",
+      "l1Id": 856
+    },
+    {
+      "id": 1311,
+      "name": "Vakantiehuizen | Kroatië",
+      "l1Id": 856
+    },
+    {
+      "id": 2930,
+      "name": "Vakantiehuizen | Luxemburg",
+      "l1Id": 856
+    },
+    {
+      "id": 892,
+      "name": "Vakantiehuizen | Nederland",
+      "l1Id": 856
+    },
+    {
+      "id": 1709,
+      "name": "Vakantiehuizen | Nederlandse Antillen",
+      "l1Id": 856
+    },
+    {
+      "id": 1313,
+      "name": "Vakantiehuizen | Noorwegen",
+      "l1Id": 856
+    },
+    {
+      "id": 869,
+      "name": "Vakantiehuizen | Oostenrijk",
+      "l1Id": 856
+    },
+    {
+      "id": 870,
+      "name": "Vakantiehuizen | Polen",
+      "l1Id": 856
+    },
+    {
+      "id": 871,
+      "name": "Vakantiehuizen | Portugal",
+      "l1Id": 856
+    },
+    {
+      "id": 1316,
+      "name": "Vakantiehuizen | Slowakije",
+      "l1Id": 856
+    },
+    {
+      "id": 872,
+      "name": "Vakantiehuizen | Spanje",
+      "l1Id": 856
+    },
+    {
+      "id": 1324,
+      "name": "Vakantiehuizen | Tsjechië",
+      "l1Id": 856
+    },
+    {
+      "id": 873,
+      "name": "Vakantiehuizen | Turkije",
+      "l1Id": 856
+    },
+    {
+      "id": 1327,
+      "name": "Vakantiehuizen | Zweden",
+      "l1Id": 856
+    },
+    {
+      "id": 874,
+      "name": "Vakantiehuizen | Zwitserland",
+      "l1Id": 856
+    },
+    {
+      "id": 2094,
+      "name": "Vakantiehuizen | Amerika",
+      "l1Id": 856
+    },
+    {
+      "id": 889,
+      "name": "Vakantiehuizen | Overige landen",
+      "l1Id": 856
+    },
+    {
+      "id": 895,
+      "name": "Verzamelen",
+      "l1Id": null
+    },
+    {
+      "id": 2931,
+      "name": "Ansichtkaarten | België",
+      "l1Id": 895
+    },
+    {
+      "id": 897,
+      "name": "Ansichtkaarten | Nederland",
+      "l1Id": 895
+    },
+    {
+      "id": 1817,
+      "name": "Ansichtkaarten | Buitenland",
+      "l1Id": 895
+    },
+    {
+      "id": 2635,
+      "name": "Ansichtkaarten | Dieren",
+      "l1Id": 895
+    },
+    {
+      "id": 1818,
+      "name": "Ansichtkaarten | Themakaarten",
+      "l1Id": 895
+    },
+    {
+      "id": 909,
+      "name": "Automerken, Motoren en Formule 1",
+      "l1Id": 895
+    },
+    {
+      "id": 1624,
+      "name": "Automaten | Flipperkasten",
+      "l1Id": 895
+    },
+    {
+      "id": 1625,
+      "name": "Automaten | Gokkasten en Fruitautomaten",
+      "l1Id": 895
+    },
+    {
+      "id": 1626,
+      "name": "Automaten | Jukeboxen",
+      "l1Id": 895
+    },
+    {
+      "id": 1268,
+      "name": "Automaten | Overige",
+      "l1Id": 895
+    },
+    {
+      "id": 898,
+      "name": "Beelden en Beeldjes",
+      "l1Id": 895
+    },
+    {
+      "id": 900,
+      "name": "Beren en Cherished Teddies",
+      "l1Id": 895
+    },
+    {
+      "id": 2813,
+      "name": "Bidprentjes en Rouwkaarten",
+      "l1Id": 895
+    },
+    {
+      "id": 1269,
+      "name": "Biermerken",
+      "l1Id": 895
+    },
+    {
+      "id": 899,
+      "name": "Blikken",
+      "l1Id": 895
+    },
+    {
+      "id": 1820,
+      "name": "Boekenleggers",
+      "l1Id": 895
+    },
+    {
+      "id": 1393,
+      "name": "Complete verzamelingen en Collecties",
+      "l1Id": 895
+    },
+    {
+      "id": 901,
+      "name": "Diddl",
+      "l1Id": 895
+    },
+    {
+      "id": 902,
+      "name": "Dierenverzamelingen",
+      "l1Id": 895
+    },
+    {
+      "id": 1270,
+      "name": "Disney",
+      "l1Id": 895
+    },
+    {
+      "id": 2814,
+      "name": "Efteling",
+      "l1Id": 895
+    },
+    {
+      "id": 904,
+      "name": "Elektronische Apparatuur",
+      "l1Id": 895
+    },
+    {
+      "id": 1392,
+      "name": "Film en Tv",
+      "l1Id": 895
+    },
+    {
+      "id": 908,
+      "name": "Flippo's",
+      "l1Id": 895
+    },
+    {
+      "id": 906,
+      "name": "Fotografica en Filmapparatuur",
+      "l1Id": 895
+    },
+    {
+      "id": 910,
+      "name": "Foto's en Prenten",
+      "l1Id": 895
+    },
+    {
+      "id": 911,
+      "name": "Geboortekaartjes en Visitekaartjes",
+      "l1Id": 895
+    },
+    {
+      "id": 912,
+      "name": "Glas en Borrelglaasjes",
+      "l1Id": 895
+    },
+    {
+      "id": 913,
+      "name": "Harry Potter",
+      "l1Id": 895
+    },
+    {
+      "id": 914,
+      "name": "Kleding en Patronen",
+      "l1Id": 895
+    },
+    {
+      "id": 915,
+      "name": "KLM Huisjes",
+      "l1Id": 895
+    },
+    {
+      "id": 916,
+      "name": "Koninklijk Huis en Royalty",
+      "l1Id": 895
+    },
+    {
+      "id": 917,
+      "name": "Lord of the Rings",
+      "l1Id": 895
+    },
+    {
+      "id": 918,
+      "name": "Luchtvaart en Vliegtuigspotten",
+      "l1Id": 895
+    },
+    {
+      "id": 935,
+      "name": "Merken en Reclamevoorwerpen",
+      "l1Id": 895
+    },
+    {
+      "id": 920,
+      "name": "Militaria | Algemeen",
+      "l1Id": 895
+    },
+    {
+      "id": 2815,
+      "name": "Militaria | Tweede Wereldoorlog",
+      "l1Id": 895
+    },
+    {
+      "id": 1387,
+      "name": "Mineralen en Fossielen",
+      "l1Id": 895
+    },
+    {
+      "id": 926,
+      "name": "Muziek, Artiesten en Beroemdheden",
+      "l1Id": 895
+    },
+    {
+      "id": 928,
+      "name": "Parfumverzamelingen",
+      "l1Id": 895
+    },
+    {
+      "id": 929,
+      "name": "Pennenverzamelingen",
+      "l1Id": 895
+    },
+    {
+      "id": 2902,
+      "name": "Poesieplaatjes",
+      "l1Id": 895
+    },
+    {
+      "id": 931,
+      "name": "Poppen",
+      "l1Id": 895
+    },
+    {
+      "id": 1627,
+      "name": "Poppenhuizen en Toebehoren",
+      "l1Id": 895
+    },
+    {
+      "id": 933,
+      "name": "Poppetjes en Figuurtjes",
+      "l1Id": 895
+    },
+    {
+      "id": 934,
+      "name": "Porselein, Kristal en Bestek",
+      "l1Id": 895
+    },
+    {
+      "id": 1446,
+      "name": "Posters",
+      "l1Id": 895
+    },
+    {
+      "id": 1821,
+      "name": "Religie",
+      "l1Id": 895
+    },
+    {
+      "id": 1390,
+      "name": "Retro",
+      "l1Id": 895
+    },
+    {
+      "id": 896,
+      "name": "Rookartikelen, Aanstekers en Luciferdoosjes",
+      "l1Id": 895
+    },
+    {
+      "id": 1686,
+      "name": "Scheepvaart",
+      "l1Id": 895
+    },
+    {
+      "id": 1822,
+      "name": "Scouting",
+      "l1Id": 895
+    },
+    {
+      "id": 941,
+      "name": "Sleutelhangers",
+      "l1Id": 895
+    },
+    {
+      "id": 2816,
+      "name": "Smurfen",
+      "l1Id": 895
+    },
+    {
+      "id": 2817,
+      "name": "Spaarpotten",
+      "l1Id": 895
+    },
+    {
+      "id": 942,
+      "name": "Speelgoed",
+      "l1Id": 895
+    },
+    {
+      "id": 2818,
+      "name": "Speelkaarten, Jokers en Kwartetten",
+      "l1Id": 895
+    },
+    {
+      "id": 943,
+      "name": "Speldjes, Pins en Buttons",
+      "l1Id": 895
+    },
+    {
+      "id": 944,
+      "name": "Spoorwegen en Tramwegen",
+      "l1Id": 895
+    },
+    {
+      "id": 945,
+      "name": "Sportartikelen en Voetbal",
+      "l1Id": 895
+    },
+    {
+      "id": 2819,
+      "name": "Star Wars",
+      "l1Id": 895
+    },
+    {
+      "id": 1823,
+      "name": "Stickers",
+      "l1Id": 895
+    },
+    {
+      "id": 1447,
+      "name": "Stripfiguren",
+      "l1Id": 895
+    },
+    {
+      "id": 1824,
+      "name": "Suikerzakjes",
+      "l1Id": 895
+    },
+    {
+      "id": 2820,
+      "name": "Supermarktacties",
+      "l1Id": 895
+    },
+    {
+      "id": 1388,
+      "name": "Swarovski",
+      "l1Id": 895
+    },
+    {
+      "id": 946,
+      "name": "Telefoonkaarten",
+      "l1Id": 895
+    },
+    {
+      "id": 947,
+      "name": "Tijdschriften, Kranten en Knipsels",
+      "l1Id": 895
+    },
+    {
+      "id": 2821,
+      "name": "Transformers",
+      "l1Id": 895
+    },
+    {
+      "id": 2141,
+      "name": "Verrassingseieren",
+      "l1Id": 895
+    },
+    {
+      "id": 1825,
+      "name": "Vingerhoedjes",
+      "l1Id": 895
+    },
+    {
+      "id": 907,
+      "name": "Wijnen",
+      "l1Id": 895
+    },
+    {
+      "id": 2903,
+      "name": "Winkelwagenmuntjes",
+      "l1Id": 895
+    },
+    {
+      "id": 927,
+      "name": "Overige Verzamelen",
+      "l1Id": 895
+    },
+    {
+      "id": 976,
+      "name": "Watersport en Boten",
+      "l1Id": null
+    },
+    {
+      "id": 977,
+      "name": "Accessoires en Onderhoud",
+      "l1Id": 976
+    },
+    {
+      "id": 3253,
+      "name": "Batterijen en Accu's",
+      "l1Id": 976
+    },
+    {
+      "id": 1960,
+      "name": "Beroepsscheepvaart",
+      "l1Id": 976
+    },
+    {
+      "id": 978,
+      "name": "Bootonderdelen",
+      "l1Id": 976
+    },
+    {
+      "id": 979,
+      "name": "Boottrailers",
+      "l1Id": 976
+    },
+    {
+      "id": 980,
+      "name": "Buiten- en Binnenboordmotoren",
+      "l1Id": 976
+    },
+    {
+      "id": 981,
+      "name": "Catamarans",
+      "l1Id": 976
+    },
+    {
+      "id": 982,
+      "name": "Duiken",
+      "l1Id": 976
+    },
+    {
+      "id": 1961,
+      "name": "Golfsurfen",
+      "l1Id": 976
+    },
+    {
+      "id": 2826,
+      "name": "Hengelsport | Algemeen",
+      "l1Id": 976
+    },
+    {
+      "id": 983,
+      "name": "Hengelsport | Karpervissen",
+      "l1Id": 976
+    },
+    {
+      "id": 2823,
+      "name": "Hengelsport | Roofvissen",
+      "l1Id": 976
+    },
+    {
+      "id": 2825,
+      "name": "Hengelsport | Vliegvissen",
+      "l1Id": 976
+    },
+    {
+      "id": 2822,
+      "name": "Hengelsport | Witvissen",
+      "l1Id": 976
+    },
+    {
+      "id": 2824,
+      "name": "Hengelsport | Zeevissen",
+      "l1Id": 976
+    },
+    {
+      "id": 984,
+      "name": "Jetski's en Waterscooters",
+      "l1Id": 976
+    },
+    {
+      "id": 3164,
+      "name": "Kajaks",
+      "l1Id": 976
+    },
+    {
+      "id": 985,
+      "name": "Kajuitzeilboten en Zeiljachten",
+      "l1Id": 976
+    },
+    {
+      "id": 986,
+      "name": "Kano's",
+      "l1Id": 976
+    },
+    {
+      "id": 1404,
+      "name": "Kitesurfen",
+      "l1Id": 976
+    },
+    {
+      "id": 987,
+      "name": "Ligplaatsen",
+      "l1Id": 976
+    },
+    {
+      "id": 989,
+      "name": "Motorboten en Motorjachten",
+      "l1Id": 976
+    },
+    {
+      "id": 988,
+      "name": "Navigatiemiddelen en Scheepselektronica",
+      "l1Id": 976
+    },
+    {
+      "id": 990,
+      "name": "Open zeilboten",
+      "l1Id": 976
+    },
+    {
+      "id": 3165,
+      "name": "Peddels",
+      "l1Id": 976
+    },
+    {
+      "id": 2827,
+      "name": "Platbodems",
+      "l1Id": 976
+    },
+    {
+      "id": 992,
+      "name": "Roeiboten",
+      "l1Id": 976
+    },
+    {
+      "id": 993,
+      "name": "Rubberboten",
+      "l1Id": 976
+    },
+    {
+      "id": 1407,
+      "name": "Sloepen",
+      "l1Id": 976
+    },
+    {
+      "id": 3162,
+      "name": "Snorkelen",
+      "l1Id": 976
+    },
+    {
+      "id": 994,
+      "name": "Speedboten",
+      "l1Id": 976
+    },
+    {
+      "id": 3163,
+      "name": "Suppen",
+      "l1Id": 976
+    },
+    {
+      "id": 1408,
+      "name": "Vis- en Consoleboten",
+      "l1Id": 976
+    },
+    {
+      "id": 2636,
+      "name": "Wakeboarden",
+      "l1Id": 976
+    },
+    {
+      "id": 3161,
+      "name": "Waterpolo",
+      "l1Id": 976
+    },
+    {
+      "id": 1455,
+      "name": "Waterski's",
+      "l1Id": 976
+    },
+    {
+      "id": 997,
+      "name": "Watersportkleding",
+      "l1Id": 976
+    },
+    {
+      "id": 995,
+      "name": "Windsurfen",
+      "l1Id": 976
+    },
+    {
+      "id": 3195,
+      "name": "Wingsurfen",
+      "l1Id": 976
+    },
+    {
+      "id": 998,
+      "name": "Zeilen en Zeiltoebehoren",
+      "l1Id": 976
+    },
+    {
+      "id": 991,
+      "name": "Overige Watersport en Boten",
+      "l1Id": 976
+    },
+    {
+      "id": 537,
+      "name": "Witgoed en Apparatuur",
+      "l1Id": null
+    },
+    {
+      "id": 564,
+      "name": "Weegschalen",
+      "l1Id": 537
+    },
+    {
+      "id": 538,
+      "name": "Afzuigkappen",
+      "l1Id": 537
+    },
+    {
+      "id": 561,
+      "name": "Airco's",
+      "l1Id": 537
+    },
+    {
+      "id": 3177,
+      "name": "Airfryers",
+      "l1Id": 537
+    },
+    {
+      "id": 3181,
+      "name": "Blenders",
+      "l1Id": 537
+    },
+    {
+      "id": 1979,
+      "name": "Broodbakmachines",
+      "l1Id": 537
+    },
+    {
+      "id": 1980,
+      "name": "Broodroosters",
+      "l1Id": 537
+    },
+    {
+      "id": 3185,
+      "name": "Bruiswatermachines",
+      "l1Id": 537
+    },
+    {
+      "id": 3184,
+      "name": "Contactgrills",
+      "l1Id": 537
+    },
+    {
+      "id": 3179,
+      "name": "Eierkokers",
+      "l1Id": 537
+    },
+    {
+      "id": 3171,
+      "name": "Fonduesets",
+      "l1Id": 537
+    },
+    {
+      "id": 542,
+      "name": "Fornuizen",
+      "l1Id": 537
+    },
+    {
+      "id": 541,
+      "name": "Frituurpannen",
+      "l1Id": 537
+    },
+    {
+      "id": 1981,
+      "name": "Gourmetstellen",
+      "l1Id": 537
+    },
+    {
+      "id": 3173,
+      "name": "Grillplaten",
+      "l1Id": 537
+    },
+    {
+      "id": 3175,
+      "name": "IJsmachines",
+      "l1Id": 537
+    },
+    {
+      "id": 3183,
+      "name": "Juicers",
+      "l1Id": 537
+    },
+    {
+      "id": 543,
+      "name": "Keukenmixers",
+      "l1Id": 537
+    },
+    {
+      "id": 544,
+      "name": "Koelkasten en IJskasten",
+      "l1Id": 537
+    },
+    {
+      "id": 3182,
+      "name": "Koffiemachine-accessoires",
+      "l1Id": 537
+    },
+    {
+      "id": 545,
+      "name": "Koffiezetapparaten",
+      "l1Id": 537
+    },
+    {
+      "id": 546,
+      "name": "Kookplaten",
+      "l1Id": 537
+    },
+    {
+      "id": 3166,
+      "name": "Luchtbehandelingsapparatuur",
+      "l1Id": 537
+    },
+    {
+      "id": 548,
+      "name": "Magnetrons",
+      "l1Id": 537
+    },
+    {
+      "id": 3180,
+      "name": "Melkopschuimers",
+      "l1Id": 537
+    },
+    {
+      "id": 1982,
+      "name": "Onderdelen en Toebehoren",
+      "l1Id": 537
+    },
+    {
+      "id": 552,
+      "name": "Ovens",
+      "l1Id": 537
+    },
+    {
+      "id": 554,
+      "name": "Persoonlijke-verzorgingsapparatuur",
+      "l1Id": 537
+    },
+    {
+      "id": 3178,
+      "name": "Rijstkokers",
+      "l1Id": 537
+    },
+    {
+      "id": 3174,
+      "name": "Slowcookers",
+      "l1Id": 537
+    },
+    {
+      "id": 556,
+      "name": "Stofzuigers",
+      "l1Id": 537
+    },
+    {
+      "id": 3168,
+      "name": "Stoomapparaten",
+      "l1Id": 537
+    },
+    {
+      "id": 557,
+      "name": "Strijkijzers en Strijkplanken",
+      "l1Id": 537
+    },
+    {
+      "id": 1457,
+      "name": "Thuistaps",
+      "l1Id": 537
+    },
+    {
+      "id": 560,
+      "name": "Vaatwasmachines",
+      "l1Id": 537
+    },
+    {
+      "id": 3167,
+      "name": "Ventilatoren",
+      "l1Id": 537
+    },
+    {
+      "id": 540,
+      "name": "Vriezers en Diepvrieskisten",
+      "l1Id": 537
+    },
+    {
+      "id": 3172,
+      "name": "Wafelijzers",
+      "l1Id": 537
+    },
+    {
+      "id": 3170,
+      "name": "Was-droogcombinaties",
+      "l1Id": 537
+    },
+    {
+      "id": 562,
+      "name": "Wasdrogers",
+      "l1Id": 537
+    },
+    {
+      "id": 563,
+      "name": "Wasmachines",
+      "l1Id": 537
+    },
+    {
+      "id": 3176,
+      "name": "Waterkoelers",
+      "l1Id": 537
+    },
+    {
+      "id": 1983,
+      "name": "Waterkokers",
+      "l1Id": 537
+    },
+    {
+      "id": 3169,
+      "name": "Waterontharders",
+      "l1Id": 537
+    },
+    {
+      "id": 1458,
+      "name": "Wekkers",
+      "l1Id": 537
+    },
+    {
+      "id": 1359,
+      "name": "Zonnebanken en Gezichtsbruiners",
+      "l1Id": 537
+    },
+    {
+      "id": 553,
+      "name": "Overige Witgoed en Apparatuur",
+      "l1Id": 537
+    },
+    {
+      "id": 1085,
+      "name": "Zakelijke goederen",
+      "l1Id": null
+    },
+    {
+      "id": 1086,
+      "name": "Agrarisch | Aardappelen, Groenten, Fruit en Vlees",
+      "l1Id": 1085
+    },
+    {
+      "id": 2097,
+      "name": "Agrarisch | Agrarisch Onroerend goed",
+      "l1Id": 1085
+    },
+    {
+      "id": 2605,
+      "name": "Agrarisch | Veevoer",
+      "l1Id": 1085
+    },
+    {
+      "id": 1691,
+      "name": "Agrarisch | Onderdelen | Banden, Velgen en Assen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1092,
+      "name": "Agrarisch | Tractoren",
+      "l1Id": 1085
+    },
+    {
+      "id": 1692,
+      "name": "Agrarisch | Werktuigen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1087,
+      "name": "Bedrijfs Onroerend goed",
+      "l1Id": 1085
+    },
+    {
+      "id": 1094,
+      "name": "Exploitaties en Overnames",
+      "l1Id": 1085
+    },
+    {
+      "id": 2103,
+      "name": "Horeca | Food",
+      "l1Id": 1085
+    },
+    {
+      "id": 1090,
+      "name": "Horeca | Keukenapparatuur",
+      "l1Id": 1085
+    },
+    {
+      "id": 1689,
+      "name": "Horeca | Meubilair en Inrichting",
+      "l1Id": 1085
+    },
+    {
+      "id": 1688,
+      "name": "Horeca | Overige",
+      "l1Id": 1085
+    },
+    {
+      "id": 2604,
+      "name": "Kantoor en Winkelinrichting | Beveiliging",
+      "l1Id": 1085
+    },
+    {
+      "id": 1389,
+      "name": "Kantoor en Winkelinrichting | Apparatuur en Telecommunicatie",
+      "l1Id": 1085
+    },
+    {
+      "id": 372,
+      "name": "Kantoor en Winkelinrichting | Computer en IT",
+      "l1Id": 1085
+    },
+    {
+      "id": 441,
+      "name": "Kantoor en Winkelinrichting | Kantoorartikelen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1690,
+      "name": "Kantoor en Winkelinrichting | Kantoormeubilair en Inrichting",
+      "l1Id": 1085
+    },
+    {
+      "id": 2603,
+      "name": "Kantoor en Winkelinrichting | Kassa's en Betaalsystemen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1700,
+      "name": "Kantoor en Winkelinrichting | Magazijn, Stelling en Opslag",
+      "l1Id": 1085
+    },
+    {
+      "id": 1964,
+      "name": "Kantoor en Winkelinrichting | Onderdelen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1091,
+      "name": "Kantoor en Winkelinrichting | Winkel en Inventaris",
+      "l1Id": 1085
+    },
+    {
+      "id": 2113,
+      "name": "Machines en Bouw | Aggregaten",
+      "l1Id": 1085
+    },
+    {
+      "id": 1965,
+      "name": "Machines en Bouw | Heftrucks en Intern transport",
+      "l1Id": 1085
+    },
+    {
+      "id": 2117,
+      "name": "Machines en Bouw | Houtbewerking",
+      "l1Id": 1085
+    },
+    {
+      "id": 1694,
+      "name": "Machines en Bouw | Industrie en Techniek",
+      "l1Id": 1085
+    },
+    {
+      "id": 286,
+      "name": "Machines en Bouw | Keten en Containers",
+      "l1Id": 1085
+    },
+    {
+      "id": 255,
+      "name": "Machines en Bouw | Kranen en Graafmachines",
+      "l1Id": 1085
+    },
+    {
+      "id": 2115,
+      "name": "Machines en Bouw | Lastechniek",
+      "l1Id": 1085
+    },
+    {
+      "id": 2105,
+      "name": "Machines en Bouw | Liften, Steigers en Ladders",
+      "l1Id": 1085
+    },
+    {
+      "id": 2116,
+      "name": "Machines en Bouw | Metaalbewerking",
+      "l1Id": 1085
+    },
+    {
+      "id": 1695,
+      "name": "Machines en Bouw | Onderdelen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1696,
+      "name": "Machines en Bouw | Onderhoud en Reiniging",
+      "l1Id": 1085
+    },
+    {
+      "id": 2114,
+      "name": "Machines en Bouw | Pompen en Compressoren",
+      "l1Id": 1085
+    },
+    {
+      "id": 1698,
+      "name": "Machines en Bouw | Transport",
+      "l1Id": 1085
+    },
+    {
+      "id": 1966,
+      "name": "Machines en Bouw | Tuin, Park en Bosbouw",
+      "l1Id": 1085
+    },
+    {
+      "id": 1697,
+      "name": "Machines en Bouw | Overig",
+      "l1Id": 1085
+    },
+    {
+      "id": 1089,
+      "name": "Partijgoederen en Retail | Franchising, Wederverkoop en Distributie",
+      "l1Id": 1085
+    },
+    {
+      "id": 1419,
+      "name": "Partijgoederen en Retail | Partijgoederen",
+      "l1Id": 1085
+    },
+    {
+      "id": 1096,
+      "name": "Partijgoederen en Retail | Verkoopwagens",
+      "l1Id": 1085
+    },
+    {
+      "id": 1702,
+      "name": "Partijgoederen en Retail | Verpakking en Verzending",
+      "l1Id": 1085
+    },
+    {
+      "id": 1093,
+      "name": "Overige Zakelijke goederen",
+      "l1Id": 1085
+    },
+    {
+      "id": 428,
+      "name": "Diversen",
+      "l1Id": null
+    },
+    {
+      "id": 1967,
+      "name": "Agenda's",
+      "l1Id": 428
+    },
+    {
+      "id": 1347,
+      "name": "Braces",
+      "l1Id": 428
+    },
+    {
+      "id": 431,
+      "name": "Brommobielen en Scootmobielen",
+      "l1Id": 428
+    },
+    {
+      "id": 3193,
+      "name": "Bureau-accessoires",
+      "l1Id": 428
+    },
+    {
+      "id": 3186,
+      "name": "Cadeaupapier",
+      "l1Id": 428
+    },
+    {
+      "id": 3187,
+      "name": "Cadeauverpakkingen",
+      "l1Id": 428
+    },
+    {
+      "id": 3192,
+      "name": "Kalenders",
+      "l1Id": 428
+    },
+    {
+      "id": 436,
+      "name": "Kerst",
+      "l1Id": 428
+    },
+    {
+      "id": 1968,
+      "name": "Levensmiddelen",
+      "l1Id": 428
+    },
+    {
+      "id": 3202,
+      "name": "Loopkrukken",
+      "l1Id": 428
+    },
+    {
+      "id": 3208,
+      "name": "Looprekken",
+      "l1Id": 428
+    },
+    {
+      "id": 3189,
+      "name": "Notitieboeken",
+      "l1Id": 428
+    },
+    {
+      "id": 3190,
+      "name": "Papierwaren",
+      "l1Id": 428
+    },
+    {
+      "id": 1703,
+      "name": "Pasen",
+      "l1Id": 428
+    },
+    {
+      "id": 3188,
+      "name": "Rekenmachines",
+      "l1Id": 428
+    },
+    {
+      "id": 3209,
+      "name": "Rollators",
+      "l1Id": 428
+    },
+    {
+      "id": 2904,
+      "name": "Rolstoelen",
+      "l1Id": 428
+    },
+    {
+      "id": 1345,
+      "name": "Rommelmarktspullen",
+      "l1Id": 428
+    },
+    {
+      "id": 1456,
+      "name": "Schoolbenodigdheden",
+      "l1Id": 428
+    },
+    {
+      "id": 3044,
+      "name": "Schoolborden",
+      "l1Id": 428
+    },
+    {
+      "id": 1705,
+      "name": "Schrijfwaren",
+      "l1Id": 428
+    },
+    {
+      "id": 443,
+      "name": "Sinterklaas",
+      "l1Id": 428
+    },
+    {
+      "id": 2828,
+      "name": "Trapliften",
+      "l1Id": 428
+    },
+    {
+      "id": 1355,
+      "name": "Typemachines",
+      "l1Id": 428
+    },
+    {
+      "id": 1346,
+      "name": "Verpleegmiddelen",
+      "l1Id": 428
+    },
+    {
+      "id": 1704,
+      "name": "Vlaggen en Wimpels",
+      "l1Id": 428
+    },
+    {
+      "id": 3207,
+      "name": "Wandelstokken",
+      "l1Id": 428
+    },
+    {
+      "id": 3191,
+      "name": "Wenskaarten",
+      "l1Id": 428
+    },
+    {
+      "id": 440,
+      "name": "Overige Diversen",
+      "l1Id": 428
+    }
+  ]
+}

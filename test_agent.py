@@ -1169,7 +1169,7 @@ def test_proposal_shows_search_count_and_today_count(monkeypatch):
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00"]})
     # One daily check for 25 new listings a day exceeds the 20-listing scoring cap: the coverage warning shows.
     assert ctx.proposals[0]["volumeNote"] == "About 240 listings match now; about 25 new per day" + ". This search gets about 25 new listings per check; one check can read 20. Add a word or a max price so nothing is missed."
-    assert reads == [("iphone", {"l1CategoryId": 820, "l2CategoryIds[]": 1953}, 0)]
+    assert reads == [("iphone", {}, 0)]
     propose.invoke({"query": "iphone", "schedule_kind": "daily", "times": ["08:00", "20:00"]})
     assert ctx.proposals[1]["volumeNote"] == "About 240 listings match now; about 25 new per day"
     propose.invoke({"query": "iphone", "must_include": "16gb", "schedule_kind": "daily", "times": ["08:00"]})
@@ -2283,6 +2283,16 @@ def test_plain_words_map_first_set_category_filters():
         assert from_plain_words(words)[:2] == (category, filters)
 
 
+def test_category_is_not_inferred_from_product_or_brand_alone():
+    from category_filters import from_plain_words
+    for words in ("samsung tv", "auto stoeltje", "iphone hoesje", "playstation controller",
+                  "bmw car", "laptop", "phone"):
+        assert from_plain_words(words)[:2] == (None, {})
+    assert from_plain_words("diesel auto onder 50.000 km")[:2] == (
+        "91", {"fuel": "474", "mileage": ":50000"})
+    assert from_plain_words("auto", category_id="91")[:2] == ("91", {})
+
+
 def test_category_search_filters_and_old_watch_request():
     assert agent.search_filters({}) == {}
     assert agent.search_filters({"max_price_eur": 500, "postcode": "3511 ab", "max_distance_km": 30}) == {
@@ -2293,15 +2303,30 @@ def test_category_search_filters_and_old_watch_request():
     assert agent.search_filters({"category_id": 339, "attribute_filters": {"memoryRAM": "12103"}})["l2CategoryIds[]"] == 339
 
 
+def test_category_search_matches_marktplaats_recorded_filter_request():
+    fixture = json.loads((Path(__file__).parent / "tests/marktplaats_category_filters_good.json").read_text())
+    assert agent.search_filters(fixture["watch"]) == fixture["requestFilters"]
+    assert fixture["siteSearchRequest"]["categories"]["l1Category"]["id"] == fixture["requestFilters"]["l1CategoryId"]
+    assert int(fixture["requestFilters"]["attributesById[]"][0]) in fixture["siteSearchRequest"]["attributesById"]
+    assert fixture["siteSearchRequest"]["attributeRanges"] == [{"attributeKey": "mileage", "to": 50000}]
+
+
+def test_frontend_category_snapshot_matches_source():
+    root = Path(__file__).parent
+    assert json.loads((root / "frontend/convex/categories.json").read_text()) == json.loads(
+        (root / "data/categories.json").read_text())
+
+
 def test_chat_proposes_diesel_car_with_structured_filters(monkeypatch):
     monkeypatch.setattr(agent, "estimate_volume_note", lambda *_: None)
     context = agent.ChatContext([])
     proposal = agent.make_tools(context)[1]
-    proposal.invoke({"query": "a diesel car under 50.000 km within 30 km of 3511", "schedule_kind": "interval", "every_minutes": 60})
+    proposal.invoke({"query": "a diesel car under 50.000 km", "schedule_kind": "interval", "every_minutes": 60,
+                     "postcode": "3511AB", "max_distance_km": 30})
     assert context.proposals[0]["categoryId"] == 91
     assert context.proposals[0]["attributeFilters"] == {"fuel": "474", "mileage": ":50000"}
     assert context.proposals[0]["query"] == "auto"
-    assert context.proposals[0]["postcode"] == "3511"
+    assert context.proposals[0]["postcode"] == "3511AB"
     assert context.proposals[0]["maxDistanceKm"] == 30
 
 
@@ -2324,14 +2349,15 @@ def test_watch_chat_maps_plain_words_with_mocked_model(monkeypatch):
             self.calls += 1
             if self.calls == 1:
                 yield AIMessageChunk(content="", tool_call_chunks=[{"name": "propose_watch",
-                    "args": json.dumps({"query": "a diesel car under 50.000 km within 30 km of 3511",
+                    "args": json.dumps({"query": "a diesel car under 50.000 km",
+                                        "postcode": "3511AB", "max_distance_km": 30,
                                         "schedule_kind": "interval", "every_minutes": 60}),
                     "id": "watch1", "index": 0}])
             else:
                 yield AIMessageChunk(content="Ready to check and save.")
 
     monkeypatch.setattr(agent, "watch_model", WatchModel())
-    answer = agent.chat("a diesel car under 50.000 km within 30 km of 3511", [], mode="watch")
+    answer = agent.chat("a diesel car under 50.000 km within 30 km of 3511AB", [], mode="watch")
     assert answer["proposals"][0]["categoryId"] == 91
     assert answer["proposals"][0]["attributeFilters"] == {"fuel": "474", "mileage": ":50000"}
-    assert answer["proposals"][0]["postcode"] == "3511"
+    assert answer["proposals"][0]["postcode"] == "3511AB"

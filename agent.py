@@ -324,11 +324,6 @@ def make_tools(ctx):
             schedule = make_schedule(schedule_kind, every_minutes, times, days)
         except ValueError as e:
             return f"Invalid schedule: {e}"
-        nearby = re.search(r"\b(?:within|binnen)\s+(\d+)\s*km\s+(?:of|van)\s+(\d{4}[a-z]{0,2})\b", query, re.I)
-        if nearby and not postcode:
-            postcode = nearby[2].upper()
-        if nearby and max_distance_km is None:
-            max_distance_km = int(nearby[1])
         proposal = {"type": "create", "query": query.strip()[:80], "maxPriceEur": max_price_eur,
                               "mustInclude": must_include, "postcode": postcode,
                               "maxDistanceKm": max_distance_km if postcode else None,

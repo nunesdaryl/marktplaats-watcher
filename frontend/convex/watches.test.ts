@@ -295,8 +295,8 @@ test("category ids and facet choices are validated when a watch is saved", async
   expect(watch?.attributeFilters).toEqual({ fuel: "474", mileage: ":50000" });
 });
 
-test("a four-digit postcode can anchor a distance filter", async () => {
+test("a four-digit postcode cannot anchor a distance filter", async () => {
   const { alice } = setup();
-  await alice.mutation(api.watches.create, { ...macMini, postcode: "3511", maxDistanceKm: 30 });
-  expect((await alice.query(api.watches.list, {}))[0].postcode).toBe("3511");
+  await expect(alice.mutation(api.watches.create, { ...macMini, postcode: "3511", maxDistanceKm: 30 }))
+    .rejects.toThrow("Dutch postcode");
 });

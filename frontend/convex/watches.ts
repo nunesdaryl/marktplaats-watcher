@@ -49,7 +49,7 @@ function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string
   if (args.maxPriceEur !== undefined && !(args.maxPriceEur > 0 && args.maxPriceEur <= 1_000_000))
     throw new ConvexError("Enter a max price in whole euros, like 500.");
   const postcode = args.postcode?.replace(/\s/g, "").toUpperCase() || undefined;
-  if (postcode && !/^\d{4}(?:[A-Z]{2})?$/.test(postcode)) throw new ConvexError("A Dutch postcode looks like 1012 or 1012AB.");
+  if (postcode && !/^\d{4}[A-Z]{2}$/.test(postcode)) throw new ConvexError("A Dutch postcode looks like 1012AB.");
   if (args.maxDistanceKm !== undefined && !(args.maxDistanceKm > 0 && args.maxDistanceKm <= 300))
     throw new ConvexError("Pick a distance from 1 to 300 km.");
   const mustInclude = args.mustInclude?.trim().slice(0, 40) || undefined;

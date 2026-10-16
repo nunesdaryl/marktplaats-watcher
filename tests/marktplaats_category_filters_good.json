@@ -1,0 +1,19 @@
+{
+  "source": "Marktplaats first-party /l/auto-s/ page (fuel filter link /l/auto-s/f/diesel/474/ and mileage select), its loaded 355-f0a9555053102ddd.js search-request serializer (l1CategoryId, attributesById, attributeRanges), and /lrp/api/search response's searchRequest, read 2026-10-16; listing and seller data omitted",
+  "sourceUrl": "https://www.marktplaats.nl/l/auto-s/",
+  "requestUrl": "https://www.marktplaats.nl/lrp/api/search?l1CategoryId=91&attributesById%5B%5D=474&attributeRanges%5B%5D=mileage%3A%3A50000&limit=30&offset=0",
+  "watch": {
+    "category_id": 91,
+    "attribute_filters": { "fuel": "474", "mileage": ":50000" }
+  },
+  "requestFilters": {
+    "l1CategoryId": 91,
+    "attributesById[]": ["474"],
+    "attributeRanges[]": ["mileage::50000"]
+  },
+  "siteSearchRequest": {
+    "categories": { "l1Category": { "id": 91, "key": "auto-s" } },
+    "attributesById": [474, 10882],
+    "attributeRanges": [{ "attributeKey": "mileage", "to": 50000 }]
+  }
+}

@@ -38,7 +38,8 @@ def normalize_filters(category_id, filters):
 def from_plain_words(query, category_id=None, filters=None):
     """Infer only unambiguous category facets; retain other words in the search."""
     text = query.lower()
-    if category_id is None:
+    inferred_category = category_id is None
+    if inferred_category:
         for pattern, cat in [(r"\b(car|auto|volkswagen|bmw)\b", "91"), (r"\b(e-bike|ebike|elektrische fiets)\b", "451"),
                              (r"\b(bike|fiets|bicycle)\b", "445"), (r"\b(macbook)\b", "325"),
                              (r"\b(laptop|notebook)\b", "339"), (r"\b(playstation 5|ps5)\b", "2954"),
@@ -48,7 +49,7 @@ def from_plain_words(query, category_id=None, filters=None):
                 category_id = cat
                 break
     cat = categories().get(str(category_id)) if category_id is not None else None
-    inferred = dict(filters or {})
+    inferred = {} if inferred_category else dict(filters or {})
     if cat:
         facets = cat.get("filters", {})
         for key, facet in facets.items():
@@ -66,9 +67,13 @@ def from_plain_words(query, category_id=None, filters=None):
                     inferred[key] = value_id
                     break
         if "mileage" in facets and "mileage" not in inferred:
-            match = re.search(r"(?:under|below|minder dan|tot|max(?:imum)?)\s+(\d[\d., ]*)\s*km\b", text)
+            match = re.search(r"(?:under|below|onder|minder dan|tot|max(?:imum)?)\s+(\d[\d., ]*)\s*km\b", text)
             if match:
                 inferred["mileage"] = ":" + str(int(re.sub(r"\D", "", match[1])))
+    if inferred_category and not inferred:
+        return None, {}, None
+    if inferred_category:
+        inferred.update(filters or {})
     return normalize_filters(category_id, inferred)
 
 
@@ -81,14 +86,13 @@ def search_words(query, category_id, filters):
         if not facet:
             continue
         if key == "mileage":
-            result = re.sub(r"(?:under|below|minder dan|tot|max(?:imum)?)\s+\d[\d., ]*\s*km\b", "", result, flags=re.I)
+            result = re.sub(r"(?:under|below|onder|minder dan|tot|max(?:imum)?)\s+\d[\d., ]*\s*km\b", "", result, flags=re.I)
         elif facet["type"] == "choice":
             label = facet["values"].get(value, "")
             if label:
                 aliases = {"Gebruikt": r"\b(?:used|second.hand|gebruikt)\b", "Nieuw": r"\b(?:new|nieuw)\b",
                            "Benzine": r"\b(?:petrol|gasoline|benzine)\b", "Elektrisch": r"\b(?:electric|elektrisch)\b"}
                 result = re.sub(aliases.get(label, r"\b" + re.escape(label).replace(r"\ ", r"\s*") + r"\b"), "", result, flags=re.I)
-    result = re.sub(r"\b(?:within|binnen)\s+\d+\s*km\s+(?:of|van)\s+\d{4}[a-z]{0,2}\b", "", result, flags=re.I)
     result = re.sub(r"^\s*(?:a|an|een)\s+", "", result, flags=re.I)
     result = re.sub(r"\s+", " ", result).strip(" ,") or query
     if str(category_id) == "91" and result.lower() == "car":

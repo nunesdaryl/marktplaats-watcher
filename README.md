@@ -184,7 +184,8 @@ uptime check).
   usually one page for a watch with a price and distance, more for a broad one (at most 40 pages).
   A watch may also use a Marktplaats category and its own filters, such as car fuel and mileage,
   laptop RAM or phone storage. Chat can propose these from plain words; the person reviews and saves
-  the watch. The checked-in category vocabulary is in `data/categories.json`; unknown saved values
+  the watch. The checked-in category vocabulary is in `data/categories.json` (copied to
+  `frontend/convex/categories.json` for the frontend build); unknown saved values
   are ignored with a visible note.
   "New" means unseen and placed after the newest listing of the last check. Seller details are never kept.
 - Marktplaats' terms (Art. 7.3) forbid repeated, systematic querying. Scheduled watches do exactly that;

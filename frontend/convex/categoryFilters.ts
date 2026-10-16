@@ -1,5 +1,5 @@
 import { ConvexError } from "convex/values";
-import data from "../../data/categories.json";
+import data from "./categories.json";
 
 type Facet = { label: string; type: string; values?: Record<string, string>; min?: number; max?: number; unit?: string };
 type Category = { id: number; name: string; l1Id: number | null; filters?: Record<string, Facet> };
