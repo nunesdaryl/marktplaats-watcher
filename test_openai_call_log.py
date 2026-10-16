@@ -211,6 +211,40 @@ def test_check_flushes_one_grouped_batch_after_two_rankings_and_failure(monkeypa
     assert "secret prompt" not in json.dumps(posts)
 
 
+def test_real_check_pool_rankings_keep_request_route(monkeypatch, capsys):
+    monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
+    monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
+    monkeypatch.setenv("CRON_SECRET", "test-cron")
+    posts = []
+    monkeypatch.setattr(convex_api, "convex_post", lambda path, payload: posts.append((path, payload)))
+    raw = [{"itemId": "m123", "title": "Bike", "vipUrl": "/v/m123",
+            "date": "Vandaag", "priceInfo": {"priceCents": 10000, "priceType": "FIXED"}}]
+    monkeypatch.setattr(agent, "read_since", lambda *args: (raw, False))
+
+    class FakeRanker:
+        def invoke(self, messages):
+            finish(OpenAICallLogger("gpt-5.4-mini"), 11, 2)
+            listings = json.loads(messages[-1]["content"])["listings"]
+            return agent.Ranking(ranks=[agent.Rank(id=item["id"], score=8, reason="match")
+                                        for item in listings])
+
+    monkeypatch.setattr(agent, "ranker", FakeRanker())
+    response = TestClient(main.app).post("/api/internal/check", headers={"X-Cron-Secret": "test-cron"},
+        json={"query": "bike", "watches": [
+            {"id": "w1", "watermark": 0, "max_price_eur": 500},
+            {"id": "w2", "watermark": 0, "max_price_eur": 600}]})
+    assert response.status_code == 200
+    assert all(item["ok"] for item in response.json()["results"])
+    assert len(posts) == 1 and posts[0][0] == "/api/openai-calls"
+    assert len(posts[0][1]["records"]) == 1
+    row = posts[0][1]["records"][0]
+    assert row.items() >= {"route": "/api/internal/check", "requests": 2,
+                           "inputTokens": 22, "outputTokens": 4}.items()
+    lines = records(capsys)
+    assert len(lines) == 2
+    assert all(line["route"] == "/api/internal/check" for line in lines)
+
+
 def test_stream_flushes_after_tool_turn(monkeypatch, client):
     monkeypatch.setenv("CONVEX_SITE_URL", "https://example.convex.site")
     monkeypatch.setenv("API_TO_CONVEX_SECRET", "test-secret")
