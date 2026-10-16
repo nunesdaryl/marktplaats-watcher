@@ -64,6 +64,28 @@ http.route({ path: "/api/ai-spend", method: "POST", handler: httpAction(async (c
   } catch { return new Response("AI usage could not be recorded.", { status: 400 }); }
 }) });
 
+http.route({ path: "/api/openai-calls", method: "POST", handler: httpAction(async (ctx, request) => {
+  const secret = process.env.API_TO_CONVEX_SECRET;
+  if (!secret) return new Response("OpenAI call reporting is not configured.", { status: 503 });
+  if (!sameSecret(request.headers.get("X-Api-Secret") ?? "", secret)) return new Response("Wrong API secret.", { status: 401 });
+  let body: unknown;
+  try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
+  const records = (body as { records?: unknown })?.records;
+  const fields = ["day", "route", "env", "model", "ok", "error", "requests", "inputTokens", "outputTokens"];
+  const valid = Array.isArray(records) && records.length > 0 && records.length <= 200 && records.every((row) =>
+    row && typeof row === "object" && Object.keys(row).length === fields.length &&
+    Object.keys(row).every((key) => fields.includes(key)) &&
+    typeof row.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.day) &&
+    [row.route, row.env, row.model].every((value) => typeof value === "string" && value.length > 0 && value.length <= 100) &&
+    typeof row.ok === "boolean" && (row.error === null || typeof row.error === "string" && row.error.length > 0 && row.error.length <= 100) &&
+    [row.requests, row.inputTokens, row.outputTokens].every((value) => Number.isSafeInteger(value) && value >= 0) && row.requests > 0);
+  if (!valid) return new Response("Invalid request.", { status: 400 });
+  try {
+    await ctx.runMutation(internal.openaiCalls.recordCalls, { records });
+    return Response.json({ ok: true });
+  } catch { return new Response("OpenAI calls could not be recorded.", { status: 400 }); }
+}) });
+
 function sameSecret(given: string, expected: string) {
   const encoder = new TextEncoder();
   const a = encoder.encode(given), b = encoder.encode(expected);

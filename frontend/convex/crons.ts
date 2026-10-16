@@ -13,5 +13,6 @@ crons.daily("founding month reminders", { hourUTC: 6, minuteUTC: 0 }, internal.f
 crons.daily("new user nurture", { hourUTC: 7, minuteUTC: 0 }, internal.nurture.sendDue, {});
 crons.daily("forget founding answers after 12 months", { hourUTC: 3, minuteUTC: 45 }, internal.founding.purge, {});
 crons.daily("forget usage events older than 90 days", { hourUTC: 3, minuteUTC: 30 }, internal.events.purge, {});
+crons.daily("forget OpenAI call counts older than 90 days", { hourUTC: 3, minuteUTC: 35 }, internal.openaiCalls.purge, {});
 crons.interval("OpenAI monthly costs", { hours: 1 }, internal.openaiSpend.refreshCosts, {});
 export default crons;

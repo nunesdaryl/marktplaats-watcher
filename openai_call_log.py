@@ -2,6 +2,7 @@
 
 import json
 import os
+from datetime import datetime, timezone
 from contextvars import ContextVar
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -9,9 +10,19 @@ from langchain_core.callbacks import BaseCallbackHandler
 
 call_route = ContextVar("openai_call_route", default="unknown")
 call_request_id = ContextVar("openai_call_request_id", default=None)
+call_records = ContextVar("openai_call_records", default=None)
 
 
 def log_openai_call(model, input_tokens=None, output_tokens=None, error=None):
+    records = call_records.get()
+    if records is not None:
+        key = (datetime.now(timezone.utc).date().isoformat(), call_route.get(),
+               os.getenv("VERCEL_ENV") or "local", model, error is None,
+               type(error).__name__ if error is not None else None)
+        row = records.setdefault(key, {"requests": 0, "inputTokens": 0, "outputTokens": 0})
+        row["requests"] += 1
+        row["inputTokens"] += input_tokens or 0
+        row["outputTokens"] += output_tokens or 0
     print(json.dumps({
         "event": "openai_call", "route": call_route.get(),
         "env": os.getenv("VERCEL_ENV") or "local", "model": model,
@@ -19,6 +30,21 @@ def log_openai_call(model, input_tokens=None, output_tokens=None, error=None):
         "ok": error is None, "error": type(error).__name__ if error is not None else None,
         "request_id": call_request_id.get(),
     }), flush=True)
+
+
+def flush_openai_calls(records):
+    """Persist one request's grouped records; failure never affects its response."""
+    if not records or not os.getenv("CONVEX_SITE_URL") or not os.getenv("API_TO_CONVEX_SECRET"):
+        return
+    from convex_api import convex_post
+    try:
+        convex_post("/api/openai-calls", {"records": [
+            {"day": day, "route": route, "env": env, "model": model, "ok": ok,
+             "error": error, **counts}
+            for (day, route, env, model, ok, error), counts in records.items()
+        ]})
+    except Exception as exc:
+        print(json.dumps({"event": "openai_calls_flush_failed", "error": type(exc).__name__}), flush=True)
 
 
 class OpenAICallLogger(BaseCallbackHandler):

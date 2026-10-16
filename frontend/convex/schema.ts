@@ -136,6 +136,10 @@ export default defineSchema({
     kinds: v.any(), days: v.any(), dailyKinds: v.any(),
   }).index("by_month", ["monthStart"]).index("by_user_month", ["userId", "monthStart"]),
   aiSpendBackfills: defineTable({ monthStart: v.number(), completedAt: v.number() }).index("by_month", ["monthStart"]),
+  openaiCalls: defineTable({
+    day: v.string(), route: v.string(), env: v.string(), model: v.string(), ok: v.boolean(),
+    error: v.union(v.string(), v.null()), requests: v.number(), inputTokens: v.number(), outputTokens: v.number(),
+  }).index("by_day", ["day"]).index("by_key", ["day", "route", "env", "model", "ok", "error"]),
   openaiCosts: defineTable({
     monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
     byKey: v.optional(v.array(v.object({ name: v.string(), usd: v.number() }))),
