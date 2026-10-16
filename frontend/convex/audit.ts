@@ -6,6 +6,7 @@ import { sendEmail } from "./checker";
 import { insertTracked } from "./totals";
 import { hasEnded } from "./founding";
 import { budgetFor } from "./aiBudget";
+import { recordAuditUsage } from "./auditUsage";
 
 const DAY = 86_400_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -130,6 +131,7 @@ export const run = internalAction({
     const runId = crypto.randomUUID();
     const groups = await ctx.runQuery(internal.audit.groups, { now: at });
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
+    const missingOwner = { logged: false };
     let checked = 0, misses = 0;
     const ownerResults = [];
     for (const [index, group] of groups.entries()) {
@@ -144,6 +146,8 @@ export const run = internalAction({
         });
         if (!res.ok) throw new Error(`Search service answered ${res.status}.`);
         results = (await res.json()).results;
+        if (Array.isArray(results))
+          await recordAuditUsage(ctx, requestId, group.watches.map((w) => String(w.id)), results, missingOwner);
         if (!Array.isArray(results) || results.length !== group.watches.length)
           throw new Error("Search service returned an incomplete audit.");
       } catch (e) {
@@ -152,8 +156,9 @@ export const run = internalAction({
         results = group.watches.map((w) => ({ watchId: w.id, ok: false, read: 0,
           candidates: 0, scored: 0, missCount: 0, misses: [], error }));
       }
-      await ctx.runMutation(internal.audit.record, { at, requestId, results });
-      ownerResults.push(...results.filter((r: { ok: boolean; misses: { score: number; kind: string }[] }) =>
+      const storedResults = results.map((r: any) => { const { usage: _usage, ...stored } = r; return stored; });
+      await ctx.runMutation(internal.audit.record, { at, requestId, results: storedResults });
+      ownerResults.push(...storedResults.filter((r: { ok: boolean; misses: { score: number; kind: string }[] }) =>
         r.ok && r.misses.some((m) => m.score >= 9 && (m.kind === "handled" || m.kind === "rescored"))));
       checked += results.length;
       misses += results.reduce((n: number, r: { missCount: number }) => n + r.missCount, 0);

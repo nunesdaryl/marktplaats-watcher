@@ -8,6 +8,7 @@ import { ratingToken } from "./ratings";
 import { catchupItem } from "./schema";
 import { hasEnded } from "./founding";
 import { budgetFor } from "./aiBudget";
+import { recordAuditUsage } from "./auditUsage";
 
 const BASELINE_MS = 2 * 60_000;
 const MAX_WATCHES_PER_REQUEST = 20;
@@ -197,6 +198,7 @@ export const run = internalAction({
     const api = process.env.WATCHER_API_URL, secret = process.env.CRON_SECRET;
     if (groups.length && (!api || !secret)) throw new Error("WATCHER_API_URL / CRON_SECRET are not set in Convex.");
     const runId = crypto.randomUUID();
+    const missingOwner = { logged: false };
     const preview: { userEmail: string; watchLabel: string;
       listings: { score: number; title: string; price: number | null; url: string }[] }[] = [];
     const items: { watchId: Id<"watches">; userId: Id<"users">; listingId: string; title: string;
@@ -210,6 +212,8 @@ export const run = internalAction({
       });
       if (!res.ok) throw new Error(`Search service answered ${res.status}.`);
       const results = (await res.json()).results;
+      if (Array.isArray(results))
+        await recordAuditUsage(ctx, requestId, group.watches.map((w) => String(w.id)), results, missingOwner);
       if (!Array.isArray(results) || results.length !== group.watches.length || results.some((r) => !r.ok))
         throw new Error(`Search service returned an incomplete catch-up audit (${requestId}).`);
       const mails = await ctx.runMutation(internal.catchup.record, { results: results.map((r) => ({

@@ -47,6 +47,8 @@ Production run: `npx convex run --prod openaiSpend:reconcile '{"days":14}'` on 1
 
 **Next measurement:** After one full UTC day in production, run `npx convex run --prod openaiCalls:summary '{"days":2}'` and read the completed day's counts and tokens by `route` and `env` (production only). Compare them with that day's OpenAI completion and embedding usage from `openaiSpend:reconcile`; the remaining difference identifies calls outside the logged production service or calls that could not be observed here. Vercel Hobby logs do not retain a full day reliably.
 
+MW-147 meters daily delivery audits and catch-up plans as `audit` spend on the owner's account, including dry-run plans; the audited watch stays a reference and its user's budget is untouched. Watch checks now record each explicit ranking attempt, including retries and failed calls, with failed calls carrying estimated input tokens and zero output tokens. Historical spend is not backfilled.
+
 ## OpenAI call-path inventory
 
 The Python service uses `OPENAI_API_KEY` for `ChatOpenAI` through `model_config.py:14` and `agent.py:380-384`, the separate offer model at `offer.py:23`, and `OpenAIEmbeddings` at `agent.py:1128`. These paths use the app key **when the deployed service's `OPENAI_API_KEY` is that key**. The Convex admin key only reads OpenAI organization APIs; it does not make model calls.

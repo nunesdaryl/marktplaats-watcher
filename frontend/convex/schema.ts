@@ -123,13 +123,14 @@ export default defineSchema({
   }).index("by_user_day", ["userId", "day"]).index("by_day", ["day"]),
 
   aiSpend: defineTable({
-    userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("chat"),
+    userId: v.id("users"), windowStart: v.number(), kind: v.union(v.literal("watch"), v.literal("audit"), v.literal("chat"),
       v.literal("estimate"), v.literal("owner"), v.literal("embedding"), v.literal("offer help")),
     watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")),
     model: v.optional(v.string()), checkId: v.optional(v.string()),
     alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),
     inputTokens: v.number(), outputTokens: v.number(),
     costEur: v.number(), at: v.number(), callId: v.string(), rolledUp: v.optional(v.boolean()),
+    estimated: v.optional(v.boolean()),
   }).index("by_user_window", ["userId", "windowStart"]).index("by_call", ["callId"]).index("by_at", ["at"])
     .index("by_user_at", ["userId", "at"]),
   aiSpendMonthly: defineTable({ monthStart: v.number(), userId: v.id("users"), totalEur: v.number(),
