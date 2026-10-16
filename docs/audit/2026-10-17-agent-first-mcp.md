@@ -107,7 +107,7 @@ The current version is **2026-07-28**. Before listing, the server needs these ch
 
 - `jasp-nerd/marktplaats-mcp`: Python MCP for Marktplaats and 2dehands. Hosted read-only endpoint plus stdio, setup docs for about 40 clients. **In the official MCP Registry since 15 Jul.**
     - Reach (16 Oct): 4 stars; 241 PyPI downloads a month; updated 14 Oct
-    - How it differs from us: Search only, no scoring or watches. Its account tools send messages and bids with a **copied browser session cookie**, which our rules forbid (no server-side Marktplaats sessions).
+    - How it differs from us: Search only, no scoring or watches. Its account tools send messages and binding bids with the person's **browser session cookie**, kept on their own machine (local stdio only; the hosted endpoint refuses cookies) and confirmed by a flag the model sets. We hold no Marktplaats credentials at all. Details in the [deep dive](2026-10-17-marktplaats-mcp-deep-dive.md).
 - `PonClick/marktplaats-mcp`: stdio search, filters, details, seller info
     - Reach (16 Oct): 19 stars; updated 7 Oct
     - How it differs from us: Local, search only
