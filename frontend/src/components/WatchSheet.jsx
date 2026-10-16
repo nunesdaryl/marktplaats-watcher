@@ -7,6 +7,7 @@ import Sheet from "./Sheet.jsx";
 import WatchLifecycle from "./WatchLifecycle.jsx";
 import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
 import { scheduleKind, track } from "../lib/track.js";
+import { categoryName, filterLabels, normalizeCategory } from "../../convex/categoryFilters";
 
 const HOURLY = { kind: "interval", everyMinutes: 60 };
 const number = (value) => (value === "" || value === null || value === undefined ? undefined : Number(value));
@@ -22,6 +23,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
     postcode: initial.postcode ?? "", maxDistanceKm: initial.maxDistanceKm ?? "",
     schedule: initial.schedule ?? HOURLY, notify: initial.notify ?? "good",
     includeBusinessSellers: initial.includeBusinessSellers ?? false,
+    categoryId: initial.categoryId, attributeFilters: initial.attributeFilters ?? {},
   }));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,7 +51,8 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getToken()}` },
           body: JSON.stringify({ query: f.query, mustInclude: f.mustInclude || null,
             maxPriceEur: number(f.maxPriceEur), postcode: f.postcode || null,
-            maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : null, schedule: f.schedule }),
+            maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : null, schedule: f.schedule,
+            categoryId: f.categoryId, attributeFilters: f.attributeFilters }),
           signal: controller.signal,
         });
         if (response.ok) {
@@ -59,7 +62,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
       } catch { /* The estimate is advisory; saving still works if the search is unavailable. */ }
     }, estimateDelay);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [f.query, f.mustInclude, f.maxPriceEur, f.postcode, f.maxDistanceKm, f.schedule, estimateDelay]);
+  }, [f.query, f.mustInclude, f.maxPriceEur, f.postcode, f.maxDistanceKm, f.categoryId, f.attributeFilters, f.schedule, estimateDelay]);
 
   async function save(e) {
     e.preventDefault();
@@ -73,6 +76,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           excludeWords: f.excludeWords,
           postcode: f.postcode || undefined, maxDistanceKm: f.postcode ? number(f.maxDistanceKm) : undefined,
           schedule: f.schedule, notify: f.notify, includeBusinessSellers: f.includeBusinessSellers,
+          categoryId: f.categoryId, attributeFilters: f.attributeFilters,
         });
       } else {
         await update({
@@ -81,6 +85,7 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
           mustInclude: f.mustInclude.trim() || null, maxPriceEur: number(f.maxPriceEur) ?? null,
           excludeWords: f.excludeWords,
           postcode: f.postcode.trim() || null, maxDistanceKm: f.postcode.trim() ? number(f.maxDistanceKm) ?? null : null,
+          categoryId: f.categoryId ?? null, attributeFilters: f.attributeFilters,
         });
       }
       track("watch_saved", { kind: scheduleKind(f.schedule), value: f.notify, mode: mode === "create" ? "new" : "edit" });
@@ -104,6 +109,14 @@ export default function WatchSheet({ mode, initial = {}, watchId, onClose }) {
               <div className="chips">{f.excludeWords.map((word) => <button key={word} type="button" className="chip"
                 aria-label={`Remove ${word} from skipped words`}
                 onClick={() => setF({ ...f, excludeWords: f.excludeWords.filter((value) => value !== word) })}>Remove {word} ×</button>)}</div></div>}
+            {f.categoryId && <div className="row"><span>Category filters</span><div className="chips">
+              <button type="button" className="chip" onClick={() => setF({ ...f, categoryId: undefined, attributeFilters: {} })}>
+                Remove {categoryName(f.categoryId) ?? "unavailable category"} ×</button>
+              {Object.entries(f.attributeFilters).map(([key, value]) => <button key={key} type="button" className="chip"
+                onClick={() => setF({ ...f, attributeFilters: Object.fromEntries(Object.entries(f.attributeFilters).filter(([name]) => name !== key)) })}>
+                Remove {filterLabels(f.categoryId, { [key]: value })[0] ?? key} ×</button>)}
+            </div></div>}
+            {normalizeCategory(f.categoryId, f.attributeFilters).note && <p className="hint" role="status">{normalizeCategory(f.categoryId, f.attributeFilters).note}</p>}
             <label className="row"><span>Max price</span>
               <input {...field("maxPriceEur")} ref={priceInput} type="number" min="1" inputMode="numeric" placeholder="Optional, in €" /></label>
             <label className="row"><span>Near postcode</span>

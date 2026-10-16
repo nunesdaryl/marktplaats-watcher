@@ -966,13 +966,18 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
     search (9 checked, 0 e-mails).</td></tr>
   <tr><td>A check read one page: 30 listings in Marktplaats' own order, which ignores sorting and filters. Most
     matches were never read (iPhone 13 under &euro;500: 25 on page 1 of 139 in five pages).</td>
-    <td>Checks read the date-sorted search with the watch's price and distance applied by Marktplaats, page after page
+    <td>Checks read the date-sorted search with the watch's price, distance, category and selected category facets applied by Marktplaats, page after page
     through every day since the last successful check. Marktplaats sorts by day only (0 violations in 45 pages; within
     a day in no set order), so reading whole days is what makes it complete. A filtered watch needs about one request.
     Since 30 Sep, "new" means unseen by that watch, regardless of id or listing number: late-published and re-dated
     listings can appear below the watermark. The watermark remains for the silent first look, while Convex dedupes
     against its full seen table. At most 40 pages; hitting that logs <code>coverage_capped</code>.</td></tr>
 </table>
+<p>Category ids and facet values come from <code>data/categories.json</code>. A category check sends
+  <code>l1CategoryId</code> and, for level-2 categories, <code>l2CategoryIds[]</code>;
+  selected choices use <code>attributesById[]</code> and numeric ranges use <code>attributeRanges[]</code>.
+  Convex validates new watches against the file. Retired saved values are dropped with a visible note;
+  watches without a category keep their previous request.</p>
 <p>If a ranker response omits listings, the check retries those listings once; any still unscored are logged, marked seen, and excluded from alerts without failing the watch.</p>
 <p>A daily delivery audit runs at 04:30 UTC before the owner's 05:00 digest. For each active, seeded watch it
   independently reads the previous day's date-sorted search with that watch's filters, compares eligible listings

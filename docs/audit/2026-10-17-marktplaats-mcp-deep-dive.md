@@ -133,7 +133,7 @@ The 2019 official API and the 2026 terms fit together. Marktplaats only lets thi
 1. **Keep the rule:** never hold Marktplaats credentials. Say so publicly on the `/agents` page and in the directory listings; it is our sharpest difference.
 2. **Add "prepared actions" to MW-150.** For any listing, the MCP returns a drafted message, a suggested bid (never above the watch maximum), the listing link and a preview receipt. The person or their own browser agent performs it, and nothing is sent from our side.
 3. **Spec the API checks** (§4, points 1–5) and a daily live canary in CI, as a factory draft.
-4. **Spec "filters from plain words"** using category filters, re-implemented or credited, as a factory draft.
+4. **Spec "filters from plain words"** using category filters, re-implemented or credited, as a factory draft. Filed as MW-156.
 5. **Build the Chrome extension later**, after users ask for faster bidding. Measure "Bid hand-offs" on the dashboard first (3 in 30 days so far).
 6. **Sharpen the MW-14 ask** to the two scopes in §6, and cite the official API's missing buyer endpoints.
 7. **Don't attack the competitor.** Link to their search tools as complementary if useful; never compare in public without dated facts.

@@ -11,6 +11,7 @@ import BroadWatchWarning from "../components/BroadWatchWarning.jsx";
 import RatingNudge from "../components/RatingNudge.jsx";
 import { go, useNow } from "../lib/router.js";
 import { track } from "../lib/track.js";
+import { categoryName, filterLabels, normalizeCategory } from "../../convex/categoryFilters";
 
 /** Asks once more before something that can't be undone (no browser dialogs). */
 export function ConfirmButton({ label, confirmLabel, onConfirm, icon }) {
@@ -57,6 +58,9 @@ export default function WatchView({ watch, onEdit, actions }) {
         {watch.pinned && <span className="pill">Pinned</span>}
         <WatchSentence label={watch.label} schedule={watch.schedule} notify={watch.notify} paused={!watch.active} />
         {watch.excludeWords?.length > 0 && <p className="muted">Skipping: {watch.excludeWords.join(", ")}</p>}
+        {watch.categoryId && <p className="muted">Category: {categoryName(watch.categoryId) ?? "unavailable"}{filterLabels(watch.categoryId, watch.attributeFilters).length > 0 &&
+          ` · ${filterLabels(watch.categoryId, watch.attributeFilters).join(" · ")}`}</p>}
+        {normalizeCategory(watch.categoryId, watch.attributeFilters).note && <p className="hint" role="status">{normalizeCategory(watch.categoryId, watch.attributeFilters).note}</p>}
         <p className="muted watch-times">{status}{watch.lastCheckedAt ? ` · last checked ${describeWhen(watch.lastCheckedAt, now)}` : ""}</p>
         {ratingCount > 0 && <p className="muted">Tuned by {ratingCount} of your ratings</p>}
         {watch.lastError && <p className="warn">{watch.lastError}</p>}

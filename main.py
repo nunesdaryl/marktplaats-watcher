@@ -124,6 +124,8 @@ class WatchRef(BaseModel):
     maxDistanceKm: int | None = None
     includeBusinessSellers: bool = False
     schedule: dict | None = None
+    categoryId: int | None = None
+    attributeFilters: dict[str, str] = Field(default_factory=dict)
 
 
 class WatchEstimate(BaseModel):
@@ -133,6 +135,8 @@ class WatchEstimate(BaseModel):
     postcode: str | None = None
     maxDistanceKm: int | None = None
     schedule: dict
+    categoryId: int | None = None
+    attributeFilters: dict[str, str] = Field(default_factory=dict)
 
 
 class ChatRequest(BaseModel):
@@ -496,6 +500,8 @@ class CheckWatch(BaseModel):
     postcode: str | None = Field(default=None, max_length=10)
     max_distance_km: int | None = None
     include_business_sellers: bool = False
+    category_id: int | None = None
+    attribute_filters: dict[str, str] = Field(default_factory=dict)
     seen_ids: list[str] = Field(default=[], max_length=2000)  # must be >= MAX_SEEN_SENT in checker.ts
     seen_prices: dict[str, dict[str, int]] = Field(default={}, max_length=2000)  # same bounded window as seen_ids
     seeded: bool = True          # False on the first check: nothing is e-mailed then, so nothing is scored

@@ -101,6 +101,7 @@ export const claimDue = internalMutation({
             price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [],
             note: (r.note ?? "").slice(0, 100) })),
           max_distance_km: w.maxDistanceKm ?? null, seen_ids: seen.map((s) => s.listingId),
+          category_id: w.categoryId ?? null, attribute_filters: w.attributeFilters ?? {},
           include_business_sellers: w.includeBusinessSellers ?? false,
           seen_prices: Object.fromEntries(seen.filter((s) => s.firstPriceEur !== undefined).map((s) =>
             [s.listingId, { first_price_eur: s.firstPriceEur!, ...(s.alertedDropPriceEur !== undefined

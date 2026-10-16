@@ -25,6 +25,8 @@ const proposal = v.union(
     mustInclude: v.union(v.string(), v.null()), postcode: v.union(v.string(), v.null()),
     maxDistanceKm: v.union(v.number(), v.null()), schedule: scheduleValidator, notify: notifyValidator,
     includeBusinessSellers: v.optional(v.boolean()),
+    categoryId: v.optional(v.number()), attributeFilters: v.optional(v.record(v.string(), v.string())),
+    filterNote: v.optional(v.string()),
     volumeNote: v.optional(v.union(v.string(), v.null())),
   }),
   v.object({
@@ -32,6 +34,8 @@ const proposal = v.union(
     schedule: v.optional(scheduleValidator), notify: v.optional(notifyValidator),
     active: v.optional(v.boolean()), maxPriceEur: v.optional(v.number()),
     includeBusinessSellers: v.optional(v.boolean()),
+    categoryId: v.optional(v.union(v.number(), v.null())), attributeFilters: v.optional(v.record(v.string(), v.string())),
+    filterNote: v.optional(v.string()),
     volumeNote: v.optional(v.union(v.string(), v.null())),
   }),
 );
