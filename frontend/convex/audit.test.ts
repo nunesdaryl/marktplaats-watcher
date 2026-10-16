@@ -21,6 +21,7 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); delete process.env.
 test("daily audit stores misses without changing seen listings or alerts; digest reports them", async () => {
   const t = convexTest(schema, modules);
   const mails: any[] = [];
+  await t.withIdentity({ subject: "owner", email: "owner@example.com" }).mutation(api.users.store, {});
   const alice = t.withIdentity({ subject: "a", email: "a@example.com" });
   const id = await alice.mutation(api.watches.create, { query: "mac mini",
     schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
@@ -40,7 +41,8 @@ test("daily audit stores misses without changing seen listings or alerts; digest
     expect(body.watches[0].seen_scores).toEqual({ m1: 4 });
     return new Response(JSON.stringify({ results: [{ watchId: id, ok: true, read: 2, candidates: 1,
       scored: 1, missCount: 1, misses: [{ id: "m1", title: "Mac mini", url: "https://www.marktplaats.nl/v/m1",
-        score: 9, kind: "rescored", checkScore: 4 }] }] }));
+        score: 9, kind: "rescored", checkScore: 4 }], usage: { model: "gpt-5.4-mini",
+        input_tokens: 40, output_tokens: 4, calls: [{ input_tokens: 40, output_tokens: 4, cost_eur: 0.002 }] } }] }));
   }));
   expect(await t.action(internal.audit.run, {})).toEqual({ checked: 1, misses: 1 });
   const rows = await t.run((ctx) => ctx.db.query("audits").collect());
@@ -69,6 +71,52 @@ test("daily audit stores misses without changing seen listings or alerts; digest
   const dashboard = await owner.query(api.admin.dashboard, {});
   expect(dashboard?.deliveryAudit).toMatchObject({ checked: 1, misses: 1,
     latestMisses: [{ listingId: "m1", url: "https://www.marktplaats.nl/v/m1" }] });
+});
+
+test("daily audit charges ranking calls to the owner, not the watch budget", async () => {
+  const t = convexTest(schema, modules);
+  await t.withIdentity({ subject: "owner", email: "owner@example.com" }).mutation(api.users.store, {});
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.run((ctx) => ctx.db.patch(watchId, { seeded: true }));
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{ watchId, ok: true,
+    read: 1, candidates: 1, scored: 1, missCount: 0, misses: [],
+    usage: { model: "gpt-5.4-mini", input_tokens: 100, output_tokens: 8,
+      calls: [{ input_tokens: 100, output_tokens: 8, cost_eur: 0.01 }] } }] }))));
+  await t.action(internal.audit.run, {});
+  const spend = await t.run((ctx) => ctx.db.query("aiSpend").collect());
+  const users = await t.run((ctx) => ctx.db.query("users").collect());
+  expect(spend).toMatchObject([{ userId: users.find((u) => u.clerkId === "owner")!._id,
+    watchId, kind: "audit", inputTokens: 100, costEur: 0.01 }]);
+  expect(spend[0].callId).toMatch(/^audit-.*\.0\..*\.0$/);
+  expect(await t.run((ctx) => ctx.db.query("aiBudgets").collect())).toMatchObject([
+    { userId: users.find((u) => u.clerkId === "owner")!._id, totalEur: 0.01 },
+  ]);
+});
+
+test("missing owner configuration logs once and leaves audit results intact", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  for (const query of ["bike", "phone"]) {
+    const id = await alice.mutation(api.watches.create, { query,
+      schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+    await t.run((ctx) => ctx.db.patch(id, { seeded: true }));
+  }
+  delete process.env.OWNER_CLERK_ID;
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+    const group = JSON.parse(init.body as string);
+    return new Response(JSON.stringify({ results: group.watches.map((w: { id: string }) => ({
+      watchId: w.id, ok: true, read: 1, candidates: 1, scored: 1, missCount: 0, misses: [],
+      usage: { model: "gpt-5.4-mini", calls: [{ input_tokens: 10, output_tokens: 2, cost_eur: 0.001 }] },
+    })) }));
+  }));
+  expect(await t.action(internal.audit.run, {})).toEqual({ checked: 2, misses: 0 });
+  expect(errors).toHaveBeenCalledTimes(1);
+  expect(await t.run((ctx) => ctx.db.query("audits").collect())).toHaveLength(2);
+  expect(await t.run((ctx) => ctx.db.query("aiSpend").collect())).toEqual([]);
+  errors.mockRestore();
 });
 
 test("a repeated listing is kept for review but counted only on its first audit", async () => {

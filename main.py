@@ -584,6 +584,10 @@ def check_route(request: CheckRequest):
 @app.post("/api/internal/audit", dependencies=[Depends(cron_caller)])
 def audit_route(request: AuditRequest):
     results = [audit_watch(w.model_dump()) for w in request.watches]
+    for result in results:
+        if "usage" in result:
+            result["usage"]["model"] = os.environ["OPENAI_MODEL"]
+            result["usage"]["calls"] = [{**call, "cost_eur": ai_cost(call)} for call in result["usage"]["calls"]]
     log("audit", watches=len(results), failed=sum(not r["ok"] for r in results),
         misses=sum(r["missCount"] for r in results), scored=sum(r["scored"] for r in results))
     return {"results": results}

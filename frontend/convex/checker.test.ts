@@ -660,3 +660,23 @@ test("failed check groups record ids shared with the run and API headers", async
   expect(headers).toEqual([`${run.requestId}.0`]);
   expect(error).toMatchObject({ kind: "check", requestId: headers[0], message: "Error: Search service answered 503." });
 });
+
+test("failed ranking attempts charge estimated watch usage", async () => {
+  const { t, id } = await seededWatch();
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{
+    watchId: id, ok: false, failureKind: "other", error: "Scoring unavailable",
+    usage: { model: "gpt-5.4-mini", input_tokens: 50, output_tokens: 0, calls: [
+      { input_tokens: 25, output_tokens: 0, cost_eur: 0.01, estimated: true },
+      { input_tokens: 25, output_tokens: 0, cost_eur: 0.01, estimated: true },
+    ] },
+  }] }))));
+  await t.action(internal.checker.checkDue, {});
+  const spend = await t.run((ctx) => ctx.db.query("aiSpend").collect());
+  expect(spend).toHaveLength(2);
+  expect(spend).toMatchObject([
+    { kind: "watch", watchId: id, estimated: true, inputTokens: 25 },
+    { kind: "watch", watchId: id, estimated: true, inputTokens: 25 },
+  ]);
+  const budgets = await t.run((ctx) => ctx.db.query("aiBudgets").collect());
+  expect(budgets).toMatchObject([{ totalEur: 0.02 }]);
+});

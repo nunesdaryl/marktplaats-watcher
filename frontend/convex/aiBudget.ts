@@ -47,12 +47,13 @@ export const check = internalQuery({ args: { clerkId: v.string() }, handler: asy
 } });
 
 export const record = internalMutation({
-  args: { clerkId: v.string(), kind: v.union(v.literal("watch"), v.literal("chat"), v.literal("estimate"),
+  args: { clerkId: v.string(), kind: v.union(v.literal("watch"), v.literal("audit"), v.literal("chat"), v.literal("estimate"),
       v.literal("owner"), v.literal("embedding"), v.literal("offer help")),
     watchId: v.optional(v.id("watches")), chatId: v.optional(v.id("chats")), model: v.optional(v.string()),
     checkId: v.optional(v.string()),
     alertsSent: v.optional(v.number()), listingsScored: v.optional(v.number()),
-    inputTokens: v.number(), outputTokens: v.number(), costEur: v.number(), callId: v.string() },
+    inputTokens: v.number(), outputTokens: v.number(), costEur: v.number(), callId: v.string(),
+    estimated: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const user = await ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId)).unique();
     if (!user) throw new ConvexError("An admitted account is required.");
@@ -74,7 +75,8 @@ export const record = internalMutation({
       ...(args.alertsSent !== undefined ? { alertsSent: args.alertsSent } : {}),
       ...(args.listingsScored !== undefined ? { listingsScored: args.listingsScored } : {}),
       inputTokens: args.inputTokens,
-      outputTokens: args.outputTokens, costEur: args.costEur, at: now, callId: args.callId, rolledUp: true });
+      outputTokens: args.outputTokens, costEur: args.costEur, at: now, callId: args.callId, rolledUp: true,
+      ...(args.estimated !== undefined ? { estimated: args.estimated } : {}) });
     await addToMonthly(ctx, (await ctx.db.get(spendId))!);
     const row = await ctx.db.query("aiBudgets").withIndex("by_user_window", (q) => q.eq("userId", user._id).eq("windowStart", budget.windowStart)).unique();
     const totalEur = budget.spentEur + args.costEur;

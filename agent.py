@@ -388,7 +388,7 @@ def configure_models():
                             max_tokens=CHAT_MAX_TOKENS, stream_usage=True)
     model = base_model.bind_tools(make_tools(ChatContext([])))
     watch_model = base_model.bind_tools([t for t in make_tools(ChatContext([])) if t.name != "search_marktplaats"])
-    ranker = chat_model(required_env("OPENAI_MODEL"), timeout=20, max_retries=1,
+    ranker = chat_model(required_env("OPENAI_MODEL"), timeout=20, max_retries=0,
                         max_tokens=RANK_MAX_TOKENS).with_structured_output(Ranking, include_raw=True)
 
 # "Watch it" mode, enforced in code rather than asked for in the prompt: the model gets only the proposal tools
@@ -589,13 +589,18 @@ class Ranking(BaseModel):
     ranks: list[Rank]
 
 
-# Scheduled checks rank many watches: a shorter timeout and one retry keep a run inside the function time limit
+# Scheduled checks rank many watches: a shorter timeout and one explicit retry keep a run inside the function time limit
 RANK_MAX_TOKENS = 2500
 configure_models()  # raw rank response kept for token usage (cost), see RANK_USAGE
 RANK_USAGE = []                  # (input_tokens, output_tokens) per ranking call, read by evals/
 _rank_usage_for_check = ContextVar("rank_usage_for_check", default=None)
 RANK_WORKERS = 6
 RANK_BATCH = 10
+
+
+def rank_usage(usage):
+    return {"input_tokens": sum(call["input_tokens"] for call in usage),
+            "output_tokens": sum(call["output_tokens"] for call in usage), "calls": usage}
 
 BIDDING_NEAR_MAX = 0.85   # a 'bidding from' price at 85% or more of the watch's maximum is likely to end over budget
 WANTED_REASON = "This is a wanted ad (someone looking to buy), not a listing for sale."
@@ -646,9 +651,22 @@ def rank_listings(description, listings, raise_on_failure=False, rating_examples
         for start in range(0, len(listings), RANK_BATCH):
             missing = listings[start:start + RANK_BATCH]
             for _ in range(2):
-                out = ranker.invoke([*RANK_PROMPT_TEMPLATE.format_messages(), {"role": "user", "content": json.dumps(
-                    {"watching_for": description, "this_persons_earlier_ratings_for_this_watch": (rating_examples or [])[:8],
-                     "listings": missing})}])
+                prompt_json = json.dumps({"watching_for": description,
+                    "this_persons_earlier_ratings_for_this_watch": (rating_examples or [])[:8], "listings": missing})
+                messages = [*RANK_PROMPT_TEMPLATE.format_messages(), {"role": "user", "content": prompt_json}]
+                for attempt in range(2):
+                    try:
+                        out = ranker.invoke(messages)
+                        break
+                    except Exception:
+                        estimated_input = (len(prompt_json) + 3) // 4
+                        RANK_USAGE.append((estimated_input, 0))
+                        collector = _rank_usage_for_check.get()
+                        if collector is not None:
+                            collector.append({"input_tokens": estimated_input,
+                                              "output_tokens": 0, "estimated": True})
+                        if attempt:
+                            raise
                 ranking = out["parsed"] if isinstance(out, dict) else out
                 if isinstance(out, dict):
                     usage = getattr(out.get("raw"), "usage_metadata", None) or {}
@@ -656,7 +674,8 @@ def rank_listings(description, listings, raise_on_failure=False, rating_examples
                         RANK_USAGE.append((usage.get("input_tokens", 0), usage.get("output_tokens", 0)))
                         collector = _rank_usage_for_check.get()
                         if collector is not None:
-                            collector.append((usage.get("input_tokens", 0), usage.get("output_tokens", 0)))
+                            collector.append({"input_tokens": usage.get("input_tokens", 0),
+                                              "output_tokens": usage.get("output_tokens", 0)})
                     if out.get("parsing_error") or ranking is None:
                         raise ValueError(f"unparseable ranking: {out.get('parsing_error')}")
                 missing_ids = {item["id"] for item in missing}
@@ -998,8 +1017,7 @@ def check_query(query, watches, now=None):
     with ThreadPoolExecutor(max_workers=RANK_WORKERS) as pool:
         ranked = _map_with_request_context(pool, rank, to_rank)
     for (w, listings, fresh_candidates, newest, waiting, capped, reserved_ids, stats), (fresh, usage) in zip(to_rank, ranked):
-        tokens = {"input_tokens": sum(x[0] for x in usage), "output_tokens": sum(x[1] for x in usage),
-                  "calls": [{"input_tokens": x[0], "output_tokens": x[1]} for x in usage]}
+        tokens = rank_usage(usage)
         if isinstance(fresh, str):
             messages = {"credit_exhausted": "Paused: the AI account has run out of credit. The owner has been told; nothing is sent unscored.",
                         "spend_cap": "Paused: the AI account's spending limit has been reached. The owner has been told; nothing is sent unscored.",
@@ -1032,6 +1050,8 @@ def audit_watch(w, now=None):
     """Compare eligible listings with what this watch handled and alerted."""
     result = {"watchId": w.get("id", ""), "ok": True, "read": 0, "candidates": 0,
               "scored": 0, "unscored": 0, "misses": [], "missCount": 0}
+    usage = []
+    token = _rank_usage_for_check.set(usage)
     try:
         now = now or datetime.now(AMSTERDAM)
         today = now.astimezone(AMSTERDAM).date()
@@ -1126,6 +1146,10 @@ def audit_watch(w, now=None):
     except Exception as e:
         result["ok"] = False
         result["error"] = f"{type(e).__name__}: {e}"
+    finally:
+        _rank_usage_for_check.reset(token)
+    if usage:
+        result["usage"] = rank_usage(usage)
     return result
 
 

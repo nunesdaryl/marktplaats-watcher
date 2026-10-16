@@ -1091,6 +1091,52 @@ def test_ranking_failure_leaves_listings_unranked_instead_of_dropping_them(monke
     assert ranked[0]["score"] is None and "unavailable" in ranked[0]["reason"]
 
 
+@pytest.mark.parametrize("succeed", [True, False])
+def test_ranking_failed_attempts_are_metered(monkeypatch, succeed):
+    from langchain_core.messages import AIMessage
+
+    attempts = []
+    class FlakyRanker:
+        def invoke(self, messages):
+            attempts.append(messages[-1]["content"])
+            if len(attempts) == 1 or not succeed:
+                raise TimeoutError("model timeout")
+            return {"parsed": agent.Ranking(ranks=[agent.Rank(id="a1", score=8, reason="match")]),
+                    "raw": AIMessage(content="", usage_metadata={"input_tokens": 17, "output_tokens": 3,
+                                                               "total_tokens": 20})}
+    monkeypatch.setattr(agent, "ranker", FlakyRanker())
+    usage = []
+    token = agent._rank_usage_for_check.set(usage)
+    try:
+        ranked = agent.rank_listings("mac mini", [{"id": "a1", "title": "Mac mini"}], raise_on_failure=True)
+        assert succeed and ranked[0]["score"] == 8
+    except TimeoutError:
+        assert not succeed
+    finally:
+        agent._rank_usage_for_check.reset(token)
+    assert len(attempts) == 2
+    assert usage[0] == {"input_tokens": (len(attempts[0]) + 3) // 4, "output_tokens": 0, "estimated": True}
+    assert usage[1] == ({"input_tokens": 17, "output_tokens": 3} if succeed else
+                        {"input_tokens": (len(attempts[1]) + 3) // 4, "output_tokens": 0, "estimated": True})
+
+
+def test_ranker_disables_client_retries(monkeypatch):
+    calls = []
+    original = agent.base_model, agent.model, agent.watch_model, agent.ranker
+    class FakeModel:
+        def bind_tools(self, *args, **kwargs):
+            return self
+        def with_structured_output(self, *args, **kwargs):
+            return self
+    monkeypatch.setattr(agent, "chat_model", lambda *args, **kwargs: calls.append(kwargs) or FakeModel())
+    monkeypatch.setattr(agent, "make_tools", lambda *_: [])
+    try:
+        agent.configure_models()
+        assert calls[-1]["max_retries"] == 0
+    finally:
+        agent.base_model, agent.model, agent.watch_model, agent.ranker = original
+
+
 def test_chat_can_only_propose_watches_never_save_them(monkeypatch):
     monkeypatch.setattr(agent, "estimate_volume_note", lambda *_: None)
     ctx = agent.ChatContext([{"id": "w1", "label": "Mac mini"}])
@@ -1434,7 +1480,9 @@ def test_check_query_never_returns_unscored_listings(monkeypatch):
             raise RuntimeError("model down")
     monkeypatch.setattr(agent, "ranker", DownRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
-    assert result == {"watchId": "w1", "ok": False, "failureKind": "other", "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
+    assert result["usage"]["calls"] == [
+        {"input_tokens": result["usage"]["calls"][0]["input_tokens"], "output_tokens": 0, "estimated": True}] * 2
+    assert {k: v for k, v in result.items() if k != "usage"} == {"watchId": "w1", "ok": False, "failureKind": "other", "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
 def test_check_query_labels_empty_openai_credit_without_sending_unscored_listings(monkeypatch):
@@ -1446,7 +1494,8 @@ def test_check_query_labels_empty_openai_credit_without_sending_unscored_listing
 
     monkeypatch.setattr(agent, "ranker", EmptyCreditRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "watermark": 0, "seen_ids": []}])
-    assert result == {"watchId": "w1", "ok": False, "failureKind": "credit_exhausted",
+    assert len(result["usage"]["calls"]) == 2 and all(call["estimated"] for call in result["usage"]["calls"])
+    assert {k: v for k, v in result.items() if k != "usage"} == {"watchId": "w1", "ok": False, "failureKind": "credit_exhausted",
                       "error": "Paused: the AI account has run out of credit. The owner has been told; nothing is sent unscored."}
 
 
@@ -1511,15 +1560,16 @@ def test_check_query_fails_if_retry_raises(monkeypatch):
     class FailingRetryRanker:
         def invoke(self, messages):
             calls.append([item["id"] for item in json.loads(messages[-1]["content"])["listings"]])
-            if len(calls) == 2:
+            if len(calls) >= 2:
                 raise RuntimeError("model down")
             return agent.Ranking(ranks=[agent.Rank(id="m5000", score=8, reason="match")])
 
     monkeypatch.setattr(agent, "ranker", FailingRetryRanker())
     [result] = agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 100,
                                                 "last_checked_at": EARLIER_TODAY}], now=NOW)
-    assert calls == [["m5000", "m4999"], ["m4999"]]
-    assert result == {"watchId": "w1", "ok": False, "failureKind": "other",
+    assert calls == [["m5000", "m4999"], ["m4999"], ["m4999"]]
+    assert len(result["usage"]["calls"]) == 2 and all(call["estimated"] for call in result["usage"]["calls"])
+    assert {k: v for k, v in result.items() if k != "usage"} == {"watchId": "w1", "ok": False, "failureKind": "other",
                       "error": "The AI that scores listings didn't answer. We'll try again soon, and nothing is sent unscored."}
 
 
@@ -1911,6 +1961,23 @@ def test_audit_watch_caps_scoring_and_reports_empty_and_failure(monkeypatch):
     assert agent.audit_watch(w, now)["ok"] is False
 
 
+def test_audit_watch_returns_ranking_usage_even_on_failure(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    monkeypatch.setattr(agent, "read_since", lambda *args: ([
+        {"itemId": "m123", "title": "Bike", "vipUrl": "/v/m123", "date": "Gisteren"}], False))
+    def rank(*args, **kwargs):
+        agent._rank_usage_for_check.get().append({"input_tokens": 12, "output_tokens": 0, "estimated": True})
+        raise TimeoutError("model timeout")
+    monkeypatch.setattr(agent, "score_listings", rank)
+    result = agent.audit_watch({"id": "w", "query": "bike", "notify": "good", "seen_ids": ["m123"]},
+                               datetime(2026, 9, 30, 12, tzinfo=ZoneInfo("Europe/Amsterdam")))
+    assert result["ok"] is False
+    assert result["usage"] == {"input_tokens": 12, "output_tokens": 0,
+                               "calls": [{"input_tokens": 12, "output_tokens": 0, "estimated": True}]}
+
+
 def test_audit_watch_excludes_baseline_and_keeps_highest_scoring_misses(monkeypatch):
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -2050,7 +2117,10 @@ def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
     monkeypatch.setenv("CRON_SECRET", "s3cret")
     monkeypatch.setattr(main, "audit_watch", lambda w: {"watchId": w["id"], "ok": False,
                                                         "read": 0, "candidates": 0, "scored": 0,
-                                                        "missCount": 0, "misses": [], "error": "bad page"})
+                                                        "missCount": 0, "misses": [], "error": "bad page",
+                                                        "usage": {"input_tokens": 100, "output_tokens": 0,
+                                                                  "calls": [{"input_tokens": 100, "output_tokens": 0,
+                                                                             "estimated": True}]}})
     client = TestClient(main.app)
     body = {"watches": [{"id": "w", "query": "bike", "notify": "good", "seen_ids": [],
                          "alerted_ids": [], "last_read_at": None}]}
@@ -2058,6 +2128,11 @@ def test_audit_endpoint_uses_cron_auth_and_reports_failures(monkeypatch):
     response = client.post("/api/internal/audit", json=body, headers={"X-Cron-Secret": "s3cret"})
     assert response.status_code == 200
     assert response.json()["results"][0]["ok"] is False
+    usage = response.json()["results"][0]["usage"]
+    assert usage["model"] == "gpt-5.4-mini"
+    assert usage["calls"][0] == {"input_tokens": 100, "output_tokens": 0,
+                                  "estimated": True, "cost_eur": main.ai_cost({"input_tokens": 100,
+                                                                                  "output_tokens": 0})}
 
 
 def test_audit_route_accepts_full_seen_history(client, monkeypatch):

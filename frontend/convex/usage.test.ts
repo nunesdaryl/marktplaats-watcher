@@ -40,6 +40,37 @@ test("AI ledger accumulates calls, pauses chat and watches, resets after 30 days
   expect(await alice.query(api.aiBudget.mine, {})).toMatchObject({ allowed: true, spentEur: 0 });
 });
 
+test("estimated watch calls count toward the owner's budget", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  await t.mutation(internal.aiBudget.record, { clerkId: "alice", kind: "watch", watchId,
+    callId: "failed-ranking-0", estimated: true, inputTokens: 200, outputTokens: 0, costEur: 0.2 });
+  expect(await t.run((ctx) => ctx.db.query("aiSpend").collect())).toMatchObject([
+    { kind: "watch", watchId, estimated: true, inputTokens: 200, outputTokens: 0, costEur: 0.2 },
+  ]);
+  expect(await alice.query(api.aiBudget.mine, {})).toMatchObject({ spentEur: 0.2 });
+});
+
+test("HTTP AI spend endpoint accepts audit kind", async () => {
+  const t = convexTest(schema, modules);
+  await t.withIdentity({ subject: "owner", email: "owner@example.com" }).mutation(api.users.store, {});
+  process.env.API_TO_CONVEX_SECRET = "secret";
+  try {
+    const response = await t.fetch("/api/ai-spend", { method: "POST",
+      headers: { "Content-Type": "application/json", "X-Api-Secret": "secret" },
+      body: JSON.stringify({ clerkId: "owner", kind: "audit", callId: "audit-http-1",
+        inputTokens: 10, outputTokens: 2, costEur: 0.001 }) });
+    expect(response.status).toBe(200);
+    expect(await t.run((ctx) => ctx.db.query("aiSpend").collect())).toMatchObject([
+      { kind: "audit", inputTokens: 10, outputTokens: 2 },
+    ]);
+  } finally {
+    delete process.env.API_TO_CONVEX_SECRET;
+  }
+});
+
 test("40 chats are allowed, the 41st is denied, and Amsterdam midnight resets the count", async () => {
   const t = convexTest(schema, modules);
   await t.withIdentity({ subject: "alice", email: "alice@example.com" }).mutation(api.users.store, {});

@@ -137,7 +137,8 @@ const result = v.object({
   paidRemoved: v.optional(v.number()), businessRemoved: v.optional(v.number()), businessSignaled: v.optional(v.number()),
   gpsrPresent: v.optional(v.number()), verifiedTrue: v.optional(v.number()), sellerListingsChecked: v.optional(v.number()),
   usage: v.optional(v.object({ input_tokens: v.number(), output_tokens: v.number(), model: v.optional(v.string()),
-    calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number() })) })),
+    calls: v.array(v.object({ input_tokens: v.number(), output_tokens: v.number(), cost_eur: v.number(),
+      estimated: v.optional(v.boolean()) })) })),
 });
 
 /** Store what a check found. Returns the e-mails to send: one per watch with good new listings.
@@ -540,7 +541,8 @@ export const checkDue = internalAction({
               alertsSent: callIndex === 0 ? toSend.find((mail) => mail.watchId === source.id)?.alertIds.length ?? 0 : 0,
               listingsScored: callIndex === 0 ? r.listings?.length ?? 0 : 0,
               inputTokens: call.input_tokens, outputTokens: call.output_tokens,
-              costEur: call.cost_eur, callId: `${groupId}.${r.watchId}.${callIndex}` });
+              costEur: call.cost_eur, ...(call.estimated ? { estimated: true } : {}),
+              callId: `${groupId}.${r.watchId}.${callIndex}` });
           // The check that crosses the budget still delivers (its cost is already paid); the next checks are skipped
           // when watches are picked (budgetFor above).
         } catch (e) {

@@ -95,6 +95,26 @@ test("preview stores ten exact items; send uses the plan once without another au
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes("/api/internal/audit"))).toHaveLength(1);
 });
 
+test("dry-run catch-up records audit calls on the owner", async () => {
+  process.env.OWNER_CLERK_ID = "owner";
+  process.env.OWNER_EMAIL = "owner@example.com";
+  const { t, id } = await watch();
+  await t.withIdentity({ subject: "owner", email: "owner@example.com" }).mutation(api.users.store, {});
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{ watchId: id, ok: true,
+    misses: [], usage: { model: "gpt-5.4-mini", calls: [
+      { input_tokens: 20, output_tokens: 0, cost_eur: 0.002, estimated: true }] } }] }))));
+  await t.action(internal.catchup.run, {});
+  const spend = await t.run((ctx) => ctx.db.query("aiSpend").collect());
+  const owner = await t.run((ctx) => ctx.db.query("users").withIndex("by_clerkId", (q) => q.eq("clerkId", "owner")).unique());
+  expect(spend).toMatchObject([{ userId: owner!._id, watchId: id, kind: "audit", estimated: true,
+    inputTokens: 20, costEur: 0.002 }]);
+  expect(await t.run((ctx) => ctx.db.query("aiBudgets").collect())).toMatchObject([
+    { userId: owner!._id, totalEur: 0.002 },
+  ]);
+  delete process.env.OWNER_CLERK_ID;
+  delete process.env.OWNER_EMAIL;
+});
+
 test("catch-up window follows Amsterdam calendar days since 29 September, capped at seven", async () => {
   const { t } = await watch();
   expect((await t.query(internal.catchup.groups, {}))[0].watches[0].since_days).toBe(1);
