@@ -2,6 +2,10 @@
 
 Drafts only. Daryl posts and sends these himself; nothing here is posted by the station. Figures come from `evals/report.md` (10 Oct 2026) and our own dated checks in `competitors/marktplaats-saved-search.md`. The founding-places count is never written as a fixed number: the link shows the live count.
 
+## Status (16 October 2026)
+
+Daryl posted and sent all of these himself on 16 October: the LinkedIn post with the "why" video ([post](https://lnkd.in/p/e-4fxJdY)), the Cohort 1 WhatsApp message, the note to Vinod, and 5 to 10 personal messages. The owner dashboard's "Sign-ups by landing source" panel shows which tagged link brings sign-ups; before posting it showed 5 accounts, all without a source, and 4 of 100 founding places taken. The LinkedIn text's eval date was meant to read "14 Oct" (same result on the 14 October report).
+
 ## 1. LinkedIn post (English, USP video)
 
 Video: `media/why-2026-10-10/brag-landscape-en-why.mp4`

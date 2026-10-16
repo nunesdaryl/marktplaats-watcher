@@ -79,7 +79,37 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 
 > Vinod, following up on your push at demo day: I'm taking Marktplaats Watcher to Marktplaats. Before I go cold, do you or anyone in the network have a name at Marktplaats or Adevinta (product, partnerships or GTM)? A warm intro would make all the difference. The €10 first-user offer still stands, by the way.
 
-## 8. The 60-second demo script (for the call)
+### 7d. The pitch e-mail (16 Oct 2026, Daryl's voice, gated)
+
+**Route (checked 16 Oct 2026):** Marktplaats publishes no e-mail address for API or partner questions. The API docs only say credentials are "assigned by Marktplaats", and the business contact page lists the phone desk (088 008 26 26, Mon–Fri 09:00–17:00), a chat and the help portal. A pitch therefore goes to a named person: Vinod's warm introduction first, else a product, partnerships or API person found on LinkedIn (§5). The help-portal form is only a fallback for the narrow API question. Written in Daryl's calibrated voice (point, explanation, example; no em-dashes; no hype); every claim matches `evals/report.md` (14 Oct) and the pitch deck.
+
+> Subject: Smart alerts for Marktplaats buyers: a working demo and a proposal
+>
+> Hi [name],
+>
+> I built an alert service for Marktplaats buyers that only e-mails the listings worth a look, and I would like to build the official version of it with you.
+>
+> It is called Marktplaats Watcher. You say in plain words what you want, for example "a Mac mini with 16GB under €500, every morning at 8", and an AI agent reads every new listing, scores it 0 to 10 and e-mails only the good ones, with one line explaining why. In a real check, a 16GB Mac mini at €230 scored 9 and was e-mailed, while a docking station with "Mac mini" in the title scored 0 and never reached the inbox. A keyword alert would have sent both.
+>
+> It runs live at marktplaats-watcher.vercel.app. In our test on 53 real listings, every "great match" it e-mailed was a real match (median of 3 runs). I built it during the DataBag Forward Deployed Engineer program, where it won the cohort build-off, and the instructor asked to be its first user. He had spent his lunch break that day refreshing Marktplaats by hand for a €400 Mac mini.
+>
+> There is one honest limit. Today it reads your public search results without official access, through a route your robots.txt disallows, and your terms don't allow repeated automated searching. I kept it small on purpose, with 5 watches per person, a check every 15 minutes at most and a kill switch, but that is not how it should grow.
+>
+> So I'm asking for a 30-minute conversation with the right person on product, partnerships or the API side. I would like to talk about three things:
+> 1. Official search access (/v1/search) with partner credentials, under your rate limits.
+> 2. Later, bids and messages that buyers approve on your own consent screen, so everything stays on Marktplaats.
+> 3. A small six-week pilot in one category, with success criteria we agree on before we start.
+>
+> I have a short deck with the details and the pilot proposal, and I'm happy to send it or walk you through it. If you're not the right person for this, who should I talk to?
+>
+> Kind regards,
+> Daryl Nunes
+> Solutions engineer · FDE certificate DBG-FDE-2026-009
+> linkedin.com/in/daryl-nunes-959a28411 · darylnunes@gmail.com
+
+Before sending the deck along: its "Proof" and "Success criteria" slides still carry the 10 Oct 2026 snapshot of the eval figures (recall 74%, precision 94%); the 14 Oct report has great precision 100% and recall 86% (median of 3 runs).
+
+
 
 1. Open the landing page, read the fill-in sentence out loud: "Check Marktplaats for a Mac mini with 16GB under €500 every morning at 8 and e-mail me good matches, with the reason."
 2. Chat: live search with price filter, show real listings coming back.
@@ -91,7 +121,7 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 
 - Live app: https://marktplaats-watcher.vercel.app
 - Engineering case study and pilot scorecard: [Marktplaats Watcher, an FDE case study](../case-study.md), especially its [Varick-bar scorecard](../case-study.md#varick-bar-scorecard). The scorecard names gaps in baseline, production latency, run volume, code:LLM ratio and exception approval; it is evidence for a pilot conversation, not a claim of measured buyer impact.
-- System design: `docs/architecture.excalidraw` + the 46-page system design (`docs/system-design.html`; PDF exports in the course Deliverables folder)
+- System design: `docs/architecture.excalidraw` + the 53-page system design (`docs/system-design.html`; PDF exports in the course Deliverables folder)
 - Evals: `evals/report.md` · NFRs: `docs/nfr.md` · ADRs: `docs/adr/`
 - Runbook incl. kill switch: `RUNBOOK.md`
 - FDE certificate: DBG-FDE-2026-009 (issued 3 Oct 2026, DataBag)
@@ -108,3 +138,5 @@ _Updated drafts for the founding-user push and the API-access request (6 Oct 202
 
 ---
 _Next actions: 1) send the Vinod ask (7c), 2) fire 2–3 LinkedIn connects (7b), 3) e-mail on first accept (7a). Track responses in this file._
+
+_Status 16 Oct 2026: the founding-user launch posts and the note to Vinod went out (see `generated/launch-posts-2026-10-10.md`); Daryl chose to e-mail the pitch (7d) instead of calling the business desk. Record who it went to, when, and the answer here and on MW-14._
