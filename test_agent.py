@@ -794,13 +794,36 @@ def test_paid_listings_of_older_days_dont_end_the_reading(monkeypatch):
     assert [p for _, p in read] == [0, 1]
 
 
-def test_read_since_stops_when_next_page_repeats_a_row(monkeypatch):
+def test_read_since_stops_when_next_page_fully_repeats(monkeypatch):
     first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
-    second = api_page([(4971, "Vandaag")] + [(4900 - i, "Vandaag") for i in range(agent.PAGE_SIZE - 1)])
-    read = serve_search(monkeypatch, [first, second])
+    read = serve_search(monkeypatch, [first, first])
     listings, capped = agent.read_since("bike", {}, 0, NOW.date())
     assert [page for _, page in read] == [0, 1]
-    assert len(listings) == 59 and capped is False
+    assert len(listings) == agent.PAGE_SIZE and capped is False
+
+
+def test_read_since_keeps_paging_past_one_repeated_row(monkeypatch):
+    first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    second = api_page([(4971, "Vandaag")] + [(4900 - i, "Vandaag") for i in range(agent.PAGE_SIZE - 1)])
+    third = api_page([(4000 - i, "Gisteren") for i in range(agent.PAGE_SIZE)])
+    read = serve_search(monkeypatch, [first, second, third])
+    listings, capped = agent.read_since("bike", {}, 0, NOW.date())
+    assert [page for _, page in read] == [0, 1, 2]
+    assert len(listings) == agent.PAGE_SIZE * 3 - 1 and capped is False
+    assert len({item["itemId"] for item in listings}) == len(listings)
+
+
+def test_read_since_continues_when_new_page_has_only_paid_rows(monkeypatch):
+    first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    paid = api_page([(4000 - i, "20 sep 26", "DAGTOPPER") for i in range(agent.PAGE_SIZE)])
+    older = api_page([(3000 - i, "Gisteren") for i in range(agent.PAGE_SIZE)])
+    read = serve_search(monkeypatch, [first, paid, older])
+    listings, capped = agent.read_since("bike", {}, 0, NOW.date())
+    assert [page for _, page in read] == [0, 1, 2]
+    assert len(listings) == agent.PAGE_SIZE * 3 and capped is False
+    parsed, stats = agent.parse_listings(listings, limit=None)
+    assert len(parsed) == agent.PAGE_SIZE * 2
+    assert stats["paid_removed"] == agent.PAGE_SIZE
 
 
 def test_read_since_sends_page_aligned_offsets(monkeypatch):
