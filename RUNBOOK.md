@@ -30,7 +30,7 @@ The canary workflow uses placeholder model settings for import and makes no mode
 
 ## Previews
 
-Vercel Preview deployments need `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NEXT_PUBLIC_CONVEX_URL` for the browser to sign in and read alerts. The Python API also needs `CLERK_ISSUER`, `CONVEX_SITE_URL`, and `API_TO_CONVEX_SECRET` to check access and save chat answers. Set `CONVEX_SITE_URL` to the site URL for the same Convex deployment as `NEXT_PUBLIC_CONVEX_URL`; the secret must match `API_TO_CONVEX_SECRET` in that Convex deployment. The last two API variables currently exist only for Vercel Production, so add them for Preview too.
+Vercel Preview deployments need `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NEXT_PUBLIC_CONVEX_URL` for the browser to sign in and read alerts. The Python API also needs `CLERK_ISSUER`, `CONVEX_SITE_URL`, and `API_TO_CONVEX_SECRET` to check access and save chat answers. Set `CONVEX_SITE_URL` to the site URL for the same Convex deployment as `NEXT_PUBLIC_CONVEX_URL`; the secret must match `API_TO_CONVEX_SECRET` in that Convex deployment. Both were added to Vercel Preview on 17 Oct 2026, so previews now check access and save chat answers against production Convex. Remember that a preview therefore writes real data to the signed-in account, and that new Convex functions reach previews only after a production Convex deploy (`npx convex deploy` from the branch worktree, with the operator's OK).
 
 The operator adds each variable to Vercel's Preview environment from the repo root (the CLI prompts for its value; do not put values in the command or this file):
 
@@ -39,7 +39,9 @@ npx vercel env add CONVEX_SITE_URL preview
 npx vercel env add API_TO_CONVEX_SECRET preview
 ```
 
-Redeploy the preview after adding them. If the preview uses a separate Convex deployment, configure the matching `API_TO_CONVEX_SECRET` there as well.
+In a non-interactive shell (for example Claude Code's `!` prefix) the CLI cannot prompt; pipe the value instead, for example `npx convex env get API_TO_CONVEX_SECRET --prod | tr -d '\n' | npx vercel env add API_TO_CONVEX_SECRET preview --yes`, so it never appears on screen. Redeploy the preview after adding them (`npx vercel redeploy <preview-url>`).
+
+The dev Convex deployment has no `WATCHER_API_URL` since 17 Oct 2026: it used to point at the production API, and its cron sent stale watches to production every 15 minutes (see MW-157). If you run the app locally, point it at a local API, never at production. If the preview uses a separate Convex deployment, configure the matching `API_TO_CONVEX_SECRET` there as well.
 
 ---
 

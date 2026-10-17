@@ -59,6 +59,13 @@ MW-147 meters daily delivery audits and catch-up plans as `audit` spend on the o
 - **MW-147** (merged `010dd34`) meters the audit and catch-ups as `audit` on the owner, and every scoring attempt of a watch check against the watch owner, failed attempts with estimated input tokens marked `estimated`.
 - **Next:** compare the first full UTC day of `openaiCalls:summary` (17 October) with `openaiSpend:reconcile`, then decide whether anything remains unexplained.
 
+### Follow-up, 17 October 2026
+
+- **Readout:** on 17 Oct (00:00–06:13 UTC) the check route counted 57 calls and 107,131 input tokens, OpenAI's usage report showed about 53 check completions, but only 36 `watch` rows (41,512 tokens) were charged. Audit calls (7) were charged to the owner as designed; no `estimated` rows existed.
+- **Cause:** the dev Convex deployment (`benevolent-cow-626`) still had `WATCHER_API_URL` set to production. Its 15-minute cron sent three stale dev watches to production `/api/internal/check`; production scored them with the app key and counted the calls, then dev's outdated `checker.record` rejected the result, so nothing was charged and the same listings were scored again every 15 minutes. Evidence: request `74c6ecf4-….0` (11:19:54 UTC) made two ~3,100-token calls with no production run or charge, matching a dev validation error at the same second.
+- **Fix:** `WATCHER_API_URL` removed from dev and dev's watches deleted (17 Oct, operator OK). **MW-157** (merged `f36b60b`) adds request ids to the call counter and `openaiSpend:checkGap`, which lists any check request whose counted calls differ from its charges, and charges usage even if saving results fails.
+- **Next:** read 18 Oct (UTC) with `checkGap` and `reconcile`; the target is check calls within ±2% of `watch` rows.
+
 ## OpenAI call-path inventory
 
 The Python service uses `OPENAI_API_KEY` for `ChatOpenAI` through `model_config.py:14` and `agent.py:380-384`, the separate offer model at `offer.py:23`, and `OpenAIEmbeddings` at `agent.py:1128`. These paths use the app key **when the deployed service's `OPENAI_API_KEY` is that key**. The Convex admin key only reads OpenAI organization APIs; it does not make model calls.

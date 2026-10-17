@@ -130,7 +130,7 @@ app icons, OG image and `docs/design/logo-h-to-i.gif`. Options and decisions: `d
   eval as MW-16; the build loop only picks up issues marked `agent-ready`, and issues whose next step is Daryl's carry
   `human-ready`. On 30 Sep all of Wave 1 plus MW-15 and MW-16 went through it (GPT-6 Sol builds at medium effort via
   `/opt/homebrew/bin/codex`, Claude Opus 5.5 reviews by running each change, Daryl approves each merge) and is live;
-  MW-9 and MW-14 wait on Daryl (`human-ready`); MW-5 closed on 2 Oct after the UAT sign-off and a passing eval run. MW-57 (canary) and MW-58 (scorer sees "bidding from") shipped on 3 Oct. The run is written up in `docs/system-design.html` §18–19.
+  MW-9 and MW-14 wait on Daryl (`human-ready`); MW-5 closed on 2 Oct after the UAT sign-off and a passing eval run. MW-57 (canary) and MW-58 (scorer sees "bidding from") shipped on 3 Oct. On 17 Oct six more shipped: search behaviour tests and a daily GitHub search canary (MW-155, fixed by MW-158), category filters from plain words (MW-156), per-check OpenAI call counts with a `checkGap` report (MW-157), archived watches no longer taking a watch slot (MW-159) and a Watches item plus an "Archived (n)" link in the desktop sidebar (MW-160). The run is written up in `docs/system-design.html` §18–19.
   On 30 Sep evening an alert audit found late-published listings being skipped: MW-17 fixed it, MW-19 flags
   watches too broad to keep up, MW-18 adds a nightly delivery audit to the owner digest, MW-20 fixed a regression
   (§20). Later that night MW-21 to MW-34 stored check scores, stopped accessory matches, sent users a catch-up
