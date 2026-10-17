@@ -7,16 +7,19 @@ vi.mock("convex/react", () => ({ useMutation: vi.fn() }));
 
 let archive;
 let archiveAll;
+let watchArchive;
 let toast;
 let actions;
 
 beforeEach(() => {
   archive = vi.fn(() => Promise.resolve());
   archiveAll = vi.fn();
+  watchArchive = vi.fn(() => Promise.resolve());
   toast = vi.fn();
   vi.mocked(useMutation).mockImplementation((reference) => {
     const name = getFunctionName(reference);
-    return name === "alerts:setArchived" ? archive : name === "alerts:archiveAll" ? archiveAll : vi.fn();
+    return name === "alerts:setArchived" ? archive : name === "alerts:archiveAll" ? archiveAll :
+      name === "watches:setArchived" ? watchArchive : vi.fn();
   });
   actions = useItemActions({ toast, route: { section: "alerts" } });
 });
@@ -44,4 +47,12 @@ test("restore puts an alert back through the same mutation", async () => {
   actions.alertItems({ _id: "a1" })[0].onSelect();
   await vi.waitFor(() => expect(toast).toHaveBeenCalledWith("Alert restored."));
   expect(archive).toHaveBeenCalledWith({ id: "a1", archived: false });
+});
+
+test("a watch restore refusal appears in the existing toast", async () => {
+  const message = "You have 5 watches. Archive or delete one to restore this.";
+  watchArchive.mockRejectedValueOnce({ data: message });
+  actions.watchItems({ _id: "w1", archivedAt: Date.now() })[0].onSelect();
+  await vi.waitFor(() => expect(toast).toHaveBeenCalledWith(message));
+  expect(watchArchive).toHaveBeenCalledWith({ id: "w1", archived: false });
 });

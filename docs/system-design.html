@@ -594,7 +594,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
   <tr><td>Login</td><td>Clerk; <code>main.py</code> → <code>current_user</code>; <code>convex/auth.config.ts</code></td><td>E-mail or Google
     sign-in. The API checks the session token's signature, issuer and audience; Convex uses the same token.</td></tr>
   <tr><td>Watches and alerts</td><td><code>frontend/convex/</code> (<code>schema.ts</code>, <code>watches.ts</code>, <code>users.ts</code>)</td>
-    <td>Owner checks on every function, at most 5 watches per user, delete-my-data, 30-day retention purge.</td></tr>
+    <td>Owner checks on every function, at most 5 unarchived watches per user (paused watches count; archived watches do not), delete-my-data, 30-day retention purge.</td></tr>
   <tr><td>Schedules</td><td><code>frontend/convex/schedule.ts</code></td><td>A structured schedule (interval, daily times, weekdays
     at a time) instead of a cron string; <code>nextRun</code> in Amsterdam time across clock changes, and <code>describe</code>
     for the plain-English text the UI, chat and e-mail all use.</td></tr>
@@ -676,7 +676,7 @@ Convex cron, every 15 minutes ─► watches that are due, grouped by item (one 
     appears.</td></tr>
   <tr><td>AgentMail's shared domain</td><td>No DNS work for a demo; a custom domain improves deliverability later.</td></tr>
   <tr><td>Scheduled querying of Marktplaats</td><td>This is "repeated and systematic" (Art. 7.3). The operator accepted the risk for the
-    public portfolio version; it is reduced by one read per search and filters (usually one request), 5 watches per user and a 15-minute minimum.</td></tr>
+    public portfolio version; it is reduced by one read per search and filters (usually one request), 5 unarchived watches per user and a 15-minute minimum.</td></tr>
 </table>
 <p><b>Software factory (29 September):</b> the audit's Wave 1 (<code>docs/audit/2026-09-29-fde-course-audit.md</code>) is filed as
   specs MW-1 to MW-13 in the Linear team "Marktplaats Watcher" (key MW), bound to this repo by <code>.factory.json</code>. Each spec
@@ -1277,7 +1277,7 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   On production the real icon disabled, read "Refreshing…", and came back with fresh figures after 0.57 s. The phone tab
   is covered by unit tests and still to be seen on a real phone.</p>
 <p><b>A near-miss in the demo script:</b> the 1 Oct script said "a 5-watch cap" doesn't exist. It does
-  (<code>MAX_WATCHES = 5</code>, counting paused and archived watches), and the owner had exactly 5, so the live "Watch it"
+  (<code>MAX_WATCHES = 5</code>, then counting paused and archived watches), and the owner had exactly 5, so the live "Watch it"
   step would have failed on stage. A search with the wrong words found nothing, and nothing was read to confirm it.
   Found while reading the landing page's "up to 5 watches"; the script now frees a slot before the demo.</p>
 <p><b>One design system, then new-alert glow and archive (1 Oct evening).</b> Asked whether one document described the

@@ -10,6 +10,10 @@ import { normalizeCategory } from "./categoryFilters";
 
 export const MAX_WATCHES = 5;
 
+function unarchivedCount(watches: Doc<"watches">[]) {
+  return watches.filter((watch) => !watch.archivedAt).length;
+}
+
 export const backfillSeededAt = internalMutation({
   args: { dryRun: v.boolean() },
   handler: async (ctx, { dryRun }) => {
@@ -100,7 +104,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
     const mine = await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
-    if (mine.length >= MAX_WATCHES) throw new ConvexError(`You can have up to ${MAX_WATCHES} watches. Delete one to add another.`);
+    if (unarchivedCount(mine) >= MAX_WATCHES)
+      throw new ConvexError(`You can have up to ${MAX_WATCHES} watches. Archive or delete one to add another.`);
     checkSchedule(args.schedule);
     const fields = clean(args);
     rejectDuplicate(mine, fields);
@@ -221,7 +226,12 @@ export const setPinned = mutation({
 export const setArchived = mutation({
   args: { id: v.id("watches"), archived: v.boolean() },
   handler: async (ctx, { id, archived }) => {
-    await ownWatch(ctx, id);
+    const watch = await ownWatch(ctx, id);
+    if (!archived && watch.archivedAt) {
+      const mine = await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", watch.userId)).collect();
+      if (unarchivedCount(mine) >= MAX_WATCHES)
+        throw new ConvexError(`You have ${MAX_WATCHES} watches. Archive or delete one to restore this.`);
+    }
     await patchTracked(ctx, "watches", id, archived ? { archivedAt: Date.now(), active: false, pinned: false } : { archivedAt: undefined });
   },
 });
