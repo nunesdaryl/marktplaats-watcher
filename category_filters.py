@@ -49,11 +49,11 @@ def from_plain_words(query, category_id=None, filters=None):
                 category_id = cat
                 break
     cat = categories().get(str(category_id)) if category_id is not None else None
-    inferred = {} if inferred_category else dict(filters or {})
+    inferred = {}
     if cat:
         facets = cat.get("filters", {})
         for key, facet in facets.items():
-            if facet["type"] != "choice" or key in inferred:
+            if facet["type"] != "choice":
                 continue
             for value_id, label in facet["values"].items():
                 word = label.lower()
@@ -74,9 +74,14 @@ def from_plain_words(query, category_id=None, filters=None):
     # narrow a category established by another facet, but cannot choose one.
     if inferred_category and not any(key != "condition" for key in inferred):
         return None, {}, None
-    if inferred_category:
-        inferred.update(filters or {})
-    return normalize_filters(category_id, inferred)
+    # Keep valid model choices, then fill missing facets from the person's words.
+    # A model's informal "km" key is redundant when those words supplied mileage.
+    model_filters = {key: value for key, value in (filters or {}).items()
+                     if not (key == "km" and "mileage" in inferred)}
+    _, valid_model, model_note = normalize_filters(category_id, model_filters)
+    inferred.update(valid_model)
+    category_id, inferred, inferred_note = normalize_filters(category_id, inferred)
+    return category_id, inferred, model_note or inferred_note
 
 
 def search_words(query, category_id, filters):

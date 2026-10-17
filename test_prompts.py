@@ -53,7 +53,8 @@ OLD_SYSTEM_PROMPT = ("You help the user find second-hand items on Marktplaats.nl
 
 CATEGORY_GUIDANCE = ("For watches, keep category clues and category attributes such as diesel, under 50,000 km, "
                      "16GB RAM, phone storage, or condition in the query sent to propose_watch; the tool "
-                     "maps supported words to category filters. For changes, pass plain_words to propose_watch_change. ")
+                     "maps supported words to category filters. Pass the person's own words as plain_words to "
+                     "propose_watch and propose_watch_change. If a tool drops a filter, do not claim that filter applies. ")
 SHOP_RULE_END = "in a watch proposal or watch change. Otherwise leave it false so shops are hidden. "
 
 OLD_WATCH_MODE = ("\nThe user switched the app to 'Watch it': they want this watched, not searched now. Call "
@@ -113,7 +114,7 @@ def test_rank_prompt_keeps_safety_rules_and_explains_audit_misses():
 def test_prompt_versions_are_central_and_reexported():
     assert agent.PROMPT_VERSION is prompts.PROMPT_VERSION
     assert prompts.PROMPT_VERSION == {
-        "chat": "chat-2026-10-16.1",
+        "chat": "chat-2026-10-17.1",
         "rank": "rank-2026-10-14.1",
         "admin": "admin-2026-10-10.1",
         "offer": "offer-2026-10-06.1",

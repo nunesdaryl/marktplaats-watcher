@@ -24,7 +24,7 @@ from model_config import chat_model, provider
 from openai_call_log import log_openai_call
 from pydantic import BaseModel, Field
 from openai_failure import classify_openai_failure
-from category_filters import from_plain_words, search_params, search_words
+from category_filters import categories, from_plain_words, search_params, search_words
 from prompts import (ADMIN_INTENT_PROMPT, ADMIN_INTENT_TEMPLATE, CHAT_PROMPT, PROMPT_VERSION, RAG_RULE,
                      RANK_PROMPT, RANK_PROMPT_TEMPLATE, SYSTEM_PROMPT, WATCH_MODE)
 
@@ -300,6 +300,21 @@ SCHEDULE_DOC = """schedule_kind: "interval" (with every_minutes: 15, 30, 60, 180
     notify: "great" (only great matches), "good" (good matches) or "all" (every new listing)."""
 
 
+def category_filter_doc():
+    """Describe the checked-in facet ids in the model's tool schema."""
+    entries = []
+    for category_id, category in categories().items():
+        if not category.get("filters"):
+            continue
+        facets = []
+        for key, facet in category.get("filters", {}).items():
+            values = ("lower:upper (empty bound allowed, e.g. :50000)" if facet["type"] == "range"
+                      else ", ".join(f"{value_id}={label}" for value_id, label in facet["values"].items()))
+            facets.append(f"{key} [{values}]")
+        entries.append(f"{category_id} {category['name']}: " + "; ".join(facets))
+    return "\ncategory_id and attribute_filters use these category ids and facet keys/value ids: " + " | ".join(entries)
+
+
 class ChatContext:
     """What one chat request collects besides the answer text."""
     def __init__(self, watches):
@@ -315,7 +330,8 @@ def make_tools(ctx):
                       max_price_eur: int | None = None, must_include: str | None = None,
                       postcode: str | None = None, max_distance_km: int | None = None,
                       include_business_sellers: bool = False, category_id: str | None = None,
-                      attribute_filters: dict[str, str] | None = None) -> str:
+                      attribute_filters: dict[str, str] | None = None,
+                      plain_words: str | None = None) -> str:
         """Propose a new watch: a saved search that is re-checked on a schedule, and the user gets an
         e-mail when a good new listing appears. The user still has to click Save.
         Search fields are the same as search_marktplaats.
@@ -329,7 +345,8 @@ def make_tools(ctx):
                               "maxDistanceKm": max_distance_km if postcode else None,
                               "schedule": schedule, "notify": notify,
                               "includeBusinessSellers": include_business_sellers}
-        category_id, attribute_filters, note = from_plain_words(query, category_id, attribute_filters)
+        category_id, attribute_filters, note = from_plain_words(
+            plain_words if plain_words is not None else query, category_id, attribute_filters)
         if category_id:
             proposal["query"] = search_words(proposal["query"], category_id, attribute_filters)[:80]
             proposal["categoryId"] = int(category_id)
@@ -338,7 +355,8 @@ def make_tools(ctx):
             proposal["filterNote"] = note
         proposal["volumeNote"] = estimate_volume_note(proposal)
         ctx.proposals.append(proposal)
-        return "Proposal shown to the user with a Save button. Tell them in one sentence what it will do."
+        result = "Proposal shown to the user with a Save button. Tell them in one sentence what it will do."
+        return result + (f" {note}" if note else "")
 
     @tool
     def propose_watch_change(watch_id: str, schedule_kind: Literal["interval", "daily", "weekly"] | None = None,
@@ -384,10 +402,11 @@ def make_tools(ctx):
                 "attributeFilters": change.get("attributeFilters", watch.get("attributeFilters")),
             })
         ctx.proposals.append(change)
-        return "Change shown to the user with a Save button. Tell them in one sentence what will change."
+        result = "Change shown to the user with a Save button. Tell them in one sentence what will change."
+        return result + (f" {change['filterNote']}" if change.get("filterNote") else "")
 
-    propose_watch.description += SCHEDULE_DOC
-    propose_watch_change.description += SCHEDULE_DOC
+    propose_watch.description += SCHEDULE_DOC + category_filter_doc()
+    propose_watch_change.description += SCHEDULE_DOC + category_filter_doc()
     return [search_marktplaats, propose_watch, propose_watch_change]
 
 

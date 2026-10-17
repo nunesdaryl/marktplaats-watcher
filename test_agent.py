@@ -2291,12 +2291,14 @@ def test_category_is_not_inferred_from_product_or_brand_alone():
         assert from_plain_words(words)[:2] == (None, {})
     assert from_plain_words("diesel auto onder 50.000 km")[:2] == (
         "91", {"fuel": "474", "mileage": ":50000"})
+    assert from_plain_words("diesel car below 50,000 km")[:2] == (
+        "91", {"fuel": "474", "mileage": ":50000"})
     assert from_plain_words("auto", category_id="91")[:2] == ("91", {})
 
 
 def test_condition_words_need_an_explicit_category_or_another_category_filter():
     from category_filters import from_plain_words
-    for words in ("auto stoeltje nieuw", "iphone hoesje nieuw", "fiets gebruikt",
+    for words in ("auto stoeltje nieuw", "iphone hoesje nieuw", "iphone hoesje (nieuw)", "fiets gebruikt",
                   "used car", "refurbished PlayStation 5"):
         assert from_plain_words(words)[:2] == (None, {})
     assert from_plain_words("iphone 13 128gb nieuw")[:2] == (
@@ -2342,6 +2344,20 @@ def test_chat_proposes_diesel_car_with_structured_filters(monkeypatch):
     assert context.proposals[0]["maxDistanceKm"] == 30
 
 
+def test_proposal_keeps_valid_model_facet_and_reports_dropped_facet(monkeypatch):
+    monkeypatch.setattr(agent, "estimate_volume_note", lambda *_: None)
+    context = agent.ChatContext([])
+    proposal = agent.make_tools(context)[1]
+    assert "mileage [lower:upper" in proposal.description
+    assert "fuel [473=Benzine, 474=Diesel" in proposal.description
+    result = proposal.invoke({"query": "auto", "plain_words": "diesel auto onder 50.000 km",
+                              "category_id": "91", "attribute_filters": {"fuel": "473", "unknown": "1"},
+                              "schedule_kind": "interval", "every_minutes": 60})
+    assert context.proposals[0]["attributeFilters"] == {"fuel": "473", "mileage": ":50000"}
+    assert context.proposals[0]["filterNote"] == "Unavailable category filters were removed: unknown."
+    assert "unknown" in result
+
+
 def test_retired_category_filters_are_dropped_before_a_check(capsys):
     filters = agent.search_filters({"category_id": 91, "attribute_filters": {"fuel": "retired", "mileage": ":50000"}})
     assert filters == {"l1CategoryId": 91, "attributeRanges[]": ["mileage::50000"]}
@@ -2349,7 +2365,8 @@ def test_retired_category_filters_are_dropped_before_a_check(capsys):
     assert agent.search_filters({"category_id": 999999, "attribute_filters": {"fuel": "474"}}) == {}
 
 
-def test_watch_chat_maps_plain_words_with_mocked_model(monkeypatch):
+@pytest.mark.parametrize("use_plain_words", [True, False])
+def test_watch_chat_maps_plain_words_with_mocked_model(monkeypatch, use_plain_words):
     from langchain_core.messages import AIMessageChunk
     monkeypatch.setattr(agent, "estimate_volume_note", lambda *_: None)
 
@@ -2361,7 +2378,11 @@ def test_watch_chat_maps_plain_words_with_mocked_model(monkeypatch):
             self.calls += 1
             if self.calls == 1:
                 yield AIMessageChunk(content="", tool_call_chunks=[{"name": "propose_watch",
-                    "args": json.dumps({"query": "a diesel car under 50.000 km",
+                    "args": json.dumps({"query": "auto", "category_id": "91",
+                                        "attribute_filters": {"fuel": "474", "km": "<50000"} if use_plain_words
+                                            else {"fuel": "474", "mileage": ":50000"},
+                                        **({"plain_words": "a diesel car under 50.000 km within 30 km of 3511AB"}
+                                           if use_plain_words else {}),
                                         "postcode": "3511AB", "max_distance_km": 30,
                                         "schedule_kind": "interval", "every_minutes": 60}),
                     "id": "watch1", "index": 0}])
@@ -2373,3 +2394,4 @@ def test_watch_chat_maps_plain_words_with_mocked_model(monkeypatch):
     assert answer["proposals"][0]["categoryId"] == 91
     assert answer["proposals"][0]["attributeFilters"] == {"fuel": "474", "mileage": ":50000"}
     assert answer["proposals"][0]["postcode"] == "3511AB"
+    assert "filterNote" not in answer["proposals"][0]
