@@ -190,7 +190,8 @@ uptime check).
   "New" means unseen and placed after the newest listing of the last check. Seller details are never kept.
 - Marktplaats' terms (Art. 7.3) forbid repeated, systematic querying. Scheduled watches do exactly that;
   the operator has accepted this risk for the public portfolio version. Watches with the same search and
-  filters share one read, each user has at most 5 watches, and the shortest interval is 15 minutes.
+  filters share one read, each user has at most 5 unarchived watches (paused watches count; archived watches do not),
+  and the shortest interval is 15 minutes.
 - Data kept: e-mail address, watches, listings already seen and alerts, 30 days (purged daily).
   "Delete my data" removes all of it. Listing titles and search text are sent to OpenAI for scoring.
 

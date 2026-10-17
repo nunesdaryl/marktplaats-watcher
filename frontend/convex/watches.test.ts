@@ -96,14 +96,40 @@ test("signed-out visitors can't create watches", async () => {
   await expect(t.mutation(api.watches.create, macMini)).rejects.toThrow("sign in");
 });
 
-test("at most 5 watches per user, and bad input is refused in plain English", async () => {
+test("at most 5 unarchived watches per user, and bad input is refused in plain English", async () => {
   const { alice } = setup();
   for (let i = 0; i < 5; i++) await alice.mutation(api.watches.create, { ...macMini, query: `item ${i}` });
-  await expect(alice.mutation(api.watches.create, macMini)).rejects.toThrow("up to 5 watches");
+  await expect(alice.mutation(api.watches.create, macMini)).rejects.toThrow("You can have up to 5 watches. Archive or delete one to add another.");
   const { bob } = setup();
   await expect(bob.mutation(api.watches.create, { ...macMini, postcode: "abc" })).rejects.toThrow("1012AB");
   await expect(bob.mutation(api.watches.create, { ...macMini, schedule: { kind: "interval", everyMinutes: 1 } }))
     .rejects.toThrow("every 15 or 30 minutes");
+});
+
+test("an archived watch frees a slot, while a paused watch still counts", async () => {
+  const { alice } = setup();
+  const ids = [];
+  for (let i = 0; i < 5; i++) ids.push(await alice.mutation(api.watches.create, { ...macMini, query: `item ${i}` }));
+  await alice.mutation(api.watches.setArchived, { id: ids[0], archived: true });
+  const fifth = await alice.mutation(api.watches.create, { ...macMini, query: "new item" });
+  await alice.mutation(api.watches.update, { id: fifth, active: false });
+  await expect(alice.mutation(api.watches.create, { ...macMini, query: "another item" }))
+    .rejects.toThrow("You can have up to 5 watches. Archive or delete one to add another.");
+});
+
+test("restore checks the unarchived limit, then succeeds after archiving another watch", async () => {
+  const { alice } = setup();
+  const ids = [];
+  for (let i = 0; i < 5; i++) ids.push(await alice.mutation(api.watches.create, { ...macMini, query: `item ${i}` }));
+  await alice.mutation(api.watches.setArchived, { id: ids[0], archived: true });
+  await alice.mutation(api.watches.create, { ...macMini, query: "new item" });
+  await expect(alice.mutation(api.watches.setArchived, { id: ids[0], archived: false }))
+    .rejects.toThrow("You have 5 watches. Archive or delete one to restore this.");
+  expect(await alice.query(api.watches.archived, {})).toHaveLength(1);
+  await alice.mutation(api.watches.setArchived, { id: ids[1], archived: true });
+  await alice.mutation(api.watches.setArchived, { id: ids[0], archived: false });
+  expect(await alice.query(api.watches.list, {})).toHaveLength(5);
+  expect(await alice.query(api.watches.archived, {})).toHaveLength(1);
 });
 
 test("changing the schedule moves the next check", async () => {
