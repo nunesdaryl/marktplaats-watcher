@@ -344,6 +344,25 @@ export const reconciliationLedgerPage = internalQuery({ args: { start: v.number(
       cursor: page.continueCursor, done: page.isDone };
   } });
 
+/** Compare request-scoped check counters with the watch charges for those requests. */
+export const checkGap = internalQuery({ args: { day: v.string() }, handler: async (ctx, { day }) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10) !== day)
+    throw new Error("day must be a UTC date (YYYY-MM-DD)");
+  const rows = await ctx.db.query("openaiCalls").withIndex("by_day", (q) => q.eq("day", day)).collect();
+  const counted = new Map<string, number>();
+  for (const row of rows) if (row.route === "/api/internal/check" && row.requestId)
+    counted.set(row.requestId, (counted.get(row.requestId) ?? 0) + row.requests);
+  const gaps = [];
+  for (const [requestId, countedCalls] of counted) {
+    const prefix = `${requestId}.`;
+    const charges = await ctx.db.query("aiSpend").withIndex("by_check", (q) =>
+      q.gte("checkId", prefix).lt("checkId", `${requestId}/`)).collect();
+    const watchRows = charges.filter((row) => row.kind === "watch" && row.checkId?.startsWith(prefix)).length;
+    if (countedCalls !== watchRows) gaps.push({ requestId, countedCalls, watchRows });
+  }
+  return gaps;
+} });
+
 export const reconciliationRollup = internalQuery({ args: { monthStart: v.number() }, handler: async (ctx, { monthStart: start }) => {
   const rows = await ctx.db.query("aiSpendMonthly").withIndex("by_month", (q) => q.eq("monthStart", start)).collect();
   const byDay: Record<string, number> = {};

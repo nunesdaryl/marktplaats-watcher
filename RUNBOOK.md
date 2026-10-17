@@ -75,6 +75,10 @@ For a slow chat, compare the `chat_turn.ms` log with the 60-second chat deadline
 six tool calls and 1,500 output-token cap per model call in `agent.py`. A search request has a
 15-second default timeout and interactive retries stay within a 20-second total deadline.
 
+### Reconcile watch-check AI charges
+
+From `frontend`, run `npx convex run --prod openaiSpend:checkGap '{"day":"YYYY-MM-DD"}'` for a completed UTC day. Each returned row names a check request id and shows `countedCalls` from `openaiCalls` beside `watchRows` in `aiSpend`; an empty list means every request-scoped check call has a watch charge. The query can inspect only calls recorded after request ids were added to the counter. To compare the whole app key with the ledger, run `npx convex run --prod openaiSpend:reconcile '{"days":2}'`; this read-only query needs the OpenAI admin key configured in Convex. `openaiCalls:summary '{"days":2}'` shows route totals. If `checkGap` finds a request, search that id in Vercel and Convex Logs and inspect the check result and any `AI usage record failed` line.
+
 ---
 
 ## 1. Stop all scheduled checks now (kill switch)

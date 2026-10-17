@@ -5,7 +5,8 @@ import { internal } from "./_generated/api";
 
 const record = v.object({
   day: v.string(), route: v.string(), env: v.string(), model: v.string(), ok: v.boolean(),
-  error: v.union(v.string(), v.null()), requests: v.number(), inputTokens: v.number(), outputTokens: v.number(),
+  error: v.union(v.string(), v.null()), requestId: v.optional(v.string()),
+  requests: v.number(), inputTokens: v.number(), outputTokens: v.number(),
 });
 
 export const recordCalls = internalMutation({
@@ -14,7 +15,7 @@ export const recordCalls = internalMutation({
     for (const item of records) {
       const existing = await ctx.db.query("openaiCalls").withIndex("by_key", (q) => q
         .eq("day", item.day).eq("route", item.route).eq("env", item.env)
-        .eq("model", item.model).eq("ok", item.ok).eq("error", item.error)).unique();
+        .eq("model", item.model).eq("ok", item.ok).eq("error", item.error).eq("requestId", item.requestId)).unique();
       if (existing) await ctx.db.patch(existing._id, {
         requests: existing.requests + item.requests,
         inputTokens: existing.inputTokens + item.inputTokens,
@@ -35,11 +36,21 @@ export const summary = internalQuery({
     for (let offset = days - 1; offset >= 0; offset--) {
       const day = new Date(today.getTime() - offset * 86_400_000).toISOString().slice(0, 10);
       const rows = await ctx.db.query("openaiCalls").withIndex("by_day", (q) => q.eq("day", day)).collect();
+      const routes = new Map<string, { route: string; env: string; model: string; ok: boolean; error: string | null;
+        requests: number; inputTokens: number; outputTokens: number }>();
+      for (const row of rows) {
+        const key = JSON.stringify([row.route, row.env, row.model, row.ok, row.error]);
+        const total = routes.get(key) ?? { route: row.route, env: row.env, model: row.model, ok: row.ok,
+          error: row.error, requests: 0, inputTokens: 0, outputTokens: 0 };
+        total.requests += row.requests;
+        total.inputTokens += row.inputTokens;
+        total.outputTokens += row.outputTokens;
+        routes.set(key, total);
+      }
       result.push({ day, requests: rows.reduce((sum, row) => sum + row.requests, 0),
         inputTokens: rows.reduce((sum, row) => sum + row.inputTokens, 0),
         outputTokens: rows.reduce((sum, row) => sum + row.outputTokens, 0),
-        routes: rows.map(({ route, env, model, ok, error, requests, inputTokens, outputTokens }) =>
-          ({ route, env, model, ok, error, requests, inputTokens, outputTokens })) });
+        routes: [...routes.values()] });
     }
     return result;
   },

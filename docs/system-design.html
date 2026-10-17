@@ -1651,6 +1651,11 @@ export const LOGO = { mark: "robot", pose: "chest", body: true, animate: "h-to-i
   page shows the new "Delivery audit &amp; catch-ups" column. The first full day of counts (17 October) will show how
   much of the gap remains. Lesson: a context variable does not follow work into a thread pool, and a test that fakes
   the pooled function cannot see it.</p>
+<p><b>Watch-check charging (17 October).</b> MW-157 adds the Convex check request id to each check-route call counter. An internal
+  <code>openaiSpend:checkGap</code> query compares those counts with per-watch <code>aiSpend</code> rows, so the
+  uncharged calls can be traced to a check group. A check result write previously ran before usage charging;
+  if that write failed, the action left already-made model calls uncharged. Charging now runs even when storing
+  the result fails. The day-after-merge production comparison is still required to measure the remaining gap.</p>
 <p><b>Where the OpenAI money goes (14 October, afternoon).</b> The owner dashboard showed OpenAI billing the app's
   key $4.22 while the app had measured about $0.73. MW-143 added a read-only check (<code>openaiSpend:reconcile</code>)
   that joins, per day, OpenAI's billed cost and token counts for the app key with the app's own ledger. Run on

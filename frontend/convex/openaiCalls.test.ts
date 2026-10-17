@@ -6,7 +6,7 @@ import schema from "./schema";
 const modules = import.meta.glob("./**/*.ts");
 const day = "2026-10-19";
 const row = { day, route: "/api/internal/check", env: "production", model: "gpt-5.4-mini",
-  ok: true, error: null, requests: 2, inputTokens: 30, outputTokens: 5 };
+  ok: true, error: null, requestId: "run.0", requests: 2, inputTokens: 30, outputTokens: 5 };
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -53,6 +53,15 @@ test("posts increment one day row and summary preserves route, environment, mode
       error: "RuntimeError", requests: 1, inputTokens: 0, outputTokens: 0 },
   ]));
   await expect(t.query(internal.openaiCalls.summary, { days: 32 })).rejects.toThrow();
+});
+
+test("check calls keep separate request ids while summary still totals the route", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.openaiCalls.recordCalls, { records: [row, { ...row, requestId: "run.1", requests: 1 }] });
+  const rows = await t.run((ctx) => ctx.db.query("openaiCalls").collect());
+  expect(rows.map((item) => item.requestId).sort()).toEqual(["run.0", "run.1"]);
+  const summary = await t.query(internal.openaiCalls.summary, { days: 2 });
+  expect(summary[0].routes).toMatchObject([{ route: row.route, requests: 3 }]);
 });
 
 test("daily cleanup removes only rows older than 90 days", async () => {

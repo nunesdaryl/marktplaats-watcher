@@ -202,12 +202,15 @@ def test_check_flushes_one_grouped_batch_after_two_rankings_and_failure(monkeypa
     assert posts[0][0] == "/api/openai-calls"
     rows = posts[0][1]["records"]
     assert len(rows) == 2
+    assert {row["requestId"] for row in rows} == {response.headers["X-Request-Id"]}
     assert next(row for row in rows if row["ok"]) == {
         "day": rows[0]["day"], "route": "/api/internal/check", "env": "local", "model": "gpt-5.4-mini",
-        "ok": True, "error": None, "requests": 2, "inputTokens": 30, "outputTokens": 5}
+        "ok": True, "error": None, "requestId": response.headers["X-Request-Id"],
+        "requests": 2, "inputTokens": 30, "outputTokens": 5}
     assert next(row for row in rows if not row["ok"]) == {
         "day": rows[0]["day"], "route": "/api/internal/check", "env": "local", "model": "gpt-5.4-mini",
-        "ok": False, "error": "RuntimeError", "requests": 1, "inputTokens": 0, "outputTokens": 0}
+        "ok": False, "error": "RuntimeError", "requestId": response.headers["X-Request-Id"],
+        "requests": 1, "inputTokens": 0, "outputTokens": 0}
     assert "secret prompt" not in json.dumps(posts)
 
 
