@@ -105,9 +105,9 @@ def listing_image(item):
 
 
 def is_business_seller(item):
-    """Use existing manufacturer and verified fields; never retain seller details."""
+    """Use Admarkt ids, manufacturer and verified fields; never retain seller details."""
     seller = item.get("sellerInformation") or {}
-    return has_manufacturer_details(item) or seller.get("isVerified") is True
+    return str(item.get("itemId") or "").startswith("a") or has_manufacturer_details(item) or seller.get("isVerified") is True
 
 
 def has_manufacturer_details(item):
@@ -811,6 +811,8 @@ def read_since(query, filters, since_days, today):
         # One retry with jittered backoff (as before MW-103); a lasting failure is left to the next tick.
         data = fetch_search(query, filters, page * PAGE_SIZE)
         batch = data["listings"]
+        # Date-sorted rows can shift between requests. Stop only if the whole page was already read.
+        no_new_ids = all(item.get("itemId") in ids for item in batch)
         for item in batch:
             if item.get("itemId") not in ids:
                 ids.add(item.get("itemId"))
@@ -818,7 +820,7 @@ def read_since(query, filters, since_days, today):
         # Paid "Dagtopper" listings are shown first whatever their day: they don't say where the reading is
         ages = [days_old(item.get("date"), today) for item in batch if item.get("priorityProduct", "NONE") == "NONE"]
         older = any(a is not None and a > since_days for a in ages)
-        if older or len(batch) < PAGE_SIZE:
+        if older or no_new_ids or len(batch) < PAGE_SIZE:
             return listings, False
         if page + 1 >= (data.get("maxAllowedPageNumber") or MAX_PAGES):
             return listings, page + 1 >= MAX_PAGES

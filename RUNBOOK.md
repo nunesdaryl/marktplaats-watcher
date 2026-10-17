@@ -19,10 +19,13 @@ repo root unless they start with `cd frontend`.
 | Health digest e-mail "N problem(s) need a look" | `OWNER_EMAIL` inbox, daily 05:00 UTC | Scheduler stuck, watches failing, e-mails failing, or checks paused |
 | "Marktplaats Watcher: all good this week" | Mondays | Heartbeat: silence on a Monday means the digest itself is broken |
 | GitHub "uptime" workflow failed | GitHub e-mail | Site down, API down, or chat accepting requests without login |
+| GitHub "marktplaats-canary" workflow failed | GitHub e-mail | Marktplaats search request failed, response fields changed, or no organic listings appeared |
 | GitHub "ci" failed | GitHub e-mail | Tests, build, dependency audit or secret scan failed |
 | Owner dashboard | https://marktplaats-watcher.vercel.app/admin/ (signed in as the owner) | Usage, funnel, feedback with screenshots, and the same health summary as the digest |
 | Feedback e-mail "Feedback from …" | `OWNER_EMAIL` inbox | Someone used the feedback strip; the screenshot and context are on the dashboard |
 | Logs | Vercel → Logs; Convex dashboard → Logs | JSON lines: `check`, `chat_turn`, `csp_violation` (Vercel); `check_run`, `health_digest`, `checks_paused` (Convex) |
+
+For a red `marktplaats-canary` run, open the failed GitHub Actions log. A network or HTTP error may be temporary; a missing field or zero organic rows can mean the search response changed. Check the live search response and a recent scheduled check's `paidRemoved`, `readCount`, and errors before changing the parser. The workflow reads one public search page without secrets or production writes. Re-run it manually only when investigating a failure, and record what changed.
 
 ## Previews
 

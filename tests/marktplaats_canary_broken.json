@@ -1,0 +1,5 @@
+{
+  "listings": [
+    {"itemId": "m1234567890", "title": "Bike", "priceInfo": {"priceCents": 40000}, "date": "Vandaag"}
+  ]
+}

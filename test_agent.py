@@ -14,6 +14,7 @@ os.environ.setdefault("OPENAI_API_KEY", "dummy")
 os.environ.setdefault("OPENAI_MODEL", "gpt-5.4-mini")
 
 import agent  # noqa: E402
+import marktplaats_canary  # noqa: E402
 
 PAGE = (Path(__file__).parent / "tests" / "search_page.html").read_text()  # sanitised, synthetic sellers
 
@@ -78,6 +79,15 @@ def test_parses_listings_without_seller_data():
 ])
 def test_business_seller_uses_manufacturer_or_verified_signal(item, expected):
     assert agent.is_business_seller(item) is expected
+
+
+def test_admarkt_id_is_a_shop_signal(monkeypatch):
+    monkeypatch.delenv("BUSINESS_SELLER_FILTER_ENABLED", raising=False)
+    [listing], stats = agent.parse_listings([{"itemId": "a1531512320", "title": "Bike",
+        "vipUrl": "/v/bike", "priorityProduct": "NONE", "priceInfo": {"priceCents": 40000},
+        "date": "Vandaag"}], limit=None)
+    assert agent.is_business_seller({"itemId": "a1531512320"}) is True
+    assert listing["seller_type"] == "shop" and stats["business_signaled"] == 1
 
 
 def test_paid_and_business_filters_keep_only_boolean_seller_type(monkeypatch):
@@ -782,6 +792,87 @@ def test_paid_listings_of_older_days_dont_end_the_reading(monkeypatch):
     read = serve_search(monkeypatch, [api_page(page1), api_page([(4000 + i, "Gisteren") for i in range(30)])])
     agent.check_query("mac mini", [{"id": "w1", "seen_ids": [], "watermark": 1, "last_checked_at": EARLIER_TODAY}], now=NOW)
     assert [p for _, p in read] == [0, 1]
+
+
+def test_read_since_stops_when_next_page_fully_repeats(monkeypatch):
+    first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    read = serve_search(monkeypatch, [first, first])
+    listings, capped = agent.read_since("bike", {}, 0, NOW.date())
+    assert [page for _, page in read] == [0, 1]
+    assert len(listings) == agent.PAGE_SIZE and capped is False
+
+
+def test_read_since_keeps_paging_past_one_repeated_row(monkeypatch):
+    first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    second = api_page([(4971, "Vandaag")] + [(4900 - i, "Vandaag") for i in range(agent.PAGE_SIZE - 1)])
+    third = api_page([(4000 - i, "Gisteren") for i in range(agent.PAGE_SIZE)])
+    read = serve_search(monkeypatch, [first, second, third])
+    listings, capped = agent.read_since("bike", {}, 0, NOW.date())
+    assert [page for _, page in read] == [0, 1, 2]
+    assert len(listings) == agent.PAGE_SIZE * 3 - 1 and capped is False
+    assert len({item["itemId"] for item in listings}) == len(listings)
+
+
+def test_read_since_continues_when_new_page_has_only_paid_rows(monkeypatch):
+    first = api_page([(5000 - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    paid = api_page([(4000 - i, "20 sep 26", "DAGTOPPER") for i in range(agent.PAGE_SIZE)])
+    older = api_page([(3000 - i, "Gisteren") for i in range(agent.PAGE_SIZE)])
+    read = serve_search(monkeypatch, [first, paid, older])
+    listings, capped = agent.read_since("bike", {}, 0, NOW.date())
+    assert [page for _, page in read] == [0, 1, 2]
+    assert len(listings) == agent.PAGE_SIZE * 3 and capped is False
+    parsed, stats = agent.parse_listings(listings, limit=None)
+    assert len(parsed) == agent.PAGE_SIZE * 2
+    assert stats["paid_removed"] == agent.PAGE_SIZE
+
+
+def test_read_since_sends_page_aligned_offsets(monkeypatch):
+    offsets = []
+    def fake(query, filters, offset):
+        offsets.append(offset)
+        return api_page([(5000 - offset - i, "Vandaag") for i in range(agent.PAGE_SIZE)])
+    monkeypatch.setattr(agent, "fetch_search", fake)
+    monkeypatch.setattr(agent, "MAX_PAGES", 3)
+    agent.read_since("bike", {}, 0, NOW.date())
+    assert offsets == [0, 30, 60]
+
+
+def test_live_canary_shape_accepts_recorded_search_fixture():
+    fixture = json.loads((Path(__file__).parent / "tests" / "marktplaats_canary_good.json").read_text())
+    assert marktplaats_canary.check_shape(fixture) == 1
+
+
+def test_recorded_paid_placement_is_not_organic_or_alertable(monkeypatch):
+    fixture = json.loads((Path(__file__).parent / "tests" / "marktplaats_canary_good.json").read_text())
+    monkeypatch.delenv("BUSINESS_SELLER_FILTER_ENABLED", raising=False)
+    listings, stats = agent.parse_listings(fixture["listings"], limit=None)
+    assert [item["id"] for item in listings] == ["m1234567890"]
+    assert stats["paid_removed"] == 1 and stats["seller_listings_checked"] == 1
+
+
+def test_live_canary_shape_rejects_broken_search_fixture():
+    fixture = json.loads((Path(__file__).parent / "tests" / "marktplaats_canary_broken.json").read_text())
+    with pytest.raises(ValueError, match="listings\\[0\\].*priorityProduct"):
+        marktplaats_canary.check_shape(fixture)
+
+
+def test_live_canary_requires_an_organic_row():
+    fixture = json.loads((Path(__file__).parent / "tests" / "marktplaats_canary_good.json").read_text())
+    fixture["listings"] = [fixture["listings"][1]]
+    with pytest.raises(ValueError, match="no organic listings"):
+        marktplaats_canary.check_shape(fixture)
+
+
+def test_live_canary_makes_one_search_without_retry(monkeypatch, capsys):
+    fixture = json.loads((Path(__file__).parent / "tests" / "marktplaats_canary_good.json").read_text())
+    calls = []
+    def fake_search(query, filters, offset, **kwargs):
+        calls.append((query, filters, offset, kwargs))
+        return fixture
+    monkeypatch.setattr(agent, "fetch_search", fake_search)
+    marktplaats_canary.main()
+    assert calls == [("schaakbord", {}, 0, {"retry": False})]
+    assert "1 organic" in capsys.readouterr().out
 
 
 def test_new_means_unseen_even_below_the_watermark(monkeypatch):
