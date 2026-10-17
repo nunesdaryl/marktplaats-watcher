@@ -524,7 +524,29 @@ export const checkDue = internalAction({
         verifiedTrue += r.verifiedTrue ?? 0;
         sellerListingsChecked += r.sellerListingsChecked ?? 0;
       }
-      const toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
+      let toSend: { watchId: Id<"watches">; alertIds: Id<"alerts">[]; to: string; preview?: EmailContent }[] = [];
+      try {
+        toSend = await ctx.runMutation(internal.checker.record, { now, results, dryRun });
+      } finally {
+        // A failed result write must not discard usage from calls the search service already made.
+        if (!dryRun) for (const r of results) {
+          const source = group.watches.find((w) => w.id === r.watchId);
+          if (!source || !r.usage) continue;
+          for (const [callIndex, call] of r.usage.calls.entries()) {
+            try {
+              await ctx.runMutation(internal.aiBudget.record, { clerkId: source.clerkId, watchId: source.id,
+                kind: "watch", model: r.usage.model, checkId: `${groupId}.${r.watchId}`,
+                alertsSent: callIndex === 0 ? toSend.find((mail) => mail.watchId === source.id)?.alertIds.length ?? 0 : 0,
+                listingsScored: callIndex === 0 ? r.listings?.length ?? 0 : 0,
+                inputTokens: call.input_tokens, outputTokens: call.output_tokens,
+                costEur: call.cost_eur, ...(call.estimated ? { estimated: true } : {}),
+                callId: `${groupId}.${r.watchId}.${callIndex}` });
+            } catch (e) {
+              console.error("AI usage record failed:", e);
+            }
+          }
+        }
+      }
       if (!dryRun) {
         const accountFailure = results.find((r: { failureKind?: string }) =>
           ["credit_exhausted", "spend_cap", "auth"].includes(r.failureKind ?? ""))?.failureKind;
@@ -532,24 +554,7 @@ export const checkDue = internalAction({
         else if (results.some((r: { aiCall?: boolean }) => r.aiCall))
           await ctx.runMutation(internal.openaiSpend.recordAiStatus, {});
       }
-      if (!dryRun) for (const r of results) {
-        const source = group.watches.find((w) => w.id === r.watchId);
-        if (!source || !r.usage) continue;
-        try {
-          for (const [callIndex, call] of r.usage.calls.entries())
-            await ctx.runMutation(internal.aiBudget.record, { clerkId: source.clerkId, watchId: source.id,
-              kind: "watch", model: r.usage.model, checkId: `${groupId}.${r.watchId}`,
-              alertsSent: callIndex === 0 ? toSend.find((mail) => mail.watchId === source.id)?.alertIds.length ?? 0 : 0,
-              listingsScored: callIndex === 0 ? r.listings?.length ?? 0 : 0,
-              inputTokens: call.input_tokens, outputTokens: call.output_tokens,
-              costEur: call.cost_eur, ...(call.estimated ? { estimated: true } : {}),
-              callId: `${groupId}.${r.watchId}.${callIndex}` });
-          // The check that crosses the budget still delivers (its cost is already paid); the next checks are skipped
-          // when watches are picked (budgetFor above).
-        } catch (e) {
-          console.error("AI usage record failed:", e);   // keep the paid-for results; dropping them would re-score
-        }
-      }
+      // The check that crosses the budget still delivers; the next checks are skipped when picked.
       for (const mail of toSend) {
         if (mail.preview) {
           const email = renderEmail(mail.preview, appUrl);

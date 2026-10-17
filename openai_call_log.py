@@ -16,9 +16,11 @@ call_records = ContextVar("openai_call_records", default=None)
 def log_openai_call(model, input_tokens=None, output_tokens=None, error=None):
     records = call_records.get()
     if records is not None:
+        route = call_route.get()
+        request_id = call_request_id.get() if route == "/api/internal/check" else None
         key = (datetime.now(timezone.utc).date().isoformat(), call_route.get(),
                os.getenv("VERCEL_ENV") or "local", model, error is None,
-               type(error).__name__ if error is not None else None)
+               type(error).__name__ if error is not None else None, request_id)
         row = records.setdefault(key, {"requests": 0, "inputTokens": 0, "outputTokens": 0})
         row["requests"] += 1
         row["inputTokens"] += input_tokens or 0
@@ -40,8 +42,8 @@ def flush_openai_calls(records):
     try:
         convex_post("/api/openai-calls", {"records": [
             {"day": day, "route": route, "env": env, "model": model, "ok": ok,
-             "error": error, **counts}
-            for (day, route, env, model, ok, error), counts in records.items()
+             "error": error, **({"requestId": request_id} if request_id else {}), **counts}
+            for (day, route, env, model, ok, error, request_id), counts in records.items()
         ]})
     except Exception as exc:
         print(json.dumps({"event": "openai_calls_flush_failed", "error": type(exc).__name__}), flush=True)

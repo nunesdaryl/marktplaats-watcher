@@ -1686,6 +1686,51 @@ def test_check_query_ranks_watches_in_parallel(monkeypatch):
     assert time.time() - started < 0.2 * 6 * 0.6                  # clearly faster than one after another
 
 
+def test_check_query_returns_one_usage_entry_per_rank_call_across_watch_shapes(monkeypatch):
+    from collections import Counter
+    from types import SimpleNamespace
+    from openai_call_log import call_records, call_route, log_openai_call
+
+    serve_search(monkeypatch, [api_page([(5000 - i, "Vandaag") for i in range(12)])])
+    calls = Counter()
+
+    class CountingRanker:
+        def invoke(self, messages):
+            prompt = json.loads(messages[-1]["content"])
+            watch = prompt["watching_for"]
+            calls[watch] += 1
+            ids = [item["id"] for item in prompt["listings"]]
+            if watch == "failed":
+                error = RuntimeError("model unavailable")
+                log_openai_call("test-model", error=error)
+                raise error
+            log_openai_call("test-model", input_tokens=100, output_tokens=10)
+            ranks = ids[:-1] if watch == "omitted" and calls[watch] == 1 else ids
+            return {"raw": SimpleNamespace(usage_metadata={"input_tokens": 100, "output_tokens": 10}),
+                    "parsed": agent.Ranking(ranks=[agent.Rank(id=ident, score=8, reason="match") for ident in ranks]),
+                    "parsing_error": None}
+
+    monkeypatch.setattr(agent, "ranker", CountingRanker())
+    token = call_records.set({})
+    route_token = call_route.set("/api/internal/check")
+    try:
+        base = {"watermark": 100, "seen_ids": [], "last_checked_at": EARLIER_TODAY}
+        results = agent.check_query("bike", [
+            {**base, "id": "batched", "description": "batched"},
+            {**base, "id": "omitted", "description": "omitted"},
+            {**base, "id": "failed", "description": "failed"},
+            {**base, "id": "first", "description": "first", "seeded": False},
+        ], now=NOW)
+        counted = sum(row["requests"] for row in call_records.get().values())
+    finally:
+        call_route.reset(route_token)
+        call_records.reset(token)
+    by_id = {result["watchId"]: result for result in results}
+    assert calls == {"batched": 2, "omitted": 3, "failed": 2}
+    assert by_id["failed"]["ok"] is False and "usage" not in by_id["first"]
+    assert counted == sum(len(result.get("usage", {}).get("calls", [])) for result in results) == 7
+
+
 def test_tool_calls_are_capped_per_question(monkeypatch):
     class Greedy:
         """Asks for 4 searches per turn, three turns in a row, then answers."""

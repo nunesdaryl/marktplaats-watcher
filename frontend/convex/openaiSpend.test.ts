@@ -79,6 +79,28 @@ test("only owner sees monthly spend and disconnected billing stays explicit", as
     billed: null, capUsd: 110, connected: false });
 });
 
+test("checkGap names requests whose counted calls lack watch charges", async () => {
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "alice", email: "alice@example.com" });
+  await alice.mutation(api.users.store, {});
+  const watchId = await alice.mutation(api.watches.create, { query: "bike",
+    schedule: { kind: "interval", everyMinutes: 60 }, notify: "good" });
+  const day = "2026-10-20";
+  const counter = { day, route: "/api/internal/check", env: "production", model: "gpt-5.4-mini",
+    ok: true, error: null, inputTokens: 100, outputTokens: 10 };
+  await t.mutation(internal.openaiCalls.recordCalls, { records: [
+    { ...counter, requestId: "run.0", requests: 2 },
+    { ...counter, requestId: "run.1", requests: 1 },
+  ] });
+  for (const requestId of ["run.0", "run.1"])
+    await t.mutation(internal.aiBudget.record, { clerkId: "alice", kind: "watch", watchId,
+      checkId: `${requestId}.${watchId}`, callId: `${requestId}.${watchId}.0`,
+      inputTokens: 100, outputTokens: 10, costEur: 0.01 });
+  expect(await t.query(internal.openaiSpend.checkGap, { day })).toEqual([
+    { requestId: "run.0", countedCalls: 2, watchRows: 1 },
+  ]);
+});
+
 test("an unset alert threshold is absent from the owner query", async () => {
   delete process.env.OPENAI_MONTHLY_CAP_USD;
   const t = convexTest(schema, modules);

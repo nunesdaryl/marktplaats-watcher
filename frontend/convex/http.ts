@@ -71,12 +71,13 @@ http.route({ path: "/api/openai-calls", method: "POST", handler: httpAction(asyn
   let body: unknown;
   try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
   const records = (body as { records?: unknown })?.records;
-  const fields = ["day", "route", "env", "model", "ok", "error", "requests", "inputTokens", "outputTokens"];
+  const fields = ["day", "route", "env", "model", "ok", "error", "requests", "inputTokens", "outputTokens", "requestId"];
   const valid = Array.isArray(records) && records.length > 0 && records.length <= 200 && records.every((row) =>
-    row && typeof row === "object" && Object.keys(row).length === fields.length &&
+    row && typeof row === "object" && Object.keys(row).length === fields.length - 1 + ("requestId" in row ? 1 : 0) &&
     Object.keys(row).every((key) => fields.includes(key)) &&
     typeof row.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.day) &&
     [row.route, row.env, row.model].every((value) => typeof value === "string" && value.length > 0 && value.length <= 100) &&
+    (row.requestId === undefined || typeof row.requestId === "string" && /^[A-Za-z0-9._-]{1,100}$/.test(row.requestId)) &&
     typeof row.ok === "boolean" && (row.error === null || typeof row.error === "string" && row.error.length > 0 && row.error.length <= 100) &&
     [row.requests, row.inputTokens, row.outputTokens].every((value) => Number.isSafeInteger(value) && value >= 0) && row.requests > 0);
   if (!valid) return new Response("Invalid request.", { status: 400 });

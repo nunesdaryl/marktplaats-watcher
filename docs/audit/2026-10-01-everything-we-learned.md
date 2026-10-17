@@ -301,3 +301,7 @@ Also 1 Oct evening: **one authoritative design system** (`docs/design/DESIGN-SYS
 - **Factory:** a machine merge gate, and the PR-path for `evals.yml` (local merges never trigger it).
 - **Second brain:** refresh the vault's `Decisions.md` and `Evaluation Results.md`; put this week's lessons into
   `fde-skill` (correct the agent twice → write a skill).
+
+## 17 October: watch-check charge gap (MW-157)
+
+The check route made more counted OpenAI calls than the watch ledger charged. A regression test found a concrete loss path: `checker.checkDue` wrote check results before iterating `usage.calls`, so a failed result mutation ended the action with already-made model calls uncharged. The Python multi-watch test showed batching, omitted-id retries, failed rankings and first looks all preserve one usage entry per simulated call. MW-157 moves charging into a `finally` block around result persistence and adds a request-scoped counter plus `openaiSpend:checkGap` for read-only diagnosis. The production readout the day after merge must establish whether this path explains the entire observed gap; the aggregate pre-merge figures cannot identify individual lost requests.

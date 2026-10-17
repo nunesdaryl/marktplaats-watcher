@@ -680,3 +680,40 @@ test("failed ranking attempts charge estimated watch usage", async () => {
   const budgets = await t.run((ctx) => ctx.db.query("aiBudgets").collect());
   expect(budgets).toMatchObject([{ totalEur: 0.02 }]);
 });
+
+test("a check response charges every call across successful and failed watches", async () => {
+  const { t, id } = await seededWatch();
+  const bob = t.withIdentity({ subject: "bob", email: "bob@example.com" });
+  const otherId = await bob.mutation(api.watches.create, { ...watchArgs });
+  await t.run((ctx) => ctx.db.patch(otherId, { seeded: true, nextRunAt: Date.now() }));
+  const calls = [
+    { input_tokens: 100, output_tokens: 10, cost_eur: 0.01 },
+    { input_tokens: 50, output_tokens: 5, cost_eur: 0.01 },
+  ];
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [
+    { ...found(id, []), usage: { model: "gpt-5.4-mini", input_tokens: 150, output_tokens: 15, calls } },
+    { watchId: otherId, ok: false, error: "Scoring unavailable",
+      usage: { model: "gpt-5.4-mini", input_tokens: 100, output_tokens: 10, calls: [calls[0]] } },
+  ] }))));
+  await t.action(internal.checker.checkDue, {});
+  const spend = await t.run((ctx) => ctx.db.query("aiSpend").collect());
+  expect(spend).toHaveLength(3);
+  expect(spend.filter((row) => row.watchId === id)).toHaveLength(2);
+  expect(spend.filter((row) => row.watchId === otherId)).toHaveLength(1);
+});
+
+test("check calls are charged even when storing the check result fails", async () => {
+  const { t, id } = await seededWatch();
+  const calls = [
+    { input_tokens: 120, output_tokens: 10, cost_eur: 0.01 },
+    { input_tokens: 80, output_tokens: 5, cost_eur: 0.01 },
+  ];
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [{
+    watchId: id, ok: true, currentIds: ["m1"], listings: [{ id: "m1" }],
+    usage: { model: "gpt-5.4-mini", input_tokens: 200, output_tokens: 15, calls },
+  }] }))));
+  await expect(t.action(internal.checker.checkDue, {})).rejects.toThrow();
+  const spend = await t.run((ctx) => ctx.db.query("aiSpend").collect());
+  expect(spend).toHaveLength(calls.length);
+  expect(spend.map((row) => row.inputTokens)).toEqual(calls.map((call) => call.input_tokens));
+});

@@ -132,15 +132,16 @@ export default defineSchema({
     costEur: v.number(), at: v.number(), callId: v.string(), rolledUp: v.optional(v.boolean()),
     estimated: v.optional(v.boolean()),
   }).index("by_user_window", ["userId", "windowStart"]).index("by_call", ["callId"]).index("by_at", ["at"])
-    .index("by_user_at", ["userId", "at"]),
+    .index("by_user_at", ["userId", "at"]).index("by_check", ["checkId"]),
   aiSpendMonthly: defineTable({ monthStart: v.number(), userId: v.id("users"), totalEur: v.number(),
     kinds: v.any(), days: v.any(), dailyKinds: v.any(),
   }).index("by_month", ["monthStart"]).index("by_user_month", ["userId", "monthStart"]),
   aiSpendBackfills: defineTable({ monthStart: v.number(), completedAt: v.number() }).index("by_month", ["monthStart"]),
   openaiCalls: defineTable({
     day: v.string(), route: v.string(), env: v.string(), model: v.string(), ok: v.boolean(),
+    requestId: v.optional(v.string()),
     error: v.union(v.string(), v.null()), requests: v.number(), inputTokens: v.number(), outputTokens: v.number(),
-  }).index("by_day", ["day"]).index("by_key", ["day", "route", "env", "model", "ok", "error"]),
+  }).index("by_day", ["day"]).index("by_key", ["day", "route", "env", "model", "ok", "error", "requestId"]),
   openaiCosts: defineTable({
     monthStart: v.number(), totalUsd: v.number(), updatedAt: v.number(),
     byKey: v.optional(v.array(v.object({ name: v.string(), usd: v.number() }))),
