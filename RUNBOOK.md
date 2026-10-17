@@ -26,6 +26,7 @@ repo root unless they start with `cd frontend`.
 | Logs | Vercel → Logs; Convex dashboard → Logs | JSON lines: `check`, `chat_turn`, `csp_violation` (Vercel); `check_run`, `health_digest`, `checks_paused` (Convex) |
 
 For a red `marktplaats-canary` run, open the failed GitHub Actions log. A network or HTTP error may be temporary; a missing field or zero organic rows can mean the search response changed. Check the live search response and a recent scheduled check's `paidRemoved`, `readCount`, and errors before changing the parser. The workflow reads one public search page without secrets or production writes. Re-run it manually only when investigating a failure, and record what changed.
+The canary workflow uses placeholder model settings for import and makes no model calls.
 
 ## Previews
 
