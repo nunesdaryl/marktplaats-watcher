@@ -46,6 +46,7 @@ export const groups = internalQuery({
         rating_examples: ratings.map((r) => ({ title: (r.title ?? r.listing?.title ?? "").slice(0, 100),
           price_eur: r.listing?.price_eur ?? null, verdict: r.verdict, reasons: r.reasons ?? [], note: (r.note ?? "").slice(0, 100) })),
         max_distance_km: w.maxDistanceKm ?? null, notify: w.notify,
+        category_id: w.categoryId ?? null, attribute_filters: w.attributeFilters ?? {},
         include_business_sellers: w.includeBusinessSellers ?? false,
         seen_ids: seen.map((s) => s.listingId),
         seen_scores: Object.fromEntries(seen.filter((s) => s.score !== undefined).map((s) => [s.listingId, s.score])),

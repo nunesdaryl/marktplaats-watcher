@@ -322,6 +322,8 @@ export default defineSchema({
     userId: v.id("users"),
     label: v.string(),
     query: v.string(),
+    categoryId: v.optional(v.number()),
+    attributeFilters: v.optional(v.record(v.string(), v.string())),
     maxPriceEur: v.optional(v.number()),
     mustInclude: v.optional(v.string()),
     excludeWords: v.optional(v.array(v.string())),

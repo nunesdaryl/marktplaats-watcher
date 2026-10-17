@@ -6,6 +6,7 @@ import { currentUser, deleteWatchData, requireUser } from "./users";
 import { checkTargetFolder, cleanName } from "./folders";
 import { insertTracked, patchTracked } from "./totals";
 import { TIMEZONE, checkSchedule, describe, nextRun, notifyValidator, scheduleValidator } from "./schedule";
+import { normalizeCategory } from "./categoryFilters";
 
 export const MAX_WATCHES = 5;
 
@@ -42,7 +43,7 @@ export function cleanExcludeWords(words: string[]) {
   return cleaned;
 }
 
-function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number }) {
+function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number; categoryId?: number; attributeFilters?: Record<string, string> }) {
   const q = args.query.trim().replace(/\s+/g, " ");
   if (q.length < 2 || q.length > 80) throw new ConvexError("Describe the item in 2 to 80 characters.");
   if (args.maxPriceEur !== undefined && !(args.maxPriceEur > 0 && args.maxPriceEur <= 1_000_000))
@@ -52,19 +53,22 @@ function clean(args: { query: string; maxPriceEur?: number; mustInclude?: string
   if (args.maxDistanceKm !== undefined && !(args.maxDistanceKm > 0 && args.maxDistanceKm <= 300))
     throw new ConvexError("Pick a distance from 1 to 300 km.");
   const mustInclude = args.mustInclude?.trim().slice(0, 40) || undefined;
+  const category = normalizeCategory(args.categoryId, args.attributeFilters, true);
   return {
     query: q, maxPriceEur: args.maxPriceEur, mustInclude, excludeWords: args.excludeWords ? cleanExcludeWords(args.excludeWords) : undefined, postcode,
     maxDistanceKm: postcode ? args.maxDistanceKm : undefined,
+    categoryId: category.categoryId, attributeFilters: category.attributeFilters,
   };
 }
 
-type SearchFields = { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number };
+type SearchFields = { query: string; maxPriceEur?: number; mustInclude?: string; excludeWords?: string[]; postcode?: string; maxDistanceKm?: number; categoryId?: number; attributeFilters?: Record<string, string> };
 
 function sameSearch(w: SearchFields, f: SearchFields) {
   return w.query.toLowerCase() === f.query.toLowerCase() && w.maxPriceEur === f.maxPriceEur &&
     (w.mustInclude ?? "").toLowerCase() === (f.mustInclude ?? "").toLowerCase() && w.postcode === f.postcode &&
     JSON.stringify(w.excludeWords ?? []) === JSON.stringify(f.excludeWords ?? []) &&
-    w.maxDistanceKm === f.maxDistanceKm;
+    w.maxDistanceKm === f.maxDistanceKm && w.categoryId === f.categoryId &&
+    JSON.stringify(w.attributeFilters ?? {}) === JSON.stringify(f.attributeFilters ?? {});
 }
 
 function rejectDuplicate(mine: Doc<"watches">[], fields: SearchFields) {
@@ -87,6 +91,8 @@ const search = {
   postcode: v.optional(v.string()),
   maxDistanceKm: v.optional(v.number()),
   includeBusinessSellers: v.optional(v.boolean()),
+  categoryId: v.optional(v.number()),
+  attributeFilters: v.optional(v.record(v.string(), v.string())),
 };
 
 export const create = mutation({
@@ -134,6 +140,8 @@ export const update = mutation({
     postcode: v.optional(v.union(v.string(), v.null())),
     maxDistanceKm: v.optional(v.union(v.number(), v.null())),
     includeBusinessSellers: v.optional(v.boolean()),
+    categoryId: v.optional(v.union(v.number(), v.null())),
+    attributeFilters: v.optional(v.record(v.string(), v.string())),
   },
   handler: async (ctx, { id, ...change }) => {
     const watch = await ownWatch(ctx, id);
@@ -150,20 +158,23 @@ export const update = mutation({
 
     // The search itself: any field left out keeps its current value; null clears it
     const pick = <T,>(value: T | null | undefined, current: T | undefined) => (value === undefined ? current : value ?? undefined);
-    const searchChanged = ["query", "maxPriceEur", "mustInclude", "excludeWords", "postcode", "maxDistanceKm"].some((k) => (change as Record<string, unknown>)[k] !== undefined);
+    const searchChanged = ["query", "maxPriceEur", "mustInclude", "excludeWords", "postcode", "maxDistanceKm", "categoryId", "attributeFilters"].some((k) => (change as Record<string, unknown>)[k] !== undefined);
     if (searchChanged) {
       const fields = clean({
         query: change.query ?? watch.query, maxPriceEur: pick(change.maxPriceEur, watch.maxPriceEur),
         mustInclude: pick(change.mustInclude, watch.mustInclude), postcode: pick(change.postcode, watch.postcode),
         excludeWords: change.excludeWords ?? watch.excludeWords,
         maxDistanceKm: pick(change.maxDistanceKm, watch.maxDistanceKm),
+        categoryId: pick(change.categoryId, watch.categoryId),
+        attributeFilters: change.attributeFilters ?? (change.categoryId !== undefined && change.categoryId !== watch.categoryId ? undefined : watch.attributeFilters),
       });
       const others = (await ctx.db.query("watches").withIndex("by_user", (q) => q.eq("userId", watch.userId)).collect())
         .filter((w) => w._id !== id);
       rejectDuplicate(others, fields);
       Object.assign(patch, fields, { label: label(fields), searchEditedAt: now });   // a check under way is now stale
       if (!sameSearch(watch, fields) && (fields.query.toLowerCase() !== watch.query.toLowerCase() ||
-          fields.postcode !== watch.postcode || fields.maxDistanceKm !== watch.maxDistanceKm)) {
+          fields.postcode !== watch.postcode || fields.maxDistanceKm !== watch.maxDistanceKm ||
+          fields.categoryId !== watch.categoryId || JSON.stringify(fields.attributeFilters ?? {}) !== JSON.stringify(watch.attributeFilters ?? {}))) {
         // A different search: start over with a silent first look, so old listings aren't e-mailed as new
         for (const row of await ctx.db.query("seenListings").withIndex("by_watch_listing", (q) => q.eq("watchId", id)).collect())
           await ctx.db.delete(row._id);

@@ -280,3 +280,23 @@ test("the same search can't be watched twice", async () => {
     .rejects.toThrow('You already watch "Mac mini, under €500"');
   await alice.mutation(api.watches.create, { ...macMini, maxPriceEur: 400 });   // a different price is a different watch
 });
+
+test("category ids and facet choices are validated when a watch is saved", async () => {
+  const { alice } = setup();
+  await expect(alice.mutation(api.watches.create, { ...macMini, categoryId: 999999 }))
+    .rejects.toThrow("available category");
+  await expect(alice.mutation(api.watches.create, { ...macMini, categoryId: 91, attributeFilters: { fuel: "999999" } }))
+    .rejects.toThrow("Unknown category filter");
+  const id = await alice.mutation(api.watches.create, {
+    ...macMini, query: "car", categoryId: 91, attributeFilters: { fuel: "474", mileage: ":50000" },
+  });
+  const watch = (await alice.query(api.watches.list, {})).find((item) => item._id === id);
+  expect(watch?.categoryId).toBe(91);
+  expect(watch?.attributeFilters).toEqual({ fuel: "474", mileage: ":50000" });
+});
+
+test("a four-digit postcode cannot anchor a distance filter", async () => {
+  const { alice } = setup();
+  await expect(alice.mutation(api.watches.create, { ...macMini, postcode: "3511", maxDistanceKm: 30 }))
+    .rejects.toThrow("Dutch postcode");
+});

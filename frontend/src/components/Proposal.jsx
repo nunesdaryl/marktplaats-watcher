@@ -4,21 +4,25 @@ import { api } from "../../convex/_generated/api";
 import { NOTIFY_LABEL, NOTIFY_SHORT, describe } from "../../convex/schedule";
 import { scheduleKind, track } from "../lib/track.js";
 import BroadWatchWarning, { broadWatchMessage } from "./BroadWatchWarning.jsx";
+import { categoryName, filterLabels } from "../../convex/categoryFilters";
 
 const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 export const watchFields = (p) => defined({ query: p.query, mustInclude: p.mustInclude, maxPriceEur: p.maxPriceEur,
-  postcode: p.postcode, maxDistanceKm: p.maxDistanceKm, includeBusinessSellers: p.includeBusinessSellers });
+  postcode: p.postcode, maxDistanceKm: p.maxDistanceKm, includeBusinessSellers: p.includeBusinessSellers,
+  categoryId: p.categoryId, attributeFilters: p.attributeFilters });
 
 function searchText(p) {
   return [p.query, p.mustInclude, p.maxPriceEur && `under €${p.maxPriceEur}`,
-    p.postcode && p.maxDistanceKm && `within ${p.maxDistanceKm} km of ${p.postcode}`].filter(Boolean).join(", ");
+    p.postcode && p.maxDistanceKm && `within ${p.maxDistanceKm} km of ${p.postcode}`,
+    categoryName(p.categoryId), ...filterLabels(p.categoryId, p.attributeFilters)].filter(Boolean).join(", ");
 }
 
 function changeText(p) {
   return [p.schedule && `check it ${describe(p.schedule)}`, p.notify && `e-mail you ${NOTIFY_LABEL[p.notify]} (${NOTIFY_SHORT[p.notify]})`,
     p.maxPriceEur && `set the max price to €${p.maxPriceEur}`, p.active === false && "pause it",
     p.active === true && "resume it", p.includeBusinessSellers === true && "also show shops and dealers",
-    p.includeBusinessSellers === false && "hide shops and dealers"].filter(Boolean).join(", ");
+    p.includeBusinessSellers === false && "hide shops and dealers", categoryName(p.categoryId),
+    ...filterLabels(p.categoryId, p.attributeFilters)].filter(Boolean).join(", ");
 }
 
 /** A watch the chat suggested. Nothing is saved until you press the button. */
@@ -37,7 +41,8 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
     try {
       if (p.type === "create") await create({ ...watchFields(p), schedule: p.schedule, notify });
       else await update(defined({ id: p.watchId, schedule: p.schedule, notify: p.notify, active: p.active, maxPriceEur: p.maxPriceEur,
-        includeBusinessSellers: p.includeBusinessSellers }));
+        includeBusinessSellers: p.includeBusinessSellers, categoryId: p.categoryId,
+        attributeFilters: p.attributeFilters }));
       setState("saved");
       if (p.type === "create") track("watch_saved", { kind: scheduleKind(p.schedule), value: notify, mode: "from chat" });
       onSaved?.();
@@ -59,6 +64,7 @@ export default function Proposal({ p, saved, onSaved, onAdjust }) {
         onPrice={() => onAdjust({ ...watchFields(p), schedule: p.schedule, notify, volumeNote: p.volumeNote, focusMaxPrice: true })}
         onGood={() => setNotify("good")} showGood={notify !== "good"} />}
       {p.volumeNote && state !== "saved" && <p className="hint" role="status">{p.volumeNote}</p>}
+      {p.filterNote && <p className="hint" role="status">{p.filterNote}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {state === "saved" ? (
         <p className="done">{p.type === "create" ? "Watch saved. The first check only notes what's listed now; after that, new ones that fit are e-mailed with the reason." : "Change saved."}</p>

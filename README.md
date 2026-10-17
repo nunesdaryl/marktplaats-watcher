@@ -182,6 +182,11 @@ uptime check).
   (29 Sep 2026), because the `/q/` page ignores sorting and filters and showed only a fraction of the
   matches. Marktplaats sorts by day, not by time, so a check reads all of the days since its last check:
   usually one page for a watch with a price and distance, more for a broad one (at most 40 pages).
+  A watch may also use a Marktplaats category and its own filters, such as car fuel and mileage,
+  laptop RAM or phone storage. Chat can propose these from plain words; the person reviews and saves
+  the watch. The checked-in category vocabulary is in `data/categories.json` (copied to
+  `frontend/convex/categories.json` for the frontend build); unknown saved values
+  are ignored with a visible note.
   "New" means unseen and placed after the newest listing of the last check. Seller details are never kept.
 - Marktplaats' terms (Art. 7.3) forbid repeated, systematic querying. Scheduled watches do exactly that;
   the operator has accepted this risk for the public portfolio version. Watches with the same search and
