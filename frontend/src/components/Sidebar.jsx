@@ -10,7 +10,7 @@ import Logo from "./Logo.jsx";
 import RowMenu from "./RowMenu.jsx";
 
 /** Desktop navigation, ChatGPT-style: search, new chat, alerts, pinned, folders, watches, chats by date, archive. */
-export default function Sidebar({ route, watches, watchesLoaded, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
+export default function Sidebar({ route, watches, watchesLoaded, archivedWatchCount = 0, chats, email, budget, actions, renaming, setRenaming, onNewWatch, onPrivacy, onFeedback, openSheet, toast, isOwner, newAlerts }) {
   const folders = useQuery(api.folders.list) ?? [];
   const renameChat = useMutation(api.chats.rename);
   const renameWatch = useMutation(api.watches.rename);
@@ -110,6 +110,10 @@ export default function Sidebar({ route, watches, watchesLoaded, chats, email, b
           <Icon name="bell" size={18} />Alerts
           {newAlerts && <span className="new-count" aria-label={`${newAlerts} new`}>{newAlerts}</span>}
         </button>
+        <button className={`nav-item ${["watches", "w", "archived"].includes(route.section) ? "active" : ""}`}
+                aria-current={["watches", "w", "archived"].includes(route.section) ? "page" : undefined} onClick={() => go("/watches")}>
+          <Icon name="eye" size={18} />Watches
+        </button>
         {isOwner && (
           <button className={`nav-item ${at("admin") ? "active" : ""}`} onClick={() => go("/admin")}>
             <Icon name="chart" size={18} />Dashboard
@@ -167,7 +171,7 @@ export default function Sidebar({ route, watches, watchesLoaded, chats, email, b
       })}
 
       <div className="nav-section">
-        <span>Watches</span>
+        <a className="nav-section-link" {...linkTo("/watches")}>Watches</a>
         {(watches.length > 0 || !watchesLoaded) && <button className="icon-button small" onClick={onNewWatch} aria-label="New watch"><Icon name="plus" size={16} /></button>}
       </div>
       {watches.filter(loose).map(watchRow)}
@@ -175,6 +179,9 @@ export default function Sidebar({ route, watches, watchesLoaded, chats, email, b
         <p className="empty-note">Your watches appear here after you create them.</p>
         <button className="button tinted" onClick={onNewWatch}>Create a watch</button>
       </div>}
+      {archivedWatchCount > 0 && <button className={`nav-item archive-item ${at("archived") ? "active" : ""}`} onClick={() => go("/archived")}>
+        <Icon name="archive" size={18} />Archived ({archivedWatchCount})
+      </button>}
 
       {groupByDate(chats.filter(loose)).map(([name, list]) => (
         <div key={name} className="date-group">

@@ -195,7 +195,7 @@ function Workspace() {
   if (desktop) {
     return (
       <div className="shell">
-        <Sidebar route={route} watches={watches} watchesLoaded={watchesOrLoading !== undefined} chats={chats} email={me?.email} budget={budget} actions={actions} renaming={renaming}
+        <Sidebar route={route} watches={watches} watchesLoaded={watchesOrLoading !== undefined} archivedWatchCount={archivedWatches.length} chats={chats} email={me?.email} budget={budget} actions={actions} renaming={renaming}
                  setRenaming={setRenaming} onNewWatch={() => newWatch()} onPrivacy={() => setSheet({ type: "privacy" })}
                  onFeedback={openFeedback} openSheet={setSheet} toast={setToast} isOwner={isOwner} newAlerts={newAlerts} />
         <main className="main">
